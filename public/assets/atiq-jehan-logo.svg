@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 120" width="100%" height="100%">
+  <defs>
+    <linearGradient id="blueGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f2942" />
+      <stop offset="100%" stop-color="#1e4e79" />
+    </linearGradient>
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#d97706" />
+      <stop offset="100%" stop-color="#f59e0b" />
+    </linearGradient>
+  </defs>
+
+  <!-- Left Icon Emblem: Shield with Cog & Wrench -->
+  <g transform="translate(15, 10)">
+    <!-- Outer Shield -->
+    <path d="M 50 0 L 95 18 C 95 65 50 95 50 95 C 50 95 5 65 5 18 Z" fill="url(#blueGrad)" stroke="#d97706" stroke-width="2.5" stroke-linejoin="round" />
+    <!-- Inner Shield Inset -->
+    <path d="M 50 6 L 88 22 C 88 60 50 86 50 86 C 50 86 12 60 12 22 Z" fill="none" stroke="#ffffff" stroke-width="1.2" opacity="0.6" />
+    
+    <!-- Stylized Gear Wheel -->
+    <g transform="translate(50, 44)" fill="#f59e0b">
+      <circle cx="0" cy="0" r="16" fill="none" stroke="#f59e0b" stroke-width="5" />
+      <circle cx="0" cy="0" r="7" fill="#ffffff" />
+      <!-- Gear Teeth -->
+      <rect x="-3" y="-22" width="6" height="6" rx="1" />
+      <rect x="-3" y="16" width="6" height="6" rx="1" />
+      <rect x="-22" y="-3" width="6" height="6" rx="1" />
+      <rect x="16" y="-3" width="6" height="6" rx="1" />
+      <rect x="-16" y="-16" width="6" height="6" rx="1" transform="rotate(45)" />
+      <rect x="10" y="-16" width="6" height="6" rx="1" transform="rotate(45)" />
+      <rect x="-16" y="10" width="6" height="6" rx="1" transform="rotate(45)" />
+      <rect x="10" y="10" width="6" height="6" rx="1" transform="rotate(45)" />
+    </g>
+
+    <!-- Crossed Tools Silhouette -->
+    <path d="M 32 30 L 68 66 M 68 30 L 32 66" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" opacity="0.9" />
+  </g>
+
+  <!-- Typography & Brand Text -->
+  <g transform="translate(130, 22)">
+    <!-- Arabic subtitle (optional artistic touch) or top accent -->
+    <text x="0" y="14" font-family="'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="700" letter-spacing="3" fill="#d97706" text-transform="uppercase">
+      AUTO WORKSHOP &amp; SPARE PARTS
+    </text>
+    
+    <!-- Primary Name -->
+    <text x="0" y="48" font-family="'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="34" font-weight="900" letter-spacing="1.5" fill="#0f2942">
+      ATIQ JEHAN
+    </text>
+
+    <!-- Full Legal Company Name -->
+    <text x="0" y="72" font-family="'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="11.5" font-weight="700" letter-spacing="1.2" fill="#334155">
+      AUTO REPAIR &amp; USED SPARE PARTS L.L.C.
+    </text>
+
+    <!-- Location & Certification Subline -->
+    <text x="0" y="88" font-family="'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="9" font-weight="600" letter-spacing="0.5" fill="#64748b">
+      AL DHAFRA REGION, MADINAT ZAYED, UAE
+    </text>
+  </g>
+</svg>

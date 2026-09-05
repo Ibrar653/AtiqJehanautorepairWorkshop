@@ -1,0 +1,363 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+  --font-heading: var(--font-sans);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --color-info: var(--info);
+  --shadow-xs: 0 1px 2px rgba(16, 24, 40, 0.05);
+  --shadow-md: 0 8px 24px rgba(16, 24, 40, 0.10);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+/* ─── Light Theme — Enterprise SaaS Palette ─────────────────────────────── */
+:root {
+  --background: #F6F7F9;
+  --foreground: #0E1420;
+  --card: #FFFFFF;
+  --card-foreground: #0E1420;
+  --popover: #FFFFFF;
+  --popover-foreground: #0E1420;
+  --primary: #2563EB;
+  --primary-foreground: #FFFFFF;
+  --secondary: #F1F3F6;
+  --secondary-foreground: #0E1420;
+  --muted: #F1F3F6;
+  --muted-foreground: #5B6675;
+  --accent: #F1F5F9;
+  --accent-foreground: #0E1420;
+  --destructive: #DC2626;
+  --destructive-foreground: #FFFFFF;
+  --border: #E6E8EC;
+  --input: #E6E8EC;
+  --ring: #2563EB;
+  --success: #047857;
+  --warning: #B45309;
+  --danger: #DC2626;
+  --info: #2563EB;
+  --chart-1: #2563EB;
+  --chart-2: #0D9488;
+  --chart-3: #D97706;
+  --chart-4: #7C3AED;
+  --chart-5: #059669;
+  --radius: 0.625rem; /* 10px cards */
+  --sidebar: #0E1728;
+  --sidebar-foreground: #E2E8F0;
+  --sidebar-primary: #2563EB;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: rgba(255, 255, 255, 0.06);
+  --sidebar-accent-foreground: #FFFFFF;
+  --sidebar-border: #1E293B;
+  --sidebar-ring: #2563EB;
+}
+
+/* ─── Dark Theme ───────────────────────────────────────────────────────── */
+.dark {
+  --background: #0B111E;
+  --foreground: #F1F5F9;
+  --card: #121A2A;
+  --card-foreground: #F1F5F9;
+  --popover: #121A2A;
+  --popover-foreground: #F1F5F9;
+  --primary: #3B82F6;
+  --primary-foreground: #FFFFFF;
+  --secondary: #1E293B;
+  --secondary-foreground: #F1F5F9;
+  --muted: #1E293B;
+  --muted-foreground: #94A3B8;
+  --accent: #1E293B;
+  --accent-foreground: #F1F5F9;
+  --destructive: #EF4444;
+  --destructive-foreground: #FFFFFF;
+  --border: #1E293B;
+  --input: #1E293B;
+  --ring: #3B82F6;
+  --success: #10B981;
+  --warning: #F59E0B;
+  --danger: #EF4444;
+  --info: #3B82F6;
+  --chart-1: #3B82F6;
+  --chart-2: #14B8A6;
+  --chart-3: #F59E0B;
+  --chart-4: #8B5CF6;
+  --chart-5: #10B981;
+  --sidebar: #090E17;
+  --sidebar-foreground: #E2E8F0;
+  --sidebar-primary: #3B82F6;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: rgba(255, 255, 255, 0.07);
+  --sidebar-accent-foreground: #FFFFFF;
+  --sidebar-border: #192336;
+  --sidebar-ring: #3B82F6;
+}
+
+@layer base {
+  * {
+    border-color: var(--border);
+    outline-color: var(--ring);
+  }
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    font-size: 14px;
+    line-height: 20px;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  html {
+    font-family: var(--font-sans);
+    scroll-behavior: smooth;
+  }
+
+  /* Micro-interactions: 150ms ease-out transitions */
+  a,
+  button,
+  input,
+  select,
+  textarea,
+  [role="button"],
+  [role="tab"] {
+    transition-property: color, background-color, border-color, opacity, transform;
+    transition-timing-function: cubic-bezier(0, 0, 0.2, 1);
+    transition-duration: 150ms;
+  }
+
+  /* Focus ring standard for all interactive elements */
+  :focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--primary) 40%, transparent) !important;
+    outline-offset: 2px !important;
+  }
+
+  /* Tabular numbers for numbers, currency, dates, IDs, and tables */
+  .tabular-nums,
+  td,
+  th,
+  [data-slot="table-cell"],
+  [data-slot="table-head"],
+  .font-mono,
+  .metric-value {
+    font-variant-numeric: tabular-nums;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    ::before,
+    ::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+/* ─── Strict Typography Scale ──────────────────────────────────────────── */
+.text-page-title {
+  font-size: 24px;
+  line-height: 32px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.text-page-sub {
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 400;
+  letter-spacing: 0;
+  color: var(--muted-foreground);
+}
+
+.text-section {
+  font-size: 15px;
+  line-height: 22px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.text-metric {
+  font-size: 30px;
+  line-height: 36px;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.text-eyebrow {
+  font-size: 11px;
+  line-height: 16px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.text-body {
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 400;
+  letter-spacing: 0;
+}
+
+.text-table {
+  font-size: 13px;
+  line-height: 18px;
+  font-weight: 400;
+  letter-spacing: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.text-table-head {
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.text-caption {
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 400;
+  letter-spacing: 0;
+}
+
+/* ─── Custom Scrollbar ─────────────────────────────────────────────────── */
+@layer base {
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: oklch(0.7 0.02 260 / 40%);
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: oklch(0.5 0.03 260 / 60%);
+  }
+}
+
+/* ─── Print Styles ─────────────────────────────────────────────────────── */
+@page {
+  size: A4 portrait;
+  margin: 5mm;
+}
+
+@media print {
+  html,
+  body {
+    width: 210mm;
+    height: 297mm;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+    color: black !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .job-card-print {
+    width: 200mm;
+    max-height: 287mm;
+    margin: 0 auto;
+    overflow: hidden;
+    page-break-after: avoid;
+    page-break-before: avoid;
+    break-inside: avoid;
+    box-sizing: border-box;
+  }
+
+  .no-print,
+  aside,
+  header,
+  nav,
+  [role="navigation"],
+  button,
+  .print-hidden {
+    display: none !important;
+  }
+
+  /* Reset dashboard layout wrapper margins and paddings */
+  .min-h-screen {
+    min-height: auto !important;
+  }
+
+  div.pl-64,
+  div[class*="pl-64"],
+  div[class*="sidebar"] {
+    padding-left: 0 !important;
+    margin-left: 0 !important;
+  }
+
+  main {
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: 100% !important;
+  }
+
+  .print-only {
+    display: block !important;
+  }
+
+  /* Prevent unwanted page-break split */
+  table,
+  tr,
+  td,
+  th {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  .page-break-avoid,
+  .job-card-signatures,
+  .signature-box,
+  .invoice-signatures,
+  .invoice-sig-box {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+}
