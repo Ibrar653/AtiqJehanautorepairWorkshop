@@ -218,7 +218,12 @@ export async function createWorkspaceInvitation(
   list.unshift(localInv);
   saveLocalWorkspaceInvitations(list);
 
-  const origin = typeof window !== "undefined" ? window.location.origin : "http://localhost:3000";
+  const origin =
+    typeof window !== "undefined"
+      ? window.location.origin
+      : (process.env.NEXT_PUBLIC_APP_URL ||
+         (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` :
+         (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000")));
 
   return {
     success: true,

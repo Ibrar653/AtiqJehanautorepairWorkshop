@@ -69,10 +69,11 @@ export async function POST(request: NextRequest) {
     const invitationId = `winv-${Date.now().toString(36)}-${crypto.randomBytes(4).toString("hex")}`;
 
     // 2. Resolve origin for the invitation link
+    const forwardedHost = request.headers.get("x-forwarded-host");
+    const forwardedProto = request.headers.get("x-forwarded-proto") || "https";
     const origin =
       process.env.NEXT_PUBLIC_APP_URL ||
-      request.nextUrl.origin ||
-      "http://localhost:3000";
+      (forwardedHost ? `${forwardedProto}://${forwardedHost}` : (request.nextUrl?.origin || "http://localhost:3000"));
     const inviteLink = `${origin}/auth/accept-invite?token=${rawToken}`;
 
     const invitationRecord: any = {

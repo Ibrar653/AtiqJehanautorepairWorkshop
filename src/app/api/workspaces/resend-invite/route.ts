@@ -61,10 +61,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const forwardedHost = request.headers.get("x-forwarded-host");
+    const forwardedProto = request.headers.get("x-forwarded-proto") || "https";
     const origin =
       process.env.NEXT_PUBLIC_APP_URL ||
-      request.nextUrl.origin ||
-      "http://localhost:3000";
+      (forwardedHost ? `${forwardedProto}://${forwardedHost}` : (request.nextUrl?.origin || "http://localhost:3000"));
 
     const cleanEmail = inv.email.trim().toLowerCase();
     const now = new Date().toISOString();

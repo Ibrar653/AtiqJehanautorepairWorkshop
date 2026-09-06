@@ -16,6 +16,12 @@ export async function POST(request: NextRequest) {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://dnrrwcccclulidhyglub.supabase.co";
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
+    const forwardedHost = request.headers.get("x-forwarded-host");
+    const forwardedProto = request.headers.get("x-forwarded-proto") || "https";
+    const origin =
+      process.env.NEXT_PUBLIC_APP_URL ||
+      (forwardedHost ? `${forwardedProto}://${forwardedHost}` : (request.nextUrl?.origin || "http://localhost:3000"));
+
     if (serviceRoleKey) {
       // Server-side only elevated Supabase admin client
       const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
@@ -26,6 +32,7 @@ export async function POST(request: NextRequest) {
       });
 
       const { data, error } = await supabaseAdmin.auth.admin.inviteUserByEmail(email.trim().toLowerCase(), {
+        redirectTo: `${origin}/auth/callback?next=/dashboard`,
         data: {
           role: role || "viewer",
           full_name: full_name || "Staff Member",

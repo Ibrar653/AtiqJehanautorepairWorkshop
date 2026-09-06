@@ -110,17 +110,23 @@ export function GlobalSearchBar() {
   return (
     <div ref={searchRef} className="relative w-full max-w-lg">
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
         <Input
-          placeholder="Search by Customer Name, Phone, Chassis/VIN, Plate #..."
+          placeholder="Search customers, vehicles, job cards..."
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onFocus={() => query.trim().length >= 2 && setOpen(true)}
-          className="pl-9 pr-9 h-9 bg-muted/40 border-muted focus-visible:bg-background text-sm rounded-lg"
+          className="pl-10 pr-16 h-10 bg-slate-50/80 hover:bg-slate-50 border-slate-200 focus-visible:bg-white text-[13px] rounded-xl text-slate-800 placeholder:text-slate-400 focus-visible:ring-2 focus-visible:ring-blue-500/20 focus-visible:border-blue-500 shadow-2xs transition-all"
         />
-        {loading && (
-          <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
-        )}
+        <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
+          {loading ? (
+            <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
+          ) : (
+            <kbd className="hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10.5px] font-semibold text-slate-400 bg-white border border-slate-200 rounded-md shadow-2xs">
+              ⌘ K
+            </kbd>
+          )}
+        </div>
       </div>
 
       {open && (

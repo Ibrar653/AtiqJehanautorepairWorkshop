@@ -374,6 +374,7 @@ export const ALL_APP_MODULES: AppModuleDefinition[] = [
 export const NAV_ITEMS = [
   { href: '/', label: 'Dashboard', icon: 'LayoutDashboard', module: 'dashboard' as AppModule },
   { href: '/customers', label: 'Customers', icon: 'Users', module: 'customers' as AppModule },
+  { href: '/vehicles', label: 'Vehicles', icon: 'Car', module: 'customers' as AppModule },
   { href: '/job-cards', label: 'Job Cards', icon: 'ClipboardList', module: 'job_cards' as AppModule },
   { href: '/services', label: 'Services', icon: 'Wrench', module: 'services' as AppModule },
   { href: '/parts', label: 'Spare Parts', icon: 'Cog', module: 'spare_parts' as AppModule },

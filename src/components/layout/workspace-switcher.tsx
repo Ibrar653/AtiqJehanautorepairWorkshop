@@ -27,34 +27,34 @@ export function WorkspaceSwitcher() {
     <>
       <DropdownMenu>
         <DropdownMenuTrigger
-          className="flex items-center gap-2.5 px-3 py-1.5 h-10 rounded-lg border border-border bg-card hover:bg-muted/50 text-left transition-colors outline-none focus-visible:ring-2 focus-visible:ring-primary/40 shadow-xs cursor-pointer max-w-[280px]"
+          className="flex items-center gap-2.5 px-3 py-1.5 h-10 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-left transition-all outline-none focus-visible:ring-2 focus-visible:ring-blue-500/30 shadow-2xs cursor-pointer max-w-[280px]"
           title="Switch Active Business Workspace"
         >
-          <div className="w-7 h-7 rounded-md bg-primary text-primary-foreground flex items-center justify-center font-bold text-xs shrink-0">
-            <Building2 className="w-4 h-4" />
+          <div className="w-7 h-7 rounded-lg bg-[#0F172A] text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-xs">
+            <Building2 className="w-3.5 h-3.5 text-blue-400" />
           </div>
 
           <div className="min-w-0 flex-1">
-            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider leading-none">
+            <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider leading-none">
               Current Workspace
             </p>
             <div className="flex items-center gap-1.5 mt-0.5">
-              <span className="text-[13px] font-semibold text-foreground truncate block leading-tight">
+              <span className="text-[12.5px] font-bold text-slate-900 truncate block leading-tight">
                 {currentWorkspace.name}
               </span>
               {isDefaultAtiq ? (
-                <span className="text-[9px] bg-primary/10 text-primary font-bold px-1.5 py-0.5 rounded-[4px] uppercase tracking-wider shrink-0">
+                <span className="text-[8.5px] bg-blue-50 text-blue-700 font-bold px-1.5 py-0.5 rounded-[4px] uppercase tracking-wider shrink-0 border border-blue-200">
                   PRIMARY
                 </span>
               ) : (
-                <span className="text-[9px] bg-purple-100 text-purple-800 dark:bg-purple-900/50 dark:text-purple-300 font-bold px-1.5 py-0.5 rounded-[4px] uppercase tracking-wider shrink-0">
+                <span className="text-[8.5px] bg-purple-50 text-purple-700 font-bold px-1.5 py-0.5 rounded-[4px] uppercase tracking-wider shrink-0 border border-purple-200">
                   SECONDARY
                 </span>
               )}
             </div>
           </div>
 
-          <ChevronDown className="w-3.5 h-3.5 text-muted-foreground shrink-0 ml-1" />
+          <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0 ml-0.5" />
         </DropdownMenuTrigger>
 
         <DropdownMenuContent align="start" className="w-72 bg-card p-1.5 shadow-md border border-border rounded-xl">
