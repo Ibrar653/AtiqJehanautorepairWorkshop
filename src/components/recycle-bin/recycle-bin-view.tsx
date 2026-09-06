@@ -423,7 +423,7 @@ export function RecycleBinView() {
           { label: "Recycle Bin" },
         ]}
         actions={
-          <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl border border-slate-200/80 dark:border-slate-800">
+          <div className="flex items-center gap-1.5 bg-slate-100/90 dark:bg-slate-800/80 p-1.5 rounded-2xl border border-slate-200/90 dark:border-slate-700/80 shadow-2xs">
             <Button
               size="sm"
               variant={viewMode === "active" ? "default" : "ghost"}
@@ -431,11 +431,13 @@ export function RecycleBinView() {
                 setViewMode("active");
                 setCurrentPage(1);
               }}
-              className={`text-xs h-8 px-3 rounded-lg gap-1.5 ${
-                viewMode === "active" ? "bg-white text-slate-900 shadow-xs dark:bg-slate-900 dark:text-white font-semibold" : "text-slate-600 dark:text-slate-400"
+              className={`text-xs h-9 px-4 rounded-xl gap-2 font-semibold transition-all ${
+                viewMode === "active"
+                  ? "bg-white text-slate-900 shadow-xs dark:bg-slate-900 dark:text-white"
+                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
               }`}
             >
-              <Trash2 className="w-3.5 h-3.5 text-rose-500" />
+              <Trash2 className="w-4 h-4 text-rose-500" />
               Deleted Records ({counts.totalDeleted})
             </Button>
 
@@ -446,11 +448,13 @@ export function RecycleBinView() {
                 setViewMode("history");
                 setCurrentPage(1);
               }}
-              className={`text-xs h-8 px-3 rounded-lg gap-1.5 ${
-                viewMode === "history" ? "bg-white text-slate-900 shadow-xs dark:bg-slate-900 dark:text-white font-semibold" : "text-slate-600 dark:text-slate-400"
+              className={`text-xs h-9 px-4 rounded-xl gap-2 font-semibold transition-all ${
+                viewMode === "history"
+                  ? "bg-white text-slate-900 shadow-xs dark:bg-slate-900 dark:text-white"
+                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
               }`}
             >
-              <History className="w-3.5 h-3.5 text-indigo-500" />
+              <History className="w-4 h-4 text-indigo-500" />
               Audit History
             </Button>
           </div>
@@ -458,109 +462,103 @@ export function RecycleBinView() {
       />
 
       {/* ─── SUMMARY COUNT METRIC CARDS ───────────────────────────────────── */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-        <Card className="border border-slate-200/80 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 shadow-xs">
-          <CardContent className="p-3.5">
-            <p className="text-[10px] text-muted-foreground uppercase font-semibold tracking-wider flex items-center justify-between">
-              <span>Total Deleted</span>
-              <div className="w-6 h-6 rounded-md bg-rose-50 dark:bg-rose-950/50 text-rose-600 flex items-center justify-center">
-                <Trash2 className="w-3.5 h-3.5" />
-              </div>
-            </p>
-            <p className="text-xl font-bold font-mono text-rose-700 dark:text-rose-400 tabular-nums mt-1">
-              {counts.totalDeleted}
-            </p>
-          </CardContent>
-        </Card>
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+        {/* Card 1: Total Deleted */}
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-4 shadow-2xs flex flex-col justify-between">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Total Deleted</span>
+            <div className="w-8 h-8 rounded-xl bg-rose-50 dark:bg-rose-950/50 text-rose-600 flex items-center justify-center">
+              <Trash2 className="w-4 h-4" />
+            </div>
+          </div>
+          <p className="text-2xl font-bold font-mono tracking-tight text-rose-600 dark:text-rose-400 tabular-nums mt-2">
+            {counts.totalDeleted}
+          </p>
+        </div>
 
-        <Card className="border border-slate-200/80 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 shadow-xs">
-          <CardContent className="p-3.5">
-            <p className="text-[10px] text-muted-foreground uppercase font-semibold tracking-wider flex items-center justify-between">
-              <span>Deleted Today</span>
-              <div className="w-6 h-6 rounded-md bg-amber-50 dark:bg-amber-950/50 text-amber-600 flex items-center justify-center">
-                <Clock className="w-3.5 h-3.5" />
-              </div>
-            </p>
-            <p className="text-xl font-bold font-mono text-amber-700 dark:text-amber-400 tabular-nums mt-1">
-              {counts.deletedToday}
-            </p>
-          </CardContent>
-        </Card>
+        {/* Card 2: Deleted Today */}
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-4 shadow-2xs flex flex-col justify-between">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Deleted Today</span>
+            <div className="w-8 h-8 rounded-xl bg-amber-50 dark:bg-amber-950/50 text-amber-600 flex items-center justify-center">
+              <Clock className="w-4 h-4" />
+            </div>
+          </div>
+          <p className="text-2xl font-bold font-mono tracking-tight text-amber-600 dark:text-amber-400 tabular-nums mt-2">
+            {counts.deletedToday}
+          </p>
+        </div>
 
-        <Card className="border border-slate-200/80 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 shadow-xs">
-          <CardContent className="p-3.5">
-            <p className="text-[10px] text-muted-foreground uppercase font-semibold tracking-wider flex items-center justify-between">
-              <span>Customers</span>
-              <div className="w-6 h-6 rounded-md bg-blue-50 dark:bg-blue-950/50 text-blue-600 flex items-center justify-center">
-                <Users className="w-3.5 h-3.5" />
-              </div>
-            </p>
-            <p className="text-xl font-bold font-mono text-blue-700 dark:text-blue-400 tabular-nums mt-1">
-              {counts.customers}
-            </p>
-          </CardContent>
-        </Card>
+        {/* Card 3: Customers */}
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-4 shadow-2xs flex flex-col justify-between">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Customers</span>
+            <div className="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-950/50 text-blue-600 flex items-center justify-center">
+              <Users className="w-4 h-4" />
+            </div>
+          </div>
+          <p className="text-2xl font-bold font-mono tracking-tight text-blue-600 dark:text-blue-400 tabular-nums mt-2">
+            {counts.customers}
+          </p>
+        </div>
 
-        <Card className="border border-slate-200/80 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 shadow-xs">
-          <CardContent className="p-3.5">
-            <p className="text-[10px] text-muted-foreground uppercase font-semibold tracking-wider flex items-center justify-between">
-              <span>Job Cards</span>
-              <div className="w-6 h-6 rounded-md bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 flex items-center justify-center">
-                <ClipboardList className="w-3.5 h-3.5" />
-              </div>
-            </p>
-            <p className="text-xl font-bold font-mono text-indigo-700 dark:text-indigo-400 tabular-nums mt-1">
-              {counts.jobCards}
-            </p>
-          </CardContent>
-        </Card>
+        {/* Card 4: Job Cards */}
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-4 shadow-2xs flex flex-col justify-between">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Job Cards</span>
+            <div className="w-8 h-8 rounded-xl bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 flex items-center justify-center">
+              <ClipboardList className="w-4 h-4" />
+            </div>
+          </div>
+          <p className="text-2xl font-bold font-mono tracking-tight text-indigo-600 dark:text-indigo-400 tabular-nums mt-2">
+            {counts.jobCards}
+          </p>
+        </div>
 
-        <Card className="border border-slate-200/80 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 shadow-xs">
-          <CardContent className="p-3.5">
-            <p className="text-[10px] text-muted-foreground uppercase font-semibold tracking-wider flex items-center justify-between">
-              <span>Spare Parts</span>
-              <div className="w-6 h-6 rounded-md bg-purple-50 dark:bg-purple-950/50 text-purple-600 flex items-center justify-center">
-                <Package className="w-3.5 h-3.5" />
-              </div>
-            </p>
-            <p className="text-xl font-bold font-mono text-purple-700 dark:text-purple-400 tabular-nums mt-1">
-              {counts.spareParts}
-            </p>
-          </CardContent>
-        </Card>
+        {/* Card 5: Spare Parts */}
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-4 shadow-2xs flex flex-col justify-between">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Spare Parts</span>
+            <div className="w-8 h-8 rounded-xl bg-purple-50 dark:bg-purple-950/50 text-purple-600 flex items-center justify-center">
+              <Package className="w-4 h-4" />
+            </div>
+          </div>
+          <p className="text-2xl font-bold font-mono tracking-tight text-purple-600 dark:text-purple-400 tabular-nums mt-2">
+            {counts.spareParts}
+          </p>
+        </div>
 
-        <Card className="border border-slate-200/80 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 shadow-xs">
-          <CardContent className="p-3.5">
-            <p className="text-[10px] text-muted-foreground uppercase font-semibold tracking-wider flex items-center justify-between">
-              <span>Other</span>
-              <div className="w-6 h-6 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 flex items-center justify-center">
-                <Layers className="w-3.5 h-3.5" />
-              </div>
-            </p>
-            <p className="text-xl font-bold font-mono text-slate-700 dark:text-slate-300 tabular-nums mt-1">
-              {counts.other}
-            </p>
-          </CardContent>
-        </Card>
+        {/* Card 6: Other */}
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-4 shadow-2xs flex flex-col justify-between">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Other</span>
+            <div className="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 flex items-center justify-center">
+              <Layers className="w-4 h-4" />
+            </div>
+          </div>
+          <p className="text-2xl font-bold font-mono tracking-tight text-slate-700 dark:text-slate-300 tabular-nums mt-2">
+            {counts.other}
+          </p>
+        </div>
       </div>
 
       {/* ─── SEARCH & FILTER CONTROLS BAR ─────────────────────────────────── */}
-      <Card className="p-3.5 rounded-xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs space-y-3">
+      <div className="p-4 rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xs space-y-3">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
           {/* Universal Search Bar */}
           <div className="md:col-span-6 relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
             <Input
               type="text"
               placeholder="Search Recycle Bin... (e.g. Customer, Phone, Vehicle, VIN, Job Card, Invoice, Part, Supplier...)"
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
-              className="pl-9 text-xs h-9 rounded-lg border-slate-200/80 bg-slate-50/50 dark:bg-slate-800/40"
+              className="pl-9 text-xs h-10 rounded-xl border-slate-200 bg-white dark:bg-slate-900 focus-visible:ring-1 focus-visible:ring-blue-500"
             />
             {searchInput && (
               <button
                 onClick={() => setSearchInput("")}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5"
               >
                 <X className="w-3.5 h-3.5" />
               </button>
@@ -576,9 +574,9 @@ export function RecycleBinView() {
                 setCurrentPage(1);
               }}
             >
-              <SelectTrigger className="text-xs h-9 rounded-lg border-slate-200/80 bg-slate-50/50 dark:bg-slate-800/40">
-                <div className="flex items-center gap-1.5 truncate">
-                  <Calendar className="w-3.5 h-3.5 text-slate-500" />
+              <SelectTrigger className="text-xs h-10 rounded-xl border-slate-200 bg-white dark:bg-slate-900">
+                <div className="flex items-center gap-2 truncate">
+                  <Calendar className="w-4 h-4 text-slate-500" />
                   <span>
                     {dateFilter === "all" && "Date: All Time"}
                     {dateFilter === "today" && "Date: Today"}
@@ -591,7 +589,7 @@ export function RecycleBinView() {
                   </span>
                 </div>
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="rounded-xl border-slate-200">
                 <SelectItem value="all">All Time</SelectItem>
                 <SelectItem value="today">Today</SelectItem>
                 <SelectItem value="yesterday">Yesterday</SelectItem>
@@ -613,9 +611,9 @@ export function RecycleBinView() {
                 setCurrentPage(1);
               }}
             >
-              <SelectTrigger className="text-xs h-9 rounded-lg border-slate-200/80 bg-slate-50/50 dark:bg-slate-800/40">
-                <div className="flex items-center gap-1.5 truncate">
-                  <ArrowUpDown className="w-3.5 h-3.5 text-slate-500" />
+              <SelectTrigger className="text-xs h-10 rounded-xl border-slate-200 bg-white dark:bg-slate-900">
+                <div className="flex items-center gap-2 truncate">
+                  <ArrowUpDown className="w-4 h-4 text-slate-500" />
                   <span>
                     {sortBy === "newest" && "Sort: Newest First"}
                     {sortBy === "oldest" && "Sort: Oldest First"}
@@ -624,7 +622,7 @@ export function RecycleBinView() {
                   </span>
                 </div>
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="rounded-xl border-slate-200">
                 <SelectItem value="newest">Newest Deleted First</SelectItem>
                 <SelectItem value="oldest">Oldest First</SelectItem>
                 <SelectItem value="name_asc">Name A–Z</SelectItem>
@@ -639,7 +637,7 @@ export function RecycleBinView() {
           <div className="flex flex-wrap items-center gap-3 pt-2 border-t border-slate-100 dark:border-slate-800 text-xs">
             <span className="text-muted-foreground font-semibold">Custom Range:</span>
             <div className="flex items-center gap-2">
-              <Label className="text-[11px]">From:</Label>
+              <Label className="text-[11px] font-medium text-slate-600 dark:text-slate-400">From:</Label>
               <Input
                 type="date"
                 value={customStartDate}
@@ -647,11 +645,11 @@ export function RecycleBinView() {
                   setCustomStartDate(e.target.value);
                   setCurrentPage(1);
                 }}
-                className="h-8 text-xs w-36 rounded-lg border-slate-200/80"
+                className="h-9 text-xs w-36 rounded-xl border-slate-200"
               />
             </div>
             <div className="flex items-center gap-2">
-              <Label className="text-[11px]">To:</Label>
+              <Label className="text-[11px] font-medium text-slate-600 dark:text-slate-400">To:</Label>
               <Input
                 type="date"
                 value={customEndDate}
@@ -659,14 +657,14 @@ export function RecycleBinView() {
                   setCustomEndDate(e.target.value);
                   setCurrentPage(1);
                 }}
-                className="h-8 text-xs w-36 rounded-lg border-slate-200/80"
+                className="h-9 text-xs w-36 rounded-xl border-slate-200"
               />
             </div>
           </div>
         )}
 
         {/* Record Type Filters / Pills */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pt-1 pb-0.5 scrollbar-none">
+        <div className="flex items-center gap-2 overflow-x-auto pt-1 pb-0.5 scrollbar-none">
           {MODULE_FILTERS.map((f) => {
             const Icon = f.icon;
             const isSelected = selectedModule === f.id;
@@ -679,10 +677,10 @@ export function RecycleBinView() {
                   setSelectedModule(f.id);
                   setCurrentPage(1);
                 }}
-                className={`text-xs h-7.5 px-3 rounded-lg flex-shrink-0 gap-1.5 font-medium transition-colors ${
+                className={`text-xs h-8.5 px-3.5 rounded-xl flex-shrink-0 gap-1.5 font-semibold transition-all ${
                   isSelected
-                    ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 shadow-xs"
-                    : "bg-white dark:bg-slate-900 border-slate-200/80 text-slate-600 dark:text-slate-400 hover:text-slate-900 hover:bg-slate-50"
+                    ? "bg-blue-600 text-white shadow-2xs hover:bg-blue-700"
+                    : "bg-white dark:bg-slate-900 border-slate-200 text-slate-600 dark:text-slate-400 hover:text-slate-900 hover:bg-slate-50"
                 }`}
               >
                 <Icon className="w-3.5 h-3.5" />
@@ -691,15 +689,15 @@ export function RecycleBinView() {
             );
           })}
         </div>
-      </Card>
+      </div>
 
       {/* ─── TAB 1: ACTIVE DELETED RECORDS TABLE ───────────────────────────── */}
       {viewMode === "active" && (
-        <Card className="border border-slate-200/80 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 shadow-xs overflow-hidden">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-2xs overflow-hidden">
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
-                <TableRow className="bg-slate-50/80 dark:bg-slate-800/60 border-b border-slate-200/80 h-10">
+                <TableRow className="bg-slate-50/80 hover:bg-slate-50/80 dark:bg-slate-800/60 dark:hover:bg-slate-800/60 border-b border-slate-200/80 h-11 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
                   <TableHead className="w-[40px] pl-4">
                     <Checkbox
                       checked={
@@ -713,14 +711,14 @@ export function RecycleBinView() {
                       aria-label="Select all visible records"
                     />
                   </TableHead>
-                  <TableHead className="text-xs font-semibold w-[130px]">Deleted Date</TableHead>
-                  <TableHead className="text-xs font-semibold w-[120px]">Record Type</TableHead>
-                  <TableHead className="text-xs font-semibold min-w-[180px]">Record / Name</TableHead>
-                  <TableHead className="text-xs font-semibold min-w-[150px]">Reference</TableHead>
-                  <TableHead className="text-xs font-semibold w-[140px]">Deleted From</TableHead>
-                  <TableHead className="text-xs font-semibold w-[120px]">Deleted By</TableHead>
-                  <TableHead className="text-xs font-semibold w-[90px]">Status</TableHead>
-                  <TableHead className="text-xs font-semibold text-right w-[140px]">Actions</TableHead>
+                  <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-wider w-[130px]">Deleted Date</TableHead>
+                  <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-wider w-[120px]">Record Type</TableHead>
+                  <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-wider min-w-[180px]">Record / Name</TableHead>
+                  <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-wider min-w-[150px]">Reference</TableHead>
+                  <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-wider w-[140px]">Deleted From</TableHead>
+                  <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-wider w-[120px]">Deleted By</TableHead>
+                  <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-wider w-[90px]">Status</TableHead>
+                  <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-wider text-right w-[140px] pr-4">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -734,9 +732,11 @@ export function RecycleBinView() {
                 ) : paginatedItems.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={9} className="text-center py-16 text-xs text-muted-foreground">
-                      <Trash2 className="w-10 h-10 mx-auto text-slate-300 mb-2" />
+                      <div className="h-12 w-12 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center mx-auto mb-3">
+                        <Trash2 className="w-6 h-6 text-slate-400" />
+                      </div>
                       <p className="font-semibold text-slate-700 dark:text-slate-300">No deleted record found.</p>
-                      <p className="text-[11px] text-slate-400 mt-0.5">
+                      <p className="text-[11px] text-slate-400 mt-1 max-w-sm mx-auto">
                         {debouncedQuery
                           ? "Try modifying your search keywords or clearing filters."
                           : "Any records soft-deleted from workshop modules will appear here."}
@@ -747,7 +747,7 @@ export function RecycleBinView() {
                   paginatedItems.map((item) => (
                     <TableRow
                       key={`${item.type}-${item.id}`}
-                      className={`h-12 hover:bg-slate-50/60 dark:hover:bg-slate-800/40 border-b border-slate-100 dark:border-slate-800/80 ${
+                      className={`h-12 hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition-colors border-b border-slate-100 dark:border-slate-800/80 ${
                         selectedItemKeys.includes(`${item.type}:${item.id}`) ? "bg-blue-50/40 dark:bg-blue-950/20" : ""
                       }`}
                     >
@@ -766,7 +766,7 @@ export function RecycleBinView() {
 
                       {/* Record Type */}
                       <TableCell>
-                        <Badge variant="outline" className="text-[10px] uppercase font-mono px-1.5 py-0 bg-slate-50 dark:bg-slate-800">
+                        <Badge variant="outline" className="text-[10px] uppercase font-mono px-2 py-0.5 rounded-lg bg-slate-50 dark:bg-slate-800 border-slate-200">
                           {item.type.replace("_", " ")}
                         </Badge>
                       </TableCell>
@@ -784,7 +784,7 @@ export function RecycleBinView() {
                       {/* Deleted From */}
                       <TableCell className="text-xs">
                         <span className="inline-flex items-center gap-1.5 font-medium text-slate-700 dark:text-slate-300">
-                          <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                          <span className="w-2 h-2 rounded-full bg-blue-500"></span>
                           {item.source_module}
                         </span>
                       </TableCell>
@@ -796,23 +796,23 @@ export function RecycleBinView() {
 
                       {/* Status */}
                       <TableCell>
-                        <Badge variant="outline" className="text-[10px] border-rose-300 text-rose-700 bg-rose-50 dark:bg-rose-950/40">
+                        <Badge variant="outline" className="text-[10px] font-semibold rounded-lg border-rose-300 text-rose-700 bg-rose-50 dark:bg-rose-950/40">
                           Deleted
                         </Badge>
                       </TableCell>
 
                       {/* Actions */}
-                      <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-1">
+                      <TableCell className="text-right pr-4">
+                        <div className="flex items-center justify-end gap-1.5">
                           {/* View Details */}
                           <Button
                             variant="ghost"
                             size="sm"
                             onClick={() => openDetailsModal(item)}
-                            className="h-7 w-7 p-0 rounded-lg text-slate-500 hover:text-blue-600 hover:bg-slate-100"
+                            className="h-8 w-8 p-0 rounded-xl text-slate-500 hover:text-blue-600 hover:bg-slate-100 transition-colors"
                             title="View Record Details"
                           >
-                            <Eye className="w-3.5 h-3.5" />
+                            <Eye className="w-4 h-4" />
                           </Button>
 
                           {/* Restore */}
@@ -821,10 +821,10 @@ export function RecycleBinView() {
                               variant="outline"
                               size="sm"
                               onClick={() => openRestoreModal(item)}
-                              className="h-7 px-2 text-xs rounded-lg border-emerald-300 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-800/60 dark:text-emerald-400 gap-1 font-medium"
+                              className="h-8 px-3 text-xs rounded-xl border-emerald-300 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-800/60 dark:text-emerald-400 gap-1.5 font-semibold transition-colors"
                               title="Restore to active module"
                             >
-                              <RotateCcw className="w-3 h-3" />
+                              <RotateCcw className="w-3.5 h-3.5" />
                               Restore
                             </Button>
                           )}
@@ -835,10 +835,10 @@ export function RecycleBinView() {
                               variant="ghost"
                               size="sm"
                               onClick={() => openPermanentModal(item)}
-                              className="h-7 w-7 p-0 rounded-lg text-rose-500 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/40"
+                              className="h-8 w-8 p-0 rounded-xl text-rose-500 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
                               title="Permanently Delete (Owner/Admin Only)"
                             >
-                              <Trash2 className="w-3.5 h-3.5" />
+                              <Trash2 className="w-4 h-4" />
                             </Button>
                           )}
                         </div>
@@ -852,7 +852,7 @@ export function RecycleBinView() {
 
           {/* Pagination Controls */}
           {items.length > 0 && (
-            <div className="p-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 flex items-center justify-between text-xs text-muted-foreground">
+            <div className="p-3.5 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 flex items-center justify-between text-xs text-muted-foreground">
               <span>
                 Showing {(currentPage - 1) * pageSize + 1}–
                 {Math.min(currentPage * pageSize, items.length)} of {items.length} records
@@ -864,11 +864,11 @@ export function RecycleBinView() {
                   size="sm"
                   disabled={currentPage <= 1}
                   onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                  className="h-7 text-xs px-2.5 rounded-lg border-slate-200/80"
+                  className="h-8 text-xs px-3 rounded-xl border-slate-200 hover:bg-slate-100"
                 >
                   <ChevronLeft className="w-3.5 h-3.5 mr-1" /> Previous
                 </Button>
-                <span className="font-semibold">
+                <span className="font-semibold text-slate-700 dark:text-slate-300">
                   Page {currentPage} of {totalPages}
                 </span>
                 <Button
@@ -876,45 +876,45 @@ export function RecycleBinView() {
                   size="sm"
                   disabled={currentPage >= totalPages}
                   onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                  className="h-7 text-xs px-2.5 rounded-lg border-slate-200/80"
+                  className="h-8 text-xs px-3 rounded-xl border-slate-200 hover:bg-slate-100"
                 >
                   Next <ChevronRight className="w-3.5 h-3.5 ml-1" />
                 </Button>
               </div>
             </div>
           )}
-        </Card>
+        </div>
       )}
 
       {/* ─── TAB 2: AUDIT HISTORY TABLE ───────────────────────────────────── */}
       {viewMode === "history" && (
-        <Card className="border border-slate-200/80 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 shadow-xs overflow-hidden">
-          <div className="p-3.5 border-b border-slate-200/80 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/60 flex items-center justify-between">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-2xs overflow-hidden">
+          <div className="p-4 border-b border-slate-200/80 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/60 flex items-center justify-between">
             <div>
               <h3 className="text-sm font-bold flex items-center gap-2 text-slate-900 dark:text-slate-100">
                 <History className="w-4 h-4 text-blue-600" />
                 Recycle Bin Event Audit History
               </h3>
-              <p className="text-[11px] text-muted-foreground">
+              <p className="text-[11px] text-muted-foreground mt-0.5">
                 Permanent chronological record of every deletion, restoration, and blocked action. Preserved even after restoration.
               </p>
             </div>
             <span className="text-xs text-muted-foreground">
-              Total Logged Events: <strong className="font-mono">{historyEvents.length}</strong>
+              Total Logged Events: <strong className="font-mono text-slate-800 dark:text-slate-200 font-bold">{historyEvents.length}</strong>
             </span>
           </div>
 
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
-                <TableRow className="bg-slate-50/40 dark:bg-slate-800/40 border-b border-slate-200/80 h-10">
-                  <TableHead className="text-xs font-semibold w-[140px]">Event Date</TableHead>
-                  <TableHead className="text-xs font-semibold w-[120px]">Record Type</TableHead>
-                  <TableHead className="text-xs font-semibold min-w-[180px]">Record Name / Ref</TableHead>
-                  <TableHead className="text-xs font-semibold w-[130px]">Action</TableHead>
-                  <TableHead className="text-xs font-semibold w-[130px]">Performed By</TableHead>
-                  <TableHead className="text-xs font-semibold w-[130px]">Source Module</TableHead>
-                  <TableHead className="text-xs font-semibold min-w-[200px]">Details / Reason</TableHead>
+                <TableRow className="bg-slate-50/80 hover:bg-slate-50/80 dark:bg-slate-800/60 dark:hover:bg-slate-800/60 border-b border-slate-200/80 h-11 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                  <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-wider w-[140px] pl-4">Event Date</TableHead>
+                  <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-wider w-[120px]">Record Type</TableHead>
+                  <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-wider min-w-[180px]">Record Name / Ref</TableHead>
+                  <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-wider w-[130px]">Action</TableHead>
+                  <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-wider w-[130px]">Performed By</TableHead>
+                  <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-wider w-[130px]">Source Module</TableHead>
+                  <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-wider min-w-[200px] pr-4">Details / Reason</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -928,21 +928,23 @@ export function RecycleBinView() {
                 ) : paginatedHistory.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={7} className="text-center py-16 text-xs text-muted-foreground">
-                      <History className="w-10 h-10 mx-auto text-slate-300 mb-2" />
+                      <div className="h-12 w-12 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center mx-auto mb-3">
+                        <History className="w-6 h-6 text-slate-400" />
+                      </div>
                       <p className="font-semibold text-slate-700 dark:text-slate-300">No audit history events found.</p>
-                      <p className="text-[11px] text-slate-400 mt-0.5">
+                      <p className="text-[11px] text-slate-400 mt-1 max-w-sm mx-auto">
                         Deletion and restoration events will be logged here permanently.
                       </p>
                     </TableCell>
                   </TableRow>
                 ) : (
                   paginatedHistory.map((ev) => (
-                    <TableRow key={ev.id} className="h-12 hover:bg-slate-50/60 dark:hover:bg-slate-800/40 border-b border-slate-100 dark:border-slate-800/80">
-                      <TableCell className="text-xs font-mono text-muted-foreground tabular-nums">
+                    <TableRow key={ev.id} className="h-12 hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition-colors border-b border-slate-100 dark:border-slate-800/80">
+                      <TableCell className="text-xs font-mono text-muted-foreground tabular-nums pl-4">
                         {formatDate(ev.performed_at)}
                       </TableCell>
                       <TableCell>
-                        <Badge variant="outline" className="text-[10px] uppercase font-mono px-1.5 py-0 bg-slate-50 dark:bg-slate-800">
+                        <Badge variant="outline" className="text-[10px] uppercase font-mono px-2 py-0.5 rounded-lg bg-slate-50 dark:bg-slate-800 border-slate-200">
                           {ev.record_type.replace("_", " ")}
                         </Badge>
                       </TableCell>
@@ -956,22 +958,22 @@ export function RecycleBinView() {
                       </TableCell>
                       <TableCell>
                         {ev.action === "DELETED" && (
-                          <Badge variant="outline" className="text-[10px] border-amber-300 text-amber-700 bg-amber-50 dark:bg-amber-950/40">
+                          <Badge variant="outline" className="text-[10px] font-semibold rounded-lg border-amber-300 text-amber-700 bg-amber-50 dark:bg-amber-950/40">
                             Deleted
                           </Badge>
                         )}
                         {ev.action === "RESTORED" && (
-                          <Badge variant="outline" className="text-[10px] border-emerald-300 text-emerald-700 bg-emerald-50 dark:bg-emerald-950/40">
+                          <Badge variant="outline" className="text-[10px] font-semibold rounded-lg border-emerald-300 text-emerald-700 bg-emerald-50 dark:bg-emerald-950/40">
                             Restored
                           </Badge>
                         )}
                         {ev.action === "PERMANENTLY_DELETED" && (
-                          <Badge variant="outline" className="text-[10px] border-slate-300 text-slate-700 bg-slate-100 dark:bg-slate-800">
+                          <Badge variant="outline" className="text-[10px] font-semibold rounded-lg border-slate-300 text-slate-700 bg-slate-100 dark:bg-slate-800">
                             Permanently Deleted
                           </Badge>
                         )}
                         {ev.action === "DELETE_BLOCKED" && (
-                          <Badge variant="outline" className="text-[10px] border-rose-300 text-rose-700 bg-rose-50 dark:bg-rose-950/40">
+                          <Badge variant="outline" className="text-[10px] font-semibold rounded-lg border-rose-300 text-rose-700 bg-rose-50 dark:bg-rose-950/40">
                             Delete Blocked
                           </Badge>
                         )}
@@ -982,7 +984,7 @@ export function RecycleBinView() {
                       <TableCell className="text-xs text-slate-600 dark:text-slate-400">
                         {ev.source_module}
                       </TableCell>
-                      <TableCell className="text-xs text-muted-foreground">
+                      <TableCell className="text-xs text-muted-foreground pr-4">
                         {ev.reason || (ev.action === "RESTORED" ? "Restored back to active records" : "Soft-deleted by user")}
                       </TableCell>
                     </TableRow>
@@ -994,7 +996,7 @@ export function RecycleBinView() {
 
           {/* Pagination Controls */}
           {historyEvents.length > 0 && (
-            <div className="p-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 flex items-center justify-between text-xs text-muted-foreground">
+            <div className="p-3.5 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 flex items-center justify-between text-xs text-muted-foreground">
               <span>
                 Showing {(currentPage - 1) * pageSize + 1}–
                 {Math.min(currentPage * pageSize, historyEvents.length)} of {historyEvents.length} events
@@ -1006,11 +1008,11 @@ export function RecycleBinView() {
                   size="sm"
                   disabled={currentPage <= 1}
                   onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                  className="h-7 text-xs px-2.5 rounded-lg border-slate-200/80"
+                  className="h-8 text-xs px-3 rounded-xl border-slate-200 hover:bg-slate-100"
                 >
                   <ChevronLeft className="w-3.5 h-3.5 mr-1" /> Previous
                 </Button>
-                <span className="font-semibold">
+                <span className="font-semibold text-slate-700 dark:text-slate-300">
                   Page {currentPage} of {totalPages}
                 </span>
                 <Button
@@ -1018,32 +1020,32 @@ export function RecycleBinView() {
                   size="sm"
                   disabled={currentPage >= totalPages}
                   onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                  className="h-7 text-xs px-2.5 rounded-lg border-slate-200/80"
+                  className="h-8 text-xs px-3 rounded-xl border-slate-200 hover:bg-slate-100"
                 >
                   Next <ChevronRight className="w-3.5 h-3.5 ml-1" />
                 </Button>
               </div>
             </div>
           )}
-        </Card>
+        </div>
       )}
 
       {/* ─── MODAL: VIEW DETAILS WITH EMBEDDED ACTIVITY TIMELINE ─────────── */}
       <Dialog open={detailsDialogOpen} onOpenChange={setDetailsDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto rounded-2xl border border-slate-200/90 shadow-xl p-6">
           {selectedDetailItem && (
             <div className="space-y-4">
-              <div className="border-b pb-3 flex items-center justify-between">
+              <div className="border-b border-slate-100 pb-3 flex items-center justify-between">
                 <div>
                   <div className="flex items-center gap-2">
-                    <Badge variant="outline" className="uppercase text-[10px] font-mono">
+                    <Badge variant="outline" className="uppercase text-[10px] font-mono px-2 py-0.5 rounded-lg">
                       {selectedDetailItem.type.replace("_", " ")}
                     </Badge>
                     <DialogTitle className="text-lg font-bold text-slate-900 dark:text-slate-100">
                       {selectedDetailItem.nameOrNumber}
                     </DialogTitle>
                   </div>
-                  <DialogDescription className="text-xs mt-1">
+                  <DialogDescription className="text-xs mt-1 text-slate-500">
                     Deleted from <strong>{selectedDetailItem.source_module}</strong> on{" "}
                     {formatDate(selectedDetailItem.deleted_at)} by {selectedDetailItem.deleted_by || "Admin"}
                   </DialogDescription>
@@ -1051,7 +1053,7 @@ export function RecycleBinView() {
               </div>
 
               {/* Key Attributes Grid */}
-              <div className="grid grid-cols-2 gap-3 p-3 bg-slate-50 dark:bg-slate-800/60 rounded-lg text-xs">
+              <div className="grid grid-cols-2 gap-3 p-4 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-100 dark:border-slate-800 text-xs">
                 <div>
                   <span className="text-[10px] text-muted-foreground uppercase font-semibold block">Reference</span>
                   <span className="font-mono font-bold text-slate-800 dark:text-slate-200">
@@ -1076,7 +1078,7 @@ export function RecycleBinView() {
                     {selectedDetailItem.deleted_by || "Admin"}
                   </span>
                 </div>
-                <div className="col-span-2 border-t pt-2 mt-1">
+                <div className="col-span-2 border-t border-slate-200/80 pt-2 mt-1">
                   <span className="text-[10px] text-muted-foreground uppercase font-semibold block">Record Summary</span>
                   <p className="text-xs text-slate-700 dark:text-slate-300 mt-0.5">
                     {selectedDetailItem.details}
@@ -1085,7 +1087,7 @@ export function RecycleBinView() {
               </div>
 
               {/* Activity History Timeline */}
-              <div className="space-y-2 border-t pt-3">
+              <div className="space-y-2 border-t border-slate-100 pt-3">
                 <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
                   <History className="w-3.5 h-3.5 text-indigo-500" />
                   Activity History For This Record
@@ -1105,7 +1107,7 @@ export function RecycleBinView() {
                     {recordHistory.map((ev) => (
                       <div
                         key={ev.id}
-                        className="p-2.5 rounded bg-slate-50 dark:bg-slate-800/40 border text-xs flex items-center justify-between"
+                        className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 text-xs flex items-center justify-between"
                       >
                         <div>
                           <div className="flex items-center gap-2">
@@ -1134,7 +1136,7 @@ export function RecycleBinView() {
                 )}
               </div>
 
-              <DialogFooter className="pt-3 border-t flex flex-row items-center justify-between">
+              <DialogFooter className="pt-3 border-t border-slate-100 flex flex-row items-center justify-between">
                 <div>
                   {canManage && (
                     <Button
@@ -1143,16 +1145,16 @@ export function RecycleBinView() {
                       onClick={() => {
                         openPermanentModal(selectedDetailItem);
                       }}
-                      className="text-xs text-red-600 hover:bg-red-50 hover:text-red-700 gap-1.5"
+                      className="text-xs h-10 px-3.5 rounded-xl text-rose-600 hover:bg-rose-50 hover:text-rose-700 gap-1.5 font-semibold"
                     >
-                      <Trash2 className="w-3.5 h-3.5" />
+                      <Trash2 className="w-4 h-4" />
                       Permanent Delete
                     </Button>
                   )}
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <Button variant="outline" size="sm" onClick={() => setDetailsDialogOpen(false)}>
+                  <Button variant="outline" size="sm" onClick={() => setDetailsDialogOpen(false)} className="h-10 px-4 rounded-xl border-slate-200 font-semibold">
                     Close
                   </Button>
                   {canRestore && (
@@ -1161,9 +1163,9 @@ export function RecycleBinView() {
                       onClick={() => {
                         openRestoreModal(selectedDetailItem);
                       }}
-                      className="bg-emerald-600 hover:bg-emerald-700 text-white gap-1.5 text-xs"
+                      className="bg-emerald-600 hover:bg-emerald-700 text-white gap-1.5 text-xs h-10 px-4 rounded-xl font-semibold shadow-2xs"
                     >
-                      <RotateCcw className="w-3.5 h-3.5" />
+                      <RotateCcw className="w-4 h-4" />
                       Restore Record
                     </Button>
                   )}
@@ -1176,22 +1178,22 @@ export function RecycleBinView() {
 
       {/* ─── MODAL: CONFIRM RESTORE ────────────────────────────────────────── */}
       <Dialog open={restoreDialogOpen} onOpenChange={setRestoreDialogOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md rounded-2xl border border-slate-200/90 shadow-xl p-6">
           {itemToRestore && (
             <div className="space-y-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-950 flex items-center justify-center text-emerald-600">
+                <div className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-950 flex items-center justify-center text-emerald-600">
                   <RotateCcw className="w-5 h-5" />
                 </div>
                 <div>
-                  <DialogTitle className="text-base font-bold">Restore Deleted Record</DialogTitle>
-                  <DialogDescription className="text-xs">
+                  <DialogTitle className="text-base font-bold text-slate-900 dark:text-slate-100">Restore Deleted Record</DialogTitle>
+                  <DialogDescription className="text-xs text-slate-500 mt-0.5">
                     Return this record to its active section
                   </DialogDescription>
                 </div>
               </div>
 
-              <div className="p-3 bg-emerald-50 dark:bg-emerald-950/30 rounded-lg border border-emerald-200 dark:border-emerald-900 text-xs space-y-1">
+              <div className="p-4 bg-emerald-50 dark:bg-emerald-950/30 rounded-xl border border-emerald-200 dark:border-emerald-900 text-xs space-y-1.5">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Record:</span>
                   <span className="font-bold text-slate-900 dark:text-slate-100">{itemToRestore.nameOrNumber}</span>
@@ -1206,21 +1208,21 @@ export function RecycleBinView() {
                 </div>
               </div>
 
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-muted-foreground leading-relaxed">
                 All historical links and associations (such as customer vehicle links or job card line items) will be restored intact.
               </p>
 
               <DialogFooter className="pt-2">
-                <Button variant="outline" size="sm" onClick={() => setRestoreDialogOpen(false)}>
+                <Button variant="outline" size="sm" onClick={() => setRestoreDialogOpen(false)} className="h-10 px-4 rounded-xl border-slate-200 font-semibold">
                   Cancel
                 </Button>
                 <Button
                   size="sm"
                   disabled={actionLoading}
                   onClick={handleConfirmRestore}
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white gap-1.5"
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white gap-1.5 h-10 px-4 rounded-xl font-semibold shadow-2xs"
                 >
-                  {actionLoading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                  {actionLoading && <Loader2 className="w-4 h-4 animate-spin" />}
                   Confirm &amp; Restore
                 </Button>
               </DialogFooter>
@@ -1231,18 +1233,18 @@ export function RecycleBinView() {
 
       {/* ─── MODAL: PERMANENT DELETE CONFIRMATION ──────────────────────────── */}
       <Dialog open={permanentDialogOpen} onOpenChange={setPermanentDialogOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md rounded-2xl border border-slate-200/90 shadow-xl p-6">
           {itemToPurge && (
             <div className="space-y-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-red-100 dark:bg-red-950 flex items-center justify-center text-red-600">
+                <div className="w-10 h-10 rounded-xl bg-rose-100 dark:bg-rose-950 flex items-center justify-center text-rose-600">
                   <Trash2 className="w-5 h-5" />
                 </div>
                 <div>
-                  <DialogTitle className="text-base font-bold text-red-600">
+                  <DialogTitle className="text-base font-bold text-rose-600">
                     Permanently Delete Record
                   </DialogTitle>
-                  <DialogDescription className="text-xs font-semibold text-rose-600">
+                  <DialogDescription className="text-xs font-semibold text-rose-500 mt-0.5">
                     This action cannot be undone.
                   </DialogDescription>
                 </div>
@@ -1250,24 +1252,24 @@ export function RecycleBinView() {
 
               {/* Financial History Block Warning */}
               {financialBlockMessage ? (
-                <div className="p-3 bg-red-50 dark:bg-red-950/40 rounded-lg border border-red-300 dark:border-red-900 text-xs space-y-2">
-                  <div className="flex items-start gap-2">
-                    <ShieldAlert className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
+                <div className="p-4 bg-rose-50 dark:bg-rose-950/40 rounded-xl border border-rose-300 dark:border-rose-900 text-xs space-y-2">
+                  <div className="flex items-start gap-2.5">
+                    <ShieldAlert className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
                     <div>
-                      <p className="font-bold text-red-800 dark:text-red-200">
+                      <p className="font-bold text-rose-800 dark:text-rose-200">
                         Deletion Blocked: Financial Integrity Protection
                       </p>
-                      <p className="text-red-700 dark:text-red-300 mt-1">
+                      <p className="text-rose-700 dark:text-rose-300 mt-1">
                         {financialBlockMessage}
                       </p>
                     </div>
                   </div>
-                  <p className="text-[11px] text-muted-foreground border-t border-red-200 dark:border-red-800 pt-1.5">
+                  <p className="text-[11px] text-muted-foreground border-t border-rose-200 dark:border-rose-800 pt-2">
                     Records linked to tax invoices, ledger entries, or posted financial transactions cannot be erased to preserve UAE audit trail compliance.
                   </p>
                 </div>
               ) : (
-                <div className="p-3 bg-slate-50 dark:bg-slate-800/40 rounded-lg border text-xs space-y-1">
+                <div className="p-4 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200 text-xs space-y-1.5">
                   <p className="text-muted-foreground">You are about to permanently purge:</p>
                   <p className="font-bold text-sm text-slate-900 dark:text-slate-100">{itemToPurge.nameOrNumber}</p>
                   <p className="text-[11px] text-muted-foreground">
@@ -1277,16 +1279,16 @@ export function RecycleBinView() {
               )}
 
               <DialogFooter className="pt-2">
-                <Button variant="outline" size="sm" onClick={() => setPermanentDialogOpen(false)}>
+                <Button variant="outline" size="sm" onClick={() => setPermanentDialogOpen(false)} className="h-10 px-4 rounded-xl border-slate-200 font-semibold">
                   Cancel
                 </Button>
                 <Button
                   size="sm"
                   disabled={Boolean(financialBlockMessage) || actionLoading}
                   onClick={handleConfirmPurge}
-                  className="bg-red-600 hover:bg-red-700 text-white gap-1.5"
+                  className="bg-rose-600 hover:bg-rose-700 text-white gap-1.5 h-10 px-4 rounded-xl font-semibold shadow-2xs"
                 >
-                  {actionLoading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                  {actionLoading && <Loader2 className="w-4 h-4 animate-spin" />}
                   Permanently Delete
                 </Button>
               </DialogFooter>

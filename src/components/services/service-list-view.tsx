@@ -387,8 +387,8 @@ export function ServiceListView() {
         description="Manage workshop service catalog rates, estimated labour times, and job card usage"
         breadcrumbs={[{ label: "Dashboard", href: "/" }, { label: "Services" }]}
         actions={
-          <Button onClick={openCreateDialog} className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm font-semibold">
-            <Plus className="mr-2 h-4 w-4" /> Add Service
+          <Button onClick={openCreateDialog} className="h-10 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white shadow-2xs font-semibold gap-1.5">
+            <Plus className="h-4 w-4" /> Add Service
           </Button>
         }
       />
@@ -398,15 +398,15 @@ export function ServiceListView() {
         <div
           className={`flex items-center justify-between p-4 rounded-xl border text-sm transition-all animate-in fade-in duration-200 ${
             toastMessage.type === "success"
-              ? "bg-blue-50 border-blue-200 text-blue-800 dark:bg-blue-950/40 dark:border-blue-800 dark:text-blue-300"
-              : "bg-rose-50 border-rose-200 text-rose-800 dark:bg-rose-950/40 dark:border-rose-800 dark:text-rose-300"
+              ? "bg-blue-50 border-blue-200 text-blue-800"
+              : "bg-rose-50 border-rose-200 text-rose-800"
           }`}
         >
           <div className="flex items-center gap-2">
             {toastMessage.type === "success" ? (
-              <CheckCircle2 className="h-4 w-4 shrink-0 text-blue-600 dark:text-blue-400" />
+              <CheckCircle2 className="h-4 w-4 shrink-0 text-blue-600" />
             ) : (
-              <AlertCircle className="h-4 w-4 shrink-0 text-rose-600 dark:text-rose-400" />
+              <AlertCircle className="h-4 w-4 shrink-0 text-rose-600" />
             )}
             <span className="font-medium">{toastMessage.text}</span>
           </div>
@@ -420,56 +420,60 @@ export function ServiceListView() {
       )}
 
       {/* Top 4 KPI Summary Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
-        <div className="bg-white border border-slate-200/80 rounded-xl p-3.5 shadow-xs flex items-center justify-between">
-          <div>
-            <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Total Services</p>
-            <p className="text-2xl font-bold font-mono tabular-nums text-slate-900 mt-0.5">{services.length}</p>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-2xs">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Total Services</span>
+            <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+              <Wrench className="w-4 h-4" />
+            </div>
           </div>
-          <div className="w-9 h-9 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
-            <Wrench className="w-4 h-4" />
-          </div>
+          <p className="text-2xl font-bold font-mono tracking-tight text-slate-900 mt-2">{services.length}</p>
+          <p className="text-xs text-slate-500 mt-1">Catalog service items</p>
         </div>
 
-        <div className="bg-white border border-slate-200/80 rounded-xl p-3.5 shadow-xs flex items-center justify-between">
-          <div>
-            <p className="text-[11px] font-semibold text-emerald-700 uppercase tracking-wider">Active Services</p>
-            <p className="text-2xl font-bold font-mono tabular-nums text-emerald-700 mt-0.5">
-              {services.filter((s) => s.is_active).length}
-            </p>
+        <div className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-2xs">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold text-emerald-600 uppercase tracking-wider">Active Services</span>
+            <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+              <CheckCircle2 className="w-4 h-4" />
+            </div>
           </div>
-          <div className="w-9 h-9 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
-            <CheckCircle2 className="w-4 h-4" />
-          </div>
+          <p className="text-2xl font-bold font-mono tracking-tight text-emerald-600 mt-2">
+            {services.filter((s) => s.is_active).length}
+          </p>
+          <p className="text-xs text-slate-500 mt-1">Available for work orders</p>
         </div>
 
-        <div className="bg-white border border-slate-200/80 rounded-xl p-3.5 shadow-xs flex items-center justify-between">
-          <div>
-            <p className="text-[11px] font-semibold text-purple-700 uppercase tracking-wider">Categories</p>
-            <p className="text-2xl font-bold font-mono tabular-nums text-purple-700 mt-0.5">
-              {availableCategories.length}
-            </p>
+        <div className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-2xs">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold text-purple-600 uppercase tracking-wider">Categories</span>
+            <div className="w-9 h-9 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center shrink-0">
+              <Layers className="w-4 h-4" />
+            </div>
           </div>
-          <div className="w-9 h-9 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center">
-            <Layers className="w-4 h-4" />
-          </div>
+          <p className="text-2xl font-bold font-mono tracking-tight text-purple-600 mt-2">
+            {availableCategories.length}
+          </p>
+          <p className="text-xs text-slate-500 mt-1">Specialized divisions</p>
         </div>
 
-        <div className="bg-white border border-slate-200/80 rounded-xl p-3.5 shadow-xs flex items-center justify-between">
-          <div>
-            <p className="text-[11px] font-semibold text-amber-700 uppercase tracking-wider">Total Job Usage</p>
-            <p className="text-2xl font-bold font-mono tabular-nums text-amber-700 mt-0.5">
-              {services.reduce((acc, s) => acc + (s.usage_count || 0), 0)}
-            </p>
+        <div className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-2xs">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold text-amber-600 uppercase tracking-wider">Total Job Usage</span>
+            <div className="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
+              <History className="w-4 h-4" />
+            </div>
           </div>
-          <div className="w-9 h-9 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
-            <History className="w-4 h-4" />
-          </div>
+          <p className="text-2xl font-bold font-mono tracking-tight text-amber-600 mt-2">
+            {services.reduce((acc, s) => acc + (s.usage_count || 0), 0)}
+          </p>
+          <p className="text-xs text-slate-500 mt-1">Job card completions</p>
         </div>
       </div>
 
       {/* Search & Category Filter Card */}
-      <div className="bg-white border border-slate-200/80 rounded-xl p-3 shadow-xs space-y-3">
+      <div className="bg-white border border-slate-200/90 rounded-2xl p-4 shadow-2xs space-y-3">
         <div className="flex flex-col md:flex-row gap-3 items-center justify-between">
           {/* Search Input */}
           <div className="w-full md:max-w-md">
@@ -483,17 +487,17 @@ export function ServiceListView() {
 
           {/* Status Filter Tabs */}
           <div className="flex items-center gap-1.5 self-start md:self-auto shrink-0">
-            <span className="text-xs font-semibold text-muted-foreground mr-1 flex items-center gap-1">
+            <span className="text-xs font-bold text-slate-500 mr-1 flex items-center gap-1">
               <Filter className="h-3.5 w-3.5 text-blue-600" /> Status:
             </span>
-            <div className="inline-flex rounded-lg border border-slate-200 bg-slate-50 p-0.5 text-xs">
+            <div className="inline-flex rounded-xl border border-slate-200 bg-slate-100/80 p-0.5 text-xs">
               <button
                 type="button"
                 onClick={() => setStatusFilter("all")}
-                className={`px-3 py-1 rounded-md font-semibold transition-all ${
+                className={`px-3 py-1.5 rounded-lg font-semibold transition-all ${
                   statusFilter === "all"
-                    ? "bg-white text-blue-600 shadow-xs"
-                    : "text-muted-foreground hover:text-foreground"
+                    ? "bg-white text-slate-900 shadow-2xs"
+                    : "text-slate-500 hover:text-slate-900"
                 }`}
               >
                 All ({services.length})
@@ -501,10 +505,10 @@ export function ServiceListView() {
               <button
                 type="button"
                 onClick={() => setStatusFilter("active")}
-                className={`px-3 py-1 rounded-md font-semibold transition-all ${
+                className={`px-3 py-1.5 rounded-lg font-semibold transition-all ${
                   statusFilter === "active"
-                    ? "bg-white text-blue-600 shadow-xs"
-                    : "text-muted-foreground hover:text-foreground"
+                    ? "bg-white text-blue-600 shadow-2xs"
+                    : "text-slate-500 hover:text-slate-900"
                 }`}
               >
                 Active ({services.filter((s) => s.is_active).length})
@@ -512,10 +516,10 @@ export function ServiceListView() {
               <button
                 type="button"
                 onClick={() => setStatusFilter("inactive")}
-                className={`px-3 py-1 rounded-md font-semibold transition-all ${
+                className={`px-3 py-1.5 rounded-lg font-semibold transition-all ${
                   statusFilter === "inactive"
-                    ? "bg-white text-slate-700 shadow-xs"
-                    : "text-muted-foreground hover:text-foreground"
+                    ? "bg-white text-slate-700 shadow-2xs"
+                    : "text-slate-500 hover:text-slate-900"
                 }`}
               >
                 Inactive ({services.filter((s) => !s.is_active).length})
@@ -526,15 +530,15 @@ export function ServiceListView() {
 
         {/* Category Filter Pills */}
         <div className="flex items-center gap-1.5 flex-wrap pt-2.5 border-t border-slate-100">
-          <span className="text-xs font-semibold text-muted-foreground mr-1 flex items-center gap-1">
+          <span className="text-xs font-bold text-slate-500 mr-1 flex items-center gap-1">
             <Layers className="h-3.5 w-3.5 text-blue-600" /> Category:
           </span>
           <button
             type="button"
             onClick={() => setSelectedCategory("all")}
-            className={`px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all ${
+            className={`px-3 py-1 rounded-xl text-xs font-semibold border transition-all ${
               selectedCategory === "all"
-                ? "bg-slate-900 text-white border-slate-900 shadow-xs"
+                ? "bg-slate-900 text-white border-slate-900 shadow-2xs"
                 : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"
             }`}
           >
@@ -548,9 +552,9 @@ export function ServiceListView() {
                 key={cat}
                 type="button"
                 onClick={() => setSelectedCategory(isSelected ? "all" : cat)}
-                className={`px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all flex items-center gap-1.5 ${
+                className={`px-3 py-1 rounded-xl text-xs font-semibold border transition-all flex items-center gap-1.5 ${
                   isSelected
-                    ? "bg-slate-900 text-white border-slate-900 shadow-xs"
+                    ? "bg-slate-900 text-white border-slate-900 shadow-2xs"
                     : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"
                 }`}
               >
@@ -571,9 +575,9 @@ export function ServiceListView() {
       </div>
 
       {/* Services Table */}
-      <div className="border border-slate-200/80 rounded-xl bg-white shadow-xs overflow-hidden">
+      <div className="border border-slate-200/90 rounded-2xl bg-white shadow-2xs overflow-hidden">
         {loading ? (
-          <div className="py-20 text-center text-muted-foreground">
+          <div className="py-20 text-center text-slate-500">
             <Loader2 className="h-8 w-8 mx-auto animate-spin mb-3 text-blue-600" />
             <p className="font-medium text-sm">Loading services catalog...</p>
           </div>
@@ -581,7 +585,7 @@ export function ServiceListView() {
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
-                <TableRow className="h-10 bg-slate-50/80 hover:bg-slate-50/80 border-b border-slate-200/80">
+                <TableRow className="h-11 bg-slate-50/80 hover:bg-slate-50/80 border-b border-slate-200/80">
                   <TableHead className="w-[40px] pl-4">
                     <Checkbox
                       checked={
@@ -595,13 +599,13 @@ export function ServiceListView() {
                       aria-label="Select all visible services"
                     />
                   </TableHead>
-                  <TableHead className="text-[11px] font-semibold uppercase tracking-wider text-slate-600">Service Name</TableHead>
-                  <TableHead className="text-[11px] font-semibold uppercase tracking-wider text-slate-600">Category</TableHead>
-                  <TableHead className="text-[11px] font-semibold uppercase tracking-wider text-slate-600 text-right">Default Price</TableHead>
-                  <TableHead className="text-[11px] font-semibold uppercase tracking-wider text-slate-600">Estimated Time</TableHead>
-                  <TableHead className="text-[11px] font-semibold uppercase tracking-wider text-slate-600 text-center">Times Used</TableHead>
-                  <TableHead className="text-[11px] font-semibold uppercase tracking-wider text-slate-600 text-center">Status</TableHead>
-                  <TableHead className="text-[11px] font-semibold uppercase tracking-wider text-slate-600 text-right pr-4 w-[140px] whitespace-nowrap">Actions</TableHead>
+                  <TableHead className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Service Name</TableHead>
+                  <TableHead className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Category</TableHead>
+                  <TableHead className="text-[11px] font-bold uppercase tracking-wider text-slate-500 text-right">Default Price</TableHead>
+                  <TableHead className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Estimated Time</TableHead>
+                  <TableHead className="text-[11px] font-bold uppercase tracking-wider text-slate-500 text-center">Times Used</TableHead>
+                  <TableHead className="text-[11px] font-bold uppercase tracking-wider text-slate-500 text-center">Status</TableHead>
+                  <TableHead className="text-[11px] font-bold uppercase tracking-wider text-slate-500 text-right pr-4 w-[140px] whitespace-nowrap">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody className="divide-y divide-slate-100">

@@ -582,11 +582,11 @@ export function PurchasesView() {
         description="Track incoming spare parts inventory, supplier invoices, payment terms, and stock additions"
         breadcrumbs={[{ label: "Dashboard", href: "/" }, { label: "Purchases" }]}
         actions={
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2.5">
             {canEdit && (
               <Button
                 onClick={() => handleOpenCreateModal()}
-                className="h-9 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs shadow-xs gap-1.5 px-3.5 rounded-lg"
+                className="h-10 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs shadow-2xs gap-2 px-4 rounded-xl"
               >
                 <ShoppingCart className="h-4 w-4" /> + Create Purchase
               </Button>
@@ -594,7 +594,7 @@ export function PurchasesView() {
             <Button
               variant="outline"
               render={<Link href="/suppliers" />}
-              className="h-9 border-border/80 hover:bg-slate-50 dark:hover:bg-slate-800 font-semibold text-xs gap-1.5 px-3 rounded-lg shadow-2xs"
+              className="h-10 border-slate-200 bg-white hover:bg-slate-50 font-semibold text-xs gap-2 px-3.5 rounded-xl shadow-2xs text-slate-700"
             >
               <Building2 className="h-4 w-4 text-blue-600" /> Suppliers Directory
             </Button>
@@ -605,7 +605,7 @@ export function PurchasesView() {
               }}
               variant="outline"
               size="icon"
-              className="h-9 w-9 border-border/80 hover:bg-slate-50 dark:hover:bg-slate-800 text-muted-foreground hover:text-foreground rounded-lg shadow-2xs"
+              className="h-10 w-10 border-slate-200 bg-white hover:bg-slate-50 text-slate-600 hover:text-slate-900 rounded-xl shadow-2xs"
               title="Refresh Purchases"
             >
               <RefreshCw className="h-4 w-4" />
@@ -614,92 +614,78 @@ export function PurchasesView() {
         }
       />
 
-      {/* ─── KPI Dashboard ─── */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <div className="bg-card border border-border/80 rounded-xl p-4 shadow-xs flex flex-col justify-between h-full hover:border-border transition-colors">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-              Total Invoices
-            </span>
-            <div className="h-7 w-7 rounded-lg bg-blue-50 dark:bg-blue-950/50 flex items-center justify-center text-blue-600">
-              <Receipt className="h-3.5 w-3.5" />
-            </div>
+      {/* ─── Summary KPI Cards ─── */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Total Invoices */}
+        <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-2xs flex items-center justify-between">
+          <div>
+            <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Total Invoices</p>
+            <p className="text-2xl font-bold tracking-tight text-slate-900 font-mono mt-1">{kpis.totalPurchasesCount}</p>
+            <p className="text-xs text-slate-500 mt-1">Recorded purchase orders</p>
           </div>
-          <div className="mt-3">
-            <div className="text-2xl font-bold font-mono tracking-tight text-foreground">
-              {kpis.totalPurchasesCount}
-            </div>
-            <div className="text-xs text-muted-foreground mt-0.5">Recorded purchase orders</div>
+          <div className="h-10 w-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+            <Receipt className="h-5 w-5" />
           </div>
         </div>
 
-        <div className="bg-card border border-border/80 rounded-xl p-4 shadow-xs flex flex-col justify-between h-full hover:border-border transition-colors">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-              Total Procurement
-            </span>
-            <div className="h-7 w-7 rounded-lg bg-indigo-50 dark:bg-indigo-950/50 flex items-center justify-center text-indigo-600">
-              <DollarSign className="h-3.5 w-3.5" />
-            </div>
-          </div>
-          <div className="mt-3">
-            <div className="text-2xl font-bold font-mono tracking-tight text-foreground">
+        {/* Total Procurement */}
+        <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-2xs flex items-center justify-between">
+          <div>
+            <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Total Procurement</p>
+            <p className="text-2xl font-bold tracking-tight text-slate-900 font-mono mt-1">
               {formatCurrency(kpis.totalValue)}
-            </div>
-            <div className="text-xs text-muted-foreground mt-0.5">Stock invoiced value</div>
+            </p>
+            <p className="text-xs text-slate-500 mt-1">Stock invoiced value</p>
+          </div>
+          <div className="h-10 w-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
+            <DollarSign className="h-5 w-5" />
           </div>
         </div>
 
-        <div className="bg-card border border-border/80 rounded-xl p-4 shadow-xs flex flex-col justify-between h-full hover:border-border transition-colors">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-              Total Paid
-            </span>
-            <div className="h-7 w-7 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 flex items-center justify-center text-emerald-600">
-              <CheckCircle2 className="h-3.5 w-3.5" />
-            </div>
-          </div>
-          <div className="mt-3">
-            <div className="text-2xl font-bold font-mono tracking-tight text-emerald-600 dark:text-emerald-400">
+        {/* Total Paid */}
+        <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-2xs flex items-center justify-between">
+          <div>
+            <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Total Paid</p>
+            <p className="text-2xl font-bold tracking-tight text-emerald-600 font-mono mt-1">
               {formatCurrency(kpis.totalPaid)}
-            </div>
-            <div className="text-xs text-muted-foreground mt-0.5">Settled supplier invoices</div>
+            </p>
+            <p className="text-xs text-slate-500 mt-1">Settled supplier invoices</p>
+          </div>
+          <div className="h-10 w-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+            <CheckCircle2 className="h-5 w-5" />
           </div>
         </div>
 
-        <div className="bg-card border border-border/80 rounded-xl p-4 shadow-xs flex flex-col justify-between h-full hover:border-border transition-colors">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-              Outstanding Balance
-            </span>
-            <div className="h-7 w-7 rounded-lg bg-rose-50 dark:bg-rose-950/50 flex items-center justify-center text-rose-600">
-              <AlertTriangle className="h-3.5 w-3.5" />
-            </div>
-          </div>
-          <div className="mt-3">
-            <div className={`text-2xl font-bold font-mono tracking-tight ${kpis.totalOutstanding > 0 ? "text-rose-600 dark:text-rose-400" : "text-foreground"}`}>
+        {/* Outstanding Balance */}
+        <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-2xs flex items-center justify-between">
+          <div>
+            <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Outstanding Balance</p>
+            <p className={`text-2xl font-bold font-mono tracking-tight mt-1 ${kpis.totalOutstanding > 0 ? "text-rose-600" : "text-slate-900"}`}>
               {formatCurrency(kpis.totalOutstanding)}
-            </div>
-            <div className="text-xs text-muted-foreground mt-0.5">Pending payables</div>
+            </p>
+            <p className="text-xs text-slate-500 mt-1">Pending payables</p>
+          </div>
+          <div className="h-10 w-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
+            <AlertTriangle className="h-5 w-5" />
           </div>
         </div>
       </div>
 
       {/* ─── Search & Filters Bar ─── */}
-      <div className="bg-card border border-border/80 rounded-xl p-3 shadow-xs flex flex-col md:flex-row items-center justify-between gap-3">
+      <div className="bg-white border border-slate-200/90 rounded-2xl p-3.5 shadow-2xs flex flex-col md:flex-row items-center justify-between gap-3">
         <div className="relative w-full md:w-80">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
           <Input
             placeholder="Search by supplier, invoice #, part code..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9 h-8.5 text-xs bg-muted/40 border-border/70 focus:bg-background transition-colors"
+            className="pl-9 h-10 text-xs rounded-xl border-slate-200 bg-white shadow-2xs focus:border-blue-500 focus:ring-blue-500"
           />
           {searchQuery && (
             <button
               type="button"
               onClick={() => setSearchQuery("")}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground hover:text-foreground"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 hover:text-slate-700"
             >
               ✕
             </button>
@@ -714,7 +700,7 @@ export function PurchasesView() {
               setSupplierFilter(e.target.value);
               setCurrentPage(1);
             }}
-            className="h-8.5 rounded-lg border border-border/80 bg-background px-2.5 text-xs font-medium text-foreground focus:outline-none focus:ring-1 focus:ring-primary shadow-2xs"
+            className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 shadow-2xs focus:border-blue-500 focus:ring-blue-500"
           >
             <option value="all">All Suppliers</option>
             {suppliers.map((s) => (
@@ -725,7 +711,7 @@ export function PurchasesView() {
           </select>
 
           {/* Status Filter Segmented Control */}
-          <div className="flex items-center gap-1 bg-muted/40 p-1 rounded-lg border border-border/70">
+          <div className="flex items-center gap-1.5">
             {[
               { id: "all", label: "All Status" },
               { id: "paid", label: "Paid" },
@@ -739,10 +725,10 @@ export function PurchasesView() {
                   setStatusFilter(tab.id);
                   setCurrentPage(1);
                 }}
-                className={`h-7 px-3 rounded-md text-xs font-semibold transition-all ${
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all ${
                   statusFilter === tab.id
-                    ? "bg-background text-foreground shadow-2xs border border-border/60"
-                    : "text-muted-foreground hover:text-foreground"
+                    ? "bg-blue-600 text-white shadow-2xs"
+                    : "border border-slate-200 bg-white text-slate-600 hover:text-slate-900 hover:bg-slate-50"
                 }`}
               >
                 {tab.label}
@@ -753,39 +739,39 @@ export function PurchasesView() {
       </div>
 
       {/* ─── Purchases Table Card ─── */}
-      <div className="bg-card border border-border/80 rounded-xl shadow-xs overflow-hidden">
+      <div className="border border-slate-200/90 shadow-2xs bg-white rounded-2xl overflow-hidden">
         {loading ? (
-          <div className="py-16 text-center text-muted-foreground">
-            <Loader2 className="h-7 w-7 mx-auto animate-spin mb-3 text-primary" />
+          <div className="py-20 text-center text-slate-500">
+            <Loader2 className="h-8 w-8 mx-auto animate-spin mb-3 text-blue-600" />
             <p className="font-semibold text-xs">Loading purchase records...</p>
           </div>
         ) : purchases.length > 0 ? (
           <div className="overflow-x-auto min-w-full">
             <Table className="w-full text-xs min-w-[1050px]">
               <TableHeader>
-                <TableRow className="h-10 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider bg-slate-50/75 dark:bg-slate-800/40 border-b border-border/70">
+                <TableRow className="border-b border-slate-200/80 bg-slate-50/80 hover:bg-slate-50/80 text-[11px] font-bold text-slate-500 uppercase tracking-wider h-11">
                   <TableHead className="w-[44px] pl-4">
                     <Checkbox
                       checked={
                         purchases.length > 0 && selectedPurchaseIds.length === purchases.length
-                          ? true
-                          : selectedPurchaseIds.length > 0
-                          ? "indeterminate"
-                          : false
+                            ? true
+                            : selectedPurchaseIds.length > 0
+                            ? "indeterminate"
+                            : false
                       }
                       onCheckedChange={handleSelectAll}
                       aria-label="Select all visible purchases"
                     />
                   </TableHead>
-                  <TableHead className="font-semibold text-foreground">Purchase No</TableHead>
-                  <TableHead className="font-semibold text-foreground">Supplier</TableHead>
-                  <TableHead className="font-semibold text-foreground">Date</TableHead>
-                  <TableHead className="font-semibold text-foreground text-center">Items</TableHead>
-                  <TableHead className="text-right font-semibold text-foreground">Total (AED)</TableHead>
-                  <TableHead className="text-right font-semibold text-foreground">Paid (AED)</TableHead>
-                  <TableHead className="text-right font-semibold text-foreground">Balance (AED)</TableHead>
-                  <TableHead className="text-center font-semibold text-foreground">Status</TableHead>
-                  <TableHead className="w-[105px] min-w-[105px] text-right pr-4 font-semibold text-foreground">Actions</TableHead>
+                  <TableHead className="text-slate-600 font-bold">Purchase No</TableHead>
+                  <TableHead className="text-slate-600 font-bold">Supplier</TableHead>
+                  <TableHead className="text-slate-600 font-bold">Date</TableHead>
+                  <TableHead className="text-slate-600 font-bold text-center">Items</TableHead>
+                  <TableHead className="text-right text-slate-600 font-bold">Total (AED)</TableHead>
+                  <TableHead className="text-right text-slate-600 font-bold">Paid (AED)</TableHead>
+                  <TableHead className="text-right text-slate-600 font-bold">Balance (AED)</TableHead>
+                  <TableHead className="text-center text-slate-600 font-bold">Status</TableHead>
+                  <TableHead className="w-[105px] min-w-[105px] text-right pr-4 text-slate-600 font-bold">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -804,11 +790,11 @@ export function PurchasesView() {
                   return (
                     <TableRow
                       key={p.id}
-                      className={`h-13 border-b border-border/40 hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors ${
-                        selectedPurchaseIds.includes(p.id) ? "bg-blue-50/40 dark:bg-blue-950/20" : ""
+                      className={`h-12 hover:bg-slate-50/60 border-b border-slate-100 text-xs transition-colors ${
+                        selectedPurchaseIds.includes(p.id) ? "bg-blue-50/30" : ""
                       }`}
                     >
-                      <TableCell className="pl-4">
+                      <TableCell className="pl-4 py-2.5">
                         <Checkbox
                           checked={selectedPurchaseIds.includes(p.id)}
                           onCheckedChange={() => handleToggleSelectPurchase(p.id)}
@@ -820,53 +806,53 @@ export function PurchasesView() {
                         <button
                           type="button"
                           onClick={() => handleViewDetails(p.id)}
-                          className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 hover:underline inline-flex items-center gap-1"
+                          className="text-blue-600 hover:text-blue-800 hover:underline inline-flex items-center gap-1 font-bold"
                         >
                           {p.purchase_invoice_number || `#${p.id.slice(-6)}`}
                         </button>
                       </TableCell>
 
                       <TableCell className="py-2.5">
-                        <div className="font-semibold text-foreground text-xs leading-tight">
+                        <div className="font-semibold text-slate-900 text-xs leading-tight">
                           {p.supplier?.name || "Direct Supplier"}
                         </div>
                         {(p.supplier?.company_name || p.supplier?.phone) && (
-                          <div className="text-[11px] text-muted-foreground leading-tight mt-0.5">
+                          <div className="text-[11px] text-slate-500 leading-tight mt-0.5">
                             {p.supplier?.company_name || p.supplier?.phone}
                           </div>
                         )}
                       </TableCell>
 
-                      <TableCell className="font-mono text-muted-foreground text-xs py-2.5 whitespace-nowrap">
+                      <TableCell className="font-mono text-slate-500 text-xs py-2.5 whitespace-nowrap">
                         {formatDate(p.date || p.created_at)}
                       </TableCell>
 
                       <TableCell className="text-center py-2.5">
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-mono">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-lg text-[11px] font-bold bg-slate-100 text-slate-700 font-mono border border-slate-200">
                           {p.items?.length || 0} item{(p.items?.length || 0) !== 1 ? "s" : ""}
                         </span>
                       </TableCell>
 
-                      <TableCell className="text-right font-mono font-bold text-foreground py-2.5 whitespace-nowrap">
+                      <TableCell className="text-right font-mono font-bold text-slate-900 py-2.5 whitespace-nowrap tabular-nums">
                         {formatCurrency(tot)}
                       </TableCell>
 
-                      <TableCell className="text-right font-mono font-bold text-emerald-600 dark:text-emerald-400 py-2.5 whitespace-nowrap">
+                      <TableCell className="text-right font-mono font-bold text-emerald-600 py-2.5 whitespace-nowrap tabular-nums">
                         {formatCurrency(paid)}
                       </TableCell>
 
-                      <TableCell className={`text-right font-mono font-bold py-2.5 whitespace-nowrap ${bal > 0 ? "text-rose-600 dark:text-rose-400" : "text-muted-foreground"}`}>
+                      <TableCell className={`text-right font-mono font-bold py-2.5 whitespace-nowrap tabular-nums ${bal > 0 ? "text-rose-600" : "text-slate-400"}`}>
                         {formatCurrency(bal)}
                       </TableCell>
 
                       <TableCell className="text-center py-2.5">
                         <span
-                          className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider border ${
+                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${
                             bal === 0 || p.payment_status === "paid"
-                              ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-800/40"
+                              ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                               : paid > 0
-                              ? "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/30 dark:text-amber-400 dark:border-amber-800/40"
-                              : "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/30 dark:text-rose-400 dark:border-rose-800/40"
+                              ? "bg-amber-50 text-amber-700 border-amber-200"
+                              : "bg-rose-50 text-rose-700 border-rose-200"
                           }`}
                         >
                           {bal === 0 || p.payment_status === "paid"
@@ -883,17 +869,17 @@ export function PurchasesView() {
                             variant="ghost"
                             size="sm"
                             onClick={() => handleViewDetails(p.id)}
-                            className="h-8 px-2 text-xs text-blue-600 hover:text-blue-800 hover:bg-blue-50 dark:hover:bg-blue-950/50"
+                            className="h-8 px-2 text-xs font-semibold text-blue-600 hover:bg-blue-50 rounded-xl"
                             title="View purchase line items"
                           >
                             <Eye className="h-3.5 w-3.5 mr-1" /> View
                           </Button>
 
                           <DropdownMenu>
-                            <DropdownMenuTrigger className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-border/80 text-muted-foreground hover:text-foreground hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors focus:outline-none">
+                            <DropdownMenuTrigger className="h-8 w-8 inline-flex items-center justify-center rounded-xl border border-slate-200 text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors focus:outline-none">
                               <MoreVertical className="h-3.5 w-3.5" />
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-48 text-xs">
+                            <DropdownMenuContent align="end" className="w-48 text-xs rounded-xl shadow-lg border-slate-200">
                               <DropdownMenuLabel>Purchase Actions</DropdownMenuLabel>
                               <DropdownMenuItem onClick={() => handleViewDetails(p.id)}>
                                 <Eye className="h-3.5 w-3.5 mr-2 text-blue-600" /> View Details
@@ -930,12 +916,12 @@ export function PurchasesView() {
             </Table>
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center py-10 px-4 min-h-[220px] max-h-[280px] text-center">
-            <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-muted-foreground/70 mb-3">
+          <div className="flex flex-col items-center justify-center py-12 px-4 min-h-[220px] max-h-[280px] text-center">
+            <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-400 mb-3">
               <ShoppingCart className="h-5 w-5" />
             </div>
-            <p className="text-sm font-bold text-foreground">No purchase records found</p>
-            <p className="text-xs text-muted-foreground mt-1 max-w-sm">
+            <p className="text-sm font-bold text-slate-900">No purchase records found</p>
+            <p className="text-xs text-slate-500 mt-1 max-w-sm">
               Create a purchase order to record incoming spare parts and automatically increase stock.
             </p>
             <div className="flex items-center gap-2 mt-4">
@@ -943,7 +929,7 @@ export function PurchasesView() {
                 <Button
                   size="sm"
                   onClick={() => handleOpenCreateModal()}
-                  className="h-8 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-xs"
+                  className="h-9 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-2xs rounded-xl px-3.5"
                 >
                   <ShoppingCart className="h-3.5 w-3.5 mr-1.5" /> + Create Purchase
                 </Button>
@@ -952,7 +938,7 @@ export function PurchasesView() {
                 size="sm"
                 variant="outline"
                 render={<Link href="/suppliers" />}
-                className="h-8 text-xs font-semibold border-border/80"
+                className="h-9 text-xs font-semibold border-slate-200 bg-white hover:bg-slate-50 text-slate-700 rounded-xl shadow-2xs px-3.5"
               >
                 <Building2 className="h-3.5 w-3.5 mr-1.5 text-blue-600" /> View Suppliers
               </Button>
@@ -962,7 +948,7 @@ export function PurchasesView() {
 
         {/* Pagination Footer */}
         {totalPages > 1 && (
-          <div className="p-3.5 border-t border-border flex items-center justify-between text-xs text-muted-foreground bg-slate-50/50 dark:bg-slate-800/30">
+          <div className="p-3.5 border-t border-slate-200/80 flex items-center justify-between text-xs text-slate-500 bg-slate-50/40">
             <span>
               Showing {(currentPage - 1) * pageSize + 1} to{" "}
               {Math.min(currentPage * pageSize, totalCount)} of {totalCount} purchases
@@ -973,11 +959,11 @@ export function PurchasesView() {
                 size="sm"
                 onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                 disabled={currentPage === 1}
-                className="h-8 text-xs font-medium border-border/80"
+                className="h-8 text-xs font-semibold rounded-xl border-slate-200 bg-white hover:bg-slate-50"
               >
                 <ChevronLeft className="h-3.5 w-3.5 mr-1" /> Previous
               </Button>
-              <span className="font-semibold px-2 font-mono">
+              <span className="font-semibold px-2 font-mono text-slate-900">
                 {currentPage} / {totalPages}
               </span>
               <Button
@@ -985,7 +971,7 @@ export function PurchasesView() {
                 size="sm"
                 onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                 disabled={currentPage >= totalPages}
-                className="h-8 text-xs font-medium border-border/80"
+                className="h-8 text-xs font-semibold rounded-xl border-slate-200 bg-white hover:bg-slate-50"
               >
                 Next <ChevronRight className="h-3.5 w-3.5 ml-1" />
               </Button>

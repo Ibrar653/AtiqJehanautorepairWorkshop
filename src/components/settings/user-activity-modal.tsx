@@ -123,15 +123,17 @@ export function UserActivityModal({ open, onOpenChange, user }: UserActivityModa
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl w-full max-h-[85vh] flex flex-col p-6 gap-4 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100">
-        <DialogHeader className="pb-2 border-b border-slate-100 dark:border-slate-800">
+      <DialogContent className="max-w-3xl w-full max-h-[85vh] flex flex-col p-6 gap-4 bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-xl rounded-2xl text-slate-900 dark:text-slate-100">
+        <DialogHeader className="pb-3 border-b border-slate-100 dark:border-slate-800">
           <div className="flex items-center justify-between gap-2">
             <div>
               <DialogTitle className="text-lg font-bold flex items-center gap-2">
-                <Clock className="w-5 h-5 text-blue-600" />
+                <div className="h-9 w-9 rounded-xl bg-blue-50 dark:bg-blue-950/50 flex items-center justify-center text-blue-600 border border-blue-200/60 dark:border-blue-900">
+                  <Clock className="w-5 h-5" />
+                </div>
                 {user ? `Activity & Audit Log: ${user.full_name}` : "System Staff Activity & Audit Trail"}
               </DialogTitle>
-              <DialogDescription className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+              <DialogDescription className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                 {user
                   ? `Historical logins, operations, and permission revisions for ${user.email} (${user.role.toUpperCase()})`
                   : "Workshop system-wide operational activity logs and administrative changes"}
@@ -142,7 +144,7 @@ export function UserActivityModal({ open, onOpenChange, user }: UserActivityModa
               size="sm"
               onClick={loadData}
               disabled={loading}
-              className="h-8 text-xs px-2.5 gap-1"
+              className="h-9 text-xs px-3 rounded-xl border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-semibold shadow-2xs gap-1.5"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
               Refresh
@@ -152,23 +154,23 @@ export function UserActivityModal({ open, onOpenChange, user }: UserActivityModa
 
         {/* Search Input */}
         <div className="relative">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
           <Input
             placeholder="Search activities by description, user, action or document reference..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9 h-9 text-xs"
+            className="pl-9 h-10 text-xs rounded-xl border-slate-200 shadow-2xs"
           />
         </div>
 
         {/* Tabs: Activity Timeline & Permission Diff Logs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0">
-          <TabsList className="bg-slate-100 dark:bg-slate-800/80 p-1 rounded-lg w-full grid grid-cols-2">
-            <TabsTrigger value="activities" className="text-xs flex items-center justify-center gap-1.5 py-1.5 font-medium">
+          <TabsList className="bg-slate-100/80 dark:bg-slate-800/80 p-1 rounded-xl w-full grid grid-cols-2 border border-slate-200/80 dark:border-slate-800">
+            <TabsTrigger value="activities" className="text-xs flex items-center justify-center gap-1.5 py-2 font-semibold rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-slate-900 data-[state=active]:shadow-2xs">
               <Layers className="w-3.5 h-3.5" />
               Operational Activity ({filteredActivities.length})
             </TabsTrigger>
-            <TabsTrigger value="permissions" className="text-xs flex items-center justify-center gap-1.5 py-1.5 font-medium">
+            <TabsTrigger value="permissions" className="text-xs flex items-center justify-center gap-1.5 py-2 font-semibold rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-slate-900 data-[state=active]:shadow-2xs">
               <Sliders className="w-3.5 h-3.5" />
               Permission Change History ({filteredPermLogs.length})
             </TabsTrigger>

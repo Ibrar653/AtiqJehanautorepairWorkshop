@@ -280,7 +280,7 @@ export function ReportsView() {
                     : loadBalanceSummary
                 }
                 disabled={dailyLoading || balanceLoading || cashFlowLoading}
-                className="h-8 gap-1.5 text-xs bg-white dark:bg-slate-900 border-slate-200/80 shadow-xs hover:bg-slate-50"
+                className="h-10 px-3.5 gap-2 text-xs font-semibold rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 shadow-2xs transition-colors"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${dailyLoading || balanceLoading || cashFlowLoading ? "animate-spin" : ""}`} />
                 Refresh
@@ -298,7 +298,7 @@ export function ReportsView() {
                     exportCashFlowCSV(cashFlowData);
                   }
                 }}
-                className="h-8 gap-1.5 text-xs bg-white dark:bg-slate-900 border-slate-200/80 shadow-xs hover:bg-slate-50 text-blue-600 hover:text-blue-700"
+                className="h-10 px-3.5 gap-2 text-xs font-semibold rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-blue-600 hover:text-blue-700 shadow-2xs transition-colors"
               >
                 <Download className="w-3.5 h-3.5" />
                 Export CSV
@@ -307,7 +307,7 @@ export function ReportsView() {
               <Button
                 size="sm"
                 onClick={handlePrint}
-                className="h-8 gap-1.5 text-xs bg-blue-600 hover:bg-blue-700 text-white shadow-xs"
+                className="h-10 px-4 gap-2 text-xs font-semibold rounded-xl bg-blue-600 hover:bg-blue-700 text-white shadow-2xs transition-colors"
               >
                 <Printer className="w-3.5 h-3.5" />
                 Print Report
@@ -325,16 +325,16 @@ export function ReportsView() {
         }}
         className="space-y-6"
       >
-        <TabsList className="grid grid-cols-3 max-w-md h-10 p-1 bg-slate-100 dark:bg-slate-800/80 rounded-xl border border-slate-200/80 dark:border-slate-800 print:hidden">
-          <TabsTrigger value="daily" className="text-xs py-1.5 gap-1.5 font-medium rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-slate-900 data-[state=active]:shadow-xs">
+        <TabsList className="grid grid-cols-3 max-w-md h-12 p-1.5 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-2xs print:hidden">
+          <TabsTrigger value="daily" className="text-xs py-2 gap-2 font-bold rounded-xl data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-xs text-slate-600 dark:text-slate-400 transition-all">
             <FileText className="w-3.5 h-3.5" />
             Daily Transactions
           </TabsTrigger>
-          <TabsTrigger value="balance" className="text-xs py-1.5 gap-1.5 font-medium rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-slate-900 data-[state=active]:shadow-xs">
+          <TabsTrigger value="balance" className="text-xs py-2 gap-2 font-bold rounded-xl data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-xs text-slate-600 dark:text-slate-400 transition-all">
             <Scale className="w-3.5 h-3.5" />
             Balance Summary
           </TabsTrigger>
-          <TabsTrigger value="cash_flow" className="text-xs py-1.5 gap-1.5 font-medium rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-slate-900 data-[state=active]:shadow-xs">
+          <TabsTrigger value="cash_flow" className="text-xs py-2 gap-2 font-bold rounded-xl data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-xs text-slate-600 dark:text-slate-400 transition-all">
             <ArrowRightLeft className="w-3.5 h-3.5" />
             Cash Flow Report
           </TabsTrigger>
@@ -349,22 +349,22 @@ export function ReportsView() {
             <div className="space-y-3">
               {/* Imbalance Warning Banner if not balanced */}
               {!dailyData.summary.isBalanced ? (
-                <div className="p-3.5 rounded-xl bg-rose-50/80 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900 flex items-center justify-between gap-3 text-xs text-rose-800 dark:text-rose-300">
-                  <div className="flex items-center gap-2 font-semibold">
-                    <AlertTriangle className="w-4 h-4 text-rose-600 flex-shrink-0" />
+                <div className="p-4 rounded-2xl bg-rose-50/90 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900 flex items-center justify-between gap-3 text-xs text-rose-800 dark:text-rose-300 shadow-2xs">
+                  <div className="flex items-center gap-2.5 font-semibold">
+                    <AlertTriangle className="w-5 h-5 text-rose-600 flex-shrink-0" />
                     <span>⚠️ Ledger imbalance detected! Total Debit does not match Total Credit.</span>
                   </div>
-                  <span className="font-mono font-bold bg-rose-100 dark:bg-rose-900/50 px-2.5 py-1 rounded-lg">
+                  <span className="font-mono font-bold bg-rose-100 dark:bg-rose-900/50 px-3 py-1 rounded-xl">
                     Difference: AED {dailyData.summary.imbalanceDiff.toFixed(2)}
                   </span>
                 </div>
               ) : (
-                <div className="p-3 rounded-xl bg-emerald-50/70 dark:bg-emerald-950/20 border border-emerald-200/80 dark:border-emerald-800/60 flex items-center justify-between text-xs text-emerald-800 dark:text-emerald-300">
-                  <div className="flex items-center gap-2 font-medium">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                <div className="p-4 rounded-2xl bg-emerald-50/80 dark:bg-emerald-950/20 border border-emerald-200/80 dark:border-emerald-800/60 flex items-center justify-between text-xs text-emerald-800 dark:text-emerald-300 shadow-2xs">
+                  <div className="flex items-center gap-2.5 font-semibold">
+                    <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0" />
                     <span>Double-Entry Reconciled: Total Debit strictly equals Total Credit</span>
                   </div>
-                  <Badge variant="outline" className="border-emerald-300 text-emerald-700 bg-white dark:bg-slate-900 text-[10px] font-semibold">
+                  <Badge variant="outline" className="border-emerald-300 text-emerald-700 bg-white dark:bg-slate-900 text-[10px] font-bold px-2 py-0.5 rounded-lg">
                     BALANCED
                   </Badge>
                 </div>
@@ -372,106 +372,78 @@ export function ReportsView() {
 
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3">
                 {/* Total Debit */}
-                <Card className="border border-slate-200/80 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 shadow-xs">
-                  <CardHeader className="p-3 pb-1">
-                    <CardDescription className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Total Debit</CardDescription>
-                  </CardHeader>
-                  <CardContent className="p-3 pt-0">
-                    <p className="text-base font-bold font-mono text-slate-900 dark:text-slate-100 tabular-nums">
-                      AED {dailyData.summary.totalDebit.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                    </p>
-                  </CardContent>
-                </Card>
+                <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-5 shadow-2xs flex flex-col justify-between">
+                  <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Total Debit</div>
+                  <div className="text-xl font-bold font-mono tracking-tight text-slate-900 dark:text-slate-100 tabular-nums mt-2">
+                    AED {dailyData.summary.totalDebit.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                  </div>
+                </div>
 
                 {/* Total Credit */}
-                <Card className="border border-slate-200/80 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 shadow-xs">
-                  <CardHeader className="p-3 pb-1">
-                    <CardDescription className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Total Credit</CardDescription>
-                  </CardHeader>
-                  <CardContent className="p-3 pt-0">
-                    <p className="text-base font-bold font-mono text-slate-900 dark:text-slate-100 tabular-nums">
-                      AED {dailyData.summary.totalCredit.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                    </p>
-                  </CardContent>
-                </Card>
+                <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-5 shadow-2xs flex flex-col justify-between">
+                  <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Total Credit</div>
+                  <div className="text-xl font-bold font-mono tracking-tight text-slate-900 dark:text-slate-100 tabular-nums mt-2">
+                    AED {dailyData.summary.totalCredit.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                  </div>
+                </div>
 
                 {/* Cash In */}
-                <Card className="border border-slate-200/80 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 shadow-xs">
-                  <CardHeader className="p-3 pb-1">
-                    <CardDescription className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1 uppercase tracking-wider">
-                      <ArrowDownLeft className="w-3 h-3" /> Cash In
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="p-3 pt-0">
-                    <p className="text-base font-bold font-mono text-emerald-700 dark:text-emerald-400 tabular-nums">
-                      AED {dailyData.summary.cashIn.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                    </p>
-                  </CardContent>
-                </Card>
+                <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-5 shadow-2xs flex flex-col justify-between">
+                  <div className="text-[11px] font-bold text-emerald-600 uppercase tracking-wider flex items-center gap-1">
+                    <ArrowDownLeft className="w-3.5 h-3.5" /> Cash In
+                  </div>
+                  <div className="text-xl font-bold font-mono tracking-tight text-emerald-700 dark:text-emerald-400 tabular-nums mt-2">
+                    AED {dailyData.summary.cashIn.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                  </div>
+                </div>
 
                 {/* Cash Out */}
-                <Card className="border border-slate-200/80 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 shadow-xs">
-                  <CardHeader className="p-3 pb-1">
-                    <CardDescription className="text-[11px] font-semibold text-rose-600 dark:text-rose-400 flex items-center gap-1 uppercase tracking-wider">
-                      <ArrowUpRight className="w-3 h-3" /> Cash Out
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="p-3 pt-0">
-                    <p className="text-base font-bold font-mono text-rose-700 dark:text-rose-400 tabular-nums">
-                      AED {dailyData.summary.cashOut.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                    </p>
-                  </CardContent>
-                </Card>
+                <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-5 shadow-2xs flex flex-col justify-between">
+                  <div className="text-[11px] font-bold text-rose-600 uppercase tracking-wider flex items-center gap-1">
+                    <ArrowUpRight className="w-3.5 h-3.5" /> Cash Out
+                  </div>
+                  <div className="text-xl font-bold font-mono tracking-tight text-rose-700 dark:text-rose-400 tabular-nums mt-2">
+                    AED {dailyData.summary.cashOut.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                  </div>
+                </div>
 
                 {/* Bank In */}
-                <Card className="border border-slate-200/80 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 shadow-xs">
-                  <CardHeader className="p-3 pb-1">
-                    <CardDescription className="text-[11px] font-semibold text-blue-600 dark:text-blue-400 flex items-center gap-1 uppercase tracking-wider">
-                      <ArrowDownLeft className="w-3 h-3" /> Bank In
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="p-3 pt-0">
-                    <p className="text-base font-bold font-mono text-blue-700 dark:text-blue-400 tabular-nums">
-                      AED {dailyData.summary.bankIn.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                    </p>
-                  </CardContent>
-                </Card>
+                <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-5 shadow-2xs flex flex-col justify-between">
+                  <div className="text-[11px] font-bold text-blue-600 uppercase tracking-wider flex items-center gap-1">
+                    <ArrowDownLeft className="w-3.5 h-3.5" /> Bank In
+                  </div>
+                  <div className="text-xl font-bold font-mono tracking-tight text-blue-700 dark:text-blue-400 tabular-nums mt-2">
+                    AED {dailyData.summary.bankIn.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                  </div>
+                </div>
 
                 {/* Bank Out */}
-                <Card className="border border-slate-200/80 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 shadow-xs">
-                  <CardHeader className="p-3 pb-1">
-                    <CardDescription className="text-[11px] font-semibold text-amber-600 dark:text-amber-400 flex items-center gap-1 uppercase tracking-wider">
-                      <ArrowUpRight className="w-3 h-3" /> Bank Out
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="p-3 pt-0">
-                    <p className="text-base font-bold font-mono text-amber-700 dark:text-amber-400 tabular-nums">
-                      AED {dailyData.summary.bankOut.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                    </p>
-                  </CardContent>
-                </Card>
+                <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-5 shadow-2xs flex flex-col justify-between">
+                  <div className="text-[11px] font-bold text-amber-600 uppercase tracking-wider flex items-center gap-1">
+                    <ArrowUpRight className="w-3.5 h-3.5" /> Bank Out
+                  </div>
+                  <div className="text-xl font-bold font-mono tracking-tight text-amber-700 dark:text-amber-400 tabular-nums mt-2">
+                    AED {dailyData.summary.bankOut.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                  </div>
+                </div>
 
                 {/* Total Transactions */}
-                <Card className="border border-slate-200/80 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 shadow-xs col-span-2 sm:col-span-1">
-                  <CardHeader className="p-3 pb-1">
-                    <CardDescription className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Transactions</CardDescription>
-                  </CardHeader>
-                  <CardContent className="p-3 pt-0">
-                    <p className="text-base font-bold font-mono text-slate-900 dark:text-slate-100 tabular-nums">
-                      {dailyData.summary.totalTransactions} <span className="text-[11px] font-normal text-muted-foreground">({dailyData.summary.totalEntries} lines)</span>
-                    </p>
-                  </CardContent>
-                </Card>
+                <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-5 shadow-2xs flex flex-col justify-between col-span-2 sm:col-span-1">
+                  <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Transactions</div>
+                  <div className="text-xl font-bold font-mono tracking-tight text-slate-900 dark:text-slate-100 tabular-nums mt-2">
+                    {dailyData.summary.totalTransactions} <span className="text-[11px] font-normal text-slate-500">({dailyData.summary.totalEntries} lines)</span>
+                  </div>
+                </div>
               </div>
             </div>
           )}
 
           {/* Filters Bar */}
-          <Card className="p-3.5 rounded-xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs print:hidden space-y-3">
+          <div className="p-4 rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xs print:hidden space-y-3">
             <div className="flex flex-wrap items-center gap-3">
               {/* Date Preset Buttons */}
-              <div className="flex items-center gap-1 text-xs">
-                <span className="font-semibold text-muted-foreground mr-1 text-[11px]">Date:</span>
+              <div className="flex items-center gap-1.5 text-xs flex-wrap">
+                <span className="font-bold text-slate-500 mr-1 text-[11px] uppercase tracking-wider">Date:</span>
                 {(["today", "yesterday", "this_week", "this_month", "custom"] as const).map((p) => {
                   const labels = {
                     today: "Today",
@@ -486,10 +458,10 @@ export function ReportsView() {
                       variant={datePreset === p ? "default" : "outline"}
                       size="sm"
                       onClick={() => setDatePreset(p)}
-                      className={`h-8 px-3 text-xs rounded-lg font-medium ${
+                      className={`h-10 px-3.5 text-xs rounded-xl font-semibold transition-colors ${
                         datePreset === p
-                          ? "bg-blue-600 hover:bg-blue-700 text-white shadow-xs"
-                          : "bg-white dark:bg-slate-900 border-slate-200/80 text-slate-700 dark:text-slate-300 hover:bg-slate-50"
+                          ? "bg-blue-600 hover:bg-blue-700 text-white shadow-2xs"
+                          : "bg-white dark:bg-slate-900 border-slate-200 text-slate-700 dark:text-slate-300 hover:bg-slate-50 shadow-2xs"
                       }`}
                     >
                       {labels[p]}
@@ -505,40 +477,40 @@ export function ReportsView() {
                     type="date"
                     value={startDate}
                     onChange={(e) => setStartDate(e.target.value)}
-                    className="h-8 text-xs w-[130px] rounded-lg border-slate-200/80"
+                    className="h-10 text-xs w-[140px] rounded-xl border-slate-200"
                   />
-                  <span className="text-xs text-muted-foreground">to</span>
+                  <span className="text-xs text-slate-500 font-semibold">to</span>
                   <Input
                     type="date"
                     value={endDate}
                     onChange={(e) => setEndDate(e.target.value)}
-                    className="h-8 text-xs w-[130px] rounded-lg border-slate-200/80"
+                    className="h-10 text-xs w-[140px] rounded-xl border-slate-200"
                   />
                 </div>
               )}
 
               {/* Search Bar */}
-              <div className="relative flex-1 min-w-[200px]">
-                <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
+              <div className="relative flex-1 min-w-[220px]">
+                <Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
                 <Input
                   placeholder="Search by Txn No, Invoice, Ref, Account, Description..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-8 text-xs h-8 rounded-lg border-slate-200/80 bg-slate-50/50 dark:bg-slate-800/40"
+                  className="pl-9 text-xs h-10 rounded-xl border-slate-200 bg-slate-50/50 dark:bg-slate-800/40"
                 />
               </div>
             </div>
 
             {/* Sub-Filters */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-2 border-t border-slate-100 dark:border-slate-800">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2.5 border-t border-slate-100 dark:border-slate-800">
               {/* Account Type Filter */}
               <div className="space-y-1">
-                <Label className="text-[10px] text-muted-foreground font-semibold">Account Type</Label>
+                <Label className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Account Type</Label>
                 <Select value={accountTypeFilter} onValueChange={(v) => { if (v) setAccountTypeFilter(v); }}>
-                  <SelectTrigger className="h-8 text-xs rounded-lg border-slate-200/80 bg-slate-50/50 dark:bg-slate-800/40">
+                  <SelectTrigger className="h-10 text-xs rounded-xl border-slate-200 bg-slate-50/50 dark:bg-slate-800/40 font-medium">
                     <SelectValue placeholder="All Types" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="rounded-xl border-slate-200 shadow-lg">
                     <SelectItem value="all">All Account Types</SelectItem>
                     <SelectItem value="asset">Asset (1000s)</SelectItem>
                     <SelectItem value="liability">Liability (2000s)</SelectItem>
@@ -551,12 +523,12 @@ export function ReportsView() {
 
               {/* Reference / Transaction Type */}
               <div className="space-y-1">
-                <Label className="text-[10px] text-muted-foreground font-semibold">Transaction Type</Label>
+                <Label className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Transaction Type</Label>
                 <Select value={referenceTypeFilter} onValueChange={(v) => { if (v) setReferenceTypeFilter(v); }}>
-                  <SelectTrigger className="h-8 text-xs rounded-lg border-slate-200/80 bg-slate-50/50 dark:bg-slate-800/40">
+                  <SelectTrigger className="h-10 text-xs rounded-xl border-slate-200 bg-slate-50/50 dark:bg-slate-800/40 font-medium">
                     <SelectValue placeholder="All Types" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="rounded-xl border-slate-200 shadow-lg">
                     <SelectItem value="all">All Types</SelectItem>
                     <SelectItem value="customer_invoice">Customer Invoice</SelectItem>
                     <SelectItem value="customer_payment">Customer Payment</SelectItem>
@@ -574,12 +546,12 @@ export function ReportsView() {
 
               {/* Payment Method */}
               <div className="space-y-1">
-                <Label className="text-[10px] text-muted-foreground font-semibold">Payment Method</Label>
+                <Label className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Payment Method</Label>
                 <Select value={paymentMethodFilter} onValueChange={(v) => { if (v) setPaymentMethodFilter(v); }}>
-                  <SelectTrigger className="h-8 text-xs rounded-lg border-slate-200/80 bg-slate-50/50 dark:bg-slate-800/40">
+                  <SelectTrigger className="h-10 text-xs rounded-xl border-slate-200 bg-slate-50/50 dark:bg-slate-800/40 font-medium">
                     <SelectValue placeholder="All Methods" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="rounded-xl border-slate-200 shadow-lg">
                     <SelectItem value="all">All Methods</SelectItem>
                     <SelectItem value="cash">Cash on Hand</SelectItem>
                     <SelectItem value="bank">Bank Account</SelectItem>
@@ -590,12 +562,12 @@ export function ReportsView() {
 
               {/* Page Size */}
               <div className="space-y-1">
-                <Label className="text-[10px] text-muted-foreground font-semibold">Rows per page</Label>
+                <Label className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Rows per page</Label>
                 <Select value={String(dailyLimit)} onValueChange={(v) => { if (v) setDailyLimit(Number(v)); }}>
-                  <SelectTrigger className="h-8 text-xs rounded-lg border-slate-200/80 bg-slate-50/50 dark:bg-slate-800/40">
+                  <SelectTrigger className="h-10 text-xs rounded-xl border-slate-200 bg-slate-50/50 dark:bg-slate-800/40 font-medium">
                     <SelectValue placeholder="50" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="rounded-xl border-slate-200 shadow-lg">
                     <SelectItem value="20">20 rows</SelectItem>
                     <SelectItem value="50">50 rows</SelectItem>
                     <SelectItem value="100">100 rows</SelectItem>
@@ -603,82 +575,84 @@ export function ReportsView() {
                 </Select>
               </div>
             </div>
-          </Card>
+          </div>
 
           {/* Transactions Table */}
-          <div className="border border-slate-200/80 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 shadow-xs overflow-hidden">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-2xs overflow-hidden">
             <div className="overflow-x-auto">
               <Table>
-                <TableHeader className="bg-slate-50/80 dark:bg-slate-800/60 border-b border-slate-200/80 dark:border-slate-800">
-                  <TableRow className="h-10">
-                    <TableHead className="text-xs font-semibold w-[90px]">Date</TableHead>
-                    <TableHead className="text-xs font-semibold w-[110px]">Txn No</TableHead>
-                    <TableHead className="text-xs font-semibold min-w-[160px]">Account</TableHead>
-                    <TableHead className="text-xs font-semibold w-[90px]">Type</TableHead>
-                    <TableHead className="text-xs font-semibold min-w-[180px]">Description</TableHead>
-                    <TableHead className="text-xs font-semibold w-[100px]">Reference</TableHead>
-                    <TableHead className="text-xs font-semibold text-right w-[110px]">Debit (AED)</TableHead>
-                    <TableHead className="text-xs font-semibold text-right w-[110px]">Credit (AED)</TableHead>
-                    <TableHead className="text-xs font-semibold w-[90px]">Method</TableHead>
-                    <TableHead className="text-xs font-semibold w-[90px]">Created By</TableHead>
+                <TableHeader className="bg-slate-50/80 hover:bg-slate-50/80 dark:bg-slate-800/60 border-b border-slate-200/80 dark:border-slate-800">
+                  <TableRow className="h-11">
+                    <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-wider w-[100px]">Date</TableHead>
+                    <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-wider w-[120px]">Txn No</TableHead>
+                    <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-wider min-w-[160px]">Account</TableHead>
+                    <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-wider w-[90px]">Type</TableHead>
+                    <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-wider min-w-[180px]">Description</TableHead>
+                    <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-wider w-[100px]">Reference</TableHead>
+                    <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-wider text-right w-[120px]">Debit (AED)</TableHead>
+                    <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-wider text-right w-[120px]">Credit (AED)</TableHead>
+                    <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-wider w-[90px]">Method</TableHead>
+                    <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-wider w-[95px]">Created By</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {dailyLoading ? (
                     <TableRow>
-                      <TableCell colSpan={10} className="py-14 text-center text-xs text-muted-foreground">
+                      <TableCell colSpan={10} className="py-14 text-center text-xs text-slate-500">
                         <RefreshCw className="w-5 h-5 mx-auto animate-spin mb-2 text-blue-600" />
                         Loading journal transactions...
                       </TableCell>
                     </TableRow>
                   ) : !dailyData || dailyData.rows.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={10} className="py-14 text-center text-xs text-muted-foreground">
-                        <FileText className="w-8 h-8 mx-auto text-slate-300 dark:text-slate-700 mb-2" />
-                        <p className="font-semibold text-slate-700 dark:text-slate-300">No transactions recorded for this period</p>
+                      <TableCell colSpan={10} className="py-12 text-center text-xs text-slate-500">
+                        <div className="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center mx-auto mb-2 text-slate-400">
+                          <FileText className="w-6 h-6" />
+                        </div>
+                        <p className="font-bold text-slate-700 dark:text-slate-300">No transactions recorded for this period</p>
                         <p className="text-[11px] text-slate-400 mt-0.5">Try selecting a broader date range or clearing filters.</p>
                       </TableCell>
                     </TableRow>
                   ) : (
                     dailyData.rows.map((row) => (
-                      <TableRow key={row.entryId} className="h-12 hover:bg-slate-50/60 dark:hover:bg-slate-800/40 border-b border-slate-100 dark:border-slate-800/80">
-                        <TableCell className="text-xs font-mono text-slate-600 dark:text-slate-400">
+                      <TableRow key={row.entryId} className="h-12 hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition-colors border-b border-slate-100 dark:border-slate-800/80 text-xs">
+                        <TableCell className="font-mono text-slate-600 dark:text-slate-400">
                           {row.transactionDate}
                         </TableCell>
-                        <TableCell className="text-xs font-mono font-semibold text-blue-700 dark:text-blue-400">
+                        <TableCell className="font-mono font-bold text-blue-600 dark:text-blue-400">
                           {row.transactionNumber}
                         </TableCell>
-                        <TableCell className="text-xs">
-                          <span className="font-mono text-[11px] font-semibold text-slate-500 mr-1.5">
+                        <TableCell>
+                          <span className="font-mono text-[11px] font-bold text-slate-500 mr-1.5">
                             {row.accountCode}
                           </span>
-                          <span className="font-medium text-slate-900 dark:text-slate-100">
+                          <span className="font-semibold text-slate-900 dark:text-slate-100">
                             {row.accountName}
                           </span>
                         </TableCell>
-                        <TableCell className="text-xs">
-                          <Badge variant="outline" className="text-[10px] uppercase px-1.5 py-0">
+                        <TableCell>
+                          <Badge variant="outline" className="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded-lg">
                             {row.accountType}
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-xs text-slate-700 dark:text-slate-300 max-w-[240px] truncate" title={row.description}>
+                        <TableCell className="text-slate-700 dark:text-slate-300 max-w-[240px] truncate" title={row.description}>
                           {row.description}
                         </TableCell>
-                        <TableCell className="text-xs font-mono text-slate-500">
+                        <TableCell className="font-mono text-slate-500">
                           {row.referenceId || "—"}
                         </TableCell>
-                        <TableCell className="text-xs font-mono text-right font-semibold text-slate-900 dark:text-slate-100 tabular-nums">
+                        <TableCell className="font-mono text-right font-bold text-slate-900 dark:text-slate-100 tabular-nums">
                           {row.debit > 0 ? row.debit.toFixed(2) : "—"}
                         </TableCell>
-                        <TableCell className="text-xs font-mono text-right font-semibold text-slate-900 dark:text-slate-100 tabular-nums">
+                        <TableCell className="font-mono text-right font-bold text-slate-900 dark:text-slate-100 tabular-nums">
                           {row.credit > 0 ? row.credit.toFixed(2) : "—"}
                         </TableCell>
-                        <TableCell className="text-xs">
-                          <span className="capitalize text-[11px] text-slate-600 dark:text-slate-400">
+                        <TableCell>
+                          <span className="capitalize text-[11px] font-medium text-slate-600 dark:text-slate-400">
                             {row.paymentMethod}
                           </span>
                         </TableCell>
-                        <TableCell className="text-xs text-slate-500 truncate max-w-[100px]">
+                        <TableCell className="text-slate-500 truncate max-w-[100px]">
                           {row.createdBy}
                         </TableCell>
                       </TableRow>
@@ -690,21 +664,21 @@ export function ReportsView() {
 
             {/* Pagination Controls */}
             {dailyData && dailyData.totalRows > 0 && (
-              <div className="p-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 flex items-center justify-between text-xs text-muted-foreground print:hidden">
+              <div className="p-3.5 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 flex items-center justify-between text-xs text-slate-500 print:hidden">
                 <span>
                   Showing {((dailyPage - 1) * dailyLimit) + 1} to {Math.min(dailyPage * dailyLimit, dailyData.totalRows)} of {dailyData.totalRows} entries
                 </span>
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-2">
                   <Button
                     variant="outline"
                     size="sm"
                     disabled={dailyPage <= 1}
                     onClick={() => setDailyPage((p) => Math.max(1, p - 1))}
-                    className="h-7 px-2 text-xs"
+                    className="h-8 px-3 text-xs rounded-xl font-semibold border-slate-200 bg-white hover:bg-slate-50 text-slate-700 shadow-2xs"
                   >
                     <ChevronLeft className="w-3.5 h-3.5 mr-0.5" /> Previous
                   </Button>
-                  <span className="px-2 font-semibold">
+                  <span className="px-2 font-bold font-mono">
                     Page {dailyPage} of {Math.max(1, Math.ceil(dailyData.totalRows / dailyLimit))}
                   </span>
                   <Button
@@ -712,7 +686,7 @@ export function ReportsView() {
                     size="sm"
                     disabled={dailyPage >= Math.ceil(dailyData.totalRows / dailyLimit)}
                     onClick={() => setDailyPage((p) => p + 1)}
-                    className="h-7 px-2 text-xs"
+                    className="h-8 px-3 text-xs rounded-xl font-semibold border-slate-200 bg-white hover:bg-slate-50 text-slate-700 shadow-2xs"
                   >
                     Next <ChevronRight className="w-3.5 h-3.5 ml-0.5" />
                   </Button>
@@ -727,35 +701,35 @@ export function ReportsView() {
            ══════════════════════════════════════════════════════════════════════ */}
         <TabsContent value="balance" className="space-y-5">
           {/* As of Date Bar */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-xl shadow-xs">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-2xl shadow-2xs">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-600 flex items-center justify-center">
-                <Calendar className="w-4 h-4" />
+              <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 flex items-center justify-center">
+                <Calendar className="w-5 h-5" />
               </div>
               <div>
                 <h3 className="font-bold text-sm text-slate-900 dark:text-slate-100">
                   Balance Summary as of: <span className="font-mono text-blue-600 tabular-nums">{asOfDate}</span>
                 </h3>
-                <p className="text-[11px] text-muted-foreground">
+                <p className="text-xs text-slate-500">
                   Calculated from real General Ledger transactions up to this date
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-2 print:hidden">
-              <Label htmlFor="asOfDateInput" className="text-xs font-semibold text-muted-foreground">As of Date:</Label>
+            <div className="flex items-center gap-2 print:hidden flex-wrap">
+              <Label htmlFor="asOfDateInput" className="text-xs font-bold text-slate-500 uppercase tracking-wider">As of Date:</Label>
               <Input
                 id="asOfDateInput"
                 type="date"
                 value={asOfDate}
                 onChange={(e) => setAsOfDate(e.target.value)}
-                className="h-8 text-xs w-[140px] rounded-lg border-slate-200/80"
+                className="h-10 text-xs w-[140px] rounded-xl border-slate-200"
               />
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setAsOfDate(new Date().toISOString().slice(0, 10))}
-                className="h-8 text-xs rounded-lg border-slate-200/80"
+                className="h-10 text-xs px-3.5 rounded-xl border-slate-200 font-semibold bg-white hover:bg-slate-50 text-slate-700 shadow-2xs"
               >
                 Today
               </Button>
@@ -765,7 +739,7 @@ export function ReportsView() {
                   variant="outline"
                   size="sm"
                   onClick={() => setResetAccountingOpen(true)}
-                  className="h-8 text-xs gap-1.5 border-rose-300 text-rose-700 hover:bg-rose-50 dark:border-rose-900/60 dark:text-rose-400 dark:hover:bg-rose-950/40 rounded-lg"
+                  className="h-10 text-xs px-3.5 gap-2 rounded-xl font-semibold border-rose-200 text-rose-700 bg-rose-50 hover:bg-rose-100 dark:border-rose-900/60 dark:text-rose-400 dark:hover:bg-rose-950/40 shadow-2xs transition-colors"
                   title="Reset ATIQ JEHAN Accounting to Clean Zero"
                 >
                   <RotateCcw className="w-3.5 h-3.5 text-rose-600" />
@@ -779,109 +753,101 @@ export function ReportsView() {
           {balanceData && (
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
               {/* Cash Balance */}
-              <Card className="border border-slate-200/80 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 shadow-xs">
-                <CardHeader className="p-3.5 pb-1">
-                  <CardDescription className="text-xs flex items-center justify-between font-semibold">
-                    <span className="text-slate-600 dark:text-slate-400 uppercase tracking-wider text-[11px]">Cash on Hand</span>
-                    <div className="w-7 h-7 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 flex items-center justify-center">
-                      <Wallet className="w-3.5 h-3.5" />
-                    </div>
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="p-3.5 pt-0">
-                  <p className="text-lg font-bold font-mono text-slate-900 dark:text-slate-100 tabular-nums">
+              <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-5 shadow-2xs flex flex-col justify-between">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Cash on Hand</span>
+                  <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 flex items-center justify-center">
+                    <Wallet className="w-5 h-5" />
+                  </div>
+                </div>
+                <div className="mt-2">
+                  <p className="text-2xl font-bold font-mono tracking-tight text-slate-900 dark:text-slate-100 tabular-nums">
                     AED {balanceData.entitySummaries.cash.currentCashBalance.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                   </p>
-                </CardContent>
-              </Card>
+                  <p className="text-xs text-slate-500 mt-1">Physical cash drawer balance</p>
+                </div>
+              </div>
 
               {/* Total Bank Balance */}
-              <Card className="border border-slate-200/80 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 shadow-xs">
-                <CardHeader className="p-3.5 pb-1">
-                  <CardDescription className="text-xs flex items-center justify-between font-semibold">
-                    <span className="text-slate-600 dark:text-slate-400 uppercase tracking-wider text-[11px]">Total Bank Balance</span>
-                    <div className="w-7 h-7 rounded-lg bg-blue-50 dark:bg-blue-950/50 text-blue-600 flex items-center justify-center">
-                      <Landmark className="w-3.5 h-3.5" />
-                    </div>
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="p-3.5 pt-0">
-                  <p className="text-lg font-bold font-mono text-slate-900 dark:text-slate-100 tabular-nums">
+              <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-5 shadow-2xs flex flex-col justify-between">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Bank Balance</span>
+                  <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-950/50 text-blue-600 flex items-center justify-center">
+                    <Landmark className="w-5 h-5" />
+                  </div>
+                </div>
+                <div className="mt-2">
+                  <p className="text-2xl font-bold font-mono tracking-tight text-slate-900 dark:text-slate-100 tabular-nums">
                     AED {balanceData.entitySummaries.bank.totalBankBalance.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                   </p>
-                </CardContent>
-              </Card>
+                  <p className="text-xs text-slate-500 mt-1">Total corporate bank accounts</p>
+                </div>
+              </div>
 
               {/* Customer Receivables */}
-              <Card className="border border-slate-200/80 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 shadow-xs">
-                <CardHeader className="p-3.5 pb-1">
-                  <CardDescription className="text-xs flex items-center justify-between font-semibold">
-                    <span className="text-slate-600 dark:text-slate-400 uppercase tracking-wider text-[11px]">Customer Receivables</span>
-                    <div className="w-7 h-7 rounded-lg bg-cyan-50 dark:bg-cyan-950/50 text-cyan-600 flex items-center justify-center">
-                      <Users className="w-3.5 h-3.5" />
-                    </div>
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="p-3.5 pt-0">
-                  <p className="text-lg font-bold font-mono text-slate-900 dark:text-slate-100 tabular-nums">
+              <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-5 shadow-2xs flex flex-col justify-between">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Receivables</span>
+                  <div className="w-10 h-10 rounded-xl bg-cyan-50 dark:bg-cyan-950/50 text-cyan-600 flex items-center justify-center">
+                    <Users className="w-5 h-5" />
+                  </div>
+                </div>
+                <div className="mt-2">
+                  <p className="text-2xl font-bold font-mono tracking-tight text-slate-900 dark:text-slate-100 tabular-nums">
                     AED {balanceData.entitySummaries.customers.totalReceivable.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                   </p>
-                  <p className="text-[10px] text-muted-foreground mt-0.5">
+                  <p className="text-xs text-slate-500 mt-1">
                     {balanceData.entitySummaries.customers.customersWithBalanceCount} customers with dues
                   </p>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
 
               {/* Supplier Payables */}
-              <Card className="border border-slate-200/80 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 shadow-xs">
-                <CardHeader className="p-3.5 pb-1">
-                  <CardDescription className="text-xs flex items-center justify-between font-semibold">
-                    <span className="text-slate-600 dark:text-slate-400 uppercase tracking-wider text-[11px]">Supplier Payables</span>
-                    <div className="w-7 h-7 rounded-lg bg-amber-50 dark:bg-amber-950/50 text-amber-600 flex items-center justify-center">
-                      <Truck className="w-3.5 h-3.5" />
-                    </div>
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="p-3.5 pt-0">
-                  <p className="text-lg font-bold font-mono text-slate-900 dark:text-slate-100 tabular-nums">
+              <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-5 shadow-2xs flex flex-col justify-between">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Supplier Payables</span>
+                  <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-950/50 text-amber-600 flex items-center justify-center">
+                    <Truck className="w-5 h-5" />
+                  </div>
+                </div>
+                <div className="mt-2">
+                  <p className="text-2xl font-bold font-mono tracking-tight text-slate-900 dark:text-slate-100 tabular-nums">
                     AED {balanceData.entitySummaries.suppliers.totalPayable.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                   </p>
-                  <p className="text-[10px] text-muted-foreground mt-0.5">
+                  <p className="text-xs text-slate-500 mt-1">
                     {balanceData.entitySummaries.suppliers.suppliersWithBalanceCount} suppliers pending
                   </p>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
 
               {/* Worker Payables */}
-              <Card className="border border-slate-200/80 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 shadow-xs col-span-2 sm:col-span-1">
-                <CardHeader className="p-3.5 pb-1">
-                  <CardDescription className="text-xs flex items-center justify-between font-semibold">
-                    <span className="text-slate-600 dark:text-slate-400 uppercase tracking-wider text-[11px]">Worker Payables</span>
-                    <div className="w-7 h-7 rounded-lg bg-purple-50 dark:bg-purple-950/50 text-purple-600 flex items-center justify-center">
-                      <HardHat className="w-3.5 h-3.5" />
-                    </div>
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="p-3.5 pt-0">
-                  <p className="text-lg font-bold font-mono text-slate-900 dark:text-slate-100 tabular-nums">
+              <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-5 shadow-2xs flex flex-col justify-between col-span-2 sm:col-span-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Worker Payables</span>
+                  <div className="w-10 h-10 rounded-xl bg-purple-50 dark:bg-purple-950/50 text-purple-600 flex items-center justify-center">
+                    <HardHat className="w-5 h-5" />
+                  </div>
+                </div>
+                <div className="mt-2">
+                  <p className="text-2xl font-bold font-mono tracking-tight text-slate-900 dark:text-slate-100 tabular-nums">
                     AED {balanceData.entitySummaries.workers.totalPayable.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                   </p>
-                  <p className="text-[10px] text-muted-foreground mt-0.5">
+                  <p className="text-xs text-slate-500 mt-1">
                     Staff salaries &amp; advances
                   </p>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             </div>
           )}
 
           {/* Grouped Account Tables */}
           {balanceLoading ? (
-            <div className="py-16 text-center text-xs text-muted-foreground">
+            <div className="py-16 text-center text-xs text-slate-500">
               <RefreshCw className="w-6 h-6 mx-auto animate-spin mb-2 text-blue-600" />
               Calculating real closing balances from ledger...
             </div>
           ) : !balanceData ? (
-            <div className="py-12 text-center text-xs text-muted-foreground">
+            <div className="py-12 text-center text-xs text-slate-500">
               No balance summary data available.
             </div>
           ) : (
@@ -889,8 +855,8 @@ export function ReportsView() {
               {(["asset", "liability", "income", "expense", "equity"] as const).map((key) => {
                 const group = balanceData.groups[key];
                 return (
-                  <div key={key} className="border border-slate-200/80 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 shadow-xs overflow-hidden">
-                    <div className="p-3.5 bg-slate-50/80 dark:bg-slate-800/60 flex items-center justify-between border-b border-slate-200/80 dark:border-slate-800">
+                  <div key={key} className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-2xs overflow-hidden">
+                    <div className="p-4 bg-slate-50/80 dark:bg-slate-800/60 flex items-center justify-between border-b border-slate-200/80 dark:border-slate-800">
                       <h4 className="font-bold text-xs tracking-wider uppercase text-slate-900 dark:text-slate-100">
                         {group.title}
                       </h4>
@@ -902,20 +868,20 @@ export function ReportsView() {
                     <div className="overflow-x-auto">
                       <Table>
                         <TableHeader>
-                          <TableRow className="bg-slate-50/40 dark:bg-slate-800/40 border-b border-slate-200/80 h-10">
-                            <TableHead className="text-xs font-semibold w-[100px]">Account Code</TableHead>
-                            <TableHead className="text-xs font-semibold min-w-[220px]">Account Name</TableHead>
-                            <TableHead className="text-xs font-semibold w-[140px]">Category</TableHead>
-                            <TableHead className="text-xs font-semibold text-right w-[120px]">Opening Balance</TableHead>
-                            <TableHead className="text-xs font-semibold text-right w-[120px]">Debit Activity</TableHead>
-                            <TableHead className="text-xs font-semibold text-right w-[120px]">Credit Activity</TableHead>
-                            <TableHead className="text-xs font-semibold text-right w-[140px]">Closing Balance</TableHead>
+                          <TableRow className="bg-slate-50/80 hover:bg-slate-50/80 dark:bg-slate-800/40 border-b border-slate-200/80 h-11">
+                            <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-wider w-[120px]">Account Code</TableHead>
+                            <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-wider min-w-[220px]">Account Name</TableHead>
+                            <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-wider w-[140px]">Category</TableHead>
+                            <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-wider text-right w-[130px]">Opening Balance</TableHead>
+                            <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-wider text-right w-[130px]">Debit Activity</TableHead>
+                            <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-wider text-right w-[130px]">Credit Activity</TableHead>
+                            <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-wider text-right w-[150px]">Closing Balance</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
                           {group.accounts.length === 0 ? (
                             <TableRow>
-                              <TableCell colSpan={7} className="text-center py-6 text-xs text-muted-foreground">
+                              <TableCell colSpan={7} className="text-center py-6 text-xs text-slate-500">
                                 No accounts configured under this category.
                               </TableCell>
                             </TableRow>
@@ -924,29 +890,29 @@ export function ReportsView() {
                               <TableRow
                                 key={acc.id}
                                 onClick={() => handleDrilldownAccount(acc)}
-                                className="h-12 hover:bg-blue-50/40 dark:hover:bg-blue-950/20 cursor-pointer group transition border-b border-slate-100 dark:border-slate-800/80"
+                                className="h-12 hover:bg-blue-50/40 dark:hover:bg-blue-950/20 cursor-pointer group transition-colors border-b border-slate-100 dark:border-slate-800/80 text-xs"
                                 title="Click to view detailed ledger statement"
                               >
-                                <TableCell className="text-xs font-mono font-semibold text-slate-700 dark:text-slate-300">
+                                <TableCell className="font-mono font-bold text-slate-700 dark:text-slate-300">
                                   {acc.accountCode}
                                 </TableCell>
-                                <TableCell className="text-xs font-medium text-slate-900 dark:text-slate-100 group-hover:text-blue-600 transition flex items-center justify-between">
+                                <TableCell className="font-semibold text-slate-900 dark:text-slate-100 group-hover:text-blue-600 transition flex items-center justify-between">
                                   <span>{acc.accountName}</span>
-                                  <Eye className="w-3 h-3 text-slate-400 opacity-0 group-hover:opacity-100 transition" />
+                                  <Eye className="w-3.5 h-3.5 text-slate-400 opacity-0 group-hover:opacity-100 transition" />
                                 </TableCell>
-                                <TableCell className="text-xs text-slate-500">
+                                <TableCell className="text-slate-500">
                                   {acc.accountSubType}
                                 </TableCell>
-                                <TableCell className="text-xs font-mono text-right text-slate-600 dark:text-slate-400 tabular-nums">
+                                <TableCell className="font-mono text-right text-slate-600 dark:text-slate-400 tabular-nums">
                                   {acc.openingBalance.toFixed(2)}
                                 </TableCell>
-                                <TableCell className="text-xs font-mono text-right text-slate-600 dark:text-slate-400 tabular-nums">
+                                <TableCell className="font-mono text-right text-slate-600 dark:text-slate-400 tabular-nums">
                                   {acc.totalDebit > 0 ? acc.totalDebit.toFixed(2) : "0.00"}
                                 </TableCell>
-                                <TableCell className="text-xs font-mono text-right text-slate-600 dark:text-slate-400 tabular-nums">
+                                <TableCell className="font-mono text-right text-slate-600 dark:text-slate-400 tabular-nums">
                                   {acc.totalCredit > 0 ? acc.totalCredit.toFixed(2) : "0.00"}
                                 </TableCell>
-                                <TableCell className="text-xs font-mono text-right font-bold text-slate-900 dark:text-slate-100 tabular-nums">
+                                <TableCell className="font-mono text-right font-bold text-slate-900 dark:text-slate-100 tabular-nums">
                                   AED {acc.closingBalance.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                 </TableCell>
                               </TableRow>
@@ -960,34 +926,34 @@ export function ReportsView() {
               })}
 
               {/* Total Balance Sheet Summary Equation */}
-              <Card className="p-4 rounded-xl bg-slate-900 text-white shadow-xs border border-slate-800">
+              <div className="p-6 rounded-2xl bg-slate-900 text-white shadow-2xs border border-slate-800">
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center">
                   <div>
-                    <p className="text-[11px] text-slate-400 uppercase font-semibold">Total Assets</p>
-                    <p className="text-lg font-bold font-mono text-emerald-400 tabular-nums">
+                    <p className="text-[11px] text-slate-400 uppercase font-bold tracking-wider">Total Assets</p>
+                    <p className="text-xl font-bold font-mono text-emerald-400 tabular-nums mt-1">
                       AED {balanceData.totals.totalAssets.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                     </p>
                   </div>
                   <div>
-                    <p className="text-[11px] text-slate-400 uppercase font-semibold">Total Liabilities</p>
-                    <p className="text-lg font-bold font-mono text-amber-400 tabular-nums">
+                    <p className="text-[11px] text-slate-400 uppercase font-bold tracking-wider">Total Liabilities</p>
+                    <p className="text-xl font-bold font-mono text-amber-400 tabular-nums mt-1">
                       AED {balanceData.totals.totalLiabilities.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                     </p>
                   </div>
                   <div>
-                    <p className="text-[11px] text-slate-400 uppercase font-semibold">Net Profit (Income - Expenses)</p>
-                    <p className="text-lg font-bold font-mono text-blue-400 tabular-nums">
+                    <p className="text-[11px] text-slate-400 uppercase font-bold tracking-wider">Net Profit (Income - Expenses)</p>
+                    <p className="text-xl font-bold font-mono text-blue-400 tabular-nums mt-1">
                       AED {balanceData.totals.netProfit.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                     </p>
                   </div>
                   <div>
-                    <p className="text-[11px] text-slate-400 uppercase font-semibold">Total Liabilities &amp; Equity</p>
-                    <p className="text-lg font-bold font-mono text-white tabular-nums">
+                    <p className="text-[11px] text-slate-400 uppercase font-bold tracking-wider">Total Liabilities &amp; Equity</p>
+                    <p className="text-xl font-bold font-mono text-white tabular-nums mt-1">
                       AED {balanceData.totals.totalLiabilitiesAndEquity.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                     </p>
                   </div>
                 </div>
-              </Card>
+              </div>
             </div>
           )}
         </TabsContent>
@@ -999,83 +965,83 @@ export function ReportsView() {
           {/* Summary Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
             {/* Total Cash In */}
-            <Card className="border border-slate-200/80 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 shadow-xs">
-              <CardHeader className="p-4 pb-1">
-                <CardDescription className="text-xs flex items-center justify-between font-semibold">
-                  <span className="text-slate-600 dark:text-slate-400 uppercase tracking-wider text-[11px]">Total Cash In</span>
-                  <div className="w-8 h-8 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 flex items-center justify-center">
-                    <ArrowDownLeft className="w-4 h-4" />
-                  </div>
-                </CardDescription>
-                <CardTitle className="text-2xl font-bold font-mono text-emerald-600 dark:text-emerald-400 tabular-nums mt-1">
+            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-5 shadow-2xs flex flex-col justify-between">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Total Cash In</span>
+                <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 flex items-center justify-center">
+                  <ArrowDownLeft className="w-5 h-5" />
+                </div>
+              </div>
+              <div className="mt-2">
+                <p className="text-2xl font-bold font-mono tracking-tight text-emerald-600 dark:text-emerald-400 tabular-nums">
                   AED {cashFlowData?.summary.totalCashIn.toLocaleString(undefined, { minimumFractionDigits: 2 }) || "0.00"}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-4 pt-1 text-[11px] text-muted-foreground">
-                Inflows entering workshop &bull; {cashFlowData?.summary.cashInCount || 0} transactions
-              </CardContent>
-            </Card>
+                </p>
+                <p className="text-xs text-slate-500 mt-1">
+                  Inflows entering workshop &bull; {cashFlowData?.summary.cashInCount || 0} transactions
+                </p>
+              </div>
+            </div>
 
             {/* Total Cash Out */}
-            <Card className="border border-slate-200/80 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 shadow-xs">
-              <CardHeader className="p-4 pb-1">
-                <CardDescription className="text-xs flex items-center justify-between font-semibold">
-                  <span className="text-slate-600 dark:text-slate-400 uppercase tracking-wider text-[11px]">Total Cash Out</span>
-                  <div className="w-8 h-8 rounded-lg bg-rose-50 dark:bg-rose-950/50 text-rose-600 flex items-center justify-center">
-                    <ArrowUpRight className="w-4 h-4" />
-                  </div>
-                </CardDescription>
-                <CardTitle className="text-2xl font-bold font-mono text-rose-600 dark:text-rose-400 tabular-nums mt-1">
+            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-5 shadow-2xs flex flex-col justify-between">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Total Cash Out</span>
+                <div className="w-10 h-10 rounded-xl bg-rose-50 dark:bg-rose-950/50 text-rose-600 flex items-center justify-center">
+                  <ArrowUpRight className="w-5 h-5" />
+                </div>
+              </div>
+              <div className="mt-2">
+                <p className="text-2xl font-bold font-mono tracking-tight text-rose-600 dark:text-rose-400 tabular-nums">
                   AED {cashFlowData?.summary.totalCashOut.toLocaleString(undefined, { minimumFractionDigits: 2 }) || "0.00"}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-4 pt-1 text-[11px] text-muted-foreground">
-                Outflows leaving workshop &bull; {cashFlowData?.summary.cashOutCount || 0} transactions
-              </CardContent>
-            </Card>
+                </p>
+                <p className="text-xs text-slate-500 mt-1">
+                  Outflows leaving workshop &bull; {cashFlowData?.summary.cashOutCount || 0} transactions
+                </p>
+              </div>
+            </div>
 
             {/* Net Cash Flow */}
-            <Card className="border border-slate-200/80 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 shadow-xs">
-              <CardHeader className="p-4 pb-1">
-                <CardDescription className="text-xs flex items-center justify-between font-semibold">
-                  <span className="text-slate-600 dark:text-slate-400 uppercase tracking-wider text-[11px]">Net Cash Flow</span>
-                  <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-950/50 text-blue-600 flex items-center justify-center">
-                    <Scale className="w-4 h-4" />
-                  </div>
-                </CardDescription>
-                <CardTitle className={`text-2xl font-bold font-mono tabular-nums mt-1 ${(cashFlowData?.summary.netCashFlow || 0) >= 0 ? "text-blue-700 dark:text-blue-400" : "text-rose-600"}`}>
+            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-5 shadow-2xs flex flex-col justify-between">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Net Cash Flow</span>
+                <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-950/50 text-blue-600 flex items-center justify-center">
+                  <Scale className="w-5 h-5" />
+                </div>
+              </div>
+              <div className="mt-2">
+                <p className={`text-2xl font-bold font-mono tracking-tight tabular-nums ${(cashFlowData?.summary.netCashFlow || 0) >= 0 ? "text-blue-700 dark:text-blue-400" : "text-rose-600"}`}>
                   {(cashFlowData?.summary.netCashFlow || 0) >= 0 ? "+" : ""}AED {cashFlowData?.summary.netCashFlow.toLocaleString(undefined, { minimumFractionDigits: 2 }) || "0.00"}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-4 pt-1 text-[11px] text-muted-foreground">
-                Formula: Cash In - Cash Out
-              </CardContent>
-            </Card>
+                </p>
+                <p className="text-xs text-slate-500 mt-1">
+                  Formula: Cash In - Cash Out
+                </p>
+              </div>
+            </div>
 
             {/* Internal Transfers */}
-            <Card className="border border-slate-200/80 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 shadow-xs">
-              <CardHeader className="p-4 pb-1">
-                <CardDescription className="text-xs flex items-center justify-between font-semibold">
-                  <span className="text-slate-600 dark:text-slate-400 uppercase tracking-wider text-[11px]">Internal Transfers</span>
-                  <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 flex items-center justify-center">
-                    <ArrowRightLeft className="w-4 h-4" />
-                  </div>
-                </CardDescription>
-                <CardTitle className="text-2xl font-bold font-mono text-slate-800 dark:text-slate-200 tabular-nums mt-1">
+            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-5 shadow-2xs flex flex-col justify-between">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Internal Transfers</span>
+                <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 flex items-center justify-center">
+                  <ArrowRightLeft className="w-5 h-5" />
+                </div>
+              </div>
+              <div className="mt-2">
+                <p className="text-2xl font-bold font-mono tracking-tight text-slate-800 dark:text-slate-200 tabular-nums">
                   AED {cashFlowData?.summary.totalInternalTransfers.toLocaleString(undefined, { minimumFractionDigits: 2 }) || "0.00"}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-4 pt-1 text-[11px] text-muted-foreground">
-                Excluded from Net &bull; {cashFlowData?.summary.internalTransferCount || 0} account movements
-              </CardContent>
-            </Card>
+                </p>
+                <p className="text-xs text-slate-500 mt-1">
+                  Excluded from Net &bull; {cashFlowData?.summary.internalTransferCount || 0} account movements
+                </p>
+              </div>
+            </div>
           </div>
 
           {/* Filter Bar */}
-          <Card className="p-3.5 rounded-xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs print:hidden space-y-3">
+          <div className="p-4 rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xs print:hidden space-y-3">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="text-xs font-semibold text-muted-foreground mr-1 flex items-center gap-1 text-[11px]">
+                <span className="text-xs font-bold text-slate-500 mr-1 flex items-center gap-1 text-[11px] uppercase tracking-wider">
                   <Filter className="w-3.5 h-3.5" /> Date:
                 </span>
                 {[
@@ -1091,10 +1057,10 @@ export function ReportsView() {
                     variant={cfDatePreset === p.id ? "default" : "outline"}
                     size="sm"
                     onClick={() => setCfDatePreset(p.id as any)}
-                    className={`text-xs h-8 px-3 rounded-lg font-medium ${
+                    className={`text-xs h-10 px-3.5 rounded-xl font-semibold transition-colors ${
                       cfDatePreset === p.id
-                        ? "bg-blue-600 hover:bg-blue-700 text-white shadow-xs"
-                        : "bg-white dark:bg-slate-900 border-slate-200/80 text-slate-700 dark:text-slate-300 hover:bg-slate-50"
+                        ? "bg-blue-600 hover:bg-blue-700 text-white shadow-2xs"
+                        : "bg-white dark:bg-slate-900 border-slate-200 text-slate-700 dark:text-slate-300 hover:bg-slate-50 shadow-2xs"
                     }`}
                   >
                     {p.label}
@@ -1102,16 +1068,16 @@ export function ReportsView() {
                 ))}
               </div>
 
-              <div className="text-xs text-muted-foreground font-mono bg-slate-50 dark:bg-slate-800/60 px-2.5 py-1 rounded-lg border border-slate-200/60">
+              <div className="text-xs text-slate-500 font-mono bg-slate-50 dark:bg-slate-800/60 px-3 py-1.5 rounded-xl border border-slate-200/80">
                 {cashFlowData?.dateRange.startDate} to {cashFlowData?.dateRange.endDate}
               </div>
             </div>
 
             {/* Custom Date Pickers & Dropdown Filters */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2.5 pt-2 border-t border-slate-100 dark:border-slate-800">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 pt-2.5 border-t border-slate-100 dark:border-slate-800">
               {/* Start Date */}
               <div className="space-y-1">
-                <Label className="text-[10px] text-muted-foreground font-semibold">Start Date</Label>
+                <Label className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Start Date</Label>
                 <Input
                   type="date"
                   value={cfStartDate}
@@ -1120,13 +1086,13 @@ export function ReportsView() {
                     setCfStartDate(e.target.value);
                     if (cfDatePreset !== "custom") setCfDatePreset("custom");
                   }}
-                  className="text-xs h-8 rounded-lg border-slate-200/80 bg-slate-50/50 dark:bg-slate-800/40"
+                  className="text-xs h-10 rounded-xl border-slate-200 bg-slate-50/50 dark:bg-slate-800/40"
                 />
               </div>
 
               {/* End Date */}
               <div className="space-y-1">
-                <Label className="text-[10px] text-muted-foreground font-semibold">End Date</Label>
+                <Label className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">End Date</Label>
                 <Input
                   type="date"
                   value={cfEndDate}
@@ -1135,18 +1101,18 @@ export function ReportsView() {
                     setCfEndDate(e.target.value);
                     if (cfDatePreset !== "custom") setCfDatePreset("custom");
                   }}
-                  className="text-xs h-8 rounded-lg border-slate-200/80 bg-slate-50/50 dark:bg-slate-800/40"
+                  className="text-xs h-10 rounded-xl border-slate-200 bg-slate-50/50 dark:bg-slate-800/40"
                 />
               </div>
 
               {/* Cash Flow Type */}
               <div className="space-y-1">
-                <Label className="text-[10px] text-muted-foreground font-semibold">Cash Flow Type</Label>
+                <Label className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Cash Flow Type</Label>
                 <Select value={cfTypeFilter} onValueChange={(val) => { if (val) setCfTypeFilter(val); }}>
-                  <SelectTrigger className="text-xs h-8 rounded-lg border-slate-200/80 bg-slate-50/50 dark:bg-slate-800/40">
+                  <SelectTrigger className="text-xs h-10 rounded-xl border-slate-200 bg-slate-50/50 dark:bg-slate-800/40 font-medium">
                     <SelectValue placeholder="All Flow Types" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="rounded-xl border-slate-200 shadow-lg">
                     <SelectItem value="all" className="text-xs">All Types</SelectItem>
                     <SelectItem value="cash_in" className="text-xs">Cash In (Inflows)</SelectItem>
                     <SelectItem value="cash_out" className="text-xs">Cash Out (Outflows)</SelectItem>
@@ -1157,12 +1123,12 @@ export function ReportsView() {
 
               {/* Account Filter */}
               <div className="space-y-1">
-                <Label className="text-[10px] text-muted-foreground font-semibold">Account</Label>
+                <Label className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Account</Label>
                 <Select value={cfAccountFilter} onValueChange={(val) => { if (val) setCfAccountFilter(val); }}>
-                  <SelectTrigger className="text-xs h-8 rounded-lg border-slate-200/80 bg-slate-50/50 dark:bg-slate-800/40">
+                  <SelectTrigger className="text-xs h-10 rounded-xl border-slate-200 bg-slate-50/50 dark:bg-slate-800/40 font-medium">
                     <SelectValue placeholder="All Accounts" />
                   </SelectTrigger>
-                  <SelectContent className="max-h-56">
+                  <SelectContent className="max-h-56 rounded-xl border-slate-200 shadow-lg">
                     <SelectItem value="all" className="text-xs">All Accounts</SelectItem>
                     {cfAccountsList.map((acc) => (
                       <SelectItem key={acc.id} value={acc.id} className="text-xs">
@@ -1176,24 +1142,24 @@ export function ReportsView() {
 
             {/* Search Bar */}
             <div className="relative pt-1">
-              <Search className="absolute left-2.5 top-3.5 h-3.5 w-3.5 text-muted-foreground" />
+              <Search className="absolute left-3 top-4 h-4 w-4 text-slate-400" />
               <Input
                 placeholder="Search by Transaction No, Reference, Description, Account..."
                 value={cfSearchQuery}
                 onChange={(e) => setCfSearchQuery(e.target.value)}
-                className="pl-8 text-xs h-8 rounded-lg border-slate-200/80 bg-slate-50/50 dark:bg-slate-800/40"
+                className="pl-9 text-xs h-10 rounded-xl border-slate-200 bg-slate-50/50 dark:bg-slate-800/40"
               />
             </div>
-          </Card>
+          </div>
 
           {/* Cash Flow Table */}
-          <div className="border border-slate-200/80 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 shadow-xs overflow-hidden">
-            <div className="p-3.5 border-b border-slate-200/80 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/60 flex items-center justify-between">
-              <div className="text-xs font-semibold text-slate-800 dark:text-slate-200">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-2xs overflow-hidden">
+            <div className="p-4 border-b border-slate-200/80 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/60 flex items-center justify-between">
+              <div className="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider">
                 Cash Flow Records ({cashFlowData?.rows.length || 0})
               </div>
-              <div className="text-xs text-muted-foreground font-mono">
-                Operating Net: <strong className={(cashFlowData?.summary.netCashFlow || 0) >= 0 ? "text-emerald-600" : "text-rose-600"}>
+              <div className="text-xs text-slate-500 font-mono">
+                Operating Net: <strong className={`font-bold ${(cashFlowData?.summary.netCashFlow || 0) >= 0 ? "text-emerald-600" : "text-rose-600"}`}>
                   AED {cashFlowData?.summary.netCashFlow.toLocaleString(undefined, { minimumFractionDigits: 2 }) || "0.00"}
                 </strong>
               </div>
@@ -1202,31 +1168,33 @@ export function ReportsView() {
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
-                  <TableRow className="bg-slate-50/40 dark:bg-slate-800/40 border-b border-slate-200/80 h-10">
-                    <TableHead className="text-xs font-semibold w-[95px]">Date</TableHead>
-                    <TableHead className="text-xs font-semibold w-[120px]">Transaction No</TableHead>
-                    <TableHead className="text-xs font-semibold w-[120px]">Cash Flow Type</TableHead>
-                    <TableHead className="text-xs font-semibold min-w-[150px]">From Account</TableHead>
-                    <TableHead className="text-xs font-semibold min-w-[150px]">To Account</TableHead>
-                    <TableHead className="text-xs font-semibold min-w-[180px]">Description</TableHead>
-                    <TableHead className="text-xs font-semibold text-right w-[110px]">Amount (AED)</TableHead>
-                    <TableHead className="text-xs font-semibold w-[100px]">Reference</TableHead>
-                    <TableHead className="text-xs font-semibold w-[95px]">Created By</TableHead>
+                  <TableRow className="bg-slate-50/80 hover:bg-slate-50/80 dark:bg-slate-800/40 border-b border-slate-200/80 h-11">
+                    <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-wider w-[100px]">Date</TableHead>
+                    <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-wider w-[130px]">Transaction No</TableHead>
+                    <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-wider w-[130px]">Cash Flow Type</TableHead>
+                    <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-wider min-w-[150px]">From Account</TableHead>
+                    <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-wider min-w-[150px]">To Account</TableHead>
+                    <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-wider min-w-[180px]">Description</TableHead>
+                    <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-wider text-right w-[120px]">Amount (AED)</TableHead>
+                    <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-wider w-[100px]">Reference</TableHead>
+                    <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-wider w-[100px]">Created By</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {cashFlowLoading ? (
                     <TableRow>
-                      <TableCell colSpan={9} className="text-center py-14 text-xs text-muted-foreground">
+                      <TableCell colSpan={9} className="text-center py-14 text-xs text-slate-500">
                         <RefreshCw className="w-5 h-5 animate-spin mx-auto mb-2 text-blue-600" />
                         Loading cash flow report...
                       </TableCell>
                     </TableRow>
                   ) : !cashFlowData || cashFlowData.rows.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={9} className="text-center py-14 text-xs text-muted-foreground">
-                        <ArrowRightLeft className="w-8 h-8 mx-auto text-slate-300 dark:text-slate-700 mb-2" />
-                        <p className="font-semibold text-slate-700 dark:text-slate-300">No cash flow transactions found</p>
+                      <TableCell colSpan={9} className="text-center py-12 text-xs text-slate-500">
+                        <div className="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center mx-auto mb-2 text-slate-400">
+                          <ArrowRightLeft className="w-6 h-6" />
+                        </div>
+                        <p className="font-bold text-slate-700 dark:text-slate-300">No cash flow transactions found</p>
                         <p className="text-[11px] text-slate-400 mt-0.5">
                           Try adjusting the date preset, cash flow type, or search filter.
                         </p>
@@ -1234,42 +1202,42 @@ export function ReportsView() {
                     </TableRow>
                   ) : (
                     cashFlowData.rows.map((row) => (
-                      <TableRow key={row.id} className="h-12 hover:bg-slate-50/60 dark:hover:bg-slate-800/40 border-b border-slate-100 dark:border-slate-800/80">
-                        <TableCell className="text-xs font-mono text-muted-foreground">{row.date}</TableCell>
-                        <TableCell className="text-xs font-mono font-bold text-blue-600 dark:text-blue-400">
+                      <TableRow key={row.id} className="h-12 hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition-colors border-b border-slate-100 dark:border-slate-800/80 text-xs">
+                        <TableCell className="font-mono text-slate-500">{row.date}</TableCell>
+                        <TableCell className="font-mono font-bold text-blue-600 dark:text-blue-400">
                           {row.transactionNumber}
                         </TableCell>
                         <TableCell>
                           {row.cashFlowType === "cash_in" ? (
-                            <Badge variant="outline" className="text-[10px] font-semibold border-emerald-300 text-emerald-700 bg-emerald-50 dark:bg-emerald-950/40">
+                            <Badge variant="outline" className="text-[10px] font-bold border-emerald-300 text-emerald-700 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-lg">
                               Cash In
                             </Badge>
                           ) : row.cashFlowType === "cash_out" ? (
-                            <Badge variant="outline" className="text-[10px] font-semibold border-rose-300 text-rose-700 bg-rose-50 dark:bg-rose-950/40">
+                            <Badge variant="outline" className="text-[10px] font-bold border-rose-300 text-rose-700 bg-rose-50 dark:bg-rose-950/40 px-2 py-0.5 rounded-lg">
                               Cash Out
                             </Badge>
                           ) : (
-                            <Badge variant="outline" className="text-[10px] font-semibold border-blue-300 text-blue-700 bg-blue-50 dark:bg-blue-950/40">
+                            <Badge variant="outline" className="text-[10px] font-bold border-blue-300 text-blue-700 bg-blue-50 dark:bg-blue-950/40 px-2 py-0.5 rounded-lg">
                               Internal Transfer
                             </Badge>
                           )}
                         </TableCell>
-                        <TableCell className="text-xs">
+                        <TableCell>
                           <span className="font-mono text-[10px] text-slate-400 mr-1">{row.fromAccount.code}</span>
-                          <span className="font-medium text-slate-900 dark:text-slate-100">{row.fromAccount.name}</span>
+                          <span className="font-semibold text-slate-900 dark:text-slate-100">{row.fromAccount.name}</span>
                         </TableCell>
-                        <TableCell className="text-xs">
+                        <TableCell>
                           <span className="font-mono text-[10px] text-slate-400 mr-1">{row.toAccount.code}</span>
-                          <span className="font-medium text-slate-900 dark:text-slate-100">{row.toAccount.name}</span>
+                          <span className="font-semibold text-slate-900 dark:text-slate-100">{row.toAccount.name}</span>
                         </TableCell>
-                        <TableCell className="text-xs text-slate-700 dark:text-slate-300 max-w-[220px] truncate" title={row.description}>
+                        <TableCell className="text-slate-700 dark:text-slate-300 max-w-[220px] truncate" title={row.description}>
                           {row.description}
                         </TableCell>
-                        <TableCell className="text-right text-xs font-mono font-bold text-slate-900 dark:text-slate-100 tabular-nums">
+                        <TableCell className="text-right font-mono font-bold text-slate-900 dark:text-slate-100 tabular-nums">
                           {row.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                         </TableCell>
-                        <TableCell className="text-xs font-mono text-muted-foreground">{row.reference || "—"}</TableCell>
-                        <TableCell className="text-xs text-muted-foreground truncate max-w-[95px]">{row.createdBy}</TableCell>
+                        <TableCell className="font-mono text-slate-500">{row.reference || "—"}</TableCell>
+                        <TableCell className="text-slate-500 truncate max-w-[95px]">{row.createdBy}</TableCell>
                       </TableRow>
                     ))
                   )}
@@ -1282,24 +1250,24 @@ export function ReportsView() {
 
       {/* ─── STATEMENT DIALOG (DRILL DOWN) ─────────────────────────────────── */}
       <Dialog open={statementDialogOpen} onOpenChange={setStatementDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-6 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-xl bg-white dark:bg-slate-950">
           {activeStatement && (
             <div className="space-y-4">
-              <div className="flex items-start justify-between border-b pb-3">
+              <div className="flex items-start justify-between border-b border-slate-100 pb-3">
                 <div>
-                  <DialogTitle className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                  <DialogTitle className="text-lg font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
                     <span>{activeStatement.account.account_code} - {activeStatement.account.account_name}</span>
-                    <Badge variant="outline" className="text-xs uppercase font-normal">
+                    <Badge variant="outline" className="text-xs uppercase font-bold px-2 py-0.5 rounded-lg">
                       {activeStatement.account.account_type}
                     </Badge>
                   </DialogTitle>
-                  <DialogDescription className="text-xs mt-0.5">
+                  <DialogDescription className="text-xs text-slate-500 mt-0.5">
                     Sub-type: {activeStatement.account.account_sub_type} &bull; Generated from General Ledger
                   </DialogDescription>
                 </div>
                 <div className="text-right">
-                  <p className="text-xs text-muted-foreground">Current Balance</p>
-                  <p className="text-lg font-bold font-mono text-blue-700">
+                  <p className="text-xs text-slate-500 font-semibold uppercase tracking-wider">Current Balance</p>
+                  <p className="text-xl font-bold font-mono text-blue-700 dark:text-blue-400 tabular-nums">
                     AED {activeStatement.closing_balance.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                   </p>
                 </div>
@@ -1307,58 +1275,58 @@ export function ReportsView() {
 
               {/* Statement summary cards */}
               <div className="grid grid-cols-3 gap-3">
-                <div className="p-3 bg-slate-50 rounded-lg border">
-                  <p className="text-xs text-muted-foreground">Opening Balance</p>
-                  <p className="text-sm font-bold font-mono">AED {activeStatement.opening_balance.toFixed(2)}</p>
+                <div className="p-4 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200/80">
+                  <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">Opening Balance</p>
+                  <p className="text-base font-bold font-mono text-slate-900 dark:text-slate-100 tabular-nums mt-1">AED {activeStatement.opening_balance.toFixed(2)}</p>
                 </div>
-                <div className="p-3 bg-slate-50 rounded-lg border">
-                  <p className="text-xs text-muted-foreground">Total Debits</p>
-                  <p className="text-sm font-bold font-mono text-emerald-600">+AED {activeStatement.total_debit.toFixed(2)}</p>
+                <div className="p-4 bg-emerald-50/50 dark:bg-emerald-950/20 rounded-xl border border-emerald-200/80">
+                  <p className="text-xs text-emerald-700 dark:text-emerald-400 font-bold uppercase tracking-wider">Total Debits</p>
+                  <p className="text-base font-bold font-mono text-emerald-700 dark:text-emerald-400 tabular-nums mt-1">+AED {activeStatement.total_debit.toFixed(2)}</p>
                 </div>
-                <div className="p-3 bg-slate-50 rounded-lg border">
-                  <p className="text-xs text-muted-foreground">Total Credits</p>
-                  <p className="text-sm font-bold font-mono text-rose-600">-AED {activeStatement.total_credit.toFixed(2)}</p>
+                <div className="p-4 bg-rose-50/50 dark:bg-rose-950/20 rounded-xl border border-rose-200/80">
+                  <p className="text-xs text-rose-700 dark:text-rose-400 font-bold uppercase tracking-wider">Total Credits</p>
+                  <p className="text-base font-bold font-mono text-rose-700 dark:text-rose-400 tabular-nums mt-1">-AED {activeStatement.total_credit.toFixed(2)}</p>
                 </div>
               </div>
 
               {/* Statement Ledger lines */}
-              <div className="border rounded-lg overflow-hidden">
+              <div className="border border-slate-200/80 rounded-xl overflow-hidden">
                 <Table>
-                  <TableHeader className="bg-slate-50">
-                    <TableRow>
-                      <TableHead className="text-xs font-semibold w-[90px]">Date</TableHead>
-                      <TableHead className="text-xs font-semibold w-[110px]">Txn No</TableHead>
-                      <TableHead className="text-xs font-semibold">Description</TableHead>
-                      <TableHead className="text-xs font-semibold text-right w-[95px]">Debit (AED)</TableHead>
-                      <TableHead className="text-xs font-semibold text-right w-[95px]">Credit (AED)</TableHead>
-                      <TableHead className="text-xs font-semibold text-right w-[110px]">Balance (AED)</TableHead>
+                  <TableHeader className="bg-slate-50/80">
+                    <TableRow className="h-10">
+                      <TableHead className="text-xs font-bold text-slate-500 uppercase tracking-wider w-[100px]">Date</TableHead>
+                      <TableHead className="text-xs font-bold text-slate-500 uppercase tracking-wider w-[120px]">Txn No</TableHead>
+                      <TableHead className="text-xs font-bold text-slate-500 uppercase tracking-wider">Description</TableHead>
+                      <TableHead className="text-xs font-bold text-slate-500 uppercase tracking-wider text-right w-[110px]">Debit (AED)</TableHead>
+                      <TableHead className="text-xs font-bold text-slate-500 uppercase tracking-wider text-right w-[110px]">Credit (AED)</TableHead>
+                      <TableHead className="text-xs font-bold text-slate-500 uppercase tracking-wider text-right w-[130px]">Balance (AED)</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {activeStatement.lines.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={6} className="text-center py-8 text-xs text-muted-foreground">
+                        <TableCell colSpan={6} className="text-center py-8 text-xs text-slate-500">
                           No transactions found for this account.
                         </TableCell>
                       </TableRow>
                     ) : (
                       activeStatement.lines.map((line, idx) => (
-                        <TableRow key={idx}>
-                          <TableCell className="text-xs font-mono">{line.date}</TableCell>
-                          <TableCell className="text-xs font-mono font-medium text-blue-600">{line.transaction_number}</TableCell>
-                          <TableCell className="text-xs">
-                            <span className="font-medium">{line.description}</span>
+                        <TableRow key={idx} className="h-11 border-b border-slate-100 text-xs">
+                          <TableCell className="font-mono text-slate-600">{line.date}</TableCell>
+                          <TableCell className="font-mono font-bold text-blue-600">{line.transaction_number}</TableCell>
+                          <TableCell>
+                            <span className="font-semibold text-slate-900">{line.description}</span>
                             {line.reference_id && (
-                              <span className="ml-1 text-muted-foreground font-mono text-[10px]">({line.reference_id})</span>
+                              <span className="ml-1.5 text-slate-400 font-mono text-[10px]">({line.reference_id})</span>
                             )}
                           </TableCell>
-                          <TableCell className="text-xs font-mono text-right font-medium">
+                          <TableCell className="font-mono text-right font-medium tabular-nums">
                             {line.debit > 0 ? line.debit.toFixed(2) : "—"}
                           </TableCell>
-                          <TableCell className="text-xs font-mono text-right font-medium">
+                          <TableCell className="font-mono text-right font-medium tabular-nums">
                             {line.credit > 0 ? line.credit.toFixed(2) : "—"}
                           </TableCell>
-                          <TableCell className="text-xs font-mono text-right font-bold text-slate-800">
+                          <TableCell className="font-mono text-right font-bold text-slate-900 tabular-nums">
                             {line.running_balance.toFixed(2)}
                           </TableCell>
                         </TableRow>
@@ -1368,11 +1336,11 @@ export function ReportsView() {
                 </Table>
               </div>
 
-              <DialogFooter className="pt-2">
-                <Button variant="outline" size="sm" onClick={() => setStatementDialogOpen(false)}>
+              <DialogFooter className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
+                <Button variant="outline" size="sm" onClick={() => setStatementDialogOpen(false)} className="h-10 px-4 text-xs font-semibold rounded-xl border-slate-200">
                   Close
                 </Button>
-                <Button size="sm" onClick={handlePrint} className="gap-1.5 bg-blue-600 text-white">
+                <Button size="sm" onClick={handlePrint} className="h-10 px-4 gap-2 text-xs font-semibold rounded-xl bg-blue-600 hover:bg-blue-700 text-white shadow-2xs">
                   <Printer className="w-3.5 h-3.5" />
                   Print Statement
                 </Button>
@@ -1384,40 +1352,40 @@ export function ReportsView() {
 
       {/* ─── MODAL: RESET ACCOUNTING DATA CONFIRMATION ──────────────────────── */}
       <Dialog open={resetAccountingOpen} onOpenChange={setResetAccountingOpen}>
-        <DialogContent className="max-w-md p-6">
+        <DialogContent className="max-w-md p-6 rounded-2xl border border-slate-200/90 shadow-xl bg-white dark:bg-slate-950">
           <div className="space-y-4">
             <div className="flex items-center gap-3 text-rose-600">
-              <div className="p-2.5 bg-rose-100 dark:bg-rose-950/60 rounded-full">
+              <div className="p-3 bg-rose-100 dark:bg-rose-950/60 rounded-xl">
                 <AlertTriangle className="w-6 h-6 text-rose-600" />
               </div>
               <div>
                 <DialogTitle className="text-base font-bold text-slate-900 dark:text-slate-100">
                   Reset ATIQ JEHAN Financial Reports?
                 </DialogTitle>
-                <DialogDescription className="text-xs text-muted-foreground mt-0.5">
+                <DialogDescription className="text-xs text-slate-500 mt-0.5">
                   Clear test data and reset financial registers to clean zero
                 </DialogDescription>
               </div>
             </div>
 
-            <div className="p-3.5 bg-slate-50 dark:bg-slate-900 rounded-lg border text-xs space-y-2">
+            <div className="p-3.5 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200/80 text-xs space-y-2">
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Target Workspace:</span>
-                <span className="font-semibold text-slate-900 dark:text-slate-100">ATIQ JEHAN AUTO REPAIR</span>
+                <span className="text-slate-500">Target Workspace:</span>
+                <span className="font-bold text-slate-900 dark:text-slate-100">ATIQ JEHAN AUTO REPAIR</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Scope:</span>
-                <span className="text-slate-700 dark:text-slate-300">Balance Summary, Cash Flow, General Ledger</span>
+                <span className="text-slate-500">Scope:</span>
+                <span className="text-slate-700 dark:text-slate-300 font-medium">Balance Summary, Cash Flow, General Ledger</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Other Workspaces:</span>
-                <span className="text-emerald-600 font-medium">100% Protected & Isolated</span>
+                <span className="text-slate-500">Other Workspaces:</span>
+                <span className="text-emerald-600 font-bold">100% Protected & Isolated</span>
               </div>
             </div>
 
-            <div className="p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 rounded-lg text-xs text-amber-800 dark:text-amber-300 space-y-1">
-              <div className="font-semibold flex items-center gap-1.5">
-                <AlertTriangle className="w-3.5 h-3.5" />
+            <div className="p-3.5 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 rounded-xl text-xs text-amber-800 dark:text-amber-300 space-y-1.5">
+              <div className="font-bold flex items-center gap-1.5">
+                <AlertTriangle className="w-4 h-4 text-amber-600" />
                 What will happen:
               </div>
               <ul className="list-disc list-inside text-[11px] space-y-1 pl-1">
@@ -1435,6 +1403,7 @@ export function ReportsView() {
                 size="sm"
                 onClick={() => setResetAccountingOpen(false)}
                 disabled={isResettingAccounting}
+                className="h-10 px-4 text-xs font-semibold rounded-xl border-slate-200"
               >
                 Cancel
               </Button>
@@ -1444,7 +1413,7 @@ export function ReportsView() {
                 size="sm"
                 onClick={handleConfirmResetAccounting}
                 disabled={isResettingAccounting}
-                className="bg-rose-600 hover:bg-rose-700 text-white font-medium"
+                className="h-10 px-4 text-xs font-semibold rounded-xl bg-rose-600 hover:bg-rose-700 text-white shadow-2xs"
               >
                 {isResettingAccounting ? "Resetting..." : "Reset ATIQ JEHAN Reports"}
               </Button>

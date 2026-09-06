@@ -308,28 +308,28 @@ export function CustomerDetailView({ id }: CustomerDetailViewProps) {
           { label: customer.name },
         ]}
       >
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2.5">
           {!isViewer && (
             <>
               <Button
                 variant="outline"
                 onClick={openEditCustomer}
-                className="h-9 px-3.5 text-xs font-semibold rounded-lg border-border hover:bg-muted/50"
+                className="h-10 px-3.5 text-xs font-semibold rounded-xl border-slate-200 bg-white hover:bg-slate-50 text-slate-700 shadow-2xs gap-1.5"
               >
-                <Pencil className="mr-1.5 h-3.5 w-3.5 text-muted-foreground" /> Edit Profile
+                <Pencil className="h-3.5 w-3.5 text-slate-500" /> Edit Profile
               </Button>
               <Button
                 onClick={openAddVehicle}
                 variant="outline"
-                className="h-9 px-3.5 text-xs font-semibold rounded-lg border-border hover:bg-muted/50"
+                className="h-10 px-3.5 text-xs font-semibold rounded-xl border-slate-200 bg-white hover:bg-slate-50 text-slate-700 shadow-2xs gap-1.5"
               >
-                <Plus className="mr-1.5 h-3.5 w-3.5 text-muted-foreground" /> Add Vehicle
+                <Plus className="h-3.5 w-3.5 text-slate-500" /> Add Vehicle
               </Button>
               <Button
                 render={<Link href={`/job-cards/new?customer_id=${id}`} />}
-                className="h-9 px-4 text-xs font-semibold rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs"
+                className="h-10 px-4 text-xs font-semibold rounded-xl bg-blue-600 hover:bg-blue-700 text-white shadow-xs gap-1.5 transition-colors"
               >
-                <Wrench className="mr-1.5 h-3.5 w-3.5" /> Create Job Card
+                <Wrench className="h-4 w-4" /> Create Job Card
               </Button>
             </>
           )}
@@ -339,108 +339,104 @@ export function CustomerDetailView({ id }: CustomerDetailViewProps) {
       {/* Customer KPI / Contact Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Phone */}
-        <Card className="border border-border/80 shadow-xs bg-card rounded-xl">
-          <CardContent className="p-4 flex items-center justify-between">
-            <div>
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Phone Number</p>
-              <p className="text-base font-bold text-foreground font-mono mt-1">{customer.mobile || "—"}</p>
-              <p className="text-[11px] text-muted-foreground mt-0.5">Primary customer contact</p>
+        <div className="bg-white rounded-2xl border border-slate-200/90 p-5 shadow-2xs hover:shadow-xs transition-all flex flex-col justify-between">
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Phone Number</p>
+            <div className="h-8 w-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+              <Phone className="h-4 w-4" />
             </div>
-            <div className="h-10 w-10 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
-              <Phone className="h-5 w-5" />
-            </div>
-          </CardContent>
-        </Card>
+          </div>
+          <div className="mt-3">
+            <h3 className="text-lg font-bold text-slate-900 font-mono tracking-tight">{customer.mobile || "—"}</h3>
+            <p className="text-[11px] text-slate-400 font-medium mt-1">Primary customer contact</p>
+          </div>
+        </div>
 
         {/* Email */}
-        <Card className="border border-border/80 shadow-xs bg-card rounded-xl">
-          <CardContent className="p-4 flex items-center justify-between">
-            <div>
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Email Address</p>
-              <p className="text-sm font-semibold text-foreground truncate max-w-[160px] mt-1">{customer.email || "—"}</p>
-              <p className="text-[11px] text-muted-foreground mt-0.5">Electronic communications</p>
+        <div className="bg-white rounded-2xl border border-slate-200/90 p-5 shadow-2xs hover:shadow-xs transition-all flex flex-col justify-between">
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Email Address</p>
+            <div className="h-8 w-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+              <Mail className="h-4 w-4" />
             </div>
-            <div className="h-10 w-10 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
-              <Mail className="h-5 w-5" />
-            </div>
-          </CardContent>
-        </Card>
+          </div>
+          <div className="mt-3">
+            <h3 className="text-sm font-bold text-slate-900 truncate max-w-[180px]">{customer.email || "—"}</h3>
+            <p className="text-[11px] text-slate-400 font-medium mt-1">Electronic communications</p>
+          </div>
+        </div>
 
         {/* Customer Since */}
-        <Card className="border border-border/80 shadow-xs bg-card rounded-xl">
-          <CardContent className="p-4 flex items-center justify-between">
-            <div>
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Customer Since</p>
-              <p className="text-sm font-bold text-foreground mt-1">{formatDate(customer.created_at)}</p>
-              <p className="text-[11px] text-muted-foreground mt-0.5">Registration date</p>
+        <div className="bg-white rounded-2xl border border-slate-200/90 p-5 shadow-2xs hover:shadow-xs transition-all flex flex-col justify-between">
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Customer Since</p>
+            <div className="h-8 w-8 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center shrink-0">
+              <Calendar className="h-4 w-4" />
             </div>
-            <div className="h-10 w-10 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 flex items-center justify-center shrink-0">
-              <Calendar className="h-5 w-5" />
-            </div>
-          </CardContent>
-        </Card>
+          </div>
+          <div className="mt-3">
+            <h3 className="text-sm font-bold text-slate-900">{formatDate(customer.created_at)}</h3>
+            <p className="text-[11px] text-slate-400 font-medium mt-1">Registration date</p>
+          </div>
+        </div>
 
         {/* Outstanding Balance */}
-        <Card className="border border-border/80 shadow-xs bg-card rounded-xl">
-          <CardContent className="p-4 flex items-center justify-between">
-            <div>
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Outstanding Balance</p>
-              <p className={`text-base font-bold font-mono mt-1 ${customer.outstanding_balance > 0 ? "text-amber-600 dark:text-amber-400" : "text-foreground"}`}>
-                {formatCurrency(customer.outstanding_balance || 0)}
-              </p>
-              <p className="text-[11px] text-muted-foreground mt-0.5">Unsettled invoices</p>
-            </div>
-            <div className={`h-10 w-10 rounded-xl flex items-center justify-center shrink-0 ${
-              customer.outstanding_balance > 0
-                ? "bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400"
-                : "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400"
+        <div className="bg-white rounded-2xl border border-slate-200/90 p-5 shadow-2xs hover:shadow-xs transition-all flex flex-col justify-between">
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Outstanding Balance</p>
+            <div className={`h-8 w-8 rounded-lg flex items-center justify-center shrink-0 ${
+              Number(customer.outstanding_balance) > 0 ? "bg-red-50 text-red-600" : "bg-emerald-50 text-emerald-600"
             }`}>
-              <DollarSign className="h-5 w-5" />
+              <DollarSign className="h-4 w-4" />
             </div>
-          </CardContent>
-        </Card>
+          </div>
+          <div className="mt-3">
+            <h3 className={`text-xl font-bold font-mono tracking-tight ${Number(customer.outstanding_balance) > 0 ? "text-red-600" : "text-slate-900"}`}>
+              {formatCurrency(customer.outstanding_balance || 0)}
+            </h3>
+            <p className="text-[11px] text-slate-400 font-medium mt-1">Unsettled invoices</p>
+          </div>
+        </div>
       </div>
 
       {/* Customer Address & Company Card */}
-      <Card className="border border-border/80 shadow-xs bg-card rounded-xl">
-        <CardContent className="p-5 grid grid-cols-1 md:grid-cols-3 gap-6 text-xs">
-          <div>
-            <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Address / Emirate</span>
-            <p className="font-medium text-foreground text-xs mt-1.5 leading-relaxed">{customer.address || "No address recorded on profile"}</p>
+      <div className="bg-white rounded-2xl border border-slate-200/90 p-5 shadow-2xs grid grid-cols-1 md:grid-cols-3 gap-6 text-xs">
+        <div>
+          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Address / Emirate</span>
+          <p className="font-semibold text-slate-800 text-xs mt-1.5 leading-relaxed">{customer.address || "No address recorded on profile"}</p>
+        </div>
+        <div>
+          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Company &amp; Tax Info</span>
+          <div className="mt-1.5 space-y-1">
+            {customer.company_name ? (
+              <p className="font-bold text-slate-900 text-xs">{customer.company_name}</p>
+            ) : (
+              <p className="text-slate-500 text-xs">Individual Account (No Company)</p>
+            )}
+            {customer.trn_number ? (
+              <p className="font-mono text-xs font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-lg border border-blue-200 inline-block">
+                TRN: {customer.trn_number}
+              </p>
+            ) : (
+              <p className="text-slate-400 text-[11px]">No TRN registered</p>
+            )}
           </div>
-          <div>
-            <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Company &amp; Tax Info</span>
-            <div className="mt-1.5 space-y-1">
-              {customer.company_name ? (
-                <p className="font-semibold text-foreground text-xs">{customer.company_name}</p>
-              ) : (
-                <p className="text-muted-foreground text-xs">Individual Account (No Company)</p>
-              )}
-              {customer.trn_number ? (
-                <p className="font-mono text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded border border-primary/20 inline-block">
-                  TRN: {customer.trn_number}
-                </p>
-              ) : (
-                <p className="text-muted-foreground text-[11px]">No TRN registered</p>
-              )}
-            </div>
-          </div>
-          <div>
-            <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Customer Notes</span>
-            <p className="font-medium text-foreground text-xs mt-1.5 leading-relaxed">{customer.notes || "No special account notes recorded."}</p>
-          </div>
-        </CardContent>
-      </Card>
+        </div>
+        <div>
+          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Customer Notes</span>
+          <p className="font-medium text-slate-600 text-xs mt-1.5 leading-relaxed">{customer.notes || "No special account notes recorded."}</p>
+        </div>
+      </div>
 
       {/* VEHICLES SECTION */}
-      <Card className="border border-border/80 shadow-xs bg-card overflow-hidden rounded-xl">
-        <CardHeader className="flex flex-row items-center justify-between border-b border-border bg-muted/40 px-6 py-3.5">
+      <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs overflow-hidden">
+        <div className="flex flex-row items-center justify-between border-b border-slate-100 bg-slate-50/50 px-6 py-4">
           <div>
-            <CardTitle className="text-sm font-bold text-foreground flex items-center gap-2">
-              <Car className="h-4 w-4 text-primary" />
+            <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+              <Car className="h-4 w-4 text-blue-600" />
               Registered Vehicles ({vehicles.length})
-            </CardTitle>
-            <p className="text-xs text-muted-foreground mt-0.5">
+            </h3>
+            <p className="text-xs text-slate-500 mt-0.5">
               Active vehicle fleet associated with {customer.name}
             </p>
           </div>
@@ -453,42 +449,42 @@ export function CustomerDetailView({ id }: CustomerDetailViewProps) {
               <Plus className="mr-1.5 h-3.5 w-3.5" /> Add Vehicle
             </Button>
           )}
-        </CardHeader>
-        <CardContent className="p-0">
+        </div>
+        <div className="p-0">
           {vehicles.length > 0 ? (
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
-                  <TableRow className="bg-muted/50 hover:bg-muted/50 border-b border-border h-11">
-                    <TableHead className="font-semibold text-foreground text-xs uppercase tracking-wider">Vehicle</TableHead>
-                    <TableHead className="font-semibold text-foreground text-xs uppercase tracking-wider">Year</TableHead>
-                    <TableHead className="font-semibold text-foreground text-xs uppercase tracking-wider">Plate Number</TableHead>
-                    <TableHead className="font-semibold text-foreground text-xs uppercase tracking-wider">Chassis / VIN</TableHead>
-                    <TableHead className="font-semibold text-foreground text-xs uppercase tracking-wider">Mileage</TableHead>
-                    <TableHead className="font-semibold text-foreground text-xs uppercase tracking-wider">Color</TableHead>
-                    <TableHead className="font-semibold text-foreground text-xs uppercase tracking-wider">Added Date</TableHead>
-                    <TableHead className="text-right font-semibold text-foreground text-xs uppercase tracking-wider pr-4">Actions</TableHead>
+                  <TableRow className="bg-slate-50/80 hover:bg-slate-50/80 border-b border-slate-200/80 h-11">
+                    <TableHead className="font-bold text-slate-500 text-[11px] uppercase tracking-wider">Vehicle</TableHead>
+                    <TableHead className="font-bold text-slate-500 text-[11px] uppercase tracking-wider">Year</TableHead>
+                    <TableHead className="font-bold text-slate-500 text-[11px] uppercase tracking-wider">Plate Number</TableHead>
+                    <TableHead className="font-bold text-slate-500 text-[11px] uppercase tracking-wider">Chassis / VIN</TableHead>
+                    <TableHead className="font-bold text-slate-500 text-[11px] uppercase tracking-wider">Mileage</TableHead>
+                    <TableHead className="font-bold text-slate-500 text-[11px] uppercase tracking-wider">Color</TableHead>
+                    <TableHead className="font-bold text-slate-500 text-[11px] uppercase tracking-wider">Added Date</TableHead>
+                    <TableHead className="text-right font-bold text-slate-500 text-[11px] uppercase tracking-wider pr-4">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
-                <TableBody className="divide-y divide-border/60">
+                <TableBody className="divide-y divide-slate-100">
                   {vehicles.map((v) => (
-                    <TableRow key={v.id} className="h-12 hover:bg-muted/40 transition-colors border-b border-border/50">
-                      <TableCell className="font-bold text-foreground text-xs">
-                        <Link href={`/vehicles/${v.id}`} className="hover:text-primary hover:underline transition-colors flex items-center gap-1.5">
-                          <Car className="h-3.5 w-3.5 text-primary shrink-0" />
+                    <TableRow key={v.id} className="h-12 hover:bg-slate-50/60 transition-colors border-b border-slate-100">
+                      <TableCell className="font-semibold text-slate-900 text-xs">
+                        <Link href={`/vehicles/${v.id}`} className="hover:text-blue-600 transition-colors flex items-center gap-1.5">
+                          <Car className="h-3.5 w-3.5 text-blue-600 shrink-0" />
                           <span>{v.make} {v.model}</span>
                         </Link>
                       </TableCell>
-                      <TableCell className="text-xs text-muted-foreground font-mono">{v.year || "—"}</TableCell>
-                      <TableCell className="font-bold text-primary text-xs font-mono">
+                      <TableCell className="text-xs text-slate-500 font-mono">{v.year || "—"}</TableCell>
+                      <TableCell className="font-bold text-blue-700 text-xs font-mono">
                         {v.registration_number || "—"}
                       </TableCell>
-                      <TableCell className="font-mono text-xs text-muted-foreground">{v.chassis_vin || "—"}</TableCell>
-                      <TableCell className="text-xs text-foreground font-mono">
+                      <TableCell className="font-mono text-xs text-slate-500">{v.chassis_vin || "—"}</TableCell>
+                      <TableCell className="text-xs text-slate-700 font-mono">
                         {v.mileage ? `${v.mileage.toLocaleString()} KM` : "—"}
                       </TableCell>
-                      <TableCell className="text-xs text-muted-foreground">{v.color || "—"}</TableCell>
-                      <TableCell className="text-xs text-muted-foreground">{formatDate(v.created_at)}</TableCell>
+                      <TableCell className="text-xs text-slate-500">{v.color || "—"}</TableCell>
+                      <TableCell className="text-xs text-slate-500">{formatDate(v.created_at)}</TableCell>
                       <TableCell className="text-right pr-4">
                         <div className="flex items-center justify-end gap-1">
                           <Button
@@ -496,7 +492,7 @@ export function CustomerDetailView({ id }: CustomerDetailViewProps) {
                             size="sm"
                             render={<Link href={`/vehicles/${v.id}`} />}
                             title="View Vehicle"
-                            className="h-8 w-8 p-0 text-muted-foreground hover:text-primary rounded-lg"
+                            className="h-8 w-8 p-0 text-slate-500 hover:text-blue-600 rounded-lg"
                           >
                             <Eye className="h-3.5 w-3.5" />
                           </Button>
@@ -506,7 +502,7 @@ export function CustomerDetailView({ id }: CustomerDetailViewProps) {
                               size="sm"
                               onClick={() => openEditVehicle(v)}
                               title="Edit Vehicle"
-                              className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground rounded-lg"
+                              className="h-8 w-8 p-0 text-slate-500 hover:text-slate-900 rounded-lg"
                             >
                               <Pencil className="h-3.5 w-3.5" />
                             </Button>
@@ -517,7 +513,7 @@ export function CustomerDetailView({ id }: CustomerDetailViewProps) {
                               size="sm"
                               onClick={() => openDeleteVehicle(v)}
                               title="Move to Recycle Bin"
-                              className="h-8 w-8 p-0 text-muted-foreground hover:text-rose-600 rounded-lg"
+                              className="h-8 w-8 p-0 text-slate-500 hover:text-rose-600 rounded-lg"
                             >
                               <Trash2 className="h-3.5 w-3.5" />
                             </Button>
@@ -527,9 +523,9 @@ export function CustomerDetailView({ id }: CustomerDetailViewProps) {
                               variant="outline"
                               size="sm"
                               render={<Link href={`/job-cards/new?customer_id=${id}&vehicle_id=${v.id}`} />}
-                              className="h-8 px-2.5 text-xs font-semibold rounded-lg border-border ml-1"
+                              className="h-8 px-2.5 text-xs font-semibold rounded-lg border-slate-200 bg-white hover:bg-slate-50 text-slate-700 ml-1"
                             >
-                              <ClipboardList className="mr-1 h-3.5 w-3.5 text-primary" /> Job Card
+                              <ClipboardList className="mr-1 h-3.5 w-3.5 text-blue-600" /> Job Card
                             </Button>
                           )}
                         </div>
@@ -540,33 +536,33 @@ export function CustomerDetailView({ id }: CustomerDetailViewProps) {
               </Table>
             </div>
           ) : (
-            <div className="py-12 text-center text-muted-foreground flex flex-col items-center justify-center px-4">
-              <Car className="h-10 w-10 mx-auto text-muted-foreground/30 stroke-1 mb-2" />
-              <h4 className="text-sm font-semibold text-foreground">No vehicles registered for {customer.name}</h4>
-              <p className="text-xs text-muted-foreground mt-1 mb-4">Add a vehicle with plate number and chassis/VIN to create repair orders</p>
+            <div className="py-12 text-center text-slate-500 flex flex-col items-center justify-center px-4">
+              <Car className="h-10 w-10 mx-auto text-slate-300 stroke-1 mb-2" />
+              <h4 className="text-sm font-semibold text-slate-900">No vehicles registered for {customer.name}</h4>
+              <p className="text-xs text-slate-500 mt-1 mb-4">Add a vehicle with plate number and chassis/VIN to create repair orders</p>
               {!isViewer && (
                 <Button
                   size="sm"
                   onClick={openAddVehicle}
-                  className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs rounded-lg h-9"
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs rounded-xl h-9 px-4 shadow-2xs"
                 >
                   <Plus className="mr-1.5 h-3.5 w-3.5" /> Add Vehicle Now
                 </Button>
               )}
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* Uploaded Physical Job Cards / Scanned Worksheets */}
-      <Card className="border border-border/80 shadow-xs bg-card overflow-hidden rounded-xl">
-        <CardHeader className="flex flex-row items-center justify-between border-b border-border bg-muted/40 px-6 py-3.5">
+      <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs overflow-hidden">
+        <div className="flex flex-row items-center justify-between border-b border-slate-100 bg-slate-50/50 px-6 py-4">
           <div>
-            <CardTitle className="text-sm font-bold text-foreground flex items-center gap-2">
-              <Paperclip className="h-4 w-4 text-primary" />
+            <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+              <Paperclip className="h-4 w-4 text-blue-600" />
               Scanned / Paper Job Cards ({documents.length})
-            </CardTitle>
-            <p className="text-xs text-muted-foreground mt-0.5">
+            </h3>
+            <p className="text-xs text-slate-500 mt-0.5">
               Archived physical repair worksheets and scanned job card PDFs
             </p>
           </div>
@@ -575,45 +571,45 @@ export function CustomerDetailView({ id }: CustomerDetailViewProps) {
               size="sm"
               variant="outline"
               onClick={() => setUploadDocOpen(true)}
-              className="h-8 px-3 text-xs font-semibold rounded-lg border-border"
+              className="h-9 px-3.5 text-xs font-semibold rounded-xl border-slate-200 bg-white hover:bg-slate-50 text-slate-700 shadow-2xs gap-1.5"
             >
-              <Upload className="mr-1.5 h-3.5 w-3.5 text-muted-foreground" /> Upload Document
+              <Upload className="h-3.5 w-3.5 text-slate-500" /> Upload Document
             </Button>
           )}
-        </CardHeader>
-        <CardContent className="p-0">
+        </div>
+        <div>
           {documents.length > 0 ? (
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
-                  <TableRow className="bg-muted/50 hover:bg-muted/50 border-b border-border h-11">
-                    <TableHead className="font-semibold text-foreground text-xs uppercase tracking-wider">Document Type</TableHead>
-                    <TableHead className="font-semibold text-foreground text-xs uppercase tracking-wider">File Name</TableHead>
-                    <TableHead className="font-semibold text-foreground text-xs uppercase tracking-wider">Vehicle</TableHead>
-                    <TableHead className="font-semibold text-foreground text-xs uppercase tracking-wider">Job Card #</TableHead>
-                    <TableHead className="font-semibold text-foreground text-xs uppercase tracking-wider">Upload Date</TableHead>
-                    <TableHead className="text-right font-semibold text-foreground text-xs uppercase tracking-wider pr-4">Actions</TableHead>
+                  <TableRow className="bg-slate-50/80 hover:bg-slate-50/80 border-b border-slate-200/80 h-11">
+                    <TableHead className="font-bold text-slate-500 text-[11px] uppercase tracking-wider">Document Type</TableHead>
+                    <TableHead className="font-bold text-slate-500 text-[11px] uppercase tracking-wider">File Name</TableHead>
+                    <TableHead className="font-bold text-slate-500 text-[11px] uppercase tracking-wider">Vehicle</TableHead>
+                    <TableHead className="font-bold text-slate-500 text-[11px] uppercase tracking-wider">Job Card #</TableHead>
+                    <TableHead className="font-bold text-slate-500 text-[11px] uppercase tracking-wider">Upload Date</TableHead>
+                    <TableHead className="text-right font-bold text-slate-500 text-[11px] uppercase tracking-wider pr-4">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
-                <TableBody className="divide-y divide-border/60">
+                <TableBody className="divide-y divide-slate-100">
                   {documents.map((doc) => (
-                    <TableRow key={doc.id} className="h-12 hover:bg-muted/40 transition-colors border-b border-border/50">
-                      <TableCell className="font-semibold text-xs text-foreground">
+                    <TableRow key={doc.id} className="h-12 hover:bg-slate-50/60 transition-colors border-b border-slate-100">
+                      <TableCell className="font-semibold text-xs text-slate-900">
                         {doc.document_type === "paper_job_card" ? "Paper Worksheet" : doc.document_type}
                       </TableCell>
-                      <TableCell className="text-xs text-foreground font-mono">{doc.file_name}</TableCell>
-                      <TableCell className="text-xs text-muted-foreground">
+                      <TableCell className="text-xs text-slate-900 font-mono">{doc.file_name}</TableCell>
+                      <TableCell className="text-xs text-slate-500">
                         {doc.vehicle ? `${doc.vehicle.make} ${doc.vehicle.model}` : "—"}
                       </TableCell>
-                      <TableCell className="text-xs text-primary font-mono font-semibold">{doc.job_card_number || "—"}</TableCell>
-                      <TableCell className="text-xs text-muted-foreground">{formatDate(doc.created_at)}</TableCell>
+                      <TableCell className="text-xs text-blue-700 font-mono font-semibold">{doc.job_card_number || "—"}</TableCell>
+                      <TableCell className="text-xs text-slate-500">{formatDate(doc.created_at)}</TableCell>
                       <TableCell className="text-right pr-4">
                         <div className="flex items-center justify-end gap-1">
                           <Button
                             variant="ghost"
                             size="sm"
                             onClick={() => setPreviewDoc(doc)}
-                            className="h-8 w-8 p-0 text-muted-foreground hover:text-primary rounded-lg"
+                            className="h-8 w-8 p-0 text-slate-500 hover:text-blue-600 rounded-lg"
                             title="Preview Document"
                           >
                             <Eye className="h-3.5 w-3.5" />
@@ -622,7 +618,7 @@ export function CustomerDetailView({ id }: CustomerDetailViewProps) {
                             variant="ghost"
                             size="sm"
                             render={<a href={doc.file_url} target="_blank" rel="noopener noreferrer" download />}
-                            className="h-8 w-8 p-0 text-muted-foreground hover:text-primary rounded-lg"
+                            className="h-8 w-8 p-0 text-slate-500 hover:text-blue-600 rounded-lg"
                             title="Download File"
                           >
                             <Download className="h-3.5 w-3.5" />
@@ -632,7 +628,7 @@ export function CustomerDetailView({ id }: CustomerDetailViewProps) {
                               variant="ghost"
                               size="sm"
                               onClick={() => handleDeleteDoc(doc.id)}
-                              className="h-8 w-8 p-0 text-muted-foreground hover:text-rose-600 rounded-lg"
+                              className="h-8 w-8 p-0 text-slate-500 hover:text-rose-600 rounded-lg"
                               title="Delete Record"
                             >
                               <Trash2 className="h-3.5 w-3.5" />
@@ -646,13 +642,13 @@ export function CustomerDetailView({ id }: CustomerDetailViewProps) {
               </Table>
             </div>
           ) : (
-            <div className="py-10 text-center text-muted-foreground flex flex-col items-center justify-center">
-              <FileText className="h-8 w-8 mx-auto text-muted-foreground/30 stroke-1 mb-2" />
-              <p className="text-xs text-muted-foreground">No scanned worksheets or paper job cards uploaded yet.</p>
+            <div className="py-10 text-center text-slate-500 flex flex-col items-center justify-center">
+              <FileText className="h-8 w-8 mx-auto text-slate-300 stroke-1 mb-2" />
+              <p className="text-xs text-slate-500">No scanned worksheets or paper job cards uploaded yet.</p>
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* Edit Customer Profile Modal */}
       <Dialog open={editCustomerOpen} onOpenChange={setEditCustomerOpen}>

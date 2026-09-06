@@ -253,6 +253,7 @@ export function CustomerListView() {
       <PageHeader
         title="Customers"
         description="Manage workshop customers, vehicles and service relationships."
+        breadcrumbs={[{ label: "Dashboard", href: "/" }, { label: "Customers" }]}
       >
         <div className="flex items-center gap-2.5">
           {!isViewer && (
@@ -260,16 +261,16 @@ export function CustomerListView() {
               <Button
                 onClick={openCreateDialog}
                 variant="outline"
-                className="h-9 px-3.5 text-xs font-semibold rounded-lg border-border hover:bg-muted/50"
+                className="h-10 px-3.5 text-xs font-semibold rounded-xl border-slate-200 bg-white hover:bg-slate-50 text-slate-700 shadow-2xs gap-1.5"
               >
-                <Plus className="mr-1.5 h-3.5 w-3.5 text-muted-foreground" />
+                <Plus className="h-3.5 w-3.5 text-slate-500" />
                 Add Customer Only
               </Button>
               <Button
                 onClick={() => setCombinedModalOpen(true)}
-                className="h-9 px-4 text-xs font-semibold rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs"
+                className="h-10 px-4 text-xs font-semibold rounded-xl bg-blue-600 hover:bg-blue-700 text-white shadow-xs gap-1.5 transition-colors"
               >
-                <Plus className="mr-1.5 h-3.5 w-3.5" />
+                <Plus className="h-4 w-4" />
                 Add Customer &amp; Vehicle
               </Button>
             </>
@@ -280,62 +281,62 @@ export function CustomerListView() {
       {/* Summary Metrics Strip */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Total Customers */}
-        <Card className="border border-border/80 shadow-xs bg-card rounded-xl">
-          <CardContent className="p-4 flex items-center justify-between">
-            <div>
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Total Customers</p>
-              <p className="text-2xl font-bold tracking-tight text-foreground font-mono mt-1">{total}</p>
-              <p className="text-[11px] text-muted-foreground mt-0.5">Active workshop accounts</p>
+        <div className="bg-white rounded-2xl border border-slate-200/90 p-5 shadow-2xs hover:shadow-xs transition-all flex flex-col justify-between">
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Customers</p>
+            <div className="h-8 w-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+              <Users className="h-4 w-4" />
             </div>
-            <div className="h-10 w-10 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
-              <Users className="h-5 w-5" />
-            </div>
-          </CardContent>
-        </Card>
+          </div>
+          <div className="mt-3">
+            <h3 className="text-2xl font-bold text-slate-900 font-mono tracking-tight">{total}</h3>
+            <p className="text-[11px] text-slate-400 font-medium mt-1">Active workshop accounts</p>
+          </div>
+        </div>
 
         {/* Registered Fleet */}
-        <Card className="border border-border/80 shadow-xs bg-card rounded-xl">
-          <CardContent className="p-4 flex items-center justify-between">
-            <div>
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Active Vehicles</p>
-              <p className="text-2xl font-bold tracking-tight text-foreground font-mono mt-1">{metrics.totalVehicles}</p>
-              <p className="text-[11px] text-muted-foreground mt-0.5">Linked customer vehicles</p>
+        <div className="bg-white rounded-2xl border border-slate-200/90 p-5 shadow-2xs hover:shadow-xs transition-all flex flex-col justify-between">
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Active Vehicles</p>
+            <div className="h-8 w-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+              <Car className="h-4 w-4" />
             </div>
-            <div className="h-10 w-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
-              <Car className="h-5 w-5" />
-            </div>
-          </CardContent>
-        </Card>
+          </div>
+          <div className="mt-3">
+            <h3 className="text-2xl font-bold text-slate-900 font-mono tracking-tight">{metrics.totalVehicles}</h3>
+            <p className="text-[11px] text-slate-400 font-medium mt-1">Linked customer vehicles</p>
+          </div>
+        </div>
 
         {/* Corporate Accounts */}
-        <Card className="border border-border/80 shadow-xs bg-card rounded-xl">
-          <CardContent className="p-4 flex items-center justify-between">
-            <div>
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Corporate Accounts</p>
-              <p className="text-2xl font-bold tracking-tight text-foreground font-mono mt-1">{metrics.corporateCount}</p>
-              <p className="text-[11px] text-muted-foreground mt-0.5">Companies with TRN</p>
+        <div className="bg-white rounded-2xl border border-slate-200/90 p-5 shadow-2xs hover:shadow-xs transition-all flex flex-col justify-between">
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Corporate Accounts</p>
+            <div className="h-8 w-8 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center shrink-0">
+              <Building2 className="h-4 w-4" />
             </div>
-            <div className="h-10 w-10 rounded-xl bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0">
-              <Building2 className="h-5 w-5" />
-            </div>
-          </CardContent>
-        </Card>
+          </div>
+          <div className="mt-3">
+            <h3 className="text-2xl font-bold text-slate-900 font-mono tracking-tight">{metrics.corporateCount}</h3>
+            <p className="text-[11px] text-slate-400 font-medium mt-1">Companies with registered TRN</p>
+          </div>
+        </div>
 
         {/* Outstanding Receivables */}
-        <Card className="border border-border/80 shadow-xs bg-card rounded-xl">
-          <CardContent className="p-4 flex items-center justify-between">
-            <div>
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Outstanding Balance</p>
-              <p className={`text-2xl font-bold tracking-tight font-mono mt-1 ${metrics.totalBalance > 0 ? "text-amber-600 dark:text-amber-400" : "text-foreground"}`}>
-                {formatCurrency(metrics.totalBalance)}
-              </p>
-              <p className="text-[11px] text-muted-foreground mt-0.5">Total unpaid customer balance</p>
+        <div className="bg-white rounded-2xl border border-slate-200/90 p-5 shadow-2xs hover:shadow-xs transition-all flex flex-col justify-between">
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Outstanding Balance</p>
+            <div className="h-8 w-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
+              <DollarSign className="h-4 w-4" />
             </div>
-            <div className="h-10 w-10 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
-              <DollarSign className="h-5 w-5" />
-            </div>
-          </CardContent>
-        </Card>
+          </div>
+          <div className="mt-3">
+            <h3 className={`text-2xl font-bold font-mono tracking-tight ${metrics.totalBalance > 0 ? "text-amber-600" : "text-slate-900"}`}>
+              {formatCurrency(metrics.totalBalance)}
+            </h3>
+            <p className="text-[11px] text-slate-400 font-medium mt-1">Total unpaid customer balance</p>
+          </div>
+        </div>
       </div>
 
       {/* Controls Bar */}
@@ -347,24 +348,24 @@ export function CustomerListView() {
             onChange={setQuery}
           />
         </div>
-        <div className="text-xs text-muted-foreground self-end sm:self-center font-medium bg-muted/40 px-3 py-1.5 rounded-lg border border-border/50">
-          Showing <span className="font-semibold text-foreground font-mono">{customers.length}</span> of <span className="font-semibold text-foreground font-mono">{total}</span> customers
+        <div className="text-xs text-slate-500 self-end sm:self-center font-medium bg-white px-3.5 py-2 rounded-xl border border-slate-200/90 shadow-2xs">
+          Showing <span className="font-bold text-slate-900 font-mono">{customers.length}</span> of <span className="font-bold text-slate-900 font-mono">{total}</span> customers
         </div>
       </div>
 
       {/* Main Customers Table */}
-      <Card className="border border-border/80 shadow-xs bg-card overflow-hidden rounded-xl">
-        <CardContent className="p-0">
+      <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs overflow-hidden">
+        <div>
           {loading ? (
-            <div className="flex items-center justify-center py-20 text-muted-foreground">
-              <Loader2 className="h-7 w-7 animate-spin mr-2.5 text-primary" />
+            <div className="flex items-center justify-center py-20 text-slate-400">
+              <Loader2 className="h-7 w-7 animate-spin mr-2.5 text-blue-600" />
               <span className="text-xs font-medium">Loading customer records...</span>
             </div>
           ) : customers.length > 0 ? (
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
-                  <TableRow className="bg-muted/50 hover:bg-muted/50 border-b border-border h-11">
+                  <TableRow className="bg-slate-50/80 hover:bg-slate-50/80 border-b border-slate-200/80 h-11">
                     <TableHead className="w-[44px] pl-4">
                       <Checkbox
                         checked={
@@ -378,16 +379,16 @@ export function CustomerListView() {
                         aria-label="Select all visible customers"
                       />
                     </TableHead>
-                    <TableHead className="font-semibold text-foreground text-xs uppercase tracking-wider">Customer</TableHead>
-                    <TableHead className="font-semibold text-foreground text-xs uppercase tracking-wider">Phone / Mobile</TableHead>
-                    <TableHead className="font-semibold text-foreground text-xs uppercase tracking-wider">Company / TRN</TableHead>
-                    <TableHead className="font-semibold text-foreground text-xs uppercase tracking-wider">Vehicles</TableHead>
-                    <TableHead className="text-right font-semibold text-foreground text-xs uppercase tracking-wider">Outstanding</TableHead>
-                    <TableHead className="text-center font-semibold text-foreground text-xs uppercase tracking-wider">Status</TableHead>
-                    <TableHead className="text-right font-semibold text-foreground text-xs uppercase tracking-wider pr-4">Actions</TableHead>
+                    <TableHead className="font-bold text-slate-500 text-[11px] uppercase tracking-wider">Customer</TableHead>
+                    <TableHead className="font-bold text-slate-500 text-[11px] uppercase tracking-wider">Phone / Mobile</TableHead>
+                    <TableHead className="font-bold text-slate-500 text-[11px] uppercase tracking-wider">Company / TRN</TableHead>
+                    <TableHead className="font-bold text-slate-500 text-[11px] uppercase tracking-wider">Vehicles</TableHead>
+                    <TableHead className="text-right font-bold text-slate-500 text-[11px] uppercase tracking-wider">Outstanding</TableHead>
+                    <TableHead className="text-center font-bold text-slate-500 text-[11px] uppercase tracking-wider">Status</TableHead>
+                    <TableHead className="text-right font-bold text-slate-500 text-[11px] uppercase tracking-wider pr-4">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
-                <TableBody className="divide-y divide-border/60">
+                <TableBody className="divide-y divide-slate-100">
                   {customers.map((c) => {
                     const balance = Number(c.outstanding_balance) || 0;
                     const vehicleSummary = c.vehicles_summary || "No Vehicles";
@@ -532,8 +533,8 @@ export function CustomerListView() {
               )}
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* Add / Edit Customer Modal */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>

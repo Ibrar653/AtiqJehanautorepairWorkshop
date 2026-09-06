@@ -701,15 +701,15 @@ export function SuppliersView() {
             <>
               <Button
                 onClick={() => handleOpenSupplierModal()}
-                className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs h-9 shadow-xs rounded-lg gap-1.5"
+                className="h-10 px-4 text-xs font-semibold rounded-xl bg-blue-600 hover:bg-blue-700 text-white shadow-2xs flex items-center gap-2"
               >
                 <Plus className="h-4 w-4" /> Add Supplier
               </Button>
               <Button
                 onClick={() => handleOpenCreatePurchase()}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs h-9 shadow-xs rounded-lg gap-1.5"
+                className="h-10 px-3.5 text-xs font-semibold rounded-xl border border-emerald-300 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 shadow-2xs flex items-center gap-2"
               >
-                <ShoppingCart className="h-4 w-4" /> Create Purchase
+                <ShoppingCart className="h-4 w-4 text-emerald-600" /> Create Purchase
               </Button>
             </>
           )}
@@ -720,10 +720,10 @@ export function SuppliersView() {
             }}
             variant="outline"
             size="sm"
-            className="h-9 px-2.5 rounded-lg border-border/80 hover:bg-muted/50"
+            className="h-10 px-3 text-xs font-semibold rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 shadow-2xs"
             title="Refresh Supplier Data"
           >
-            <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin text-primary" : ""}`} />
+            <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin text-blue-600" : ""}`} />
           </Button>
         </div>
       </PageHeader>
@@ -731,99 +731,91 @@ export function SuppliersView() {
       {/* ─── Summary KPI Cards ─── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Active Suppliers */}
-        <Card className="border border-border/80 shadow-xs bg-card rounded-xl">
-          <CardContent className="p-4 flex items-center justify-between">
-            <div>
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Active Suppliers</p>
-              <p className="text-2xl font-bold tracking-tight text-foreground font-mono mt-1">{kpis.totalActive}</p>
-              <p className="text-[11px] text-muted-foreground mt-0.5">Registered vendors</p>
-            </div>
-            <div className="h-10 w-10 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
-              <Building2 className="h-5 w-5" />
-            </div>
-          </CardContent>
-        </Card>
+        <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-2xs flex items-center justify-between">
+          <div>
+            <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Active Suppliers</p>
+            <p className="text-2xl font-bold tracking-tight text-slate-900 font-mono mt-1">{kpis.totalActive}</p>
+            <p className="text-xs text-slate-500 mt-1">Registered vendors</p>
+          </div>
+          <div className="h-10 w-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+            <Building2 className="h-5 w-5" />
+          </div>
+        </div>
 
         {/* Total Purchases */}
-        <Card className="border border-border/80 shadow-xs bg-card rounded-xl">
-          <CardContent className="p-4 flex items-center justify-between">
-            <div>
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Total Purchases</p>
-              <p className="text-2xl font-bold tracking-tight text-foreground font-mono mt-1">
-                {formatCurrency(kpis.totalPurchases)}
-              </p>
-              <p className="text-[11px] text-muted-foreground mt-0.5">Cumulative procurement</p>
-            </div>
-            <div className="h-10 w-10 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
-              <ShoppingCart className="h-5 w-5" />
-            </div>
-          </CardContent>
-        </Card>
+        <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-2xs flex items-center justify-between">
+          <div>
+            <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Total Purchases</p>
+            <p className="text-2xl font-bold tracking-tight text-slate-900 font-mono mt-1">
+              {formatCurrency(kpis.totalPurchases)}
+            </p>
+            <p className="text-xs text-slate-500 mt-1">Cumulative procurement</p>
+          </div>
+          <div className="h-10 w-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
+            <ShoppingCart className="h-5 w-5" />
+          </div>
+        </div>
 
         {/* Total Paid */}
-        <Card className="border border-border/80 shadow-xs bg-card rounded-xl">
-          <CardContent className="p-4 flex items-center justify-between">
-            <div>
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Total Paid</p>
-              <p className="text-2xl font-bold tracking-tight text-emerald-600 dark:text-emerald-400 font-mono mt-1">
-                {formatCurrency(kpis.totalPaid)}
-              </p>
-              <p className="text-[11px] text-muted-foreground mt-0.5">Settled invoices</p>
-            </div>
-            <div className="h-10 w-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
-              <CheckCircle2 className="h-5 w-5" />
-            </div>
-          </CardContent>
-        </Card>
+        <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-2xs flex items-center justify-between">
+          <div>
+            <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Total Paid</p>
+            <p className="text-2xl font-bold tracking-tight text-emerald-600 font-mono mt-1">
+              {formatCurrency(kpis.totalPaid)}
+            </p>
+            <p className="text-xs text-slate-500 mt-1">Settled invoices</p>
+          </div>
+          <div className="h-10 w-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+            <CheckCircle2 className="h-5 w-5" />
+          </div>
+        </div>
 
         {/* Outstanding Balance */}
-        <Card
+        <div
           onClick={() => setBalanceFilter((prev) => !prev)}
-          className={`border shadow-xs rounded-xl cursor-pointer transition-all ${
+          className={`rounded-2xl border p-5 shadow-2xs cursor-pointer transition-all flex items-center justify-between ${
             balanceFilter
-              ? "border-rose-400 ring-2 ring-rose-500/20 bg-rose-50/20 dark:bg-rose-950/10"
-              : "border-border/80 bg-card hover:border-border"
+              ? "border-rose-400 ring-2 ring-rose-500/20 bg-rose-50/30"
+              : "border-slate-200/90 bg-white hover:border-slate-300"
           }`}
         >
-          <CardContent className="p-4 flex items-center justify-between">
-            <div>
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Outstanding Balance</p>
-              <p className="text-2xl font-bold tracking-tight text-rose-600 dark:text-rose-400 font-mono mt-1">
-                {formatCurrency(kpis.totalOutstanding)}
-              </p>
-              <p className="text-[11px] text-rose-600/80 dark:text-rose-400/80 mt-0.5">
-                {balanceFilter ? "Filtering by balance (click to reset)" : "Pending payables"}
-              </p>
-            </div>
-            <div className="h-10 w-10 rounded-xl bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0">
-              <AlertTriangle className="h-5 w-5" />
-            </div>
-          </CardContent>
-        </Card>
+          <div>
+            <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Outstanding Balance</p>
+            <p className="text-2xl font-bold tracking-tight text-rose-600 font-mono mt-1">
+              {formatCurrency(kpis.totalOutstanding)}
+            </p>
+            <p className="text-xs text-rose-600 mt-1">
+              {balanceFilter ? "Filtering by balance (click to reset)" : "Pending payables"}
+            </p>
+          </div>
+          <div className="h-10 w-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
+            <AlertTriangle className="h-5 w-5" />
+          </div>
+        </div>
       </div>
 
       {/* ─── Unified Search & Filters Bar ─── */}
-      <div className="bg-card border border-border/80 rounded-xl p-3 shadow-xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+      <div className="bg-white border border-slate-200/90 rounded-2xl p-3.5 shadow-2xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
         <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
           <Input
             placeholder="Search by supplier, company, phone, TRN..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9 h-9 text-xs rounded-lg"
+            className="pl-9 h-10 text-xs rounded-xl border-slate-200 bg-white shadow-2xs focus:border-blue-500 focus:ring-blue-500"
           />
           {searchQuery && (
             <button
               type="button"
               onClick={() => setSearchQuery("")}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground hover:text-foreground"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 hover:text-slate-700"
             >
               ✕
             </button>
           )}
         </div>
 
-        <div className="flex flex-wrap items-center gap-1">
+        <div className="flex flex-wrap items-center gap-1.5">
           {[
             { id: "all", label: "All Suppliers" },
             { id: "active", label: "Active" },
@@ -836,10 +828,10 @@ export function SuppliersView() {
                 setStatusFilter(tab.id as any);
                 setCurrentPage(1);
               }}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all ${
                 statusFilter === tab.id
-                  ? "bg-primary text-primary-foreground shadow-xs"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
+                  ? "bg-blue-600 text-white shadow-2xs"
+                  : "border border-slate-200 bg-white text-slate-600 hover:text-slate-900 hover:bg-slate-50"
               }`}
             >
               {tab.label}
@@ -848,19 +840,19 @@ export function SuppliersView() {
         </div>
       </div>
 
-      {/* ─── Suppliers Table (Natural height, no artificial stretching) ─── */}
-      <Card className="border border-border/80 shadow-xs bg-card rounded-xl overflow-hidden">
-        <CardContent className="p-0">
+      {/* ─── Suppliers Table ─── */}
+      <div className="border border-slate-200/90 shadow-2xs bg-white rounded-2xl overflow-hidden">
+        <div className="p-0">
           {loading ? (
-            <div className="py-20 text-center text-muted-foreground">
-              <Loader2 className="h-8 w-8 mx-auto animate-spin mb-3 text-primary" />
+            <div className="py-20 text-center text-slate-500">
+              <Loader2 className="h-8 w-8 mx-auto animate-spin mb-3 text-blue-600" />
               <p className="font-medium text-xs">Loading suppliers...</p>
             </div>
           ) : suppliers.length > 0 ? (
             <div className="overflow-x-auto min-w-full">
               <Table className="min-w-[1050px]">
                 <TableHeader>
-                  <TableRow className="border-b border-border/80 bg-muted/40 hover:bg-muted/40 text-xs text-muted-foreground font-semibold">
+                  <TableRow className="border-b border-slate-200/80 bg-slate-50/80 hover:bg-slate-50/80 text-[11px] font-bold text-slate-500 uppercase tracking-wider h-11">
                     <TableHead className="w-[44px] pl-4">
                       <Checkbox
                         checked={
@@ -874,15 +866,15 @@ export function SuppliersView() {
                         aria-label="Select all visible suppliers"
                       />
                     </TableHead>
-                    <TableHead className="w-[22%] min-w-[200px] text-foreground font-semibold">Supplier</TableHead>
-                    <TableHead className="w-[14%] min-w-[120px] text-foreground font-semibold">Contact Person</TableHead>
-                    <TableHead className="w-[15%] min-w-[130px] text-foreground font-semibold">Phone / Mobile</TableHead>
-                    <TableHead className="w-[13%] min-w-[110px] text-foreground font-semibold">Company</TableHead>
-                    <TableHead className="w-[10%] min-w-[95px] text-foreground font-semibold">TRN</TableHead>
-                    <TableHead className="w-[11%] min-w-[95px] text-right text-foreground font-semibold">Total Purchases</TableHead>
-                    <TableHead className="w-[11%] min-w-[95px] text-right text-foreground font-semibold">Outstanding</TableHead>
-                    <TableHead className="w-[8%] min-w-[75px] text-center text-foreground font-semibold">Status</TableHead>
-                    <TableHead className="w-[105px] min-w-[105px] text-right pr-4 text-foreground font-semibold">Actions</TableHead>
+                    <TableHead className="w-[22%] min-w-[200px] text-slate-600 font-bold">Supplier</TableHead>
+                    <TableHead className="w-[14%] min-w-[120px] text-slate-600 font-bold">Contact Person</TableHead>
+                    <TableHead className="w-[15%] min-w-[130px] text-slate-600 font-bold">Phone / Mobile</TableHead>
+                    <TableHead className="w-[13%] min-w-[110px] text-slate-600 font-bold">Company</TableHead>
+                    <TableHead className="w-[10%] min-w-[95px] text-slate-600 font-bold">TRN</TableHead>
+                    <TableHead className="w-[11%] min-w-[95px] text-right text-slate-600 font-bold">Total Purchases</TableHead>
+                    <TableHead className="w-[11%] min-w-[95px] text-right text-slate-600 font-bold">Outstanding</TableHead>
+                    <TableHead className="w-[8%] min-w-[75px] text-center text-slate-600 font-bold">Status</TableHead>
+                    <TableHead className="w-[105px] min-w-[105px] text-right pr-4 text-slate-600 font-bold">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -891,8 +883,8 @@ export function SuppliersView() {
                     return (
                       <TableRow
                         key={s.id}
-                        className={`h-13 hover:bg-muted/40 border-b border-border/60 text-xs transition-colors ${
-                          selectedSupplierIds.includes(s.id) ? "bg-primary/5" : ""
+                        className={`h-12 hover:bg-slate-50/60 border-b border-slate-100 text-xs transition-colors ${
+                          selectedSupplierIds.includes(s.id) ? "bg-blue-50/30" : ""
                         }`}
                       >
                         <TableCell className="pl-4 py-2.5">
@@ -904,64 +896,64 @@ export function SuppliersView() {
                         </TableCell>
 
                         {/* Supplier Name & Location */}
-                        <TableCell className="font-semibold text-foreground py-2.5">
+                        <TableCell className="font-semibold text-slate-900 py-2.5">
                           <button
                             type="button"
                             onClick={() => handleViewSupplierDetails(s.id)}
-                            className="font-bold text-sm text-left text-foreground hover:text-primary transition-colors block"
+                            className="font-bold text-sm text-left text-slate-900 hover:text-blue-600 transition-colors block"
                           >
                             {s.name}
                           </button>
                           {s.city && (
-                            <span className="text-[11px] text-muted-foreground flex items-center gap-1 mt-0.5">
-                              <MapPin className="h-3 w-3 text-muted-foreground" /> {s.city}
+                            <span className="text-[11px] text-slate-500 flex items-center gap-1 mt-0.5">
+                              <MapPin className="h-3 w-3 text-slate-400" /> {s.city}
                             </span>
                           )}
                         </TableCell>
 
                         {/* Contact Person */}
-                        <TableCell className="text-foreground py-2.5 font-medium">
-                          {s.contact_person || <span className="text-muted-foreground italic font-normal">—</span>}
+                        <TableCell className="text-slate-800 py-2.5 font-medium">
+                          {s.contact_person || <span className="text-slate-400 italic font-normal">—</span>}
                         </TableCell>
 
                         {/* Phone & Email */}
                         <TableCell className="py-2.5">
-                          <span className="font-mono text-xs font-semibold text-foreground block">{s.phone || "—"}</span>
+                          <span className="font-mono text-xs font-semibold text-slate-800 block">{s.phone || "—"}</span>
                           {s.email && (
-                            <span className="text-[11px] text-muted-foreground block truncate max-w-[140px]">
+                            <span className="text-[11px] text-slate-500 block truncate max-w-[140px]">
                               {s.email}
                             </span>
                           )}
                         </TableCell>
 
                         {/* Company */}
-                        <TableCell className="py-2.5 text-foreground">
-                          {s.company_name || <span className="text-muted-foreground italic font-normal">—</span>}
+                        <TableCell className="py-2.5 text-slate-800">
+                          {s.company_name || <span className="text-slate-400 italic font-normal">—</span>}
                         </TableCell>
 
                         {/* TRN */}
                         <TableCell className="py-2.5">
                           {s.trn_number ? (
-                            <span className="font-mono text-[11px] text-muted-foreground bg-muted/60 px-1.5 py-0.5 rounded">
+                            <span className="font-mono text-[11px] text-slate-700 bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded-lg">
                               {s.trn_number}
                             </span>
                           ) : (
-                            <span className="text-muted-foreground italic font-normal">—</span>
+                            <span className="text-slate-400 italic font-normal">—</span>
                           )}
                         </TableCell>
 
                         {/* Total Purchases */}
-                        <TableCell className="text-right font-mono font-bold text-foreground py-2.5 tabular-nums">
+                        <TableCell className="text-right font-mono font-bold text-slate-900 py-2.5 tabular-nums">
                           {formatCurrency(s.total_purchases)}
                         </TableCell>
 
                         {/* Outstanding Balance */}
                         <TableCell className="text-right font-mono py-2.5 tabular-nums">
                           <span
-                            className={`font-bold px-2 py-0.5 rounded text-xs inline-block ${
+                            className={`font-bold px-2 py-0.5 rounded-lg text-xs inline-block ${
                               hasBalance
-                                ? "bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-900"
-                                : "text-emerald-600 dark:text-emerald-400 font-semibold"
+                                ? "bg-rose-50 text-rose-700 border border-rose-200"
+                                : "text-emerald-600 font-semibold"
                             }`}
                           >
                             {formatCurrency(s.outstanding_balance)}
@@ -971,37 +963,37 @@ export function SuppliersView() {
                         {/* Status */}
                         <TableCell className="text-center py-2.5">
                           {s.is_active !== false ? (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800">
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
                               <CheckCircle2 className="h-3 w-3" /> Active
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-muted text-muted-foreground border border-border">
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-500 border border-slate-200">
                               <XCircle className="h-3 w-3" /> Inactive
                             </span>
                           )}
                         </TableCell>
 
-                        {/* Actions (Never clipped) */}
+                        {/* Actions */}
                         <TableCell className="text-right pr-4 py-2.5">
                           <div className="flex items-center justify-end gap-1">
                             <Button
                               variant="ghost"
                               size="sm"
                               onClick={() => handleViewSupplierDetails(s.id)}
-                              className="h-8 px-2 text-xs text-muted-foreground hover:text-primary hover:bg-muted/60"
+                              className="h-8 px-2 text-xs font-semibold text-blue-600 hover:bg-blue-50 rounded-xl"
                               title="View supplier details & purchase history"
                             >
                               <Eye className="h-3.5 w-3.5 mr-1" /> View
                             </Button>
 
                             <DropdownMenu>
-                              <DropdownMenuTrigger className="h-8 w-8 inline-flex items-center justify-center rounded-md border border-border/80 text-muted-foreground hover:bg-muted/60 hover:text-foreground focus:outline-none">
+                              <DropdownMenuTrigger className="h-8 w-8 inline-flex items-center justify-center rounded-xl border border-slate-200 text-slate-500 hover:bg-slate-100 hover:text-slate-800 focus:outline-none">
                                 <MoreVertical className="h-3.5 w-3.5" />
                               </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end" className="w-48 text-xs">
+                              <DropdownMenuContent align="end" className="w-48 text-xs rounded-xl shadow-lg border-slate-200">
                                 <DropdownMenuLabel>Supplier Actions</DropdownMenuLabel>
                                 <DropdownMenuItem onClick={() => handleViewSupplierDetails(s.id)}>
-                                  <Eye className="h-3.5 w-3.5 mr-2 text-primary" /> View Details
+                                  <Eye className="h-3.5 w-3.5 mr-2 text-blue-600" /> View Details
                                 </DropdownMenuItem>
                                 {canEdit && (
                                   <>
@@ -1009,7 +1001,7 @@ export function SuppliersView() {
                                       <ShoppingCart className="h-3.5 w-3.5 mr-2 text-emerald-600" /> Create PO
                                     </DropdownMenuItem>
                                     <DropdownMenuItem onClick={() => handleOpenSupplierModal(s)}>
-                                      <Edit2 className="h-3.5 w-3.5 mr-2 text-muted-foreground" /> Edit Details
+                                      <Edit2 className="h-3.5 w-3.5 mr-2 text-slate-500" /> Edit Details
                                     </DropdownMenuItem>
                                     <DropdownMenuItem onClick={() => handleToggleStatus(s)}>
                                       {s.is_active !== false ? (
@@ -1046,19 +1038,19 @@ export function SuppliersView() {
               </Table>
             </div>
           ) : (
-            <div className="py-20 text-center text-muted-foreground space-y-2">
-              <Building2 className="h-10 w-10 mx-auto text-muted-foreground/40" />
-              <p className="text-sm font-semibold text-foreground">No suppliers match your search criteria</p>
-              <p className="text-xs max-w-sm mx-auto">
+            <div className="py-16 text-center text-slate-500 space-y-2">
+              <Building2 className="h-10 w-10 mx-auto text-slate-300" />
+              <p className="text-sm font-semibold text-slate-900">No suppliers match your search criteria</p>
+              <p className="text-xs max-w-sm mx-auto text-slate-500">
                 Try adjusting your search query or status filter to see other suppliers.
               </p>
             </div>
           )}
-        </CardContent>
+        </div>
 
         {/* Pagination Footer */}
         {totalPages > 1 && (
-          <div className="p-3 border-t border-border/80 bg-muted/20 flex items-center justify-between text-xs text-muted-foreground">
+          <div className="p-3.5 border-t border-slate-200/80 bg-slate-50/40 flex items-center justify-between text-xs text-slate-500">
             <span>
               Showing {(currentPage - 1) * pageSize + 1} to{" "}
               {Math.min(currentPage * pageSize, totalCount)} of {totalCount} suppliers
@@ -1069,11 +1061,11 @@ export function SuppliersView() {
                 size="sm"
                 onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                 disabled={currentPage === 1}
-                className="h-8 text-xs font-medium"
+                className="h-8 text-xs font-semibold rounded-xl border-slate-200 bg-white hover:bg-slate-50"
               >
                 <ChevronLeft className="h-3.5 w-3.5 mr-1" /> Previous
               </Button>
-              <span className="font-semibold px-2 font-mono text-foreground">
+              <span className="font-semibold px-2 font-mono text-slate-900">
                 {currentPage} / {totalPages}
               </span>
               <Button
@@ -1081,14 +1073,14 @@ export function SuppliersView() {
                 size="sm"
                 onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                 disabled={currentPage >= totalPages}
-                className="h-8 text-xs font-medium"
+                className="h-8 text-xs font-semibold rounded-xl border-slate-200 bg-white hover:bg-slate-50"
               >
                 Next <ChevronRight className="h-3.5 w-3.5 ml-1" />
               </Button>
             </div>
           </div>
         )}
-      </Card>
+      </div>
 
       {/* ========================================================================= */}
       {/* 1. ADD / EDIT SUPPLIER MODAL DIALOG                                       */}

@@ -89,31 +89,28 @@ export function Sidebar({ className, user, onCloseMobile }: SidebarProps) {
   return (
     <aside
       className={cn(
-        "fixed left-0 top-0 z-40 h-screen w-[240px] bg-[#0F172A] text-slate-100 border-r border-[#1E293B] flex flex-col select-none",
+        "fixed left-0 top-0 z-40 h-screen w-[240px] bg-white text-slate-800 border-r border-[#E5E7EB] shadow-xs flex flex-col select-none",
         className
       )}
     >
-      {/* Brand Header — High-contrast premium emblem */}
-      <div className="flex items-center justify-between px-4 h-[62px] border-b border-[#1E293B] shrink-0 bg-[#0F172A]">
-        <Link href="/" prefetch className="flex items-center gap-3 group min-w-0" onClick={onCloseMobile}>
-          <div className="h-10 w-10 rounded-xl bg-slate-900 border border-slate-700/80 p-1 flex items-center justify-center shrink-0 shadow-xs">
+      {/* Brand Header — Crisp white enterprise emblem */}
+      <div className="flex items-center justify-between px-3.5 py-3 min-h-[68px] border-b border-[#E5E7EB] shrink-0 bg-white">
+        <Link href="/" prefetch className="flex items-center gap-3 group min-w-0 flex-1" onClick={onCloseMobile}>
+          <div className="h-11 w-11 rounded-xl bg-slate-50 border border-slate-200/90 p-1 flex items-center justify-center shrink-0 shadow-2xs">
             <Image
               src="/branding/atiq-jehan-logo.png"
-              alt="ATIQ JEHAN"
-              width={34}
-              height={34}
+              alt="ATIQ JEHAN AUTO REPAIR"
+              width={40}
+              height={40}
               className="w-full h-full object-contain"
               priority
             />
           </div>
           <div className="min-w-0 flex-1">
-            <h1 className="text-[13.5px] font-extrabold text-white tracking-tight leading-none truncate">
-              ATIQ JEHAN
+            <h1 className="text-[14px] font-bold text-slate-900 tracking-tight leading-[17px]">
+              ATIQ JEHAN AUTO REPAIR
             </h1>
-            <p className="text-[10px] text-amber-400 font-bold uppercase tracking-wider mt-1 truncate">
-              AUTO REPAIR
-            </p>
-            <p className="text-[8px] text-slate-400 uppercase tracking-wider truncate">
+            <p className="text-[9px] font-semibold text-slate-400 uppercase tracking-wider mt-0.5 leading-none">
               WORKSHOP MANAGEMENT SYSTEM
             </p>
           </div>
@@ -121,7 +118,7 @@ export function Sidebar({ className, user, onCloseMobile }: SidebarProps) {
         {onCloseMobile && (
           <button
             onClick={onCloseMobile}
-            className="lg:hidden p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
+            className="lg:hidden p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors ml-1 shrink-0"
           >
             <X className="h-4 w-4" />
           </button>
@@ -137,7 +134,7 @@ export function Sidebar({ className, user, onCloseMobile }: SidebarProps) {
 
             return (
               <div key={group.title} className="space-y-1">
-                <div className="text-[10.5px] font-bold text-slate-400/80 uppercase tracking-widest px-3 py-1">
+                <div className="text-[10.5px] font-bold text-[#6B7280] uppercase tracking-wider px-3 py-1">
                   {group.title}
                 </div>
                 <div className="space-y-1">
@@ -157,15 +154,15 @@ export function Sidebar({ className, user, onCloseMobile }: SidebarProps) {
                         className={cn(
                           "flex items-center gap-3 rounded-xl px-3.5 h-[42px] text-[13.5px] transition-all duration-150 select-none group",
                           isActive
-                            ? "bg-[#2563EB] text-white font-semibold shadow-sm shadow-blue-600/30"
-                            : "text-slate-300 hover:text-white hover:bg-white/[0.08] font-medium"
+                            ? "bg-[#2563EB] text-white font-semibold shadow-xs"
+                            : "text-[#64748B] hover:text-[#111827] hover:bg-[#F3F4F6] font-medium"
                         )}
                       >
                         {Icon && (
                           <Icon
                             className={cn(
                               "h-[18px] w-[18px] shrink-0 transition-colors",
-                              isActive ? "text-white" : "text-slate-400 group-hover:text-white"
+                              isActive ? "text-white" : "text-slate-400 group-hover:text-slate-700"
                             )}
                           />
                         )}
@@ -180,26 +177,26 @@ export function Sidebar({ className, user, onCloseMobile }: SidebarProps) {
         </nav>
       </ScrollArea>
 
-      {/* User Footer Profile — Matching reference visual card */}
-      <div className="p-3 border-t border-[#1E293B] shrink-0 bg-[#0B132B]/90">
+      {/* User Footer Profile — Matching clean white card */}
+      <div className="p-2.5 border-t border-[#E5E7EB] shrink-0 bg-white">
         <Link
           href="/settings"
           prefetch
           onClick={onCloseMobile}
-          className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-slate-900/80 border border-[#1E293B] hover:border-slate-700 hover:bg-slate-800/80 transition-all group"
+          className="flex items-center gap-2.5 px-2.5 py-2 rounded-xl bg-slate-50/80 border border-[#E5E7EB] hover:border-slate-300 hover:bg-slate-100/70 transition-all group"
         >
-          <div className="h-9 w-9 rounded-full bg-[#2563EB] text-white flex items-center justify-center text-xs font-bold shrink-0 shadow-xs">
+          <div className="h-8.5 w-8.5 rounded-full bg-[#2563EB] text-white flex items-center justify-center text-xs font-bold shrink-0 shadow-2xs">
             {user ? getInitials(user.full_name) : "IA"}
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-[13px] font-semibold text-white truncate leading-tight group-hover:text-blue-200 transition-colors">
+            <p className="text-[12.5px] font-bold text-[#111827] truncate leading-tight group-hover:text-[#2563EB] transition-colors" title={user?.full_name || "Ibrar Ahmad"}>
               {user?.full_name || "Ibrar Ahmad"}
             </p>
-            <p className="text-[11px] text-slate-400 font-medium capitalize truncate mt-0.5">
+            <p className="text-[11px] text-[#64748B] font-medium capitalize truncate mt-0.5">
               {user?.role || "Owner"}
             </p>
           </div>
-          <ChevronRight className="h-4 w-4 text-slate-400 group-hover:text-white transition-colors shrink-0" />
+          <ChevronRight className="h-3.5 w-3.5 text-slate-400 group-hover:text-slate-600 transition-colors shrink-0" />
         </Link>
       </div>
     </aside>

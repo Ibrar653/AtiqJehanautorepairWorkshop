@@ -13,6 +13,8 @@ import { getLocalJobCards } from "@/lib/services/job-card-service";
 import { getLocalVehicles } from "@/lib/services/vehicle-service";
 import { CombinedCustomerVehicleModal } from "@/components/shared/combined-customer-vehicle-modal";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   DollarSign,
   Wrench,
@@ -33,6 +35,7 @@ import {
   FileText,
   Sparkles,
   RefreshCw,
+  Check,
 } from "lucide-react";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { useAuth } from "@/lib/context/auth-context";
@@ -44,6 +47,60 @@ export function DashboardView() {
   const { currentWorkspace } = useWorkspace();
   const [period, setPeriod] = useState<DashboardPeriod>("this_month");
   const [customRange, setCustomRange] = useState<{ startDate?: string; endDate?: string }>({});
+  const [showCustomRangePicker, setShowCustomRangePicker] = useState(false);
+  const [customStartDate, setCustomStartDate] = useState(
+    () => new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0, 10)
+  );
+  const [customEndDate, setCustomEndDate] = useState(
+    () => new Date().toISOString().slice(0, 10)
+  );
+  const [customRangeError, setCustomRangeError] = useState<string | null>(null);
+
+  const handlePeriodChange = (pKey: DashboardPeriod) => {
+    if (pKey === "custom") {
+      setShowCustomRangePicker((prev) => !prev);
+    } else {
+      setShowCustomRangePicker(false);
+      setCustomRangeError(null);
+      setPeriod(pKey);
+    }
+  };
+
+  const handleApplyCustomRange = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!customStartDate || !customEndDate) {
+      setCustomRangeError("Please select both start date and end date.");
+      return;
+    }
+    if (customStartDate > customEndDate) {
+      setCustomRangeError("Start date cannot be after end date.");
+      return;
+    }
+    setCustomRangeError(null);
+    setCustomRange({ startDate: customStartDate, endDate: customEndDate });
+    setPeriod("custom");
+    setShowCustomRangePicker(false);
+  };
+
+  const handleCancelCustomRange = () => {
+    setShowCustomRangePicker(false);
+    setCustomRangeError(null);
+    if (period === "custom" && (!customRange.startDate || !customRange.endDate)) {
+      setPeriod("this_month");
+    }
+  };
+
+  const handleResetCustomRange = () => {
+    const defaultStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0, 10);
+    const defaultEnd = new Date().toISOString().slice(0, 10);
+    setCustomStartDate(defaultStart);
+    setCustomEndDate(defaultEnd);
+    setCustomRange({});
+    setCustomRangeError(null);
+    setPeriod("this_month");
+    setShowCustomRangePicker(false);
+  };
+
   const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -172,42 +229,142 @@ export function DashboardView() {
       {/* ───────────────────────────────────────────────────────────────────────
           2. DATE FILTER (COMPACT PREMIUM SEGMENTED CONTROL)
       ──────────────────────────────────────────────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-2.5 rounded-2xl border border-slate-200/90 shadow-2xs">
-        <div className="flex items-center gap-1 overflow-x-auto p-0.5">
-          {(
-            [
-              { key: "today", label: "Today" },
-              { key: "yesterday", label: "Yesterday" },
-              { key: "this_week", label: "This Week" },
-              { key: "this_month", label: "This Month" },
-              { key: "last_month", label: "Last Month" },
-              { key: "this_year", label: "This Year" },
-              { key: "custom", label: "Custom Range" },
-            ] as const
-          ).map((p) => (
-            <button
-              key={p.key}
-              type="button"
-              onClick={() => setPeriod(p.key)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all whitespace-nowrap ${
-                period === p.key
-                  ? "bg-blue-600 text-white shadow-xs"
-                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-100/70"
-              }`}
-            >
-              {p.label}
-            </button>
-          ))}
+      <div className="bg-white p-3 rounded-2xl border border-slate-200/90 shadow-2xs space-y-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-1 overflow-x-auto p-0.5">
+            {(
+              [
+                { key: "today", label: "Today" },
+                { key: "yesterday", label: "Yesterday" },
+                { key: "this_week", label: "This Week" },
+                { key: "this_month", label: "This Month" },
+                { key: "last_month", label: "Last Month" },
+                { key: "this_year", label: "This Year" },
+                { key: "custom", label: "Custom Range" },
+              ] as const
+            ).map((p) => (
+              <button
+                key={p.key}
+                type="button"
+                onClick={() => handlePeriodChange(p.key)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all whitespace-nowrap flex items-center gap-1.5 ${
+                  period === p.key
+                    ? "bg-blue-600 text-white shadow-xs"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-100/70"
+                }`}
+              >
+                {p.key === "custom" && <Calendar className="h-3.5 w-3.5" />}
+                {p.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex items-center gap-2 px-2 text-xs font-medium self-end sm:self-center">
+            {period === "custom" && customRange.startDate && customRange.endDate ? (
+              <div className="flex items-center gap-1.5 bg-blue-50 text-blue-700 font-semibold px-2.5 py-1 rounded-xl border border-blue-200/80">
+                <Calendar className="h-3.5 w-3.5 text-blue-600" />
+                <span className="font-mono tabular-nums">
+                  {customRange.startDate} to {customRange.endDate}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setShowCustomRangePicker((prev) => !prev)}
+                  className="ml-1 text-[11px] underline text-blue-600 hover:text-blue-800 cursor-pointer"
+                  title="Modify date range"
+                >
+                  Edit
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-1.5 text-slate-500">
+                <Calendar className="h-3.5 w-3.5 text-slate-400" />
+                <span>
+                  {activeRange.startDate && activeRange.endDate
+                    ? `${activeRange.startDate} to ${activeRange.endDate}`
+                    : "Active cycle"}
+                </span>
+              </div>
+            )}
+          </div>
         </div>
 
-        <div className="flex items-center gap-2 px-2 text-xs text-slate-500 font-medium self-end sm:self-center">
-          <Calendar className="h-3.5 w-3.5 text-slate-400" />
-          <span>
-            {activeRange.startDate && activeRange.endDate
-              ? `${activeRange.startDate} to ${activeRange.endDate}`
-              : "Active cycle"}
-          </span>
-        </div>
+        {/* Custom Range Picker Form */}
+        {showCustomRangePicker && (
+          <form
+            onSubmit={handleApplyCustomRange}
+            className="pt-3 border-t border-slate-100 flex flex-wrap items-end gap-3.5 animate-in fade-in-50 duration-150"
+          >
+            <div className="space-y-1">
+              <Label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider">
+                Start Date
+              </Label>
+              <Input
+                type="date"
+                value={customStartDate}
+                onChange={(e) => {
+                  setCustomStartDate(e.target.value);
+                  setCustomRangeError(null);
+                }}
+                required
+                className="h-9 text-xs w-40 rounded-xl border-slate-200 bg-white font-mono tabular-nums shadow-2xs"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <Label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider">
+                End Date
+              </Label>
+              <Input
+                type="date"
+                value={customEndDate}
+                onChange={(e) => {
+                  setCustomEndDate(e.target.value);
+                  setCustomRangeError(null);
+                }}
+                required
+                className="h-9 text-xs w-40 rounded-xl border-slate-200 bg-white font-mono tabular-nums shadow-2xs"
+              />
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Button
+                type="submit"
+                size="sm"
+                className="bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl shadow-2xs h-9 px-4 text-xs gap-1.5 transition-colors cursor-pointer"
+              >
+                <Check className="h-3.5 w-3.5" />
+                Apply Range
+              </Button>
+
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleCancelCustomRange}
+                className="rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-semibold h-9 px-3 text-xs shadow-2xs cursor-pointer"
+              >
+                Cancel
+              </Button>
+
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={handleResetCustomRange}
+                className="text-slate-500 hover:text-slate-700 text-xs h-9 px-2.5 rounded-xl hover:bg-slate-100 cursor-pointer"
+              >
+                Reset
+              </Button>
+            </div>
+
+            {customRangeError && (
+              <div className="w-full text-xs text-rose-600 font-medium flex items-center gap-1 mt-1">
+                <AlertTriangle className="h-3.5 w-3.5" />
+                <span>{customRangeError}</span>
+              </div>
+            )}
+          </form>
+        )}
       </div>
 
       {/* ───────────────────────────────────────────────────────────────────────

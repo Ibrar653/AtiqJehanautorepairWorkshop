@@ -317,16 +317,16 @@ export function JobCardListView() {
               <Button
                 variant="outline"
                 onClick={() => setUploadModalOpen(true)}
-                className="h-9 px-3.5 text-xs font-semibold rounded-lg border-border hover:bg-muted/50"
+                className="h-10 px-3.5 text-xs font-semibold rounded-xl border-slate-200 bg-white hover:bg-slate-50 text-slate-700 shadow-2xs gap-1.5"
               >
-                <Upload className="mr-1.5 h-3.5 w-3.5 text-muted-foreground" />
+                <Upload className="h-3.5 w-3.5 text-slate-500" />
                 Upload Paper Job Card
               </Button>
               <Button
                 render={<Link href="/job-cards/new" />}
-                className="h-9 px-4 text-xs font-semibold rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs"
+                className="h-10 px-4 text-xs font-semibold rounded-xl bg-blue-600 hover:bg-blue-700 text-white shadow-2xs gap-1.5"
               >
-                <Plus className="mr-1.5 h-3.5 w-3.5" />
+                <Plus className="h-3.5 w-3.5" />
                 Create Job Card
               </Button>
             </>
@@ -337,86 +337,78 @@ export function JobCardListView() {
       {/* Summary KPI Cards Strip */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Total / Open Jobs */}
-        <Card
+        <div
           onClick={() => setStatusFilter("all")}
-          className={`border shadow-xs bg-card rounded-xl cursor-pointer transition-all hover:border-primary/50 ${
-            statusFilter === "all" ? "border-primary ring-1 ring-primary/30" : "border-border/80"
+          className={`bg-white rounded-2xl border border-slate-200/90 p-5 shadow-2xs cursor-pointer transition-all hover:border-blue-400/60 ${
+            statusFilter === "all" ? "ring-2 ring-blue-600/30 border-blue-500" : ""
           }`}
         >
-          <CardContent className="p-4 flex items-center justify-between">
-            <div>
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Open Jobs</p>
-              <p className="text-2xl font-bold tracking-tight text-foreground font-mono mt-1">{total}</p>
-              <p className="text-[11px] text-muted-foreground mt-0.5">Total registered orders</p>
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Open Jobs</span>
+            <div className="h-9 w-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+              <ClipboardList className="h-4 w-4" />
             </div>
-            <div className="h-10 w-10 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
-              <ClipboardList className="h-5 w-5" />
-            </div>
-          </CardContent>
-        </Card>
+          </div>
+          <p className="text-2xl font-bold tracking-tight text-slate-900 font-mono mt-2">{total}</p>
+          <p className="text-xs text-slate-500 mt-1">Total registered orders</p>
+        </div>
 
         {/* In Progress */}
-        <Card
+        <div
           onClick={() => setStatusFilter("in_progress")}
-          className={`border shadow-xs bg-card rounded-xl cursor-pointer transition-all hover:border-amber-500/50 ${
-            statusFilter === "in_progress" ? "border-amber-500 ring-1 ring-amber-500/30" : "border-border/80"
+          className={`bg-white rounded-2xl border border-slate-200/90 p-5 shadow-2xs cursor-pointer transition-all hover:border-amber-400/60 ${
+            statusFilter === "in_progress" ? "ring-2 ring-amber-500/30 border-amber-500" : ""
           }`}
         >
-          <CardContent className="p-4 flex items-center justify-between">
-            <div>
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">In Progress</p>
-              <p className="text-2xl font-bold tracking-tight text-amber-600 dark:text-amber-400 font-mono mt-1">
-                {counts.inProgress}
-              </p>
-              <p className="text-[11px] text-muted-foreground mt-0.5">Currently on the lifts</p>
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">In Progress</span>
+            <div className="h-9 w-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
+              <Clock className="h-4 w-4" />
             </div>
-            <div className="h-10 w-10 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
-              <Clock className="h-5 w-5" />
-            </div>
-          </CardContent>
-        </Card>
+          </div>
+          <p className="text-2xl font-bold tracking-tight text-amber-600 font-mono mt-2">
+            {counts.inProgress}
+          </p>
+          <p className="text-xs text-slate-500 mt-1">Currently on the lifts</p>
+        </div>
 
         {/* Waiting / Pending */}
-        <Card
+        <div
           onClick={() => setStatusFilter("waiting")}
-          className={`border shadow-xs bg-card rounded-xl cursor-pointer transition-all hover:border-purple-500/50 ${
-            statusFilter === "waiting" ? "border-purple-500 ring-1 ring-purple-500/30" : "border-border/80"
+          className={`bg-white rounded-2xl border border-slate-200/90 p-5 shadow-2xs cursor-pointer transition-all hover:border-purple-400/60 ${
+            statusFilter === "waiting" ? "ring-2 ring-purple-500/30 border-purple-500" : ""
           }`}
         >
-          <CardContent className="p-4 flex items-center justify-between">
-            <div>
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Waiting</p>
-              <p className="text-2xl font-bold tracking-tight text-purple-600 dark:text-purple-400 font-mono mt-1">
-                {counts.waiting}
-              </p>
-              <p className="text-[11px] text-muted-foreground mt-0.5">Parts or approval pending</p>
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Waiting</span>
+            <div className="h-9 w-9 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center shrink-0">
+              <AlertCircle className="h-4 w-4" />
             </div>
-            <div className="h-10 w-10 rounded-xl bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0">
-              <AlertCircle className="h-5 w-5" />
-            </div>
-          </CardContent>
-        </Card>
+          </div>
+          <p className="text-2xl font-bold tracking-tight text-purple-600 font-mono mt-2">
+            {counts.waiting}
+          </p>
+          <p className="text-xs text-slate-500 mt-1">Parts or approval pending</p>
+        </div>
 
         {/* Completed */}
-        <Card
+        <div
           onClick={() => setStatusFilter("completed")}
-          className={`border shadow-xs bg-card rounded-xl cursor-pointer transition-all hover:border-emerald-500/50 ${
-            statusFilter === "completed" ? "border-emerald-500 ring-1 ring-emerald-500/30" : "border-border/80"
+          className={`bg-white rounded-2xl border border-slate-200/90 p-5 shadow-2xs cursor-pointer transition-all hover:border-emerald-400/60 ${
+            statusFilter === "completed" ? "ring-2 ring-emerald-500/30 border-emerald-500" : ""
           }`}
         >
-          <CardContent className="p-4 flex items-center justify-between">
-            <div>
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Completed</p>
-              <p className="text-2xl font-bold tracking-tight text-emerald-600 dark:text-emerald-400 font-mono mt-1">
-                {counts.completed}
-              </p>
-              <p className="text-[11px] text-muted-foreground mt-0.5">Ready for invoicing</p>
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Completed</span>
+            <div className="h-9 w-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+              <CheckCircle2 className="h-4 w-4" />
             </div>
-            <div className="h-10 w-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
-              <CheckCircle2 className="h-5 w-5" />
-            </div>
-          </CardContent>
-        </Card>
+          </div>
+          <p className="text-2xl font-bold tracking-tight text-emerald-600 font-mono mt-2">
+            {counts.completed}
+          </p>
+          <p className="text-xs text-slate-500 mt-1">Ready for invoicing</p>
+        </div>
       </div>
 
       {/* Main Mode Tabs & Filter Bar */}
@@ -429,14 +421,14 @@ export function JobCardListView() {
               setPage(1);
             }}
           >
-            <TabsList className="bg-muted/50 border border-border/80 p-1 rounded-lg">
-              <TabsTrigger value="all" className="text-xs px-3 py-1 font-medium rounded-md">
+            <TabsList className="bg-slate-100/90 border border-slate-200/80 p-1 rounded-xl">
+              <TabsTrigger value="all" className="text-xs px-3.5 py-1.5 font-medium rounded-lg data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-2xs">
                 All Records ({total + uploadedTotal})
               </TabsTrigger>
-              <TabsTrigger value="digital" className="text-xs px-3 py-1 font-medium rounded-md">
+              <TabsTrigger value="digital" className="text-xs px-3.5 py-1.5 font-medium rounded-lg data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-2xs">
                 Digital Job Cards ({total})
               </TabsTrigger>
-              <TabsTrigger value="uploaded" className="text-xs px-3 py-1 font-medium rounded-md">
+              <TabsTrigger value="uploaded" className="text-xs px-3.5 py-1.5 font-medium rounded-lg data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-2xs">
                 Uploaded Paper Cards ({uploadedTotal})
               </TabsTrigger>
             </TabsList>
@@ -450,13 +442,13 @@ export function JobCardListView() {
                 setPage(1);
               }}
             >
-              <TabsList className="bg-muted/40 border border-border/60 p-1 rounded-lg overflow-x-auto">
-                <TabsTrigger value="all" className="text-xs px-2.5 py-1">All Statuses</TabsTrigger>
-                <TabsTrigger value="new" className="text-xs px-2.5 py-1">New</TabsTrigger>
-                <TabsTrigger value="in_progress" className="text-xs px-2.5 py-1">In Progress</TabsTrigger>
-                <TabsTrigger value="waiting" className="text-xs px-2.5 py-1">Waiting</TabsTrigger>
-                <TabsTrigger value="completed" className="text-xs px-2.5 py-1">Completed</TabsTrigger>
-                <TabsTrigger value="cancelled" className="text-xs px-2.5 py-1">Cancelled</TabsTrigger>
+              <TabsList className="bg-slate-100/90 border border-slate-200/80 p-1 rounded-xl overflow-x-auto">
+                <TabsTrigger value="all" className="text-xs px-2.5 py-1 font-medium rounded-lg data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-2xs">All Statuses</TabsTrigger>
+                <TabsTrigger value="new" className="text-xs px-2.5 py-1 font-medium rounded-lg data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-2xs">New</TabsTrigger>
+                <TabsTrigger value="in_progress" className="text-xs px-2.5 py-1 font-medium rounded-lg data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-2xs">In Progress</TabsTrigger>
+                <TabsTrigger value="waiting" className="text-xs px-2.5 py-1 font-medium rounded-lg data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-2xs">Waiting</TabsTrigger>
+                <TabsTrigger value="completed" className="text-xs px-2.5 py-1 font-medium rounded-lg data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-2xs">Completed</TabsTrigger>
+                <TabsTrigger value="cancelled" className="text-xs px-2.5 py-1 font-medium rounded-lg data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-2xs">Cancelled</TabsTrigger>
               </TabsList>
             </Tabs>
           )}
@@ -479,71 +471,71 @@ export function JobCardListView() {
 
       {/* Uploaded Job Cards Tab Content */}
       {activeTab === "uploaded" ? (
-        <Card className="border border-border/80 shadow-xs bg-card overflow-hidden rounded-xl">
-          <CardContent className="p-0">
+        <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs overflow-hidden">
+          <div className="p-0">
             {error ? (
               <div className="py-16 text-center space-y-3">
-                <div className="p-3 bg-rose-50 dark:bg-rose-950/40 text-rose-500 rounded-full w-12 h-12 mx-auto flex items-center justify-center">
+                <div className="p-3 bg-rose-50 text-rose-600 rounded-full w-12 h-12 mx-auto flex items-center justify-center">
                   <AlertCircle className="h-6 w-6" />
                 </div>
-                <p className="font-semibold text-foreground text-sm">{error}</p>
-                <p className="text-xs text-muted-foreground max-w-sm mx-auto">
+                <p className="font-semibold text-slate-900 text-sm">{error}</p>
+                <p className="text-xs text-slate-500 max-w-sm mx-auto">
                   The document archive service encountered an issue loading records.
                 </p>
-                <Button size="sm" variant="outline" onClick={loadData} className="gap-2 h-9 rounded-lg">
+                <Button size="sm" variant="outline" onClick={loadData} className="gap-2 h-9 rounded-xl border-slate-200 bg-white hover:bg-slate-50 text-slate-700">
                   <RefreshCw className="h-3.5 w-3.5" /> Retry
                 </Button>
               </div>
             ) : loading ? (
-              <div className="py-20 text-center text-muted-foreground">
-                <Loader2 className="h-7 w-7 mx-auto animate-spin mb-3 text-primary" />
+              <div className="py-20 text-center text-slate-500">
+                <Loader2 className="h-7 w-7 mx-auto animate-spin mb-3 text-blue-600" />
                 <p className="text-xs">Loading uploaded paper job cards...</p>
               </div>
             ) : uploadedJobCards.length > 0 ? (
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
-                    <TableRow className="bg-muted/50 hover:bg-muted/50 border-b border-border h-11">
-                      <TableHead className="font-semibold text-foreground text-xs uppercase tracking-wider w-[15%]">Job Card #</TableHead>
-                      <TableHead className="font-semibold text-foreground text-xs uppercase tracking-wider w-[12%]">Date</TableHead>
-                      <TableHead className="font-semibold text-foreground text-xs uppercase tracking-wider w-[20%]">Customer</TableHead>
-                      <TableHead className="font-semibold text-foreground text-xs uppercase tracking-wider w-[18%]">Vehicle / Plate</TableHead>
-                      <TableHead className="font-semibold text-foreground text-xs uppercase tracking-wider w-[20%]">Description / Scope</TableHead>
-                      <TableHead className="text-right font-semibold text-foreground text-xs uppercase tracking-wider w-[15%] pr-4">Actions</TableHead>
+                    <TableRow className="bg-slate-50/80 hover:bg-slate-50/80 border-b border-slate-200/80 h-11">
+                      <TableHead className="font-bold text-slate-500 text-[11px] uppercase tracking-wider w-[15%]">Job Card #</TableHead>
+                      <TableHead className="font-bold text-slate-500 text-[11px] uppercase tracking-wider w-[12%]">Date</TableHead>
+                      <TableHead className="font-bold text-slate-500 text-[11px] uppercase tracking-wider w-[20%]">Customer</TableHead>
+                      <TableHead className="font-bold text-slate-500 text-[11px] uppercase tracking-wider w-[18%]">Vehicle / Plate</TableHead>
+                      <TableHead className="font-bold text-slate-500 text-[11px] uppercase tracking-wider w-[20%]">Description / Scope</TableHead>
+                      <TableHead className="text-right font-bold text-slate-500 text-[11px] uppercase tracking-wider w-[15%] pr-4">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
-                  <TableBody className="divide-y divide-border/60">
+                  <TableBody className="divide-y divide-slate-100">
                     {uploadedJobCards.map((doc) => (
-                      <TableRow key={doc.id} className="h-12 hover:bg-muted/40 transition-colors border-b border-border/50">
-                        <TableCell className="font-bold text-foreground font-mono">
+                      <TableRow key={doc.id} className="h-12 hover:bg-slate-50/60 transition-colors border-b border-slate-100">
+                        <TableCell className="font-bold text-slate-900 font-mono">
                           <button
                             onClick={() => setPreviewDoc(doc)}
-                            className="hover:text-primary transition-colors text-left flex items-center gap-1.5"
+                            className="hover:text-blue-600 transition-colors text-left flex items-center gap-1.5"
                           >
-                            <FileText className="h-4 w-4 text-primary shrink-0" />
-                            <span className="truncate text-primary font-bold">{doc.job_card_number}</span>
+                            <FileText className="h-4 w-4 text-blue-600 shrink-0" />
+                            <span className="truncate text-blue-700 font-bold">{doc.job_card_number}</span>
                           </button>
                         </TableCell>
-                        <TableCell className="text-xs text-muted-foreground">
+                        <TableCell className="text-xs text-slate-500">
                           {formatDate(doc.date || doc.created_at)}
                         </TableCell>
-                        <TableCell className="font-medium text-foreground text-xs">
+                        <TableCell className="font-medium text-slate-900 text-xs">
                           {doc.customer?.name}
                           {doc.customer?.mobile && (
-                            <span className="block text-[11px] text-muted-foreground font-normal font-mono">
+                            <span className="block text-[11px] text-slate-500 font-normal font-mono">
                               {doc.customer.mobile}
                             </span>
                           )}
                         </TableCell>
-                        <TableCell className="text-xs text-foreground">
+                        <TableCell className="text-xs text-slate-900">
                           <span className="font-semibold">{doc.vehicle ? `${doc.vehicle.make} ${doc.vehicle.model}` : "—"}</span>
                           {doc.vehicle?.registration_number && (
-                            <span className="block text-[11px] font-mono text-primary font-bold">
+                            <span className="block text-[11px] font-mono text-blue-700 font-bold">
                               Plate: {doc.vehicle.registration_number}
                             </span>
                           )}
                         </TableCell>
-                        <TableCell className="text-xs text-muted-foreground">
+                        <TableCell className="text-xs text-slate-500">
                           <p className="line-clamp-2">{doc.description || "Historical archived paper repair order."}</p>
                         </TableCell>
                         <TableCell className="text-right pr-4">
@@ -552,7 +544,7 @@ export function JobCardListView() {
                               variant="ghost"
                               size="sm"
                               onClick={() => setPreviewDoc(doc)}
-                              className="h-8 px-2 text-xs font-semibold text-primary hover:text-primary hover:bg-primary/10 rounded-lg gap-1"
+                              className="h-8 px-2 text-xs font-semibold text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg gap-1"
                             >
                               <Eye className="h-3.5 w-3.5" /> View
                             </Button>
@@ -561,7 +553,7 @@ export function JobCardListView() {
                               download={doc.file_name}
                               target="_blank"
                               rel="noreferrer"
-                              className="inline-flex items-center justify-center rounded-lg text-xs font-medium border border-border bg-background hover:bg-muted h-8 px-2.5 gap-1 text-foreground"
+                              className="inline-flex items-center justify-center rounded-lg text-xs font-medium border border-slate-200 bg-white hover:bg-slate-50 h-8 px-2.5 gap-1 text-slate-700"
                             >
                               <Download className="h-3.5 w-3.5" />
                             </a>
@@ -569,7 +561,7 @@ export function JobCardListView() {
                               variant="ghost"
                               size="sm"
                               onClick={() => handleDeleteUploaded(doc.id)}
-                              className="h-8 w-8 p-0 text-muted-foreground hover:text-rose-600 rounded-lg"
+                              className="h-8 w-8 p-0 text-slate-500 hover:text-rose-600 rounded-lg"
                               title="Delete Record"
                             >
                               <Trash2 className="h-3.5 w-3.5" />
@@ -582,22 +574,22 @@ export function JobCardListView() {
                 </Table>
               </div>
             ) : (
-              <div className="py-16 text-center text-muted-foreground flex flex-col items-center justify-center px-4">
-                <Upload className="h-10 w-10 mx-auto text-muted-foreground/30 stroke-1 mb-2" />
-                <h3 className="text-sm font-semibold text-foreground">No uploaded paper job cards</h3>
-                <p className="text-xs text-muted-foreground mt-1 mb-4 max-w-sm">
+              <div className="py-16 text-center text-slate-500 flex flex-col items-center justify-center px-4">
+                <Upload className="h-10 w-10 mx-auto text-slate-300 stroke-1 mb-2" />
+                <h3 className="text-sm font-semibold text-slate-900">No uploaded paper job cards</h3>
+                <p className="text-xs text-slate-500 mt-1 mb-4 max-w-sm">
                   Archive old physical job cards, scanned PDF invoices, or photo receipts to preserve vehicle history.
                 </p>
                 <Button
                   onClick={() => setUploadModalOpen(true)}
-                  className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold rounded-lg h-9"
+                  className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-xl h-9 px-4 shadow-2xs"
                 >
                   <Upload className="mr-1.5 h-3.5 w-3.5" /> Upload First Paper Job Card
                 </Button>
               </div>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       ) : (
         /* Digital Job Cards or All Records Content */
         <div className="space-y-4">
@@ -621,31 +613,31 @@ export function JobCardListView() {
             </div>
           )}
 
-          <Card className="border border-border/80 shadow-xs bg-card overflow-hidden rounded-xl">
-            <CardContent className="p-0">
+          <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs overflow-hidden">
+            <div className="p-0">
               {error ? (
                 <div className="py-16 text-center space-y-3">
-                  <div className="p-3 bg-rose-50 dark:bg-rose-950/40 text-rose-500 rounded-full w-12 h-12 mx-auto flex items-center justify-center">
+                  <div className="p-3 bg-rose-50 text-rose-600 rounded-full w-12 h-12 mx-auto flex items-center justify-center">
                     <AlertCircle className="h-6 w-6" />
                   </div>
-                  <p className="font-semibold text-foreground text-sm">{error}</p>
-                  <p className="text-xs text-muted-foreground max-w-sm mx-auto">
+                  <p className="font-semibold text-slate-900 text-sm">{error}</p>
+                  <p className="text-xs text-slate-500 max-w-sm mx-auto">
                     The job card service encountered an issue loading records.
                   </p>
-                  <Button size="sm" variant="outline" onClick={loadData} className="gap-2 h-9 rounded-lg">
+                  <Button size="sm" variant="outline" onClick={loadData} className="gap-2 h-9 rounded-xl border-slate-200 bg-white hover:bg-slate-50 text-slate-700">
                     <RefreshCw className="h-3.5 w-3.5" /> Retry
                   </Button>
                 </div>
               ) : loading ? (
-                <div className="py-20 text-center text-muted-foreground">
-                  <Loader2 className="h-7 w-7 mx-auto animate-spin mb-3 text-primary" />
+                <div className="py-20 text-center text-slate-500">
+                  <Loader2 className="h-7 w-7 mx-auto animate-spin mb-3 text-blue-600" />
                   <p className="text-xs">Loading repair job cards...</p>
                 </div>
               ) : jobCards.length > 0 ? (
                 <div className="overflow-x-auto">
                   <Table>
                     <TableHeader>
-                      <TableRow className="bg-muted/50 hover:bg-muted/50 border-b border-border h-11">
+                      <TableRow className="bg-slate-50/80 hover:bg-slate-50/80 border-b border-slate-200/80 h-11">
                         <TableHead className="w-[44px] pl-4">
                           <Checkbox
                             checked={
@@ -659,22 +651,22 @@ export function JobCardListView() {
                             aria-label="Select all visible job cards"
                           />
                         </TableHead>
-                        <TableHead className="font-semibold text-foreground text-xs uppercase tracking-wider w-[14%]">Job Card #</TableHead>
-                        <TableHead className="font-semibold text-foreground text-xs uppercase tracking-wider w-[11%]">Date</TableHead>
-                        <TableHead className="font-semibold text-foreground text-xs uppercase tracking-wider w-[18%]">Customer Owner</TableHead>
-                        <TableHead className="font-semibold text-foreground text-xs uppercase tracking-wider w-[18%]">Vehicle &amp; Plate</TableHead>
-                        <TableHead className="font-semibold text-foreground text-xs uppercase tracking-wider w-[14%]">Chassis / VIN</TableHead>
-                        <TableHead className="font-semibold text-foreground text-xs uppercase tracking-wider w-[11%]">Status</TableHead>
-                        <TableHead className="text-right font-semibold text-foreground text-xs uppercase tracking-wider w-[12%]">Total (AED)</TableHead>
-                        <TableHead className="text-right font-semibold text-foreground text-xs uppercase tracking-wider w-[12%] pr-4">Actions</TableHead>
+                        <TableHead className="font-bold text-slate-500 text-[11px] uppercase tracking-wider w-[14%]">Job Card #</TableHead>
+                        <TableHead className="font-bold text-slate-500 text-[11px] uppercase tracking-wider w-[11%]">Date</TableHead>
+                        <TableHead className="font-bold text-slate-500 text-[11px] uppercase tracking-wider w-[18%]">Customer Owner</TableHead>
+                        <TableHead className="font-bold text-slate-500 text-[11px] uppercase tracking-wider w-[18%]">Vehicle &amp; Plate</TableHead>
+                        <TableHead className="font-bold text-slate-500 text-[11px] uppercase tracking-wider w-[14%]">Chassis / VIN</TableHead>
+                        <TableHead className="font-bold text-slate-500 text-[11px] uppercase tracking-wider w-[11%]">Status</TableHead>
+                        <TableHead className="text-right font-bold text-slate-500 text-[11px] uppercase tracking-wider w-[12%]">Total (AED)</TableHead>
+                        <TableHead className="text-right font-bold text-slate-500 text-[11px] uppercase tracking-wider w-[12%] pr-4">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
-                    <TableBody className="divide-y divide-border/60">
+                    <TableBody className="divide-y divide-slate-100">
                       {jobCards.map((jc) => (
                         <TableRow
                           key={jc.id}
-                          className={`h-12 hover:bg-muted/40 transition-colors border-b border-border/50 ${
-                            selectedJobCardIds.includes(jc.id) ? "bg-primary/5" : ""
+                          className={`h-12 hover:bg-slate-50/60 transition-colors border-b border-slate-100 ${
+                            selectedJobCardIds.includes(jc.id) ? "bg-blue-50/40" : ""
                           }`}
                         >
                           <TableCell className="pl-4">
@@ -685,18 +677,18 @@ export function JobCardListView() {
                             />
                           </TableCell>
                           <TableCell>
-                            <Link href={`/job-cards/${jc.id}`} className="hover:text-primary transition-colors block">
-                              <span className="text-primary font-bold font-mono text-sm block hover:underline">
+                            <Link href={`/job-cards/${jc.id}`} className="hover:text-blue-600 transition-colors block">
+                              <span className="text-blue-700 font-bold font-mono text-sm block hover:underline">
                                 {jc.job_card_number}
                               </span>
                               {jc.invoice_number && (
-                                <span className="text-[10px] text-muted-foreground font-mono font-medium block">
+                                <span className="text-[10px] text-slate-400 font-mono font-medium block">
                                   Inv: #{jc.invoice_number}
                                 </span>
                               )}
                             </Link>
                           </TableCell>
-                          <TableCell className="text-xs text-muted-foreground">
+                          <TableCell className="text-xs text-slate-500">
                             {formatDate(jc.date || jc.created_at)}
                           </TableCell>
                           <TableCell>
@@ -704,44 +696,44 @@ export function JobCardListView() {
                               <div>
                                 <Link
                                   href={`/customers/${jc.customer_id}`}
-                                  className="font-semibold text-foreground text-xs hover:text-primary hover:underline transition-colors block"
+                                  className="font-semibold text-slate-900 text-xs hover:text-blue-600 hover:underline transition-colors block"
                                 >
                                   {jc.customer.name}
                                 </Link>
                                 {jc.customer.mobile && (
-                                  <p className="text-[11px] font-mono text-muted-foreground">{jc.customer.mobile}</p>
+                                  <p className="text-[11px] font-mono text-slate-500">{jc.customer.mobile}</p>
                                 )}
                               </div>
                             ) : (
-                              <span className="text-muted-foreground text-xs">—</span>
+                              <span className="text-slate-400 text-xs">—</span>
                             )}
                           </TableCell>
                           <TableCell className="text-xs">
                             {jc.vehicle ? (
                               <div>
-                                <p className="font-semibold text-foreground">
+                                <p className="font-semibold text-slate-900">
                                   {jc.vehicle.make} {jc.vehicle.model}
                                 </p>
-                                <p className="text-[11px] font-bold font-mono text-primary">
+                                <p className="text-[11px] font-bold font-mono text-blue-700">
                                   {jc.vehicle.registration_number || "No Plate"}
                                 </p>
                               </div>
                             ) : (
-                              <span className="text-muted-foreground text-xs">—</span>
+                              <span className="text-slate-400 text-xs">—</span>
                             )}
                           </TableCell>
-                          <TableCell className="font-mono text-xs text-muted-foreground">
+                          <TableCell className="font-mono text-xs text-slate-500">
                             {jc.vehicle?.chassis_vin || "—"}
                           </TableCell>
                           <TableCell>
                             <div className="space-y-0.5">
                               {getStatusBadge(jc.status)}
-                              <span className="block text-[10px] font-semibold text-muted-foreground uppercase tracking-tight">
+                              <span className="block text-[10px] font-semibold text-slate-400 uppercase tracking-tight">
                                 {jc.payment_status || "Pending"}
                               </span>
                             </div>
                           </TableCell>
-                          <TableCell className="font-bold text-foreground text-right text-xs font-mono tabular-nums">
+                          <TableCell className="font-bold text-slate-900 text-right text-xs font-mono tabular-nums">
                             {formatCurrency(jc.total)}
                           </TableCell>
                           <TableCell className="text-right pr-4">
@@ -751,7 +743,7 @@ export function JobCardListView() {
                                 size="sm"
                                 render={<Link href={`/job-cards/${jc.id}`} />}
                                 title="View Full Job Card"
-                                className="h-8 px-2 text-xs font-semibold text-primary hover:text-primary hover:bg-primary/10 rounded-lg"
+                                className="h-8 px-2 text-xs font-semibold text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg"
                               >
                                 <Eye className="h-3.5 w-3.5 mr-1" /> View
                               </Button>
@@ -761,34 +753,34 @@ export function JobCardListView() {
                                 size="sm"
                                 render={<Link href={`/job-cards/${jc.id}?print=true`} />}
                                 title="Print A4 Job Card"
-                                className="h-8 px-2 text-xs text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg"
+                                className="h-8 px-2 text-xs text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg"
                               >
                                 <Printer className="h-3.5 w-3.5 mr-1" /> Print
                               </Button>
 
                               <DropdownMenu>
-                                <DropdownMenuTrigger className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-border text-muted-foreground hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/40">
+                                <DropdownMenuTrigger className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-blue-600/40">
                                   <MoreVertical className="h-3.5 w-3.5" />
                                 </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end" className="w-44 text-xs shadow-md border-border rounded-lg">
+                                <DropdownMenuContent align="end" className="w-44 text-xs shadow-md border-slate-200 rounded-xl">
                                   <DropdownMenuLabel>Job Card Actions</DropdownMenuLabel>
                                   <DropdownMenuItem render={<Link href={`/job-cards/${jc.id}`} />}>
-                                    <Eye className="h-3.5 w-3.5 mr-2 text-primary" /> View Details
+                                    <Eye className="h-3.5 w-3.5 mr-2 text-blue-600" /> View Details
                                   </DropdownMenuItem>
                                   {canEdit && (
                                     <DropdownMenuItem render={<Link href={`/job-cards/${jc.id}/edit`} />}>
-                                      <Pencil className="h-3.5 w-3.5 mr-2 text-muted-foreground" /> Edit Job Card
+                                      <Pencil className="h-3.5 w-3.5 mr-2 text-slate-500" /> Edit Job Card
                                     </DropdownMenuItem>
                                   )}
                                   <DropdownMenuItem render={<Link href={`/job-cards/${jc.id}?print=true`} />}>
-                                    <Printer className="h-3.5 w-3.5 mr-2 text-muted-foreground" /> Print A4 Sheet
+                                    <Printer className="h-3.5 w-3.5 mr-2 text-slate-500" /> Print A4 Sheet
                                   </DropdownMenuItem>
                                   {canDelete && (
                                     <>
                                       <DropdownMenuSeparator />
                                       <DropdownMenuItem
                                         onClick={() => openDeleteModal(jc)}
-                                        className="text-destructive hover:text-destructive font-semibold focus:text-destructive"
+                                        className="text-rose-600 hover:text-rose-700 font-semibold focus:text-rose-700"
                                       >
                                         <Trash2 className="h-3.5 w-3.5 mr-2" /> Delete
                                       </DropdownMenuItem>
@@ -804,24 +796,24 @@ export function JobCardListView() {
                   </Table>
                 </div>
               ) : (
-                <div className="py-16 text-center text-muted-foreground flex flex-col items-center justify-center px-4">
-                  <ClipboardList className="h-10 w-10 mx-auto text-muted-foreground/30 stroke-1 mb-2" />
-                  <h3 className="text-sm font-semibold text-foreground">No job cards found</h3>
-                  <p className="text-xs text-muted-foreground mt-1 mb-4 max-w-sm">
+                <div className="py-14 text-center text-slate-500 flex flex-col items-center justify-center px-4">
+                  <ClipboardList className="h-10 w-10 mx-auto text-slate-300 stroke-1 mb-2" />
+                  <h3 className="text-sm font-semibold text-slate-900">No job cards found</h3>
+                  <p className="text-xs text-slate-500 mt-1 mb-4 max-w-sm">
                     {query || statusFilter !== "all"
                       ? "No repair orders match your current filter and search query."
                       : "Open a repair job card for a customer vehicle to start tracking services, parts and labour."}
                   </p>
                   <Button
                     render={<Link href="/job-cards/new" />}
-                    className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold rounded-lg h-9"
+                    className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-xl h-9 px-4 shadow-2xs"
                   >
                     <Plus className="mr-1.5 h-3.5 w-3.5" /> Create First Job Card
                   </Button>
                 </div>
               )}
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </div>
       )}
 

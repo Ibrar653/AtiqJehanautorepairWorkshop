@@ -1550,13 +1550,12 @@ export function AccountsView() {
         />
 
         {/* Global Quick Action Buttons */}
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex items-center gap-2.5 flex-wrap">
           <Button
             variant="outline"
-            size="sm"
             onClick={loadAllData}
             disabled={loading}
-            className="text-xs h-9 gap-1.5"
+            className="rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-semibold h-10 px-3.5 shadow-2xs gap-1.5 text-xs transition-colors"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
             Refresh
@@ -1565,12 +1564,11 @@ export function AccountsView() {
           {canTransfer && (
             <Button
               variant="outline"
-              size="sm"
               onClick={() => setTransferOpen(true)}
-              className="text-xs h-9 gap-1.5 border-indigo-200 text-indigo-700 hover:bg-indigo-50 dark:border-indigo-800 dark:text-indigo-300"
+              className="rounded-xl border border-indigo-200 bg-white hover:bg-indigo-50/60 text-indigo-700 font-semibold h-10 px-3.5 shadow-2xs gap-1.5 text-xs transition-colors"
             >
               <ArrowRightLeft className="w-3.5 h-3.5" />
-              + Transfer Money
+              Transfer Money
             </Button>
           )}
 
@@ -1578,21 +1576,19 @@ export function AccountsView() {
             <>
               <Button
                 variant="outline"
-                size="sm"
                 onClick={() => setJournalOpen(true)}
-                className="text-xs h-9 gap-1.5 border-blue-200 text-blue-700 hover:bg-blue-50 dark:border-blue-800 dark:text-blue-300"
+                className="rounded-xl border border-blue-200 bg-white hover:bg-blue-50/60 text-blue-700 font-semibold h-10 px-3.5 shadow-2xs gap-1.5 text-xs transition-colors"
               >
                 <FileSpreadsheet className="w-3.5 h-3.5" />
-                + Manual Journal
+                Manual Journal
               </Button>
 
               <Button
-                size="sm"
                 onClick={() => setNewAccountOpen(true)}
-                className="text-xs h-9 gap-1.5 bg-blue-600 hover:bg-blue-700 text-white"
+                className="bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl shadow-2xs h-10 px-4 gap-1.5 text-xs transition-colors"
               >
                 <Plus className="w-3.5 h-3.5" />
-                + Add Account
+                Add Account
               </Button>
             </>
           )}
@@ -1600,9 +1596,8 @@ export function AccountsView() {
           {isOwner && (
             <Button
               variant="outline"
-              size="sm"
               onClick={() => setResetAccountingOpen(true)}
-              className="text-xs h-9 gap-1.5 border-rose-300 text-rose-700 hover:bg-rose-50 dark:border-rose-900/60 dark:text-rose-400 dark:hover:bg-rose-950/40"
+              className="rounded-xl border border-rose-200 bg-white hover:bg-rose-50/60 text-rose-700 font-semibold h-10 px-3.5 shadow-2xs gap-1.5 text-xs transition-colors"
               title="Reset ATIQ JEHAN Accounting to Clean Zero"
             >
               <RotateCcw className="w-3.5 h-3.5 text-rose-600" />
@@ -1613,9 +1608,9 @@ export function AccountsView() {
       </div>
 
       {/* ─── FAST GLOBAL SEARCH ─────────────────────────────────────────── */}
-      <div className="relative bg-white dark:bg-slate-900 border rounded-xl shadow-sm p-3.5 space-y-3">
+      <div className="relative bg-white border border-slate-200/90 rounded-2xl shadow-2xs p-4 space-y-3">
         <div className="relative flex items-center">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 dark:text-slate-500" />
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
           <Input
             id="accounts-global-search-input"
             type="text"
@@ -1633,7 +1628,7 @@ export function AccountsView() {
                 setIsSearchOpen(false);
               }
             }}
-            className="pl-10 pr-24 h-11 text-sm bg-slate-50/70 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 focus-visible:ring-blue-500"
+            className="pl-10 pr-24 h-11 text-sm bg-slate-50/70 border-slate-200 rounded-xl focus-visible:ring-blue-500"
           />
           <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
             {isSearching && <RefreshCw className="h-4 w-4 text-blue-500 animate-spin" />}
@@ -1645,13 +1640,13 @@ export function AccountsView() {
                   setSearchResults([]);
                   setIsSearchOpen(false);
                 }}
-                className="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-600 transition"
+                className="p-1 rounded-lg hover:bg-slate-200 text-slate-400 hover:text-slate-600 transition"
                 title="Clear search"
               >
                 <X className="h-3.5 w-3.5" />
               </button>
             )}
-            <kbd className="hidden sm:inline-flex text-[10px] text-muted-foreground bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded border">
+            <kbd className="hidden sm:inline-flex text-[10px] text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded-lg border border-slate-200 font-mono">
               ESC
             </kbd>
           </div>
@@ -1659,7 +1654,7 @@ export function AccountsView() {
 
         {/* Filter Pills */}
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs no-scrollbar">
-          <span className="text-[11px] font-semibold text-muted-foreground uppercase mr-1 tracking-wider">
+          <span className="text-[11px] font-bold text-slate-500 uppercase mr-1 tracking-wider">
             Filter:
           </span>
           {SEARCH_FILTERS.map((f) => {
@@ -1669,10 +1664,10 @@ export function AccountsView() {
                 key={f.id}
                 type="button"
                 onClick={() => setSearchFilter(f.id)}
-                className={`px-2.5 py-1 rounded-full text-xs font-medium transition-all whitespace-nowrap ${
+                className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all whitespace-nowrap ${
                   isActive
-                    ? "bg-blue-600 text-white shadow-sm"
-                    : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
+                    ? "bg-blue-600 text-white shadow-2xs"
+                    : "bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900"
                 }`}
               >
                 {f.label}
@@ -1683,46 +1678,46 @@ export function AccountsView() {
 
         {/* Results Dropdown Panel */}
         {isSearchOpen && debouncedSearchQuery.trim().length >= 2 && (
-          <div className="mt-2 border border-slate-200 dark:border-slate-800 rounded-lg bg-white dark:bg-slate-900 shadow-xl overflow-hidden divide-y divide-slate-100 dark:divide-slate-800 animate-in fade-in-50 duration-150 z-20">
-            <div className="px-3.5 py-2 bg-slate-50/80 dark:bg-slate-800/80 flex items-center justify-between text-xs text-muted-foreground">
+          <div className="mt-2 border border-slate-200/90 rounded-2xl bg-white shadow-xl overflow-hidden divide-y divide-slate-100 animate-in fade-in-50 duration-150 z-20">
+            <div className="px-4 py-2.5 bg-slate-50/80 flex items-center justify-between text-xs text-slate-500">
               <span>
                 {isSearching ? (
                   "Searching accounts and ledger records..."
                 ) : (
                   <>
-                    Found <strong className="text-foreground">{searchResults.length}</strong> matching record{searchResults.length === 1 ? "" : "s"}
+                    Found <strong className="text-slate-900">{searchResults.length}</strong> matching record{searchResults.length === 1 ? "" : "s"}
                   </>
                 )}
               </span>
-              <span className="text-[11px] text-blue-600 dark:text-blue-400 font-medium">Click any record to open ledger details</span>
+              <span className="text-[11px] text-blue-600 font-semibold">Click any record to open ledger details</span>
             </div>
 
             {searchResults.length === 0 && !isSearching ? (
-              <div className="p-6 text-center text-sm text-slate-500 dark:text-slate-400">
+              <div className="p-6 text-center text-sm text-slate-500">
                 <AlertCircle className="w-6 h-6 mx-auto mb-2 text-slate-400" />
-                <p className="font-semibold text-slate-700 dark:text-slate-300">No account or ledger record found</p>
+                <p className="font-semibold text-slate-700">No account or ledger record found</p>
                 <p className="text-xs text-slate-400 mt-0.5">Try searching with a different keyword or change the category filter.</p>
               </div>
             ) : (
-              <div className="max-h-[380px] overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800">
+              <div className="max-h-[380px] overflow-y-auto divide-y divide-slate-100">
                 {searchResults.map((result) => {
                   return (
                     <div
                       key={result.id}
                       onClick={() => handleSelectSearchResult(result)}
-                      className="p-3 hover:bg-blue-50/60 dark:hover:bg-blue-950/30 cursor-pointer transition flex items-center justify-between gap-4 group"
+                      className="p-3.5 hover:bg-blue-50/60 cursor-pointer transition flex items-center justify-between gap-4 group"
                     >
                       <div className="space-y-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-semibold text-sm text-slate-900 dark:text-slate-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition truncate">
+                          <span className="font-semibold text-sm text-slate-900 group-hover:text-blue-600 transition truncate">
                             {result.name}
                           </span>
                           <Badge variant="outline" className={`text-[10px] px-1.5 py-0 font-medium ${getTypeBadgeClass(result.related_entity_type, result.account_type)}`}>
                             {result.account_type}
                           </Badge>
                         </div>
-                        <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400 flex-wrap">
-                          <span className="font-mono bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded text-[11px] text-slate-700 dark:text-slate-300 font-semibold">
+                        <div className="flex items-center gap-3 text-xs text-slate-500 flex-wrap">
+                          <span className="font-mono bg-slate-100 px-1.5 py-0.5 rounded text-[11px] text-slate-700 font-semibold">
                             Code: {result.account_code}
                           </span>
                           {result.reference && (
@@ -1740,8 +1735,8 @@ export function AccountsView() {
 
                       <div className="text-right flex-shrink-0 flex items-center gap-3">
                         <div>
-                          <p className="text-[11px] text-muted-foreground uppercase font-medium">Balance</p>
-                          <p className="text-sm font-bold font-mono text-slate-900 dark:text-slate-100">
+                          <p className="text-[11px] text-slate-400 uppercase font-bold">Balance</p>
+                          <p className="text-sm font-bold font-mono text-slate-900 tabular-nums">
                             AED {Number(result.balance || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </p>
                         </div>
@@ -1758,40 +1753,40 @@ export function AccountsView() {
 
       {/* Main Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-9 h-auto p-1 bg-slate-100 dark:bg-slate-800/80 rounded-lg">
-          <TabsTrigger value="dashboard" className="text-xs py-2 gap-1.5">
+        <TabsList className="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-9 h-auto p-1.5 bg-slate-100/80 rounded-2xl border border-slate-200/80 shadow-2xs gap-1">
+          <TabsTrigger value="dashboard" className="text-xs py-2.5 rounded-xl font-semibold gap-1.5 transition-all data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-xs">
             <LayoutDashboard className="w-3.5 h-3.5" />
             Dashboard
           </TabsTrigger>
-          <TabsTrigger value="accounts" className="text-xs py-2 gap-1.5">
+          <TabsTrigger value="accounts" className="text-xs py-2.5 rounded-xl font-semibold gap-1.5 transition-all data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-xs">
             <BookOpen className="w-3.5 h-3.5" />
             Accounts
           </TabsTrigger>
-          <TabsTrigger value="customers" className="text-xs py-2 gap-1.5">
+          <TabsTrigger value="customers" className="text-xs py-2.5 rounded-xl font-semibold gap-1.5 transition-all data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-xs">
             <Users className="w-3.5 h-3.5" />
             Customers
           </TabsTrigger>
-          <TabsTrigger value="suppliers" className="text-xs py-2 gap-1.5">
+          <TabsTrigger value="suppliers" className="text-xs py-2.5 rounded-xl font-semibold gap-1.5 transition-all data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-xs">
             <Truck className="w-3.5 h-3.5" />
             Suppliers
           </TabsTrigger>
-          <TabsTrigger value="workers" className="text-xs py-2 gap-1.5">
+          <TabsTrigger value="workers" className="text-xs py-2.5 rounded-xl font-semibold gap-1.5 transition-all data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-xs">
             <HardHat className="w-3.5 h-3.5" />
             Workers
           </TabsTrigger>
-          <TabsTrigger value="banks" className="text-xs py-2 gap-1.5">
+          <TabsTrigger value="banks" className="text-xs py-2.5 rounded-xl font-semibold gap-1.5 transition-all data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-xs">
             <Landmark className="w-3.5 h-3.5" />
             Banks
           </TabsTrigger>
-          <TabsTrigger value="owner" className="text-xs py-2 gap-1.5">
+          <TabsTrigger value="owner" className="text-xs py-2.5 rounded-xl font-semibold gap-1.5 transition-all data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-xs">
             <UserCheck className="w-3.5 h-3.5" />
             Owner
           </TabsTrigger>
-          <TabsTrigger value="transfers" className="text-xs py-2 gap-1.5">
+          <TabsTrigger value="transfers" className="text-xs py-2.5 rounded-xl font-semibold gap-1.5 transition-all data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-xs">
             <ArrowRightLeft className="w-3.5 h-3.5" />
             Transfers
           </TabsTrigger>
-          <TabsTrigger value="journal" className="text-xs py-2 gap-1.5">
+          <TabsTrigger value="journal" className="text-xs py-2.5 rounded-xl font-semibold gap-1.5 transition-all data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-xs">
             <FileSpreadsheet className="w-3.5 h-3.5" />
             Journal
           </TabsTrigger>
@@ -1799,333 +1794,331 @@ export function AccountsView() {
 
         {/* ─── TAB 1: DASHBOARD ───────────────────────────────────────────── */}
         <TabsContent value="dashboard" className="space-y-6">
-          {/* 5 Compact Account Summary Cards */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5">
+          {/* 5 Enterprise Account Summary Cards */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
             {/* Cash on Hand */}
-            <Card className="border border-slate-200/80 dark:border-slate-800 shadow-xs bg-white dark:bg-slate-900 rounded-xl">
-              <CardContent className="p-4">
+            <div className="bg-white rounded-2xl border border-slate-200/90 p-5 shadow-2xs flex flex-col justify-between">
+              <div>
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Cash on Hand</span>
-                  <div className="h-7 w-7 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 flex items-center justify-center">
-                    <Wallet className="h-3.5 w-3.5 text-emerald-600" />
+                  <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Cash on Hand</span>
+                  <div className="h-10 w-10 rounded-xl bg-emerald-50 flex items-center justify-center shrink-0 border border-emerald-100">
+                    <Wallet className="h-5 w-5 text-emerald-600" />
                   </div>
                 </div>
-                <div className="mt-2 flex items-baseline gap-2">
-                  <span className="text-lg font-bold font-mono tracking-tight text-slate-900 dark:text-white tabular-nums">
+                <div className="mt-2">
+                  <span className="text-xl font-bold font-mono tracking-tight text-slate-900 tabular-nums">
                     AED {metrics.cashBalance.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </span>
                 </div>
-                <p className="text-[11px] text-slate-400 mt-1 truncate">Drawer & counter float</p>
-                <div className="flex items-center gap-1.5 pt-2 mt-2 border-t border-slate-100 dark:border-slate-800">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => {
-                      const cashAcc = accounts.find((a) => a.account_code === "1001") || accounts[0];
-                      if (cashAcc) handleOpenAddEntryModal(cashAcc);
-                    }}
-                    className="flex-1 text-[11px] h-6 px-1 gap-1 text-slate-700 hover:bg-slate-50"
-                  >
-                    <Plus className="w-2.5 h-2.5" /> Entry
-                  </Button>
-                  <Button
-                    size="sm"
-                    onClick={() => {
-                      const cashAcc = accounts.find((a) => a.account_code === "1001") || accounts[0];
-                      if (cashAcc) handleOpenAccountLedger(cashAcc);
-                    }}
-                    className="flex-1 text-[11px] h-6 px-1 gap-1 bg-blue-600 hover:bg-blue-700 text-white"
-                  >
-                    <BookOpen className="w-2.5 h-2.5" /> Ledger
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+                <p className="text-xs text-slate-500 mt-1 truncate">Drawer & counter float</p>
+              </div>
+              <div className="flex items-center gap-2 pt-3 mt-3 border-t border-slate-100">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    const cashAcc = accounts.find((a) => a.account_code === "1001") || accounts[0];
+                    if (cashAcc) handleOpenAddEntryModal(cashAcc);
+                  }}
+                  className="flex-1 text-xs h-8 px-2 gap-1 rounded-xl border-slate-200 font-semibold text-slate-700 hover:bg-slate-50"
+                >
+                  <Plus className="w-3 h-3" /> Entry
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    const cashAcc = accounts.find((a) => a.account_code === "1001") || accounts[0];
+                    if (cashAcc) handleOpenAccountLedger(cashAcc);
+                  }}
+                  className="flex-1 text-xs h-8 px-2 gap-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl shadow-2xs"
+                >
+                  <BookOpen className="w-3 h-3" /> Ledger
+                </Button>
+              </div>
+            </div>
 
             {/* Bank Balance */}
-            <Card className="border border-slate-200/80 dark:border-slate-800 shadow-xs bg-white dark:bg-slate-900 rounded-xl">
-              <CardContent className="p-4">
+            <div className="bg-white rounded-2xl border border-slate-200/90 p-5 shadow-2xs flex flex-col justify-between">
+              <div>
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Bank Balance</span>
-                  <div className="h-7 w-7 rounded-lg bg-blue-50 dark:bg-blue-950/50 flex items-center justify-center">
-                    <Landmark className="h-3.5 w-3.5 text-blue-600" />
+                  <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Bank Balance</span>
+                  <div className="h-10 w-10 rounded-xl bg-blue-50 flex items-center justify-center shrink-0 border border-blue-100">
+                    <Landmark className="h-5 w-5 text-blue-600" />
                   </div>
                 </div>
-                <div className="mt-2 flex items-baseline gap-2">
-                  <span className="text-lg font-bold font-mono tracking-tight text-blue-600 dark:text-blue-400 tabular-nums">
+                <div className="mt-2">
+                  <span className="text-xl font-bold font-mono tracking-tight text-blue-600 tabular-nums">
                     AED {metrics.totalBankBalance.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </span>
                 </div>
-                <p className="text-[11px] text-slate-400 mt-1 truncate">ADCB + FAB accounts</p>
-                <div className="flex items-center gap-1.5 pt-2 mt-2 border-t border-slate-100 dark:border-slate-800">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => {
-                      const bankAcc = accounts.find((a) => a.account_code === "1002") || accounts[1];
-                      if (bankAcc) handleOpenAddEntryModal(bankAcc);
-                    }}
-                    className="flex-1 text-[11px] h-6 px-1 gap-1 text-slate-700 hover:bg-slate-50"
-                  >
-                    <Plus className="w-2.5 h-2.5" /> Entry
-                  </Button>
-                  <Button
-                    size="sm"
-                    onClick={() => setActiveTab("banks")}
-                    className="flex-1 text-[11px] h-6 px-1 gap-1 bg-blue-600 hover:bg-blue-700 text-white"
-                  >
-                    <Landmark className="w-2.5 h-2.5" /> Banks
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+                <p className="text-xs text-slate-500 mt-1 truncate">ADCB + FAB accounts</p>
+              </div>
+              <div className="flex items-center gap-2 pt-3 mt-3 border-t border-slate-100">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    const bankAcc = accounts.find((a) => a.account_code === "1002") || accounts[1];
+                    if (bankAcc) handleOpenAddEntryModal(bankAcc);
+                  }}
+                  className="flex-1 text-xs h-8 px-2 gap-1 rounded-xl border-slate-200 font-semibold text-slate-700 hover:bg-slate-50"
+                >
+                  <Plus className="w-3 h-3" /> Entry
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={() => setActiveTab("banks")}
+                  className="flex-1 text-xs h-8 px-2 gap-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl shadow-2xs"
+                >
+                  <Landmark className="w-3 h-3" /> Banks
+                </Button>
+              </div>
+            </div>
 
             {/* Receivables */}
-            <Card className="border border-slate-200/80 dark:border-slate-800 shadow-xs bg-white dark:bg-slate-900 rounded-xl">
-              <CardContent className="p-4">
+            <div className="bg-white rounded-2xl border border-slate-200/90 p-5 shadow-2xs flex flex-col justify-between">
+              <div>
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Receivables</span>
-                  <div className="h-7 w-7 rounded-lg bg-amber-50 dark:bg-amber-950/50 flex items-center justify-center">
-                    <Users className="h-3.5 w-3.5 text-amber-600" />
+                  <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Receivables</span>
+                  <div className="h-10 w-10 rounded-xl bg-amber-50 flex items-center justify-center shrink-0 border border-amber-100">
+                    <Users className="h-5 w-5 text-amber-600" />
                   </div>
                 </div>
-                <div className="mt-2 flex items-baseline gap-2">
-                  <span className="text-lg font-bold font-mono tracking-tight text-amber-700 dark:text-amber-400 tabular-nums">
+                <div className="mt-2">
+                  <span className="text-xl font-bold font-mono tracking-tight text-amber-600 tabular-nums">
                     AED {metrics.customerReceivables.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </span>
                 </div>
-                <p className="text-[11px] text-slate-400 mt-1 truncate">Customer unpaid invoices</p>
-                <div className="pt-2 mt-2 border-t border-slate-100 dark:border-slate-800">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => setActiveTab("customers")}
-                    className="w-full text-[11px] h-6 px-1 gap-1 text-slate-700 hover:bg-slate-50"
-                  >
-                    <Users className="w-2.5 h-2.5" /> View Debtors
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+                <p className="text-xs text-slate-500 mt-1 truncate">Customer unpaid invoices</p>
+              </div>
+              <div className="pt-3 mt-3 border-t border-slate-100">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setActiveTab("customers")}
+                  className="w-full text-xs h-8 px-2 gap-1 rounded-xl border-slate-200 font-semibold text-slate-700 hover:bg-slate-50"
+                >
+                  <Users className="w-3 h-3" /> View Debtors
+                </Button>
+              </div>
+            </div>
 
             {/* Payables */}
-            <Card className="border border-slate-200/80 dark:border-slate-800 shadow-xs bg-white dark:bg-slate-900 rounded-xl">
-              <CardContent className="p-4">
+            <div className="bg-white rounded-2xl border border-slate-200/90 p-5 shadow-2xs flex flex-col justify-between">
+              <div>
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Payables</span>
-                  <div className="h-7 w-7 rounded-lg bg-rose-50 dark:bg-rose-950/50 flex items-center justify-center">
-                    <Truck className="h-3.5 w-3.5 text-rose-600" />
+                  <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Payables</span>
+                  <div className="h-10 w-10 rounded-xl bg-rose-50 flex items-center justify-center shrink-0 border border-rose-100">
+                    <Truck className="h-5 w-5 text-rose-600" />
                   </div>
                 </div>
-                <div className="mt-2 flex items-baseline gap-2">
-                  <span className="text-lg font-bold font-mono tracking-tight text-rose-700 dark:text-rose-400 tabular-nums">
+                <div className="mt-2">
+                  <span className="text-xl font-bold font-mono tracking-tight text-rose-600 tabular-nums">
                     AED {(metrics.supplierPayables + metrics.workerPayables).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </span>
                 </div>
-                <p className="text-[11px] text-slate-400 mt-1 truncate">
-                  Suppliers AED {metrics.supplierPayables.toLocaleString("en-US", { maximumFractionDigits: 0 })} &bull; Workers AED {metrics.workerPayables.toLocaleString("en-US", { maximumFractionDigits: 0 })}
+                <p className="text-xs text-slate-500 mt-1 truncate">
+                  Suppliers &bull; Workers
                 </p>
-                <div className="pt-2 mt-2 border-t border-slate-100 dark:border-slate-800">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => setActiveTab("suppliers")}
-                    className="w-full text-[11px] h-6 px-1 gap-1 text-slate-700 hover:bg-slate-50"
-                  >
-                    <Truck className="w-2.5 h-2.5" /> View Payables
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+              </div>
+              <div className="pt-3 mt-3 border-t border-slate-100">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setActiveTab("suppliers")}
+                  className="w-full text-xs h-8 px-2 gap-1 rounded-xl border-slate-200 font-semibold text-slate-700 hover:bg-slate-50"
+                >
+                  <Truck className="w-3 h-3" /> View Payables
+                </Button>
+              </div>
+            </div>
 
             {/* Owner Capital */}
-            <Card className="border border-slate-200/80 dark:border-slate-800 shadow-xs bg-white dark:bg-slate-900 rounded-xl">
-              <CardContent className="p-4">
+            <div className="bg-white rounded-2xl border border-slate-200/90 p-5 shadow-2xs flex flex-col justify-between">
+              <div>
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Owner Capital</span>
-                  <div className="h-7 w-7 rounded-lg bg-indigo-50 dark:bg-indigo-950/50 flex items-center justify-center">
-                    <UserCheck className="h-3.5 w-3.5 text-indigo-600" />
+                  <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Owner Capital</span>
+                  <div className="h-10 w-10 rounded-xl bg-indigo-50 flex items-center justify-center shrink-0 border border-indigo-100">
+                    <UserCheck className="h-5 w-5 text-indigo-600" />
                   </div>
                 </div>
-                <div className="mt-2 flex items-baseline gap-2">
-                  <span className="text-lg font-bold font-mono tracking-tight text-indigo-700 dark:text-indigo-400 tabular-nums">
+                <div className="mt-2">
+                  <span className="text-xl font-bold font-mono tracking-tight text-indigo-600 tabular-nums">
                     AED {metrics.ownerCapital.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </span>
                 </div>
-                <p className="text-[11px] text-slate-400 mt-1 truncate">Equity capital introduced</p>
-                <div className="pt-2 mt-2 border-t border-slate-100 dark:border-slate-800">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => setActiveTab("owner")}
-                    className="w-full text-[11px] h-6 px-1 gap-1 text-slate-700 hover:bg-slate-50"
-                  >
-                    <UserCheck className="w-2.5 h-2.5" /> Equity Register
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+                <p className="text-xs text-slate-500 mt-1 truncate">Equity capital introduced</p>
+              </div>
+              <div className="pt-3 mt-3 border-t border-slate-100">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setActiveTab("owner")}
+                  className="w-full text-xs h-8 px-2 gap-1 rounded-xl border-slate-200 font-semibold text-slate-700 hover:bg-slate-50"
+                >
+                  <UserCheck className="w-3 h-3" /> Equity Register
+                </Button>
+              </div>
+            </div>
           </div>
 
           {/* ─── CASH FLOW SUMMARY (OPERATING CASH FLOW) ────────────────── */}
-          <Card className="border-indigo-200 dark:border-indigo-900 shadow-sm bg-gradient-to-br from-white via-indigo-50/20 to-slate-50 dark:from-slate-900 dark:via-indigo-950/20 dark:to-slate-900 overflow-hidden">
-            <CardHeader className="p-4 pb-3 border-b bg-indigo-50/50 dark:bg-indigo-950/40">
+          <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs overflow-hidden">
+            <div className="p-5 border-b border-slate-100 bg-indigo-50/30">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div className="flex items-center gap-2.5">
-                  <div className="p-2 rounded-lg bg-indigo-600 text-white shadow-sm">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 rounded-xl bg-indigo-600 text-white shadow-2xs">
                     <ArrowRightLeft className="w-4 h-4" />
                   </div>
                   <div>
-                    <CardTitle className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                    <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
                       <span>Business Cash Flow Summary</span>
-                      <Badge variant="outline" className="border-indigo-300 text-indigo-700 dark:text-indigo-300 bg-indigo-50/80 dark:bg-indigo-950/50 text-[10px]">
+                      <Badge variant="outline" className="border-indigo-200 text-indigo-700 bg-indigo-50 text-[10px] rounded-lg">
                         Net = In - Out
                       </Badge>
-                    </CardTitle>
-                    <CardDescription className="text-[11px] mt-0.5">
-                      Formula: <strong className="text-slate-700 dark:text-slate-300">Net Cash Flow = Cash In - Cash Out</strong>. Pure internal transfers (e.g. Cash → Bank) are excluded to prevent double-counting.
-                    </CardDescription>
+                    </h3>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      Formula: <strong className="text-slate-700 font-semibold">Net Cash Flow = Cash In - Cash Out</strong>. Pure internal transfers are excluded to prevent double-counting.
+                    </p>
                   </div>
                 </div>
                 {canTransfer && (
                   <Button
                     size="sm"
                     onClick={() => setTransferOpen(true)}
-                    className="text-xs h-8 gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm"
+                    className="text-xs h-9 px-3.5 gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl shadow-2xs"
                   >
                     <ArrowRightLeft className="w-3.5 h-3.5" />
-                    + Transfer / Cash Flow
+                    Transfer / Cash Flow
                   </Button>
                 )}
               </div>
-            </CardHeader>
-            <CardContent className="p-4">
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+            </div>
+            <div className="p-5">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3.5">
                 {/* Cash In Today */}
-                <div className="p-3 rounded-lg border border-emerald-200 dark:border-emerald-900/50 bg-emerald-50/40 dark:bg-emerald-950/20 space-y-1">
-                  <div className="flex items-center justify-between text-[11px] font-semibold text-emerald-800 dark:text-emerald-300">
+                <div className="p-4 rounded-xl border border-emerald-100 bg-emerald-50/40 space-y-1">
+                  <div className="flex items-center justify-between text-[11px] font-bold text-emerald-800 uppercase tracking-wider">
                     <span>Cash In Today</span>
                     <ArrowDownLeft className="w-3.5 h-3.5 text-emerald-600" />
                   </div>
-                  <div className="text-lg font-bold font-mono text-emerald-700 dark:text-emerald-400">
+                  <div className="text-lg font-bold font-mono text-emerald-700 tabular-nums">
                     AED {cashFlowSummary.cashInToday.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                   </div>
-                  <div className="text-[10px] text-muted-foreground">Today's inflows</div>
+                  <div className="text-[10px] text-slate-400">Today's inflows</div>
                 </div>
 
                 {/* Cash Out Today */}
-                <div className="p-3 rounded-lg border border-rose-200 dark:border-rose-900/50 bg-rose-50/40 dark:bg-rose-950/20 space-y-1">
-                  <div className="flex items-center justify-between text-[11px] font-semibold text-rose-800 dark:text-rose-300">
+                <div className="p-4 rounded-xl border border-rose-100 bg-rose-50/40 space-y-1">
+                  <div className="flex items-center justify-between text-[11px] font-bold text-rose-800 uppercase tracking-wider">
                     <span>Cash Out Today</span>
                     <ArrowUpRight className="w-3.5 h-3.5 text-rose-600" />
                   </div>
-                  <div className="text-lg font-bold font-mono text-rose-700 dark:text-rose-400">
+                  <div className="text-lg font-bold font-mono text-rose-700 tabular-nums">
                     AED {cashFlowSummary.cashOutToday.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                   </div>
-                  <div className="text-[10px] text-muted-foreground">Today's outflows</div>
+                  <div className="text-[10px] text-slate-400">Today's outflows</div>
                 </div>
 
                 {/* Net Cash Flow Today */}
-                <div className={`p-3 rounded-lg border space-y-1 ${cashFlowSummary.netCashFlowToday >= 0 ? "border-blue-200 dark:border-blue-900/50 bg-blue-50/40 dark:bg-blue-950/20" : "border-rose-200 dark:border-rose-900/50 bg-rose-50/40 dark:bg-rose-950/20"}`}>
-                  <div className="flex items-center justify-between text-[11px] font-semibold text-slate-800 dark:text-slate-200">
-                    <span>Net Cash Flow Today</span>
+                <div className={`p-4 rounded-xl border space-y-1 ${cashFlowSummary.netCashFlowToday >= 0 ? "border-blue-100 bg-blue-50/40" : "border-rose-100 bg-rose-50/40"}`}>
+                  <div className="flex items-center justify-between text-[11px] font-bold text-slate-700 uppercase tracking-wider">
+                    <span>Net Flow Today</span>
                     <Scale className="w-3.5 h-3.5 text-blue-600" />
                   </div>
-                  <div className={`text-lg font-bold font-mono ${cashFlowSummary.netCashFlowToday >= 0 ? "text-blue-700 dark:text-blue-400" : "text-rose-700 dark:text-rose-400"}`}>
+                  <div className={`text-lg font-bold font-mono tabular-nums ${cashFlowSummary.netCashFlowToday >= 0 ? "text-blue-700" : "text-rose-700"}`}>
                     {cashFlowSummary.netCashFlowToday >= 0 ? "+" : ""}AED {cashFlowSummary.netCashFlowToday.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                   </div>
-                  <div className="text-[10px] text-muted-foreground">In - Out (Today)</div>
+                  <div className="text-[10px] text-slate-400">In - Out (Today)</div>
                 </div>
 
                 {/* Cash In This Month */}
-                <div className="p-3 rounded-lg border border-emerald-200 dark:border-emerald-900/50 bg-emerald-50/40 dark:bg-emerald-950/20 space-y-1">
-                  <div className="flex items-center justify-between text-[11px] font-semibold text-emerald-800 dark:text-emerald-300">
-                    <span>Cash In This Month</span>
+                <div className="p-4 rounded-xl border border-emerald-100 bg-emerald-50/40 space-y-1">
+                  <div className="flex items-center justify-between text-[11px] font-bold text-emerald-800 uppercase tracking-wider">
+                    <span>Cash In Month</span>
                     <ArrowDownLeft className="w-3.5 h-3.5 text-emerald-600" />
                   </div>
-                  <div className="text-lg font-bold font-mono text-emerald-700 dark:text-emerald-400">
+                  <div className="text-lg font-bold font-mono text-emerald-700 tabular-nums">
                     AED {cashFlowSummary.cashInThisMonth.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                   </div>
-                  <div className="text-[10px] text-muted-foreground">Monthly inflows</div>
+                  <div className="text-[10px] text-slate-400">Monthly inflows</div>
                 </div>
 
                 {/* Cash Out This Month */}
-                <div className="p-3 rounded-lg border border-rose-200 dark:border-rose-900/50 bg-rose-50/40 dark:bg-rose-950/20 space-y-1">
-                  <div className="flex items-center justify-between text-[11px] font-semibold text-rose-800 dark:text-rose-300">
-                    <span>Cash Out This Month</span>
+                <div className="p-4 rounded-xl border border-rose-100 bg-rose-50/40 space-y-1">
+                  <div className="flex items-center justify-between text-[11px] font-bold text-rose-800 uppercase tracking-wider">
+                    <span>Cash Out Month</span>
                     <ArrowUpRight className="w-3.5 h-3.5 text-rose-600" />
                   </div>
-                  <div className="text-lg font-bold font-mono text-rose-700 dark:text-rose-400">
+                  <div className="text-lg font-bold font-mono text-rose-700 tabular-nums">
                     AED {cashFlowSummary.cashOutThisMonth.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                   </div>
-                  <div className="text-[10px] text-muted-foreground">Monthly outflows</div>
+                  <div className="text-[10px] text-slate-400">Monthly outflows</div>
                 </div>
 
                 {/* Net Cash Flow This Month */}
-                <div className={`p-3 rounded-lg border space-y-1 ${cashFlowSummary.netCashFlowThisMonth >= 0 ? "border-blue-200 dark:border-blue-900/50 bg-blue-50/40 dark:bg-blue-950/20" : "border-rose-200 dark:border-rose-900/50 bg-rose-50/40 dark:bg-rose-950/20"}`}>
-                  <div className="flex items-center justify-between text-[11px] font-semibold text-slate-800 dark:text-slate-200">
-                    <span>Net Cash Flow Month</span>
+                <div className={`p-4 rounded-xl border space-y-1 ${cashFlowSummary.netCashFlowThisMonth >= 0 ? "border-blue-100 bg-blue-50/40" : "border-rose-100 bg-rose-50/40"}`}>
+                  <div className="flex items-center justify-between text-[11px] font-bold text-slate-700 uppercase tracking-wider">
+                    <span>Net Flow Month</span>
                     <Scale className="w-3.5 h-3.5 text-blue-600" />
                   </div>
-                  <div className={`text-lg font-bold font-mono ${cashFlowSummary.netCashFlowThisMonth >= 0 ? "text-blue-700 dark:text-blue-400" : "text-rose-700 dark:text-rose-400"}`}>
+                  <div className={`text-lg font-bold font-mono tabular-nums ${cashFlowSummary.netCashFlowThisMonth >= 0 ? "text-blue-700" : "text-rose-700"}`}>
                     {cashFlowSummary.netCashFlowThisMonth >= 0 ? "+" : ""}AED {cashFlowSummary.netCashFlowThisMonth.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                   </div>
-                  <div className="text-[10px] text-muted-foreground">In - Out (This Month)</div>
+                  <div className="text-[10px] text-slate-400">In - Out (This Month)</div>
                 </div>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
           {/* Quick Action Banner */}
-          <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-slate-900 dark:to-blue-950/40 border-blue-200 dark:border-blue-900">
-            <CardContent className="p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 bg-blue-600 text-white rounded-lg shadow-sm">
-                  <ShieldCheck className="w-5 h-5" />
-                </div>
-                <div>
-                  <h4 className="text-sm font-semibold text-blue-950 dark:text-blue-100">
-                    Workshop Net Liquid Position: AED {metrics.netCashFlow.toLocaleString("en-US", { minimumFractionDigits: 2 })}
-                  </h4>
-                  <p className="text-xs text-blue-700 dark:text-blue-300">
-                    Calculated in real-time from active Cash and Bank account ledgers.
-                  </p>
-                </div>
+          <div className="bg-gradient-to-r from-blue-50 via-indigo-50/50 to-blue-50/30 rounded-2xl border border-blue-200/90 shadow-2xs p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 bg-blue-600 text-white rounded-xl shadow-2xs shrink-0">
+                <ShieldCheck className="w-5 h-5" />
               </div>
+              <div>
+                <h4 className="text-sm font-bold text-slate-900">
+                  Workshop Net Liquid Position: AED {metrics.netCashFlow.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                </h4>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Calculated in real-time from active Cash and Bank account ledgers.
+                </p>
+              </div>
+            </div>
 
-              <div className="flex items-center gap-2 flex-wrap">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => {
-                    setActiveTab("owner");
-                    setOwnerTxnOpen(true);
-                  }}
-                  className="text-xs h-8 bg-white dark:bg-slate-900"
-                >
-                  Owner Capital / Drawing
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => {
-                    setActiveTab("workers");
-                    setWorkerSalaryDueOpen(true);
-                  }}
-                  className="text-xs h-8 bg-white dark:bg-slate-900"
-                >
-                  Accrue Worker Salary
-                </Button>
-                <Button
-                  size="sm"
-                  onClick={() => setActiveTab("accounts")}
-                  className="text-xs h-8 bg-blue-600 hover:bg-blue-700 text-white"
-                >
-                  View Full Chart of Accounts &rarr;
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+            <div className="flex items-center gap-2 flex-wrap">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  setActiveTab("owner");
+                  setOwnerTxnOpen(true);
+                }}
+                className="text-xs h-9 px-3 rounded-xl border-slate-200 bg-white hover:bg-slate-50 font-semibold text-slate-700"
+              >
+                Owner Capital / Drawing
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  setActiveTab("workers");
+                  setWorkerSalaryDueOpen(true);
+                }}
+                className="text-xs h-9 px-3 rounded-xl border-slate-200 bg-white hover:bg-slate-50 font-semibold text-slate-700"
+              >
+                Accrue Worker Salary
+              </Button>
+              <Button
+                size="sm"
+                onClick={() => setActiveTab("accounts")}
+                className="text-xs h-9 px-3.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl shadow-2xs"
+              >
+                View Full Chart of Accounts &rarr;
+              </Button>
+            </div>
+          </div>
         </TabsContent>
 
         {/* ─── TAB 2: CHART OF ACCOUNTS (LEDGER ACCOUNTS) ─────────────────── */}
@@ -2133,22 +2126,22 @@ export function AccountsView() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-center gap-2 flex-1 max-w-md">
               <div className="relative flex-1">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                 <Input
                   placeholder="Search by code, account name, or sub-type..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-8 text-xs h-9"
+                  className="pl-9 text-xs h-10 rounded-xl border-slate-200 bg-white"
                 />
               </div>
             </div>
 
             <div className="flex items-center gap-2">
               <Select value={accountTypeFilter} onValueChange={(val) => { if (val) setAccountTypeFilter(val); }}>
-                <SelectTrigger className="w-[150px] text-xs h-9">
+                <SelectTrigger className="w-[160px] text-xs h-10 rounded-xl border-slate-200 bg-white font-medium">
                   <SelectValue placeholder="All Types" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="rounded-xl border-slate-200 shadow-lg">
                   <SelectItem value="all">All Types</SelectItem>
                   <SelectItem value="asset">Asset (1000s)</SelectItem>
                   <SelectItem value="liability">Liability (2000s)</SelectItem>
@@ -2160,81 +2153,81 @@ export function AccountsView() {
             </div>
           </div>
 
-          <Card className="overflow-hidden border border-slate-200/80 dark:border-slate-800 shadow-xs bg-white dark:bg-slate-900 rounded-xl">
+          <div className="border border-slate-200/90 shadow-2xs bg-white rounded-2xl overflow-hidden">
             <div className="overflow-x-auto">
               <Table>
-                <TableHeader className="bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200/80">
-                  <TableRow>
-                    <TableHead className="w-[100px] text-xs font-semibold text-slate-700 dark:text-slate-200">Account Code</TableHead>
-                    <TableHead className="min-w-[180px] text-xs font-semibold text-slate-700 dark:text-slate-200">Account Name</TableHead>
-                    <TableHead className="w-[100px] text-xs font-semibold text-slate-700 dark:text-slate-200">Type</TableHead>
-                    <TableHead className="text-right w-[120px] text-xs font-semibold text-slate-700 dark:text-slate-200">Opening Balance</TableHead>
-                    <TableHead className="text-right w-[110px] text-xs font-semibold text-slate-700 dark:text-slate-200">Debit</TableHead>
-                    <TableHead className="text-right w-[110px] text-xs font-semibold text-slate-700 dark:text-slate-200">Credit</TableHead>
-                    <TableHead className="text-right w-[120px] text-xs font-semibold text-slate-700 dark:text-slate-200">Closing Balance</TableHead>
-                    <TableHead className="w-[80px] text-center text-xs font-semibold text-slate-700 dark:text-slate-200">Status</TableHead>
-                    <TableHead className="w-[150px] min-w-[150px] text-right pr-4 text-xs font-semibold text-slate-700 dark:text-slate-200">Actions</TableHead>
+                <TableHeader>
+                  <TableRow className="bg-slate-50/80 hover:bg-slate-50/80 border-b border-slate-200/80 h-11">
+                    <TableHead className="w-[110px] text-[11px] font-bold text-slate-500 uppercase tracking-wider">Account Code</TableHead>
+                    <TableHead className="min-w-[180px] text-[11px] font-bold text-slate-500 uppercase tracking-wider">Account Name</TableHead>
+                    <TableHead className="w-[100px] text-[11px] font-bold text-slate-500 uppercase tracking-wider">Type</TableHead>
+                    <TableHead className="text-right w-[130px] text-[11px] font-bold text-slate-500 uppercase tracking-wider">Opening Balance</TableHead>
+                    <TableHead className="text-right w-[120px] text-[11px] font-bold text-slate-500 uppercase tracking-wider">Debit</TableHead>
+                    <TableHead className="text-right w-[120px] text-[11px] font-bold text-slate-500 uppercase tracking-wider">Credit</TableHead>
+                    <TableHead className="text-right w-[130px] text-[11px] font-bold text-slate-500 uppercase tracking-wider">Closing Balance</TableHead>
+                    <TableHead className="w-[90px] text-center text-[11px] font-bold text-slate-500 uppercase tracking-wider">Status</TableHead>
+                    <TableHead className="w-[160px] min-w-[160px] text-right pr-4 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredAccounts.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={9} className="text-center py-12 text-xs text-muted-foreground">
+                      <TableCell colSpan={9} className="text-center py-12 text-xs text-slate-400">
                         No accounts match the current filter.
                       </TableCell>
                     </TableRow>
                   ) : (
                     filteredAccounts.map((acc) => {
                       const typeColors: Record<string, string> = {
-                        asset: "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300",
-                        liability: "bg-red-50 text-red-700 border-red-200 dark:bg-red-950/40 dark:text-red-300",
-                        income: "bg-teal-50 text-teal-700 border-teal-200 dark:bg-teal-950/40 dark:text-teal-300",
-                        expense: "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300",
-                        equity: "bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/40 dark:text-indigo-300",
+                        asset: "bg-emerald-50 text-emerald-700 border-emerald-200",
+                        liability: "bg-red-50 text-red-700 border-red-200",
+                        income: "bg-teal-50 text-teal-700 border-teal-200",
+                        expense: "bg-rose-50 text-rose-700 border-rose-200",
+                        equity: "bg-indigo-50 text-indigo-700 border-indigo-200",
                       };
 
                       return (
-                        <TableRow key={acc.id} className="h-12 border-b border-slate-100 dark:border-slate-800/60 hover:bg-slate-50/70 dark:hover:bg-slate-800/50 transition-colors text-[13px]">
-                          <TableCell className="font-mono font-bold text-xs text-blue-600 dark:text-blue-400 whitespace-nowrap">
+                        <TableRow key={acc.id} className="h-12 border-b border-slate-100 hover:bg-slate-50/60 transition-colors text-xs">
+                          <TableCell className="font-mono font-bold text-xs text-blue-600 whitespace-nowrap">
                             {acc.account_code}
                           </TableCell>
-                          <TableCell className="font-medium text-slate-900 dark:text-white">
+                          <TableCell className="font-medium text-slate-900">
                             <div>{acc.account_name}</div>
                             {acc.account_sub_type && (
                               <div className="text-[11px] text-slate-400 font-normal">{acc.account_sub_type}</div>
                             )}
                           </TableCell>
                           <TableCell>
-                            <Badge variant="outline" className={`text-[10px] capitalize font-medium ${typeColors[acc.account_type]}`}>
+                            <Badge variant="outline" className={`text-[10px] capitalize font-semibold rounded-lg ${typeColors[acc.account_type]}`}>
                               {acc.account_type}
                             </Badge>
                           </TableCell>
                           <TableCell className="text-right font-mono text-xs text-slate-500 tabular-nums whitespace-nowrap">
                             AED {Number(acc.opening_balance || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </TableCell>
-                          <TableCell className="text-right font-mono text-xs text-emerald-600 dark:text-emerald-400 tabular-nums whitespace-nowrap">
+                          <TableCell className="text-right font-mono text-xs text-emerald-600 font-semibold tabular-nums whitespace-nowrap">
                             {accountDebitsAndCredits[acc.id]?.debit ? `AED ${Number(accountDebitsAndCredits[acc.id].debit).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "—"}
                           </TableCell>
-                          <TableCell className="text-right font-mono text-xs text-rose-600 dark:text-rose-400 tabular-nums whitespace-nowrap">
+                          <TableCell className="text-right font-mono text-xs text-rose-600 font-semibold tabular-nums whitespace-nowrap">
                             {accountDebitsAndCredits[acc.id]?.credit ? `AED ${Number(accountDebitsAndCredits[acc.id].credit).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "—"}
                           </TableCell>
-                          <TableCell className="text-right font-mono font-bold text-xs text-slate-900 dark:text-white tabular-nums whitespace-nowrap">
+                          <TableCell className="text-right font-mono font-bold text-xs text-slate-900 tabular-nums whitespace-nowrap">
                             AED {Number(acc.current_balance || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </TableCell>
                           <TableCell className="text-center">
                             {acc.is_active ? (
-                              <Badge variant="outline" className="text-[10px] bg-emerald-50 text-emerald-700 border-emerald-200">Active</Badge>
+                              <Badge variant="outline" className="text-[10px] bg-emerald-50 text-emerald-700 border-emerald-200 rounded-lg">Active</Badge>
                             ) : (
-                              <Badge variant="outline" className="text-[10px] bg-slate-50 text-slate-600 border-slate-200">Archived</Badge>
+                              <Badge variant="outline" className="text-[10px] bg-slate-50 text-slate-600 border-slate-200 rounded-lg">Archived</Badge>
                             )}
                           </TableCell>
                           <TableCell className="text-right pr-4 whitespace-nowrap">
-                            <div className="flex items-center justify-end gap-1">
+                            <div className="flex items-center justify-end gap-1.5">
                               <Button
                                 size="sm"
                                 variant="outline"
                                 onClick={() => handleOpenAddEntryModal(acc)}
-                                className="text-xs h-7 px-2 gap-1 text-blue-700 border-blue-200 hover:bg-blue-50"
+                                className="text-xs h-8 px-2.5 gap-1 text-blue-700 border-blue-200 hover:bg-blue-50 rounded-xl font-semibold"
                                 title="+ Add Entry"
                               >
                                 <Plus className="w-3 h-3" />
@@ -2243,7 +2236,7 @@ export function AccountsView() {
                               <Button
                                 size="sm"
                                 onClick={() => handleOpenAccountLedger(acc)}
-                                className="text-xs h-7 px-2 gap-1 bg-blue-600 hover:bg-blue-700 text-white"
+                                className="text-xs h-8 px-2.5 gap-1 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold shadow-2xs"
                                 title="View Ledger & Statement"
                               >
                                 <BookOpen className="w-3 h-3" />
@@ -2256,7 +2249,7 @@ export function AccountsView() {
                                   size="sm"
                                   onClick={() => handleArchiveAccount(acc)}
                                   title="Deactivate / Archive Account"
-                                  className="h-7 w-7 p-0 text-slate-400 hover:text-amber-600 hover:bg-amber-50"
+                                  className="h-8 w-8 p-0 rounded-xl text-slate-400 hover:text-amber-600 hover:bg-amber-50"
                                 >
                                   <Archive className="h-3.5 w-3.5" />
                                 </Button>
@@ -2268,7 +2261,7 @@ export function AccountsView() {
                                   size="sm"
                                   onClick={() => handleDeleteCustomAccount(acc)}
                                   title="Delete Custom Account"
-                                  className="h-7 w-7 p-0 text-slate-400 hover:text-red-600 hover:bg-red-50"
+                                  className="h-8 w-8 p-0 rounded-xl text-slate-400 hover:text-red-600 hover:bg-red-50"
                                 >
                                   <Trash2 className="h-3.5 w-3.5" />
                                 </Button>
@@ -2282,66 +2275,66 @@ export function AccountsView() {
                 </TableBody>
               </Table>
             </div>
-          </Card>
+          </div>
         </TabsContent>
 
         {/* ─── TAB 3: CUSTOMER ACCOUNTS ───────────────────────────────────── */}
         <TabsContent value="customers" className="space-y-4">
-          <Card className="overflow-hidden">
-            <CardHeader className="pb-3 bg-slate-50 dark:bg-slate-900/40 border-b">
-              <CardTitle className="text-sm font-semibold flex items-center gap-2">
+          <div className="border border-slate-200/90 shadow-2xs bg-white rounded-2xl overflow-hidden">
+            <div className="p-4 pb-3 bg-slate-50/50 border-b border-slate-100">
+              <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
                 <Users className="w-4 h-4 text-blue-600" />
                 Customer Ledgers & Receivables
-              </CardTitle>
-              <CardDescription className="text-xs">
+              </h3>
+              <p className="text-xs text-slate-500 mt-0.5">
                 Real-time outstanding balances from workshop invoices and received payments
-              </CardDescription>
-            </CardHeader>
+              </p>
+            </div>
             <div className="overflow-x-auto">
               <Table>
-                <TableHeader className="bg-slate-50 dark:bg-slate-900/50">
-                  <TableRow>
-                    <TableHead className="text-xs font-semibold">Customer Name</TableHead>
-                    <TableHead className="text-xs font-semibold">Phone</TableHead>
-                    <TableHead className="text-xs font-semibold">Company</TableHead>
-                    <TableHead className="text-xs font-semibold">TRN</TableHead>
-                    <TableHead className="text-right text-xs font-semibold">Outstanding (AED)</TableHead>
-                    <TableHead className="w-[190px] text-right text-xs font-semibold">Actions</TableHead>
+                <TableHeader>
+                  <TableRow className="bg-slate-50/80 hover:bg-slate-50/80 border-b border-slate-200/80 h-11">
+                    <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Customer Name</TableHead>
+                    <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Phone</TableHead>
+                    <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Company</TableHead>
+                    <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">TRN</TableHead>
+                    <TableHead className="text-right text-[11px] font-bold text-slate-500 uppercase tracking-wider">Outstanding (AED)</TableHead>
+                    <TableHead className="w-[190px] text-right text-[11px] font-bold text-slate-500 uppercase tracking-wider">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {customers.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center py-8 text-xs text-muted-foreground">
+                      <TableCell colSpan={6} className="text-center py-12 text-xs text-slate-400">
                         No customers found.
                       </TableCell>
                     </TableRow>
                   ) : (
                     customers.map((c) => (
-                      <TableRow key={c.id}>
-                        <TableCell className="font-medium text-xs">{c.name}</TableCell>
-                        <TableCell className="text-xs text-muted-foreground font-mono">{c.mobile || c.phone || "—"}</TableCell>
-                        <TableCell className="text-xs">{c.company_name || "—"}</TableCell>
-                        <TableCell className="text-xs font-mono">{c.trn || "—"}</TableCell>
-                        <TableCell className="text-right font-mono text-xs font-semibold text-amber-600 dark:text-amber-400">
-                          {Number(c.outstanding_balance || 0).toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                      <TableRow key={c.id} className="h-12 border-b border-slate-100 hover:bg-slate-50/60 transition-colors text-xs">
+                        <TableCell className="font-semibold text-slate-900">{c.name}</TableCell>
+                        <TableCell className="text-xs text-slate-500 font-mono">{c.mobile || c.phone || "—"}</TableCell>
+                        <TableCell className="text-xs text-slate-600">{c.company_name || "—"}</TableCell>
+                        <TableCell className="text-xs font-mono text-slate-500">{c.trn || "—"}</TableCell>
+                        <TableCell className="text-right font-mono text-xs font-bold text-amber-600 tabular-nums">
+                          AED {Number(c.outstanding_balance || 0).toLocaleString("en-US", { minimumFractionDigits: 2 })}
                         </TableCell>
-                        <TableCell className="text-right">
+                        <TableCell className="text-right pr-4">
                           <div className="flex items-center justify-end gap-1.5">
                             <Button
                               size="sm"
                               variant="outline"
                               onClick={() => handleOpenAddEntryModal(c)}
-                              className="text-xs h-7 px-2 gap-1 text-blue-700 border-blue-200 hover:bg-blue-50 dark:border-blue-800 dark:text-blue-300"
+                              className="text-xs h-8 px-2.5 gap-1 rounded-xl font-semibold text-blue-700 border-blue-200 hover:bg-blue-50"
                               title="+ Add Entry"
                             >
                               <Plus className="w-3 h-3" />
-                              + Entry
+                              Entry
                             </Button>
                             <Button
                               size="sm"
                               onClick={() => handleOpenAccountLedger(c)}
-                              className="text-xs h-7 px-2 gap-1 bg-blue-600 hover:bg-blue-700 text-white"
+                              className="text-xs h-8 px-2.5 gap-1 rounded-xl font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-2xs"
                               title="View Ledger & Transaction History"
                             >
                               <BookOpen className="w-3 h-3" />
@@ -2355,64 +2348,64 @@ export function AccountsView() {
                 </TableBody>
               </Table>
             </div>
-          </Card>
+          </div>
         </TabsContent>
 
         {/* ─── TAB 4: SUPPLIER ACCOUNTS ───────────────────────────────────── */}
         <TabsContent value="suppliers" className="space-y-4">
-          <Card className="overflow-hidden">
-            <CardHeader className="pb-3 bg-slate-50 dark:bg-slate-900/40 border-b">
-              <CardTitle className="text-sm font-semibold flex items-center gap-2">
+          <div className="border border-slate-200/90 shadow-2xs bg-white rounded-2xl overflow-hidden">
+            <div className="p-4 pb-3 bg-slate-50/50 border-b border-slate-100">
+              <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
                 <Truck className="w-4 h-4 text-blue-600" />
                 Supplier Ledgers & Payables
-              </CardTitle>
-              <CardDescription className="text-xs">
+              </h3>
+              <p className="text-xs text-slate-500 mt-0.5">
                 Accrued parts purchases, payments made, and current supplier balances
-              </CardDescription>
-            </CardHeader>
+              </p>
+            </div>
             <div className="overflow-x-auto">
               <Table>
-                <TableHeader className="bg-slate-50 dark:bg-slate-900/50">
-                  <TableRow>
-                    <TableHead className="text-xs font-semibold">Supplier Name</TableHead>
-                    <TableHead className="text-xs font-semibold">Contact / Phone</TableHead>
-                    <TableHead className="text-xs font-semibold">TRN</TableHead>
-                    <TableHead className="text-right text-xs font-semibold">Remaining Payable (AED)</TableHead>
-                    <TableHead className="w-[190px] text-right text-xs font-semibold">Actions</TableHead>
+                <TableHeader>
+                  <TableRow className="bg-slate-50/80 hover:bg-slate-50/80 border-b border-slate-200/80 h-11">
+                    <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Supplier Name</TableHead>
+                    <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Contact / Phone</TableHead>
+                    <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">TRN</TableHead>
+                    <TableHead className="text-right text-[11px] font-bold text-slate-500 uppercase tracking-wider">Remaining Payable (AED)</TableHead>
+                    <TableHead className="w-[190px] text-right text-[11px] font-bold text-slate-500 uppercase tracking-wider">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {suppliers.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={5} className="text-center py-8 text-xs text-muted-foreground">
+                      <TableCell colSpan={5} className="text-center py-12 text-xs text-slate-400">
                         No suppliers found.
                       </TableCell>
                     </TableRow>
                   ) : (
                     suppliers.map((s) => (
-                      <TableRow key={s.id}>
-                        <TableCell className="font-medium text-xs">{s.name}</TableCell>
-                        <TableCell className="text-xs text-muted-foreground font-mono">{s.phone || s.contact_person || "—"}</TableCell>
-                        <TableCell className="text-xs font-mono">{s.trn || "—"}</TableCell>
-                        <TableCell className="text-right font-mono text-xs font-semibold text-red-600 dark:text-red-400">
-                          {Number(s.outstanding_balance || 0).toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                      <TableRow key={s.id} className="h-12 border-b border-slate-100 hover:bg-slate-50/60 transition-colors text-xs">
+                        <TableCell className="font-semibold text-slate-900">{s.name}</TableCell>
+                        <TableCell className="text-xs text-slate-500 font-mono">{s.phone || s.contact_person || "—"}</TableCell>
+                        <TableCell className="text-xs font-mono text-slate-500">{s.trn || "—"}</TableCell>
+                        <TableCell className="text-right font-mono text-xs font-bold text-rose-600 tabular-nums">
+                          AED {Number(s.outstanding_balance || 0).toLocaleString("en-US", { minimumFractionDigits: 2 })}
                         </TableCell>
-                        <TableCell className="text-right">
+                        <TableCell className="text-right pr-4">
                           <div className="flex items-center justify-end gap-1.5">
                             <Button
                               size="sm"
                               variant="outline"
                               onClick={() => handleOpenAddEntryModal(s)}
-                              className="text-xs h-7 px-2 gap-1 text-blue-700 border-blue-200 hover:bg-blue-50 dark:border-blue-800 dark:text-blue-300"
+                              className="text-xs h-8 px-2.5 gap-1 rounded-xl font-semibold text-blue-700 border-blue-200 hover:bg-blue-50"
                               title="+ Add Entry"
                             >
                               <Plus className="w-3 h-3" />
-                              + Entry
+                              Entry
                             </Button>
                             <Button
                               size="sm"
                               onClick={() => handleOpenAccountLedger(s)}
-                              className="text-xs h-7 px-2 gap-1 bg-blue-600 hover:bg-blue-700 text-white"
+                              className="text-xs h-8 px-2.5 gap-1 rounded-xl font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-2xs"
                               title="View Ledger & Transaction History"
                             >
                               <BookOpen className="w-3 h-3" />
@@ -2426,120 +2419,116 @@ export function AccountsView() {
                 </TableBody>
               </Table>
             </div>
-          </Card>
+          </div>
         </TabsContent>
 
         {/* ─── TAB 5: WORKER ACCOUNTS ─────────────────────────────────────── */}
         <TabsContent value="workers" className="space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
-              <h3 className="text-sm font-semibold">Workshop Staff & Worker Financial Accounts</h3>
-              <p className="text-xs text-muted-foreground">Track accrued salaries, advances, disbursements, and dues</p>
+              <h3 className="text-sm font-bold text-slate-900">Workshop Staff & Worker Financial Accounts</h3>
+              <p className="text-xs text-slate-500">Track accrued salaries, advances, disbursements, and dues</p>
             </div>
 
             {canEdit && (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <Button
-                  size="sm"
                   variant="outline"
                   onClick={() => {
                     if (workers.length > 0) setSelectedWorkerId(workers[0].id);
                     setWorkerSalaryDueOpen(true);
                   }}
-                  className="text-xs h-8 gap-1 border-purple-200 text-purple-700 hover:bg-purple-50 dark:border-purple-800 dark:text-purple-300"
+                  className="text-xs h-10 px-3.5 gap-1.5 border-purple-200 text-purple-700 hover:bg-purple-50 rounded-xl font-semibold transition-colors"
                 >
                   <Plus className="w-3 h-3" />
                   Accrue Salary
                 </Button>
 
                 <Button
-                  size="sm"
                   variant="outline"
                   onClick={() => {
                     if (workers.length > 0) setSelectedWorkerId(workers[0].id);
                     setWorkerPayOpen(true);
                   }}
-                  className="text-xs h-8 gap-1 border-emerald-200 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-800 dark:text-emerald-300"
+                  className="text-xs h-10 px-3.5 gap-1.5 border-emerald-200 text-emerald-700 hover:bg-emerald-50 rounded-xl font-semibold transition-colors"
                 >
                   <DollarSign className="w-3 h-3" />
                   Pay Salary
                 </Button>
 
                 <Button
-                  size="sm"
                   variant="outline"
                   onClick={() => {
                     if (workers.length > 0) setSelectedWorkerId(workers[0].id);
                     setWorkerAdvOpen(true);
                   }}
-                  className="text-xs h-8 gap-1 border-amber-200 text-amber-700 hover:bg-amber-50 dark:border-amber-800 dark:text-amber-300"
+                  className="text-xs h-10 px-3.5 gap-1.5 border-amber-200 text-amber-700 hover:bg-amber-50 rounded-xl font-semibold transition-colors"
                 >
                   <Wallet className="w-3 h-3" />
                   Pay Advance
                 </Button>
 
                 <Button
-                  size="sm"
                   onClick={() => setNewWorkerOpen(true)}
-                  className="text-xs h-8 gap-1 bg-purple-600 hover:bg-purple-700 text-white"
+                  className="text-xs h-10 px-4 gap-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-semibold shadow-2xs transition-colors"
                 >
                   <Plus className="w-3 h-3" />
-                  + Add Worker
+                  Add Worker
                 </Button>
               </div>
             )}
           </div>
 
-          <Card className="overflow-hidden">
+          <div className="border border-slate-200/90 shadow-2xs bg-white rounded-2xl overflow-hidden">
             <div className="overflow-x-auto">
               <Table>
-                <TableHeader className="bg-slate-50 dark:bg-slate-900/50">
-                  <TableRow>
-                    <TableHead className="text-xs font-semibold">Worker Name</TableHead>
-                    <TableHead className="text-xs font-semibold">Position</TableHead>
-                    <TableHead className="text-xs font-semibold">Phone</TableHead>
-                    <TableHead className="text-right text-xs font-semibold">Basic Salary (AED)</TableHead>
-                    <TableHead className="text-center text-xs font-semibold">Status</TableHead>
-                    <TableHead className="w-[190px] text-right text-xs font-semibold">Actions</TableHead>
+                <TableHeader>
+                  <TableRow className="bg-slate-50/80 hover:bg-slate-50/80 border-b border-slate-200/80 h-11">
+                    <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Worker Name</TableHead>
+                    <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Position</TableHead>
+                    <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Phone</TableHead>
+                    <TableHead className="text-right text-[11px] font-bold text-slate-500 uppercase tracking-wider">Basic Salary (AED)</TableHead>
+                    <TableHead className="text-center text-[11px] font-bold text-slate-500 uppercase tracking-wider">Status</TableHead>
+                    <TableHead className="w-[190px] text-right text-[11px] font-bold text-slate-500 uppercase tracking-wider">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {workers.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center py-8 text-xs text-muted-foreground">
-                        No workers recorded. Click "+ Add Worker" to create one.
+                      <TableCell colSpan={6} className="text-center py-12 text-xs text-slate-400">
+                        No workers recorded. Click &quot;+ Add Worker&quot; to create one.
                       </TableCell>
                     </TableRow>
                   ) : (
                     workers.map((w) => (
-                      <TableRow key={w.id}>
-                        <TableCell className="font-medium text-xs">{w.name}</TableCell>
-                        <TableCell className="text-xs text-muted-foreground">{w.job_position}</TableCell>
-                        <TableCell className="text-xs font-mono">{w.phone || "—"}</TableCell>
-                        <TableCell className="text-right font-mono text-xs">
-                          {Number(w.basic_salary).toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                      <TableRow key={w.id} className="h-12 border-b border-slate-100 hover:bg-slate-50/60 transition-colors text-xs">
+                        <TableCell className="font-semibold text-slate-900">{w.name}</TableCell>
+                        <TableCell className="text-xs text-slate-500">{w.job_position}</TableCell>
+                        <TableCell className="text-xs font-mono text-slate-500">{w.phone || "—"}</TableCell>
+                        <TableCell className="text-right font-mono text-xs font-bold text-slate-900 tabular-nums">
+                          AED {Number(w.basic_salary).toLocaleString("en-US", { minimumFractionDigits: 2 })}
                         </TableCell>
                         <TableCell className="text-center">
-                          <Badge variant="outline" className="text-[10px] capitalize bg-emerald-50 text-emerald-700">
+                          <Badge variant="outline" className="text-[10px] capitalize bg-emerald-50 text-emerald-700 border-emerald-200 rounded-lg">
                             {w.status}
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-right">
+                        <TableCell className="text-right pr-4">
                           <div className="flex items-center justify-end gap-1.5">
                             <Button
                               size="sm"
                               variant="outline"
                               onClick={() => handleOpenAddEntryModal(w)}
-                              className="text-xs h-7 px-2 gap-1 text-blue-700 border-blue-200 hover:bg-blue-50 dark:border-blue-800 dark:text-blue-300"
+                              className="text-xs h-8 px-2.5 gap-1 rounded-xl font-semibold text-blue-700 border-blue-200 hover:bg-blue-50"
                               title="+ Add Entry"
                             >
                               <Plus className="w-3 h-3" />
-                              + Entry
+                              Entry
                             </Button>
                             <Button
                               size="sm"
                               onClick={() => handleOpenAccountLedger(w)}
-                              className="text-xs h-7 px-2 gap-1 bg-blue-600 hover:bg-blue-700 text-white"
+                              className="text-xs h-8 px-2.5 gap-1 rounded-xl font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-2xs"
                               title="View Ledger & Transaction History"
                             >
                               <BookOpen className="w-3 h-3" />
@@ -2553,7 +2542,7 @@ export function AccountsView() {
                 </TableBody>
               </Table>
             </div>
-          </Card>
+          </div>
         </TabsContent>
 
         {/* ─── TAB 6: BANK ACCOUNTS ───────────────────────────────────────── */}
@@ -2566,62 +2555,60 @@ export function AccountsView() {
 
             {canManageAccounts && (
               <Button
-                size="sm"
                 onClick={() => setNewBankOpen(true)}
-                className="text-xs h-8 gap-1 bg-blue-600 hover:bg-blue-700 text-white"
+                className="text-xs h-10 px-4 gap-1.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl shadow-2xs transition-colors"
               >
-                <Plus className="w-3 h-3" />
-                + Add Bank Account
+                <Plus className="w-3.5 h-3.5" />
+                Add Bank Account
               </Button>
             )}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {bankAccounts.map((b) => (
-              <Card key={b.id} className="border-t-4 border-t-blue-600 shadow-sm">
-                <CardHeader className="pb-2">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-base font-semibold">{b.bank_name}</CardTitle>
-                    <Badge variant="outline" className="text-[10px] uppercase font-mono">
-                      {b.currency}
-                    </Badge>
+              <div key={b.id} className="bg-white rounded-2xl border border-slate-200/90 border-t-4 border-t-blue-600 shadow-2xs p-5 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="text-base font-bold text-slate-900">{b.bank_name}</h4>
+                    <p className="text-xs text-slate-500 mt-0.5">{b.account_name}</p>
                   </div>
-                  <CardDescription className="text-xs">{b.account_name}</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-3 pt-1">
-                  <div className="flex items-center justify-between text-xs font-mono">
-                    <span className="text-muted-foreground">Ending with:</span>
-                    <span className="font-semibold">•••• {b.account_number_last_digits || "0000"}</span>
-                  </div>
+                  <Badge variant="outline" className="text-[10px] uppercase font-mono font-bold rounded-lg border-slate-200">
+                    {b.currency}
+                  </Badge>
+                </div>
 
-                  <div className="p-3 bg-slate-50 dark:bg-slate-900 rounded-lg flex items-center justify-between">
-                    <span className="text-xs text-muted-foreground">Current Balance:</span>
-                    <span className="text-lg font-bold font-mono text-blue-700 dark:text-blue-300">
-                      AED {Number(b.current_balance || b.opening_balance).toLocaleString("en-US", { minimumFractionDigits: 2 })}
-                    </span>
-                  </div>
+                <div className="flex items-center justify-between text-xs font-mono text-slate-500">
+                  <span>Ending with:</span>
+                  <span className="font-bold text-slate-700">•••• {b.account_number_last_digits || "0000"}</span>
+                </div>
 
-                  <div className="flex items-center gap-2 pt-2 border-t">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleOpenAddEntryModal(b)}
-                      className="flex-1 text-xs h-8 gap-1 text-blue-700 border-blue-200 hover:bg-blue-50 dark:border-blue-800 dark:text-blue-300"
-                    >
-                      <Plus className="w-3.5 h-3.5" />
-                      + Add Entry
-                    </Button>
-                    <Button
-                      size="sm"
-                      onClick={() => handleOpenAccountLedger(b)}
-                      className="flex-1 text-xs h-8 gap-1 bg-blue-600 hover:bg-blue-700 text-white"
-                    >
-                      <BookOpen className="w-3.5 h-3.5" />
-                      View Ledger
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+                <div className="p-4 bg-slate-50 rounded-xl border border-slate-200/80 flex items-center justify-between">
+                  <span className="text-xs text-slate-500 font-medium">Current Balance:</span>
+                  <span className="text-xl font-bold font-mono text-blue-600 tabular-nums">
+                    AED {Number(b.current_balance || b.opening_balance).toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2 pt-2 border-t border-slate-100">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleOpenAddEntryModal(b)}
+                    className="flex-1 text-xs h-9 gap-1.5 rounded-xl font-semibold text-blue-700 border-blue-200 hover:bg-blue-50"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    Entry
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={() => handleOpenAccountLedger(b)}
+                    className="flex-1 text-xs h-9 gap-1.5 rounded-xl font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-2xs"
+                  >
+                    <BookOpen className="w-3.5 h-3.5" />
+                    Ledger
+                  </Button>
+                </div>
+              </div>
             ))}
           </div>
         </TabsContent>
@@ -2630,135 +2617,128 @@ export function AccountsView() {
         <TabsContent value="owner" className="space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
-              <h3 className="text-sm font-semibold">Owner & Admin Equity Accounts</h3>
-              <p className="text-xs text-muted-foreground">
+              <h3 className="text-sm font-bold text-slate-900">Owner & Admin Equity Accounts</h3>
+              <p className="text-xs text-slate-500">
                 Track owner capital injections, personal drawings/withdrawals, advances, and expense reimbursements
               </p>
             </div>
 
             {canManageAccounts && (
               <Button
-                size="sm"
                 onClick={() => setOwnerTxnOpen(true)}
-                className="text-xs h-8 gap-1 bg-indigo-600 hover:bg-indigo-700 text-white"
+                className="text-xs h-10 px-4 gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl shadow-2xs transition-colors"
               >
-                <Plus className="w-3 h-3" />
+                <Plus className="w-3.5 h-3.5" />
                 Record Owner Transaction
               </Button>
             )}
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <Card className="border-l-4 border-l-emerald-600 shadow-sm">
-              <CardHeader className="pb-2">
-                <CardDescription className="text-xs">Owner Capital Introduced</CardDescription>
-                <CardTitle className="text-2xl font-bold font-mono text-emerald-700 dark:text-emerald-400">
+            <div className="bg-white rounded-2xl border border-slate-200/90 border-l-4 border-l-emerald-600 shadow-2xs p-5 space-y-3">
+              <div>
+                <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Owner Capital Introduced</span>
+                <div className="text-2xl font-bold font-mono text-emerald-600 tabular-nums mt-1">
                   AED {metrics.ownerCapital.toLocaleString("en-US", { minimumFractionDigits: 2 })}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-0 text-[11px] text-muted-foreground space-y-2">
-                <div>Total equity capital invested in workshop</div>
-                <div className="flex items-center gap-1.5 pt-1 border-t">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => {
-                      const acc = accounts.find((a) => a.account_code === "3001");
-                      if (acc) handleOpenAddEntryModal(acc);
-                    }}
-                    className="flex-1 text-xs h-7 gap-1 text-emerald-700 border-emerald-200 hover:bg-emerald-50"
-                  >
-                    <Plus className="w-3 h-3" />
-                    + Entry
-                  </Button>
-                  <Button
-                    size="sm"
-                    onClick={() => {
-                      const acc = accounts.find((a) => a.account_code === "3001");
-                      if (acc) handleOpenAccountLedger(acc);
-                    }}
-                    className="flex-1 text-xs h-7 gap-1 bg-emerald-600 hover:bg-emerald-700 text-white"
-                  >
-                    <BookOpen className="w-3 h-3" />
-                    View Ledger
-                  </Button>
                 </div>
-              </CardContent>
-            </Card>
+                <p className="text-xs text-slate-500 mt-1">Total equity capital invested in workshop</p>
+              </div>
+              <div className="flex items-center gap-2 pt-2 border-t border-slate-100">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    const acc = accounts.find((a) => a.account_code === "3001");
+                    if (acc) handleOpenAddEntryModal(acc);
+                  }}
+                  className="flex-1 text-xs h-8 gap-1 rounded-xl font-semibold text-emerald-700 border-emerald-200 hover:bg-emerald-50"
+                >
+                  <Plus className="w-3 h-3" />
+                  Entry
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    const acc = accounts.find((a) => a.account_code === "3001");
+                    if (acc) handleOpenAccountLedger(acc);
+                  }}
+                  className="flex-1 text-xs h-8 gap-1 rounded-xl font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-2xs"
+                >
+                  <BookOpen className="w-3 h-3" />
+                  Ledger
+                </Button>
+              </div>
+            </div>
 
-            <Card className="border-l-4 border-l-rose-600 shadow-sm">
-              <CardHeader className="pb-2">
-                <CardDescription className="text-xs">Owner Drawings / Withdrawals</CardDescription>
-                <CardTitle className="text-2xl font-bold font-mono text-rose-700 dark:text-rose-400">
+            <div className="bg-white rounded-2xl border border-slate-200/90 border-l-4 border-l-rose-600 shadow-2xs p-5 space-y-3">
+              <div>
+                <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Owner Drawings / Withdrawals</span>
+                <div className="text-2xl font-bold font-mono text-rose-600 tabular-nums mt-1">
                   AED {(accounts.find((a) => a.account_code === "3002")?.current_balance || 0).toLocaleString("en-US", { minimumFractionDigits: 2 })}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-0 text-[11px] text-muted-foreground space-y-2">
-                <div>Total profit distributions taken by owner</div>
-                <div className="flex items-center gap-1.5 pt-1 border-t">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => {
-                      const acc = accounts.find((a) => a.account_code === "3002");
-                      if (acc) handleOpenAddEntryModal(acc);
-                    }}
-                    className="flex-1 text-xs h-7 gap-1 text-rose-700 border-rose-200 hover:bg-rose-50"
-                  >
-                    <Plus className="w-3 h-3" />
-                    + Entry
-                  </Button>
-                  <Button
-                    size="sm"
-                    onClick={() => {
-                      const acc = accounts.find((a) => a.account_code === "3002");
-                      if (acc) handleOpenAccountLedger(acc);
-                    }}
-                    className="flex-1 text-xs h-7 gap-1 bg-rose-600 hover:bg-rose-700 text-white"
-                  >
-                    <BookOpen className="w-3 h-3" />
-                    View Ledger
-                  </Button>
                 </div>
-              </CardContent>
-            </Card>
+                <p className="text-xs text-slate-500 mt-1">Total profit distributions taken by owner</p>
+              </div>
+              <div className="flex items-center gap-2 pt-2 border-t border-slate-100">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    const acc = accounts.find((a) => a.account_code === "3002");
+                    if (acc) handleOpenAddEntryModal(acc);
+                  }}
+                  className="flex-1 text-xs h-8 gap-1 rounded-xl font-semibold text-rose-700 border-rose-200 hover:bg-rose-50"
+                >
+                  <Plus className="w-3 h-3" />
+                  Entry
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    const acc = accounts.find((a) => a.account_code === "3002");
+                    if (acc) handleOpenAccountLedger(acc);
+                  }}
+                  className="flex-1 text-xs h-8 gap-1 rounded-xl font-semibold bg-rose-600 hover:bg-rose-700 text-white shadow-2xs"
+                >
+                  <BookOpen className="w-3 h-3" />
+                  Ledger
+                </Button>
+              </div>
+            </div>
 
-            <Card className="border-l-4 border-l-indigo-600 shadow-sm">
-              <CardHeader className="pb-2">
-                <CardDescription className="text-xs">Owner Advances to Workshop</CardDescription>
-                <CardTitle className="text-2xl font-bold font-mono text-indigo-700 dark:text-indigo-400">
+            <div className="bg-white rounded-2xl border border-slate-200/90 border-l-4 border-l-indigo-600 shadow-2xs p-5 space-y-3">
+              <div>
+                <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Owner Advances to Workshop</span>
+                <div className="text-2xl font-bold font-mono text-indigo-600 tabular-nums mt-1">
                   AED {(accounts.find((a) => a.account_code === "3003")?.current_balance || 0).toLocaleString("en-US", { minimumFractionDigits: 2 })}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-0 text-[11px] text-muted-foreground space-y-2">
-                <div>Short-term liquidity funding loans by owner</div>
-                <div className="flex items-center gap-1.5 pt-1 border-t">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => {
-                      const acc = accounts.find((a) => a.account_code === "3003");
-                      if (acc) handleOpenAddEntryModal(acc);
-                    }}
-                    className="flex-1 text-xs h-7 gap-1 text-indigo-700 border-indigo-200 hover:bg-indigo-50"
-                  >
-                    <Plus className="w-3 h-3" />
-                    + Entry
-                  </Button>
-                  <Button
-                    size="sm"
-                    onClick={() => {
-                      const acc = accounts.find((a) => a.account_code === "3003");
-                      if (acc) handleOpenAccountLedger(acc);
-                    }}
-                    className="flex-1 text-xs h-7 gap-1 bg-indigo-600 hover:bg-indigo-700 text-white"
-                  >
-                    <BookOpen className="w-3 h-3" />
-                    View Ledger
-                  </Button>
                 </div>
-              </CardContent>
-            </Card>
+                <p className="text-xs text-slate-500 mt-1">Short-term liquidity funding loans by owner</p>
+              </div>
+              <div className="flex items-center gap-2 pt-2 border-t border-slate-100">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    const acc = accounts.find((a) => a.account_code === "3003");
+                    if (acc) handleOpenAddEntryModal(acc);
+                  }}
+                  className="flex-1 text-xs h-8 gap-1 rounded-xl font-semibold text-indigo-700 border-indigo-200 hover:bg-indigo-50"
+                >
+                  <Plus className="w-3 h-3" />
+                  Entry
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    const acc = accounts.find((a) => a.account_code === "3003");
+                    if (acc) handleOpenAccountLedger(acc);
+                  }}
+                  className="flex-1 text-xs h-8 gap-1 rounded-xl font-semibold bg-indigo-600 hover:bg-indigo-700 text-white shadow-2xs"
+                >
+                  <BookOpen className="w-3 h-3" />
+                  Ledger
+                </Button>
+              </div>
+            </div>
           </div>
         </TabsContent>
 
@@ -2766,66 +2746,65 @@ export function AccountsView() {
         <TabsContent value="journal" className="space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
-              <h3 className="text-sm font-semibold">General Journal Transactions</h3>
-              <p className="text-xs text-muted-foreground">
+              <h3 className="text-sm font-bold text-slate-900">General Journal Transactions</h3>
+              <p className="text-xs text-slate-500">
                 Chronological list of all balanced double-entry accounting transactions
               </p>
             </div>
 
             {canManageAccounts && (
               <Button
-                size="sm"
                 onClick={() => setJournalOpen(true)}
-                className="text-xs h-8 gap-1 bg-blue-600 hover:bg-blue-700 text-white"
+                className="text-xs h-10 px-4 gap-1.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl shadow-2xs transition-colors"
               >
-                <Plus className="w-3 h-3" />
-                + New Manual Journal Entry
+                <Plus className="w-3.5 h-3.5" />
+                New Manual Journal Entry
               </Button>
             )}
           </div>
 
-          <Card className="overflow-hidden">
+          <div className="border border-slate-200/90 shadow-2xs bg-white rounded-2xl overflow-hidden">
             <div className="overflow-x-auto">
               <Table>
-                <TableHeader className="bg-slate-50 dark:bg-slate-900/50">
-                  <TableRow>
-                    <TableHead className="w-[120px] text-xs font-semibold">Txn No</TableHead>
-                    <TableHead className="w-[100px] text-xs font-semibold">Date</TableHead>
-                    <TableHead className="w-[110px] text-xs font-semibold">Type</TableHead>
-                    <TableHead className="text-xs font-semibold">Description</TableHead>
-                    <TableHead className="text-right text-xs font-semibold">Debit (AED)</TableHead>
-                    <TableHead className="text-right text-xs font-semibold">Credit (AED)</TableHead>
-                    <TableHead className="w-[90px] text-center text-xs font-semibold">Status</TableHead>
+                <TableHeader>
+                  <TableRow className="bg-slate-50/80 hover:bg-slate-50/80 border-b border-slate-200/80 h-11">
+                    <TableHead className="w-[130px] text-[11px] font-bold text-slate-500 uppercase tracking-wider">Txn No</TableHead>
+                    <TableHead className="w-[110px] text-[11px] font-bold text-slate-500 uppercase tracking-wider">Date</TableHead>
+                    <TableHead className="w-[120px] text-[11px] font-bold text-slate-500 uppercase tracking-wider">Type</TableHead>
+                    <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-wider min-w-[200px]">Description</TableHead>
+                    <TableHead className="text-right text-[11px] font-bold text-slate-500 uppercase tracking-wider w-[140px]">Debit (AED)</TableHead>
+                    <TableHead className="text-right text-[11px] font-bold text-slate-500 uppercase tracking-wider w-[140px]">Credit (AED)</TableHead>
+                    <TableHead className="w-[100px] text-center text-[11px] font-bold text-slate-500 uppercase tracking-wider">Status</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {transactions.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center py-8 text-xs text-muted-foreground">
+                      <TableCell colSpan={7} className="text-center py-12 text-xs text-slate-400">
                         No transactions recorded yet.
                       </TableCell>
                     </TableRow>
                   ) : (
                     transactions.map((t) => (
-                      <TableRow key={t.id}>
-                        <TableCell className="font-mono text-xs font-semibold text-blue-600 dark:text-blue-400">
+                      <TableRow key={t.id} className="h-12 border-b border-slate-100 hover:bg-slate-50/60 transition-colors text-xs">
+                        <TableCell className="font-mono text-xs font-bold text-blue-600">
                           {t.transaction_number}
                         </TableCell>
-                        <TableCell className="text-xs text-muted-foreground font-mono">{t.transaction_date}</TableCell>
+                        <TableCell className="text-xs text-slate-500 font-mono">{t.transaction_date}</TableCell>
                         <TableCell>
-                          <Badge variant="outline" className="text-[10px] font-mono capitalize">
+                          <Badge variant="outline" className="text-[10px] font-mono capitalize rounded-lg">
                             {t.reference_type.replace("_", " ")}
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-xs font-medium">{t.description}</TableCell>
-                        <TableCell className="text-right font-mono text-xs font-semibold">
+                        <TableCell className="text-xs font-medium text-slate-900">{t.description}</TableCell>
+                        <TableCell className="text-right font-mono text-xs font-bold text-slate-900 tabular-nums">
                           {Number(t.total_debit || 0).toLocaleString("en-US", { minimumFractionDigits: 2 })}
                         </TableCell>
-                        <TableCell className="text-right font-mono text-xs font-semibold">
+                        <TableCell className="text-right font-mono text-xs font-bold text-slate-900 tabular-nums">
                           {Number(t.total_credit || 0).toLocaleString("en-US", { minimumFractionDigits: 2 })}
                         </TableCell>
                         <TableCell className="text-center">
-                          <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-lg text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
                             Balanced
                           </span>
                         </TableCell>
@@ -2835,65 +2814,64 @@ export function AccountsView() {
                 </TableBody>
               </Table>
             </div>
-          </Card>
+          </div>
         </TabsContent>
 
         {/* ─── TAB 8: MONEY TRANSFERS HISTORY ─────────────────────────────── */}
         <TabsContent value="transfers" className="space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+              <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
                 <ArrowRightLeft className="w-5 h-5 text-indigo-600" />
                 Internal Money Transfers
               </h3>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-slate-500 mt-0.5">
                 Movement between Cash, Bank, and Financial accounts with full double-entry audit history
               </p>
             </div>
             {canTransfer && (
               <Button
-                size="sm"
                 onClick={() => setTransferOpen(true)}
-                className="text-xs h-9 gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white"
+                className="text-xs h-10 px-4 gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl shadow-2xs transition-colors"
               >
                 <ArrowRightLeft className="w-3.5 h-3.5" />
-                + Transfer Money
+                Transfer Money
               </Button>
             )}
           </div>
 
-          <Card className="shadow-sm overflow-hidden">
-            <div className="p-3.5 border-b bg-slate-50/70 dark:bg-slate-800/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="border border-slate-200/90 shadow-2xs bg-white rounded-2xl overflow-hidden">
+            <div className="p-4 border-b border-slate-100 bg-slate-50/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="relative flex-1 max-w-sm">
-                <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
                 <Input
                   placeholder="Search by Transfer No, Reference, Description, Account..."
                   value={transferHistorySearch}
                   onChange={(e) => setTransferHistorySearch(e.target.value)}
-                  className="pl-8 text-xs h-8"
+                  className="pl-9 text-xs h-10 rounded-xl border-slate-200 bg-white"
                 />
               </div>
-              <div className="text-xs text-muted-foreground">
-                Total Transfers: <strong className="text-foreground">{transferHistoryList.length}</strong>
+              <div className="text-xs text-slate-500">
+                Total Transfers: <strong className="text-slate-900 font-semibold">{transferHistoryList.length}</strong>
               </div>
             </div>
 
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
-                  <TableRow className="bg-slate-50 dark:bg-slate-800/80">
-                    <TableHead className="text-xs font-semibold w-[95px]">Date</TableHead>
-                    <TableHead className="text-xs font-semibold w-[120px]">Transfer No</TableHead>
-                    <TableHead className="text-xs font-semibold min-w-[150px]">Payable Account</TableHead>
-                    <TableHead className="text-xs font-semibold min-w-[150px]">Receivable Account</TableHead>
-                    <TableHead className="text-xs font-semibold min-w-[150px]">Saving/Diff Account</TableHead>
-                    <TableHead className="text-xs font-semibold text-right w-[110px]">Payable Amount</TableHead>
-                    <TableHead className="text-xs font-semibold text-right w-[110px]">Receivable Amount</TableHead>
-                    <TableHead className="text-xs font-semibold text-right w-[90px]">Difference</TableHead>
-                    <TableHead className="text-xs font-semibold min-w-[130px]">Remarks</TableHead>
-                    <TableHead className="text-xs font-semibold w-[95px]">Created By</TableHead>
-                    <TableHead className="text-xs font-semibold w-[90px]">Status</TableHead>
-                    <TableHead className="text-xs font-semibold text-right w-[110px]">Actions</TableHead>
+                  <TableRow className="bg-slate-50/80 hover:bg-slate-50/80 border-b border-slate-200/80 h-11">
+                    <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-wider w-[100px]">Date</TableHead>
+                    <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-wider w-[130px]">Transfer No</TableHead>
+                    <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-wider min-w-[150px]">Payable Account</TableHead>
+                    <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-wider min-w-[150px]">Receivable Account</TableHead>
+                    <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-wider min-w-[150px]">Saving/Diff Account</TableHead>
+                    <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-wider text-right w-[120px]">Payable Amount</TableHead>
+                    <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-wider text-right w-[120px]">Receivable Amount</TableHead>
+                    <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-wider text-right w-[100px]">Difference</TableHead>
+                    <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-wider min-w-[130px]">Remarks</TableHead>
+                    <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-wider w-[100px]">Created By</TableHead>
+                    <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-wider w-[90px]">Status</TableHead>
+                    <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-wider text-right w-[110px] pr-4">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -2915,9 +2893,9 @@ export function AccountsView() {
                     if (filtered.length === 0) {
                       return (
                         <TableRow>
-                          <TableCell colSpan={12} className="text-center py-12 text-xs text-muted-foreground">
+                          <TableCell colSpan={12} className="text-center py-12 text-xs text-slate-400">
                             <ArrowRightLeft className="w-8 h-8 mx-auto text-slate-300 mb-2" />
-                            <p className="font-semibold text-slate-700 dark:text-slate-300">No money transfers found</p>
+                            <p className="font-semibold text-slate-700">No money transfers found</p>
                             <p className="text-[11px] text-slate-400 mt-0.5">
                               Click &quot;+ Transfer Money&quot; to transfer funds between Payable and Receivable accounts.
                             </p>
@@ -2932,11 +2910,11 @@ export function AccountsView() {
                       const diff = item.difference !== undefined ? item.difference : item.fee;
 
                       return (
-                        <TableRow key={item.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50">
-                          <TableCell className="text-xs font-mono text-muted-foreground">{item.date}</TableCell>
-                          <TableCell className="text-xs font-mono font-bold text-blue-700 dark:text-blue-400">
+                        <TableRow key={item.id} className="h-12 border-b border-slate-100 hover:bg-slate-50/60 transition-colors text-xs">
+                          <TableCell className="text-xs font-mono text-slate-500">{item.date}</TableCell>
+                          <TableCell className="text-xs font-mono font-bold text-blue-600">
                             <div>{item.transfer_number}</div>
-                            <span className="text-[9px] font-sans uppercase text-muted-foreground">
+                            <span className="text-[9px] font-sans uppercase text-slate-400 font-semibold">
                               {item.cash_flow_type === "cash_in"
                                 ? "Cash In"
                                 : item.cash_flow_type === "cash_out"
@@ -2946,19 +2924,19 @@ export function AccountsView() {
                           </TableCell>
                           <TableCell className="text-xs">
                             <span className="font-mono text-[10px] text-slate-400 mr-1">{item.from_account.code}</span>
-                            <span className="font-medium text-slate-900 dark:text-slate-100">{item.from_account.name}</span>
+                            <span className="font-medium text-slate-900">{item.from_account.name}</span>
                           </TableCell>
                           <TableCell className="text-xs">
                             <span className="font-mono text-[10px] text-slate-400 mr-1">{item.to_account.code}</span>
-                            <span className="font-medium text-slate-900 dark:text-slate-100">{item.to_account.name}</span>
+                            <span className="font-medium text-slate-900">{item.to_account.name}</span>
                           </TableCell>
                           <TableCell className="text-xs">
                             {item.saving_account ? (
                               <div>
                                 <span className="font-mono text-[10px] text-slate-400 mr-1">{item.saving_account.code}</span>
-                                <span className="font-medium text-amber-700 dark:text-amber-400">{item.saving_account.name}</span>
+                                <span className="font-medium text-amber-700">{item.saving_account.name}</span>
                                 {item.saving_amount ? (
-                                  <span className="text-[10px] text-muted-foreground font-mono ml-1">
+                                  <span className="text-[10px] text-slate-400 font-mono ml-1">
                                     (AED {item.saving_amount.toFixed(2)})
                                   </span>
                                 ) : null}
@@ -3073,7 +3051,7 @@ export function AccountsView() {
                 </TableBody>
               </Table>
             </div>
-          </Card>
+          </div>
         </TabsContent>
       </Tabs>
 

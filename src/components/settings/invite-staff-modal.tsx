@@ -257,40 +257,40 @@ export function InviteStaffModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-3xl w-[95vw] h-[85vh] p-0 flex flex-col bg-card border border-border shadow-md overflow-hidden rounded-[10px]">
+      <DialogContent className="max-w-3xl w-[95vw] h-[85vh] p-0 flex flex-col bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-xl overflow-hidden rounded-2xl">
         {/* ─── Header & Progress Bar ─────────────────────────────────────── */}
-        <DialogHeader className="px-6 py-4 bg-card border-b border-border shrink-0">
+        <DialogHeader className="px-6 py-4 bg-slate-50/50 dark:bg-slate-800/40 border-b border-slate-200/80 dark:border-slate-800 shrink-0">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2.5">
-              <div className="h-8 w-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center border border-primary/20">
-                <UserPlus className="h-4 w-4" />
+              <div className="h-9 w-9 rounded-xl bg-blue-50 dark:bg-blue-950/50 text-blue-600 flex items-center justify-center border border-blue-200/80 dark:border-blue-900">
+                <UserPlus className="h-4.5 w-4.5" />
               </div>
               <div>
-                <DialogTitle className="text-section text-foreground font-semibold">
-                  Invite & Provision Staff User
+                <DialogTitle className="text-base text-slate-900 dark:text-slate-100 font-bold">
+                  Invite &amp; Provision Staff User
                 </DialogTitle>
-                <DialogDescription className="text-caption text-muted-foreground">
+                <DialogDescription className="text-xs text-slate-500">
                   Step {currentStep} of 8: {WIZARD_STEPS[currentStep - 1].short}
                 </DialogDescription>
               </div>
             </div>
 
-            <Badge variant="outline" className="text-[11px] font-semibold rounded-[6px] bg-muted/50 border-border">
+            <Badge variant="outline" className="text-[11px] font-bold rounded-lg bg-white dark:bg-slate-900 border-slate-200/90 shadow-2xs">
               {currentWorkspace?.name || "ATIQ JEHAN"}
             </Badge>
           </div>
 
           {/* Stepper Dots */}
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1.5">
             {WIZARD_STEPS.map((s) => (
               <div
                 key={s.step}
-                className={`h-1 flex-1 rounded-full transition-colors duration-150 ${
+                className={`h-1.5 flex-1 rounded-full transition-colors duration-150 ${
                   s.step === currentStep
-                    ? "bg-primary"
+                    ? "bg-blue-600"
                     : s.step < currentStep
                     ? "bg-emerald-600"
-                    : "bg-muted"
+                    : "bg-slate-200 dark:bg-slate-800"
                 }`}
               />
             ))}
@@ -748,21 +748,21 @@ export function InviteStaffModal({
         </div>
 
         {/* ─── Footer Controls ───────────────────────────────────────────── */}
-        <DialogFooter className="px-6 py-3 bg-card border-t border-border flex items-center justify-between shrink-0">
+        <DialogFooter className="px-6 py-3.5 bg-slate-50/50 dark:bg-slate-800/40 border-t border-slate-200/80 dark:border-slate-800 flex items-center justify-between shrink-0">
           <div>
             {currentStep > 1 && (
-              <Button variant="outline" size="sm" onClick={handleBack} disabled={loading} className="gap-1.5 text-xs h-9 rounded-lg border-border">
+              <Button variant="outline" size="sm" onClick={handleBack} disabled={loading} className="gap-1.5 text-xs h-10 px-4 rounded-xl font-semibold border-slate-200 bg-white hover:bg-slate-50 text-slate-700 shadow-2xs">
                 <ArrowLeft className="w-3.5 h-3.5" /> Back
               </Button>
             )}
           </div>
 
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm" onClick={onClose} disabled={loading} className="text-xs h-9 rounded-lg">
+            <Button variant="ghost" size="sm" onClick={onClose} disabled={loading} className="text-xs h-10 px-4 rounded-xl font-semibold text-slate-600 hover:bg-slate-100">
               Cancel
             </Button>
             {currentStep < 8 ? (
-              <Button size="sm" onClick={handleNext} className="bg-primary hover:bg-primary/90 text-primary-foreground gap-1.5 text-xs h-9 rounded-lg shadow-xs">
+              <Button size="sm" onClick={handleNext} className="bg-blue-600 hover:bg-blue-700 text-white gap-1.5 text-xs h-10 px-4 rounded-xl font-semibold shadow-2xs transition-colors">
                 Next <ArrowRight className="w-3.5 h-3.5" />
               </Button>
             ) : (
@@ -770,7 +770,7 @@ export function InviteStaffModal({
                 size="sm"
                 onClick={handleCompleteInvitation}
                 disabled={loading}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white gap-1.5 text-xs h-9 rounded-lg shadow-xs"
+                className="bg-emerald-600 hover:bg-emerald-700 text-white gap-1.5 text-xs h-10 px-4 rounded-xl font-semibold shadow-2xs transition-colors"
               >
                 <Send className="w-3.5 h-3.5" />
                 {loading ? "Sending Invitation..." : "Send Invitation"}

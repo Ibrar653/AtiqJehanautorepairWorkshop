@@ -525,12 +525,12 @@ export function InvoicesView() {
             { label: "Invoices" },
           ]}
           actions={
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2.5">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={loadInvoicesList}
-                className="h-9 gap-1.5 text-xs font-semibold border-border/80 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-2xs rounded-lg"
+                className="h-10 px-3 text-xs font-semibold rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 shadow-2xs gap-2"
                 title="Refresh invoices"
               >
                 <RefreshCw className="h-3.5 w-3.5" /> Refresh
@@ -538,7 +538,7 @@ export function InvoicesView() {
               <Button
                 size="sm"
                 onClick={handleOpenConvertModal}
-                className="h-9 gap-1.5 text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-xs px-3.5 rounded-lg"
+                className="h-10 px-4 text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-2xs rounded-xl gap-2"
               >
                 <Plus className="h-4 w-4" /> + Create Invoice
               </Button>
@@ -551,15 +551,15 @@ export function InvoicesView() {
           <div
             className={`flex items-center justify-between p-3.5 rounded-xl border text-xs font-semibold ${
               toastMessage.type === "success"
-                ? "bg-emerald-50 text-emerald-800 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800"
-                : "bg-red-50 text-red-800 border-red-200 dark:bg-red-950/40 dark:text-red-300 dark:border-red-800"
+                ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                : "bg-red-50 text-red-800 border-red-200"
             }`}
           >
             <div className="flex items-center gap-2">
               {toastMessage.type === "success" ? (
-                <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
               ) : (
-                <AlertCircle className="h-4 w-4 text-red-600 dark:text-red-400 shrink-0" />
+                <AlertCircle className="h-4 w-4 text-red-600 shrink-0" />
               )}
               <span>{toastMessage.text}</span>
             </div>
@@ -575,100 +575,92 @@ export function InvoicesView() {
         )}
 
         {/* ─── Top Financial KPI Cards ─── */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          <div className="bg-card border border-border/80 rounded-xl p-4 shadow-xs flex flex-col justify-between h-full hover:border-border transition-colors">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-2xs flex items-center justify-between">
+            <div>
+              <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
                 Total Invoiced
-              </span>
-              <div className="h-7 w-7 rounded-lg bg-blue-50 dark:bg-blue-950/50 flex items-center justify-center text-blue-600">
-                <FileText className="h-3.5 w-3.5" />
-              </div>
-            </div>
-            <div className="mt-3">
-              <div className="text-2xl font-bold font-mono tracking-tight text-foreground">
+              </p>
+              <p className="text-2xl font-bold font-mono tracking-tight text-slate-900 mt-1">
                 {formatCurrency(kpis.totalSalesValue)}
-              </div>
-              <div className="text-xs text-muted-foreground mt-0.5">
+              </p>
+              <p className="text-xs text-slate-500 mt-1">
                 From {kpis.totalInvoicesCount} generated invoice(s)
-              </div>
+              </p>
+            </div>
+            <div className="h-10 w-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+              <FileText className="h-5 w-5" />
             </div>
           </div>
 
-          <div className="bg-card border border-border/80 rounded-xl p-4 shadow-xs flex flex-col justify-between h-full hover:border-border transition-colors">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+          <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-2xs flex items-center justify-between">
+            <div>
+              <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
                 Paid / Collected
-              </span>
-              <div className="h-7 w-7 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 flex items-center justify-center text-emerald-600">
-                <CheckCircle2 className="h-3.5 w-3.5" />
-              </div>
-            </div>
-            <div className="mt-3">
-              <div className="text-2xl font-bold font-mono tracking-tight text-emerald-600 dark:text-emerald-400">
+              </p>
+              <p className="text-2xl font-bold font-mono tracking-tight text-emerald-600 mt-1">
                 {formatCurrency(kpis.totalPaidValue)}
-              </div>
-              <div className="text-xs text-muted-foreground mt-0.5">
+              </p>
+              <p className="text-xs text-slate-500 mt-1">
                 Settled customer payments
-              </div>
+              </p>
+            </div>
+            <div className="h-10 w-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+              <CheckCircle2 className="h-5 w-5" />
             </div>
           </div>
 
-          <div className="bg-card border border-border/80 rounded-xl p-4 shadow-xs flex flex-col justify-between h-full hover:border-border transition-colors">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+          <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-2xs flex items-center justify-between">
+            <div>
+              <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
                 Outstanding Balance
-              </span>
-              <div className="h-7 w-7 rounded-lg bg-rose-50 dark:bg-rose-950/50 flex items-center justify-center text-rose-600">
-                <AlertTriangle className="h-3.5 w-3.5" />
-              </div>
-            </div>
-            <div className="mt-3">
-              <div className={`text-2xl font-bold font-mono tracking-tight ${kpis.totalOutstandingBalance > 0 ? "text-rose-600 dark:text-rose-400" : "text-foreground"}`}>
+              </p>
+              <p className={`text-2xl font-bold font-mono tracking-tight mt-1 ${kpis.totalOutstandingBalance > 0 ? "text-rose-600" : "text-slate-900"}`}>
                 {formatCurrency(kpis.totalOutstandingBalance)}
-              </div>
-              <div className="text-xs text-muted-foreground mt-0.5">
+              </p>
+              <p className="text-xs text-slate-500 mt-1">
                 Pending receivables
-              </div>
+              </p>
+            </div>
+            <div className="h-10 w-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
+              <AlertTriangle className="h-5 w-5" />
             </div>
           </div>
 
-          <div className="bg-card border border-border/80 rounded-xl p-4 shadow-xs flex flex-col justify-between h-full hover:border-border transition-colors">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+          <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-2xs flex items-center justify-between">
+            <div>
+              <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
                 Total Invoices
-              </span>
-              <div className="h-7 w-7 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-muted-foreground">
-                <Receipt className="h-3.5 w-3.5" />
-              </div>
-            </div>
-            <div className="mt-3">
-              <div className="text-2xl font-bold font-mono tracking-tight text-foreground">
+              </p>
+              <p className="text-2xl font-bold font-mono tracking-tight text-slate-900 mt-1">
                 {totalCount}
-              </div>
-              <div className="text-xs text-muted-foreground mt-0.5">
+              </p>
+              <p className="text-xs text-slate-500 mt-1">
                 Total documents recorded
-              </div>
+              </p>
+            </div>
+            <div className="h-10 w-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
+              <Receipt className="h-5 w-5" />
             </div>
           </div>
         </div>
 
         {/* ─── Search & Filter Bar ─── */}
-        <div className="bg-card border border-border/80 rounded-xl p-3 shadow-xs flex flex-col md:flex-row items-center justify-between gap-3">
+        <div className="bg-white border border-slate-200/90 rounded-2xl p-3.5 shadow-2xs flex flex-col md:flex-row items-center justify-between gap-3">
           <div className="relative w-full md:w-80">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
             <Input
               type="search"
               placeholder="Search by invoice #, customer, phone, vehicle..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 h-8.5 text-xs bg-muted/40 border-border/70 focus:bg-background transition-colors"
+              className="pl-9 h-10 text-xs rounded-xl border-slate-200 bg-white shadow-2xs focus:border-blue-500 focus:ring-blue-500"
             />
             {searchQuery && (
               <button
                 type="button"
                 onClick={() => setSearchQuery("")}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground hover:text-foreground"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 hover:text-slate-700"
               >
                 ✕
               </button>
@@ -683,7 +675,7 @@ export function InvoicesView() {
                 setDateFilter(e.target.value as any);
                 setCurrentPage(1);
               }}
-              className="h-8.5 rounded-lg border border-border/80 bg-background px-2.5 text-xs font-medium text-foreground focus:outline-none focus:ring-1 focus:ring-primary shadow-2xs"
+              className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 shadow-2xs focus:border-blue-500 focus:ring-blue-500"
             >
               <option value="all">All Dates</option>
               <option value="today">Today</option>
@@ -692,7 +684,7 @@ export function InvoicesView() {
             </select>
 
             {/* Status Filter Segmented Control */}
-            <div className="flex items-center gap-1 bg-muted/40 p-1 rounded-lg border border-border/70 overflow-x-auto">
+            <div className="flex items-center gap-1.5 overflow-x-auto">
               {[
                 { key: "all", label: "All Status" },
                 { key: "paid", label: "Paid" },
@@ -707,10 +699,10 @@ export function InvoicesView() {
                     setStatusFilter(tab.key);
                     setCurrentPage(1);
                   }}
-                  className={`h-7 px-3 rounded-md text-xs font-semibold whitespace-nowrap transition-all ${
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
                     statusFilter === tab.key
-                      ? "bg-background text-foreground shadow-2xs border border-border/60"
-                      : "text-muted-foreground hover:text-foreground"
+                      ? "bg-blue-600 text-white shadow-2xs"
+                      : "border border-slate-200 bg-white text-slate-600 hover:text-slate-900 hover:bg-slate-50"
                   }`}
                 >
                   {tab.label}
@@ -722,29 +714,29 @@ export function InvoicesView() {
 
         {/* Custom Date Range Picker */}
         {dateFilter === "custom" && (
-          <div className="bg-card border border-border/80 rounded-xl p-3 shadow-xs flex flex-wrap items-center gap-3 text-xs">
+          <div className="bg-white border border-slate-200/90 rounded-2xl p-3.5 shadow-2xs flex flex-wrap items-center gap-3 text-xs">
             <div className="flex items-center gap-2">
-              <Label className="text-xs font-semibold text-muted-foreground">Start Date:</Label>
+              <Label className="text-xs font-semibold text-slate-600">Start Date:</Label>
               <Input
                 type="date"
                 value={customStartDate}
                 onChange={(e) => setCustomStartDate(e.target.value)}
-                className="h-8 text-xs w-36"
+                className="h-9 text-xs w-36 rounded-xl border-slate-200"
               />
             </div>
             <div className="flex items-center gap-2">
-              <Label className="text-xs font-semibold text-muted-foreground">End Date:</Label>
+              <Label className="text-xs font-semibold text-slate-600">End Date:</Label>
               <Input
                 type="date"
                 value={customEndDate}
                 onChange={(e) => setCustomEndDate(e.target.value)}
-                className="h-8 text-xs w-36"
+                className="h-9 text-xs w-36 rounded-xl border-slate-200"
               />
             </div>
             <Button
               size="sm"
               onClick={loadInvoicesList}
-              className="h-8 text-xs px-3 font-semibold bg-blue-600 hover:bg-blue-700 text-white"
+              className="h-9 text-xs px-4 font-semibold bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-2xs"
             >
               Apply Filter
             </Button>
@@ -752,16 +744,16 @@ export function InvoicesView() {
         )}
 
         {/* ─── Invoices Data Table ─── */}
-        <div className="bg-card border border-border/80 rounded-xl shadow-xs overflow-hidden">
+        <div className="border border-slate-200/90 shadow-2xs bg-white rounded-2xl overflow-hidden">
           {loading ? (
-            <div className="py-20 text-center text-muted-foreground">
-              <Loader2 className="h-7 w-7 mx-auto animate-spin mb-3 text-primary" />
+            <div className="py-20 text-center text-slate-500">
+              <Loader2 className="h-8 w-8 mx-auto animate-spin mb-3 text-blue-600" />
               <p className="font-semibold text-xs">Loading invoices...</p>
             </div>
           ) : invoices.length > 0 ? (
             <div className="overflow-x-auto min-w-full">
               {selectedInvoiceIds.length > 0 && (
-                <div className="bg-blue-50/80 dark:bg-blue-950/40 p-2.5 px-4 border-b border-blue-200 dark:border-blue-900/50 flex items-center justify-between text-xs text-blue-900 dark:text-blue-200">
+                <div className="bg-blue-50/80 p-3 px-4 border-b border-blue-200 flex items-center justify-between text-xs text-blue-900">
                   <span className="font-semibold">
                     {selectedInvoiceIds.length} invoice{selectedInvoiceIds.length > 1 ? "s" : ""} selected
                   </span>
@@ -769,7 +761,7 @@ export function InvoicesView() {
                     <Button
                       variant="destructive"
                       size="sm"
-                      className="h-7 text-xs font-semibold"
+                      className="h-8 text-xs font-semibold rounded-xl"
                       onClick={handleRequestBulkDelete}
                     >
                       <Trash2 className="h-3 w-3 mr-1.5" /> Delete Selected
@@ -777,7 +769,7 @@ export function InvoicesView() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="h-7 text-xs text-muted-foreground hover:text-foreground"
+                      className="h-8 text-xs text-slate-600 hover:text-slate-900 rounded-xl"
                       onClick={() => setSelectedInvoiceIds([])}
                     >
                       Clear Selection
@@ -787,7 +779,7 @@ export function InvoicesView() {
               )}
               <Table className="w-full text-xs min-w-[1100px]">
                 <TableHeader>
-                  <TableRow className="h-10 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider bg-slate-50/75 dark:bg-slate-800/40 border-b border-border/70">
+                  <TableRow className="border-b border-slate-200/80 bg-slate-50/80 hover:bg-slate-50/80 text-[11px] font-bold text-slate-500 uppercase tracking-wider h-11">
                     <TableHead className="w-[44px] pl-4">
                       <Checkbox
                         checked={
@@ -801,16 +793,16 @@ export function InvoicesView() {
                         aria-label="Select all visible invoices"
                       />
                     </TableHead>
-                    <TableHead className="font-semibold text-foreground">Invoice No</TableHead>
-                    <TableHead className="font-semibold text-foreground min-w-[180px]">Customer</TableHead>
-                    <TableHead className="font-semibold text-foreground min-w-[170px]">Vehicle</TableHead>
-                    <TableHead className="font-semibold text-foreground">Job Card</TableHead>
-                    <TableHead className="font-semibold text-foreground">Date</TableHead>
-                    <TableHead className="text-right font-semibold text-foreground">Total (AED)</TableHead>
-                    <TableHead className="text-right font-semibold text-foreground">Paid (AED)</TableHead>
-                    <TableHead className="text-right font-semibold text-foreground">Balance (AED)</TableHead>
-                    <TableHead className="text-center font-semibold text-foreground">Payment Status</TableHead>
-                    <TableHead className="w-[105px] min-w-[105px] text-right pr-4 font-semibold text-foreground">Actions</TableHead>
+                    <TableHead className="text-slate-600 font-bold">Invoice No</TableHead>
+                    <TableHead className="text-slate-600 font-bold min-w-[180px]">Customer</TableHead>
+                    <TableHead className="text-slate-600 font-bold min-w-[170px]">Vehicle</TableHead>
+                    <TableHead className="text-slate-600 font-bold">Job Card</TableHead>
+                    <TableHead className="text-slate-600 font-bold">Date</TableHead>
+                    <TableHead className="text-right text-slate-600 font-bold">Total (AED)</TableHead>
+                    <TableHead className="text-right text-slate-600 font-bold">Paid (AED)</TableHead>
+                    <TableHead className="text-right text-slate-600 font-bold">Balance (AED)</TableHead>
+                    <TableHead className="text-center text-slate-600 font-bold">Payment Status</TableHead>
+                    <TableHead className="w-[105px] min-w-[105px] text-right pr-4 text-slate-600 font-bold">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -823,9 +815,9 @@ export function InvoicesView() {
                     return (
                       <TableRow
                         key={inv.id}
-                        className={`h-13 border-b border-border/40 hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors ${
+                        className={`h-12 border-b border-slate-100 hover:bg-slate-50/60 transition-colors ${
                           isVoid ? "opacity-60 bg-slate-50/30" : ""
-                        } ${selectedInvoiceIds.includes(inv.id) ? "bg-blue-50/40 dark:bg-blue-950/20" : ""}`}
+                        } ${selectedInvoiceIds.includes(inv.id) ? "bg-blue-50/30" : ""}`}
                       >
                         <TableCell className="pl-4 py-2.5">
                           <Checkbox
@@ -839,18 +831,18 @@ export function InvoicesView() {
                           <button
                             type="button"
                             onClick={() => handleOpenDetails(inv.id)}
-                            className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 hover:underline inline-flex items-center gap-1"
+                            className="text-blue-600 hover:text-blue-800 hover:underline inline-flex items-center gap-1 font-bold"
                           >
                             {inv.invoice_number}
                           </button>
                         </TableCell>
 
                         <TableCell className="py-2.5">
-                          <div className="font-semibold text-foreground leading-tight">
+                          <div className="font-semibold text-slate-900 leading-tight">
                             {inv.customer?.name || "Cash Customer"}
                           </div>
                           {(inv.customer?.mobile || inv.customer?.company_name) && (
-                            <div className="text-[11px] text-muted-foreground font-mono leading-tight mt-0.5">
+                            <div className="text-[11px] text-slate-500 font-mono leading-tight mt-0.5">
                               {inv.customer?.mobile || inv.customer?.company_name}
                             </div>
                           )}
@@ -859,54 +851,54 @@ export function InvoicesView() {
                         <TableCell className="py-2.5">
                           {inv.vehicle ? (
                             <div>
-                              <div className="font-semibold text-foreground leading-tight">
+                              <div className="font-semibold text-slate-900 leading-tight">
                                 {inv.vehicle.make} {inv.vehicle.model}
                               </div>
-                              <div className="text-[11px] font-mono text-muted-foreground font-bold leading-tight mt-0.5">
+                              <div className="text-[11px] font-mono text-slate-500 font-bold leading-tight mt-0.5">
                                 {inv.vehicle.registration_number || "—"}
                               </div>
                             </div>
                           ) : (
-                            <span className="text-muted-foreground">—</span>
+                            <span className="text-slate-400">—</span>
                           )}
                         </TableCell>
 
                         <TableCell className="py-2.5">
                           {inv.job_card ? (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-mono font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-lg text-[11px] font-mono font-bold bg-slate-100 text-slate-700 border border-slate-200">
                               {inv.job_card.job_card_number}
                             </span>
                           ) : (
-                            <span className="text-muted-foreground text-xs">—</span>
+                            <span className="text-slate-400 text-xs">—</span>
                           )}
                         </TableCell>
 
-                        <TableCell className="font-mono text-muted-foreground text-xs py-2.5 whitespace-nowrap">
+                        <TableCell className="font-mono text-slate-500 text-xs py-2.5 whitespace-nowrap">
                           {formatDate(inv.created_at || inv.date)}
                         </TableCell>
 
-                        <TableCell className="text-right font-mono font-bold text-foreground py-2.5 whitespace-nowrap">
+                        <TableCell className="text-right font-mono font-bold text-slate-900 py-2.5 whitespace-nowrap tabular-nums">
                           {formatCurrency(tot)}
                         </TableCell>
 
-                        <TableCell className="text-right font-mono font-bold text-emerald-600 dark:text-emerald-400 py-2.5 whitespace-nowrap">
+                        <TableCell className="text-right font-mono font-bold text-emerald-600 py-2.5 whitespace-nowrap tabular-nums">
                           {formatCurrency(paid)}
                         </TableCell>
 
-                        <TableCell className={`text-right font-mono font-bold py-2.5 whitespace-nowrap ${bal > 0 && !isVoid ? "text-rose-600 dark:text-rose-400" : "text-muted-foreground"}`}>
+                        <TableCell className={`text-right font-mono font-bold py-2.5 whitespace-nowrap tabular-nums ${bal > 0 && !isVoid ? "text-rose-600" : "text-slate-400"}`}>
                           {formatCurrency(bal)}
                         </TableCell>
 
                         <TableCell className="text-center py-2.5">
                           <span
-                            className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider border ${
+                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${
                               isVoid
-                                ? "bg-slate-100 text-slate-600 border-slate-300 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700"
+                                ? "bg-slate-100 text-slate-600 border-slate-300"
                                 : bal === 0 || inv.payment_status === "paid"
-                                ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-800/40"
+                                ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                                 : paid > 0
-                                ? "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/30 dark:text-amber-400 dark:border-amber-800/40"
-                                : "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/30 dark:text-rose-400 dark:border-rose-800/40"
+                                ? "bg-amber-50 text-amber-700 border-amber-200"
+                                : "bg-rose-50 text-rose-700 border-rose-200"
                             }`}
                           >
                             {isVoid
@@ -925,17 +917,17 @@ export function InvoicesView() {
                               variant="ghost"
                               size="sm"
                               onClick={() => handleOpenDetails(inv.id)}
-                              className="h-8 px-2 text-xs text-blue-600 hover:text-blue-800 hover:bg-blue-50 dark:hover:bg-blue-950/50"
+                              className="h-8 px-2 text-xs font-semibold text-blue-600 hover:bg-blue-50 rounded-xl"
                               title="View invoice breakdown"
                             >
                               <Eye className="h-3.5 w-3.5 mr-1" /> View
                             </Button>
 
                             <DropdownMenu>
-                              <DropdownMenuTrigger className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-border/80 text-muted-foreground hover:text-foreground hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors focus:outline-none">
+                              <DropdownMenuTrigger className="h-8 w-8 inline-flex items-center justify-center rounded-xl border border-slate-200 text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors focus:outline-none">
                                 <MoreVertical className="h-3.5 w-3.5" />
                               </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end" className="w-48 text-xs">
+                              <DropdownMenuContent align="end" className="w-48 text-xs rounded-xl shadow-lg border-slate-200">
                                 <DropdownMenuLabel>Invoice Actions</DropdownMenuLabel>
                                 <DropdownMenuItem onClick={() => handleOpenDetails(inv.id)}>
                                   <Eye className="h-3.5 w-3.5 mr-2 text-blue-600" /> View Details
@@ -984,19 +976,19 @@ export function InvoicesView() {
               </Table>
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-center py-10 px-4 min-h-[220px] max-h-[280px] text-center">
-              <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-muted-foreground/70 mb-3">
+            <div className="flex flex-col items-center justify-center py-12 px-4 min-h-[220px] max-h-[280px] text-center">
+              <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-400 mb-3">
                 <FileText className="h-5 w-5" />
               </div>
-              <p className="text-sm font-bold text-foreground">No tax invoice records found</p>
-              <p className="text-xs text-muted-foreground mt-1 max-w-sm">
+              <p className="text-sm font-bold text-slate-900">No tax invoice records found</p>
+              <p className="text-xs text-slate-500 mt-1 max-w-sm">
                 Invoices are generated when converting completed Job Cards or creating new customer invoices.
               </p>
               <div className="flex items-center gap-2 mt-4">
                 <Button
                   size="sm"
                   onClick={handleOpenConvertModal}
-                  className="h-8 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-xs"
+                  className="h-9 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-2xs rounded-xl px-3.5"
                 >
                   <Plus className="h-3.5 w-3.5 mr-1.5" /> + Create Invoice
                 </Button>
@@ -1006,7 +998,7 @@ export function InvoicesView() {
 
           {/* Pagination Footer */}
           {totalPages > 1 && (
-            <div className="p-3.5 border-t border-border flex items-center justify-between text-xs text-muted-foreground bg-slate-50/50 dark:bg-slate-800/30">
+            <div className="p-3.5 border-t border-slate-200/80 flex items-center justify-between text-xs text-slate-500 bg-slate-50/40">
               <span>
                 Showing {(currentPage - 1) * pageSize + 1} to{" "}
                 {Math.min(currentPage * pageSize, totalCount)} of {totalCount} invoices
@@ -1017,11 +1009,11 @@ export function InvoicesView() {
                   size="sm"
                   onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                   disabled={currentPage === 1}
-                  className="h-8 text-xs font-medium border-border/80"
+                  className="h-8 text-xs font-semibold rounded-xl border-slate-200 bg-white hover:bg-slate-50"
                 >
                   <ChevronLeft className="h-3.5 w-3.5 mr-1" /> Previous
                 </Button>
-                <span className="font-semibold px-2 font-mono">
+                <span className="font-semibold px-2 font-mono text-slate-900">
                   {currentPage} / {totalPages}
                 </span>
                 <Button
@@ -1029,7 +1021,7 @@ export function InvoicesView() {
                   size="sm"
                   onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                   disabled={currentPage >= totalPages}
-                  className="h-8 text-xs font-medium border-border/80"
+                  className="h-8 text-xs font-semibold rounded-xl border-slate-200 bg-white hover:bg-slate-50"
                 >
                   Next <ChevronRight className="h-3.5 w-3.5 ml-1" />
                 </Button>

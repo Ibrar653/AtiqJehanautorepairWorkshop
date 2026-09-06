@@ -400,12 +400,12 @@ export function PaymentsManagementView() {
           { label: "Payments" },
         ]}
         actions={
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2.5">
             <Button
               variant="outline"
               size="sm"
               onClick={loadData}
-              className="h-9 gap-1.5 text-xs font-semibold border-border/80 hover:bg-slate-50 shadow-2xs rounded-lg"
+              className="h-10 px-3 text-xs font-semibold rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 shadow-2xs gap-2"
               title="Refresh payments"
             >
               <RefreshCw className="h-3.5 w-3.5" /> Refresh
@@ -413,7 +413,7 @@ export function PaymentsManagementView() {
             <Button
               size="sm"
               onClick={() => setActiveTab("order")}
-              className="h-9 gap-1.5 text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-xs px-3.5 rounded-lg"
+              className="h-10 px-4 text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-2xs rounded-xl gap-2"
             >
               <Plus className="h-4 w-4" /> + New Order / Advance
             </Button>
@@ -422,78 +422,70 @@ export function PaymentsManagementView() {
       />
 
       {/* ─── Top KPI Cards ─── */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <div className="bg-card border border-border/80 rounded-xl p-4 shadow-xs flex flex-col justify-between h-full hover:border-border transition-colors">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-2xs flex items-center justify-between">
+          <div>
+            <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
               Total Outstanding
-            </span>
-            <div className="h-7 w-7 rounded-lg bg-rose-50 dark:bg-rose-950/50 flex items-center justify-center text-rose-600">
-              <AlertTriangle className="h-3.5 w-3.5" />
-            </div>
-          </div>
-          <div className="mt-3">
-            <div className="text-2xl font-bold font-mono tracking-tight text-rose-600 dark:text-rose-400">
+            </p>
+            <p className="text-2xl font-bold font-mono tracking-tight text-rose-600 mt-1">
               {formatCurrency(kpis.totalOutstanding)}
-            </div>
-            <div className="text-xs text-muted-foreground mt-0.5">Pending invoice balance due</div>
+            </p>
+            <p className="text-xs text-slate-500 mt-1">Pending invoice balance due</p>
+          </div>
+          <div className="h-10 w-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
+            <AlertTriangle className="h-5 w-5" />
           </div>
         </div>
 
-        <div className="bg-card border border-border/80 rounded-xl p-4 shadow-xs flex flex-col justify-between h-full hover:border-border transition-colors">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+        <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-2xs flex items-center justify-between">
+          <div>
+            <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
               Pending Invoices
-            </span>
-            <div className="h-7 w-7 rounded-lg bg-amber-50 dark:bg-amber-950/50 flex items-center justify-center text-amber-600">
-              <Receipt className="h-3.5 w-3.5" />
-            </div>
-          </div>
-          <div className="mt-3">
-            <div className="text-2xl font-bold font-mono tracking-tight text-foreground">
+            </p>
+            <p className="text-2xl font-bold font-mono tracking-tight text-slate-900 mt-1">
               {kpis.pendingCount}
-            </div>
-            <div className="text-xs text-muted-foreground mt-0.5">Invoices awaiting full settlement</div>
+            </p>
+            <p className="text-xs text-slate-500 mt-1">Invoices awaiting full settlement</p>
+          </div>
+          <div className="h-10 w-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
+            <Receipt className="h-5 w-5" />
           </div>
         </div>
 
-        <div className="bg-card border border-border/80 rounded-xl p-4 shadow-xs flex flex-col justify-between h-full hover:border-border transition-colors">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+        <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-2xs flex items-center justify-between">
+          <div>
+            <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
               Partial Payments
-            </span>
-            <div className="h-7 w-7 rounded-lg bg-blue-50 dark:bg-blue-950/50 flex items-center justify-center text-blue-600">
-              <Clock className="h-3.5 w-3.5" />
-            </div>
-          </div>
-          <div className="mt-3">
-            <div className="text-2xl font-bold font-mono tracking-tight text-foreground">
+            </p>
+            <p className="text-2xl font-bold font-mono tracking-tight text-slate-900 mt-1">
               {kpis.partialCount}
-            </div>
-            <div className="text-xs text-muted-foreground mt-0.5">Invoices partially collected</div>
+            </p>
+            <p className="text-xs text-slate-500 mt-1">Invoices partially collected</p>
+          </div>
+          <div className="h-10 w-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+            <Clock className="h-5 w-5" />
           </div>
         </div>
 
-        <div className="bg-card border border-border/80 rounded-xl p-4 shadow-xs flex flex-col justify-between h-full hover:border-border transition-colors">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+        <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-2xs flex items-center justify-between">
+          <div>
+            <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
               Received Today
-            </span>
-            <div className="h-7 w-7 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 flex items-center justify-center text-emerald-600">
-              <CheckCircle2 className="h-3.5 w-3.5" />
-            </div>
-          </div>
-          <div className="mt-3">
-            <div className="text-2xl font-bold font-mono tracking-tight text-emerald-600 dark:text-emerald-400">
+            </p>
+            <p className="text-2xl font-bold font-mono tracking-tight text-emerald-600 mt-1">
               {formatCurrency(kpis.receivedToday)}
-            </div>
-            <div className="text-xs text-muted-foreground mt-0.5">Collections settled today</div>
+            </p>
+            <p className="text-xs text-slate-500 mt-1">Collections settled today</p>
+          </div>
+          <div className="h-10 w-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+            <CheckCircle2 className="h-5 w-5" />
           </div>
         </div>
       </div>
 
       {/* ─── The 4 Mandatory Tabs ─── */}
-      <div className="border-b border-border">
+      <div className="border-b border-slate-200">
         <div className="flex items-center gap-2 overflow-x-auto">
           {[
             { id: "pending", label: "Pending Payments", count: pendingInvoices.length },
@@ -506,17 +498,17 @@ export function PaymentsManagementView() {
               onClick={() => setActiveTab(tab.id as any)}
               className={`pb-3 px-3 text-xs font-semibold transition-all border-b-2 whitespace-nowrap flex items-center gap-1.5 ${
                 activeTab === tab.id
-                  ? "border-blue-600 text-blue-600 dark:text-blue-400"
-                  : "border-transparent text-muted-foreground hover:text-foreground"
+                  ? "border-blue-600 text-blue-600"
+                  : "border-transparent text-slate-500 hover:text-slate-900"
               }`}
             >
               <span>{tab.label}</span>
               {tab.count !== undefined && (
                 <span
-                  className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold ${
+                  className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold ${
                     activeTab === tab.id
-                      ? "bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300"
-                      : "bg-muted text-muted-foreground"
+                      ? "bg-blue-50 text-blue-700 border border-blue-200"
+                      : "bg-slate-100 text-slate-600 border border-slate-200"
                   }`}
                 >
                   {tab.count}
@@ -533,45 +525,45 @@ export function PaymentsManagementView() {
       {activeTab === "pending" && (
         <div className="space-y-4">
           {/* Toolbar */}
-          <div className="bg-card border border-border/80 rounded-xl p-3 shadow-xs flex flex-col md:flex-row items-center justify-between gap-3">
+          <div className="bg-white border border-slate-200/90 rounded-2xl p-3.5 shadow-2xs flex flex-col md:flex-row items-center justify-between gap-3">
             <div className="relative w-full md:w-80">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
               <Input
                 type="search"
                 placeholder="Search pending by customer, phone, plate, invoice..."
                 value={searchPending}
                 onChange={(e) => setSearchPending(e.target.value)}
-                className="pl-9 h-8.5 text-xs bg-muted/40 border-border/70 focus:bg-background transition-colors"
+                className="pl-9 h-10 text-xs rounded-xl border-slate-200 bg-white shadow-2xs focus:border-blue-500 focus:ring-blue-500"
               />
             </div>
-            <span className="text-xs text-muted-foreground">
+            <span className="text-xs text-slate-500 font-medium">
               Showing {filteredPending.length} pending receivable invoice(s)
             </span>
           </div>
 
           {/* Pending Payments Table */}
-          <div className="bg-card border border-border/80 rounded-xl shadow-xs overflow-hidden">
+          <div className="border border-slate-200/90 shadow-2xs bg-white rounded-2xl overflow-hidden">
             {loading ? (
-              <div className="py-20 text-center text-muted-foreground">
-                <Loader2 className="h-7 w-7 mx-auto animate-spin mb-3 text-primary" />
+              <div className="py-20 text-center text-slate-500">
+                <Loader2 className="h-8 w-8 mx-auto animate-spin mb-3 text-blue-600" />
                 <p className="font-semibold text-xs">Loading pending payments...</p>
               </div>
             ) : filteredPending.length > 0 ? (
               <div className="overflow-x-auto min-w-full">
                 <Table className="w-full text-xs min-w-[1100px]">
                   <TableHeader>
-                    <TableRow className="h-10 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider bg-slate-50/75 dark:bg-slate-800/40 border-b border-border/70">
-                      <TableHead className="font-semibold text-foreground min-w-[160px]">Customer</TableHead>
-                      <TableHead className="font-semibold text-foreground">Phone</TableHead>
-                      <TableHead className="font-semibold text-foreground min-w-[150px]">Vehicle</TableHead>
-                      <TableHead className="font-semibold text-foreground">Plate</TableHead>
-                      <TableHead className="font-semibold text-foreground">Job Card</TableHead>
-                      <TableHead className="font-semibold text-foreground">Invoice</TableHead>
-                      <TableHead className="text-right font-semibold text-foreground">Total (AED)</TableHead>
-                      <TableHead className="text-right font-semibold text-foreground">Paid (AED)</TableHead>
-                      <TableHead className="text-right font-semibold text-foreground">Balance (AED)</TableHead>
-                      <TableHead className="text-center font-semibold text-foreground">Status</TableHead>
-                      <TableHead className="w-[130px] min-w-[130px] text-right pr-4 font-semibold text-foreground">Actions</TableHead>
+                    <TableRow className="border-b border-slate-200/80 bg-slate-50/80 hover:bg-slate-50/80 text-[11px] font-bold text-slate-500 uppercase tracking-wider h-11">
+                      <TableHead className="text-slate-600 font-bold min-w-[160px]">Customer</TableHead>
+                      <TableHead className="text-slate-600 font-bold">Phone</TableHead>
+                      <TableHead className="text-slate-600 font-bold min-w-[150px]">Vehicle</TableHead>
+                      <TableHead className="text-slate-600 font-bold">Plate</TableHead>
+                      <TableHead className="text-slate-600 font-bold">Job Card</TableHead>
+                      <TableHead className="text-slate-600 font-bold">Invoice</TableHead>
+                      <TableHead className="text-right text-slate-600 font-bold">Total (AED)</TableHead>
+                      <TableHead className="text-right text-slate-600 font-bold">Paid (AED)</TableHead>
+                      <TableHead className="text-right text-slate-600 font-bold">Balance (AED)</TableHead>
+                      <TableHead className="text-center text-slate-600 font-bold">Status</TableHead>
+                      <TableHead className="w-[130px] min-w-[130px] text-right pr-4 text-slate-600 font-bold">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -583,23 +575,23 @@ export function PaymentsManagementView() {
                       return (
                         <TableRow
                           key={inv.id}
-                          className="h-13 border-b border-border/40 hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors"
+                          className="h-12 border-b border-slate-100 hover:bg-slate-50/60 transition-colors"
                         >
-                          <TableCell className="py-2.5 font-semibold text-foreground">
+                          <TableCell className="py-2.5 font-semibold text-slate-900">
                             {inv.customer?.name || "Cash Customer"}
                           </TableCell>
 
-                          <TableCell className="py-2.5 font-mono text-muted-foreground">
+                          <TableCell className="py-2.5 font-mono text-slate-500">
                             {inv.customer?.mobile || "—"}
                           </TableCell>
 
                           <TableCell className="py-2.5">
                             {inv.vehicle ? (
-                              <span className="font-semibold text-foreground">
+                              <span className="font-semibold text-slate-900">
                                 {inv.vehicle.make} {inv.vehicle.model}
                               </span>
                             ) : (
-                              <span className="text-muted-foreground">—</span>
+                              <span className="text-slate-400">—</span>
                             )}
                           </TableCell>
 
@@ -609,36 +601,36 @@ export function PaymentsManagementView() {
 
                           <TableCell className="py-2.5 font-mono text-xs">
                             {inv.job_card ? (
-                              <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-mono font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-lg text-[11px] font-mono font-bold bg-slate-100 text-slate-700 border border-slate-200">
                                 {inv.job_card.job_card_number}
                               </span>
                             ) : (
-                              <span className="text-muted-foreground">—</span>
+                              <span className="text-slate-400">—</span>
                             )}
                           </TableCell>
 
-                          <TableCell className="py-2.5 font-mono font-bold text-xs">
+                          <TableCell className="py-2.5 font-mono font-bold text-xs text-slate-800">
                             {inv.invoice_number}
                           </TableCell>
 
-                          <TableCell className="text-right font-mono font-bold text-foreground py-2.5">
+                          <TableCell className="text-right font-mono font-bold text-slate-900 py-2.5 tabular-nums">
                             {formatCurrency(tot)}
                           </TableCell>
 
-                          <TableCell className="text-right font-mono font-bold text-emerald-600 py-2.5">
+                          <TableCell className="text-right font-mono font-bold text-emerald-600 py-2.5 tabular-nums">
                             {formatCurrency(paid)}
                           </TableCell>
 
-                          <TableCell className="text-right font-mono font-black text-rose-600 py-2.5">
+                          <TableCell className="text-right font-mono font-black text-rose-600 py-2.5 tabular-nums">
                             {formatCurrency(bal)}
                           </TableCell>
 
                           <TableCell className="text-center py-2.5">
                             <span
-                              className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider border ${
+                              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${
                                 paid > 0
-                                  ? "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/30 dark:text-amber-400"
-                                  : "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/30 dark:text-rose-400"
+                                  ? "bg-amber-50 text-amber-700 border-amber-200"
+                                  : "bg-rose-50 text-rose-700 border-rose-200"
                               }`}
                             >
                               {paid > 0 ? "PARTIAL" : "PENDING"}
@@ -649,7 +641,7 @@ export function PaymentsManagementView() {
                             <Button
                               size="sm"
                               onClick={() => handleOpenReceiveModal(inv)}
-                              className="h-8 px-2.5 text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-xs gap-1"
+                              className="h-8 px-3 text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-2xs rounded-xl gap-1"
                             >
                               <CreditCard className="h-3.5 w-3.5" /> Receive
                             </Button>
@@ -662,11 +654,11 @@ export function PaymentsManagementView() {
               </div>
             ) : (
               <div className="flex flex-col items-center justify-center py-12 px-4 min-h-[220px] max-h-[280px] text-center">
-                <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-muted-foreground/70 mb-3">
+                <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-400 mb-3">
                   <CheckCircle2 className="h-5 w-5 text-emerald-600" />
                 </div>
-                <p className="text-sm font-bold text-foreground">No pending payments</p>
-                <p className="text-xs text-muted-foreground mt-1 max-w-sm">
+                <p className="text-sm font-bold text-slate-900">No pending payments</p>
+                <p className="text-xs text-slate-500 mt-1 max-w-sm">
                   All customer invoices are settled with zero outstanding balance.
                 </p>
               </div>
@@ -679,25 +671,25 @@ export function PaymentsManagementView() {
       {/* TAB 2: ORDER (Create Payment Order / Customer Advance Form)               */}
       {/* ========================================================================= */}
       {activeTab === "order" && (
-        <div className="max-w-4xl mx-auto bg-card border border-border/80 rounded-xl shadow-xs overflow-hidden">
-          <div className="p-4 border-b border-border bg-slate-50/50 dark:bg-slate-800/30">
-            <h3 className="font-bold text-sm text-foreground flex items-center gap-2">
+        <div className="max-w-4xl mx-auto bg-white border border-slate-200/90 rounded-2xl shadow-2xs overflow-hidden">
+          <div className="p-4 border-b border-slate-200/80 bg-slate-50/50">
+            <h3 className="font-bold text-sm text-slate-900 flex items-center gap-2">
               <Plus className="h-4 w-4 text-blue-600" /> Create Payment Order / Customer Advance
             </h3>
-            <p className="text-xs text-muted-foreground mt-0.5">
+            <p className="text-xs text-slate-500 mt-0.5">
               Record advance deposits from customers before job execution. Automatically credited in the financial ledger.
             </p>
           </div>
 
           <form onSubmit={handleSaveOrder} className="p-5 space-y-5">
             {orderFormError && (
-              <div className="p-3 bg-rose-50 border border-rose-200 rounded-lg text-xs font-semibold text-rose-700 flex items-center gap-2">
+              <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs font-semibold text-rose-700 flex items-center gap-2">
                 <AlertTriangle className="h-4 w-4 shrink-0" />
                 <span>{orderFormError}</span>
               </div>
             )}
             {orderFormSuccess && (
-              <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-xs font-semibold text-emerald-700 flex items-center gap-2">
+              <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs font-semibold text-emerald-700 flex items-center gap-2">
                 <CheckCircle2 className="h-4 w-4 shrink-0" />
                 <span>{orderFormSuccess}</span>
               </div>
@@ -705,16 +697,16 @@ export function PaymentsManagementView() {
 
             {/* SECTION 1: CUSTOMER */}
             <div className="space-y-3">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400 block border-b pb-1">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-blue-600 block border-b border-slate-200 pb-1">
                 Customer Information
               </span>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <Label className="text-xs font-semibold">Select Customer *</Label>
+                  <Label className="text-xs font-semibold text-slate-700">Select Customer *</Label>
                   <select
                     value={orderCustId}
                     onChange={(e) => handleSelectOrderCustomer(e.target.value)}
-                    className="w-full h-9 px-3 text-xs rounded-lg border border-border/80 bg-background font-medium focus:outline-none focus:ring-1 focus:ring-primary shadow-2xs"
+                    className="w-full h-10 px-3 text-xs rounded-xl border border-slate-200 bg-white font-medium focus:outline-none focus:ring-1 focus:ring-blue-500 shadow-2xs"
                   >
                     <option value="">-- Choose Existing Customer or Enter Manual --</option>
                     {customers.map((c) => (
@@ -725,90 +717,90 @@ export function PaymentsManagementView() {
                   </select>
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs font-semibold">Customer Name *</Label>
+                  <Label className="text-xs font-semibold text-slate-700">Customer Name *</Label>
                   <Input
                     required
                     value={orderCustName}
                     onChange={(e) => setOrderCustName(e.target.value)}
                     placeholder="Full Customer Name"
-                    className="h-9 text-xs"
+                    className="h-10 text-xs rounded-xl border-slate-200"
                   />
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs font-semibold">Phone / Mobile</Label>
+                  <Label className="text-xs font-semibold text-slate-700">Phone / Mobile</Label>
                   <Input
                     value={orderCustPhone}
                     onChange={(e) => setOrderCustPhone(e.target.value)}
                     placeholder="e.g. 0501234567"
-                    className="h-9 text-xs font-mono"
+                    className="h-10 text-xs font-mono rounded-xl border-slate-200"
                   />
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs font-semibold">Vehicle Specs</Label>
+                  <Label className="text-xs font-semibold text-slate-700">Vehicle Specs</Label>
                   <Input
                     value={orderVehicle}
                     onChange={(e) => setOrderVehicle(e.target.value)}
-                    placeholder="e.g. Toyota Land Cruiser 2022"
-                    className="h-9 text-xs"
+                    placeholder="e.g. Toyota Camry 2020"
+                    className="h-10 text-xs rounded-xl border-slate-200"
                   />
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs font-semibold">Plate Number</Label>
+                  <Label className="text-xs font-semibold text-slate-700">Plate Number</Label>
                   <Input
                     value={orderPlate}
                     onChange={(e) => setOrderPlate(e.target.value)}
-                    placeholder="e.g. DXB A-12345"
-                    className="h-9 text-xs font-mono font-bold text-blue-600"
+                    placeholder="e.g. DXB A 12345"
+                    className="h-10 text-xs font-mono rounded-xl border-slate-200"
                   />
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs font-semibold">Job Card (Optional)</Label>
+                  <Label className="text-xs font-semibold text-slate-700">Job Card Reference (Optional)</Label>
                   <Input
                     value={orderJobCard}
                     onChange={(e) => setOrderJobCard(e.target.value)}
-                    placeholder="e.g. JC-1042"
-                    className="h-9 text-xs font-mono"
+                    placeholder="e.g. JC-0012"
+                    className="h-10 text-xs font-mono rounded-xl border-slate-200"
                   />
                 </div>
               </div>
             </div>
 
-            {/* SECTION 2: ORDER DETAILS */}
+            {/* SECTION 2: DEPOSIT DETAILS */}
             <div className="space-y-3">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400 block border-b pb-1">
-                Order Details
+              <span className="text-[11px] font-bold uppercase tracking-wider text-blue-600 block border-b border-slate-200 pb-1">
+                Deposit Financials
               </span>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div className="space-y-1">
-                  <Label className="text-xs font-semibold">Order Date *</Label>
+                  <Label className="text-xs font-semibold text-slate-700">Order Date *</Label>
                   <Input
                     type="date"
                     required
                     value={orderDate}
                     onChange={(e) => setOrderDate(e.target.value)}
-                    className="h-9 text-xs font-mono"
+                    className="h-10 text-xs rounded-xl border-slate-200"
                   />
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs font-semibold">Advance Amount (AED) *</Label>
+                  <Label className="text-xs font-semibold text-slate-700">Advance Amount (AED) *</Label>
                   <Input
                     type="number"
-                    min="1"
                     step="0.01"
+                    min="1"
                     required
                     value={orderAmount}
                     onChange={(e) => setOrderAmount(e.target.value === "" ? "" : Number(e.target.value))}
                     placeholder="0.00"
-                    className="h-9 text-xs font-mono font-bold text-emerald-600"
+                    className="h-10 text-xs font-mono font-bold text-emerald-600 rounded-xl border-slate-200"
                   />
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs font-semibold">Purpose</Label>
+                  <Label className="text-xs font-semibold text-slate-700">Purpose</Label>
                   <Input
                     value={orderPurpose}
                     onChange={(e) => setOrderPurpose(e.target.value)}
                     placeholder="e.g. Parts procurement or repair advance"
-                    className="h-9 text-xs"
+                    className="h-10 text-xs rounded-xl border-slate-200"
                   />
                 </div>
               </div>
@@ -816,16 +808,16 @@ export function PaymentsManagementView() {
 
             {/* SECTION 3: PAYMENT */}
             <div className="space-y-3">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400 block border-b pb-1">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-blue-600 block border-b border-slate-200 pb-1">
                 Payment &amp; Bank Account
               </span>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div className="space-y-1">
-                  <Label className="text-xs font-semibold">Payment Method *</Label>
+                  <Label className="text-xs font-semibold text-slate-700">Payment Method *</Label>
                   <select
                     value={orderMethod}
                     onChange={(e) => setOrderMethod(e.target.value)}
-                    className="w-full h-9 px-3 text-xs rounded-lg border border-border/80 bg-background font-medium focus:outline-none focus:ring-1 focus:ring-primary shadow-2xs"
+                    className="w-full h-10 px-3 text-xs rounded-xl border border-slate-200 bg-white font-medium focus:outline-none focus:ring-1 focus:ring-blue-500 shadow-2xs"
                   >
                     <option value="cash">Cash In Hand</option>
                     <option value="bank_transfer">Bank Transfer</option>
@@ -834,12 +826,12 @@ export function PaymentsManagementView() {
                   </select>
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs font-semibold">Target Bank Account</Label>
+                  <Label className="text-xs font-semibold text-slate-700">Target Bank Account</Label>
                   <select
                     value={orderBankAccId}
                     onChange={(e) => setOrderBankAccId(e.target.value)}
                     disabled={orderMethod === "cash"}
-                    className="w-full h-9 px-3 text-xs rounded-lg border border-border/80 bg-background font-medium focus:outline-none focus:ring-1 focus:ring-primary shadow-2xs disabled:opacity-50"
+                    className="w-full h-10 px-3 text-xs rounded-xl border border-slate-200 bg-white font-medium focus:outline-none focus:ring-1 focus:ring-blue-500 shadow-2xs disabled:opacity-50"
                   >
                     <option value="">-- Select Bank Account --</option>
                     {bankAccounts.map((b) => (
@@ -850,12 +842,12 @@ export function PaymentsManagementView() {
                   </select>
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs font-semibold">Reference / Receipt No</Label>
+                  <Label className="text-xs font-semibold text-slate-700">Reference / Receipt No</Label>
                   <Input
                     value={orderRef}
                     onChange={(e) => setOrderRef(e.target.value)}
                     placeholder="e.g. TR-9821 or Cheque #"
-                    className="h-9 text-xs font-mono"
+                    className="h-10 text-xs font-mono rounded-xl border-slate-200"
                   />
                 </div>
               </div>
@@ -863,23 +855,23 @@ export function PaymentsManagementView() {
 
             {/* SECTION 4: NOTES */}
             <div className="space-y-1.5">
-              <Label className="text-xs font-semibold">Order Notes</Label>
+              <Label className="text-xs font-semibold text-slate-700">Order Notes</Label>
               <Textarea
                 value={orderNotes}
                 onChange={(e) => setOrderNotes(e.target.value)}
                 placeholder="Additional notes or instructions regarding customer deposit..."
-                className="text-xs h-18 resize-none"
+                className="text-xs h-18 resize-none rounded-xl border-slate-200"
               />
             </div>
 
             {/* Form Footer */}
-            <div className="pt-3 border-t flex items-center justify-end gap-2">
+            <div className="pt-3 border-t border-slate-200 flex items-center justify-end gap-2">
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
                 onClick={() => setActiveTab("pending")}
-                className="h-8.5 text-xs font-medium border-border/80"
+                className="h-9 text-xs font-semibold border-slate-200 bg-white hover:bg-slate-50 text-slate-700 rounded-xl"
               >
                 Cancel
               </Button>
@@ -887,7 +879,7 @@ export function PaymentsManagementView() {
                 type="submit"
                 size="sm"
                 disabled={savingOrder}
-                className="h-8.5 text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-xs px-4"
+                className="h-9 text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-2xs px-4 rounded-xl"
               >
                 {savingOrder ? "Saving..." : "Save Order"}
               </Button>
@@ -902,90 +894,89 @@ export function PaymentsManagementView() {
       {activeTab === "order_list" && (
         <div className="space-y-4">
           {/* Toolbar */}
-          <div className="bg-card border border-border/80 rounded-xl p-3 shadow-xs flex flex-col md:flex-row items-center justify-between gap-3">
+          <div className="bg-white border border-slate-200/90 rounded-2xl p-3.5 shadow-2xs flex flex-col md:flex-row items-center justify-between gap-3">
             <div className="relative w-full md:w-80">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
               <Input
                 type="search"
                 placeholder="Search orders by order #, customer, plate..."
                 value={searchOrders}
                 onChange={(e) => setSearchOrders(e.target.value)}
-                className="pl-9 h-8.5 text-xs bg-muted/40 border-border/70 focus:bg-background transition-colors"
+                className="pl-9 h-10 text-xs rounded-xl border-slate-200 bg-white shadow-2xs focus:border-blue-500 focus:ring-blue-500"
               />
             </div>
-            <span className="text-xs text-muted-foreground">
+            <span className="text-xs text-slate-500 font-medium">
               Total {filteredOrders.length} customer advance deposit(s)
             </span>
           </div>
 
           {/* Table */}
-          <div className="bg-card border border-border/80 rounded-xl shadow-xs overflow-hidden">
+          <div className="border border-slate-200/90 shadow-2xs bg-white rounded-2xl overflow-hidden">
             {filteredOrders.length > 0 ? (
               <div className="overflow-x-auto min-w-full">
                 <Table className="w-full text-xs min-w-[1050px]">
                   <TableHeader>
-                    <TableRow className="h-10 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider bg-slate-50/75 dark:bg-slate-800/40 border-b border-border/70">
-                      <TableHead className="font-semibold text-foreground">Order No</TableHead>
-                      <TableHead className="font-semibold text-foreground">Date</TableHead>
-                      <TableHead className="font-semibold text-foreground min-w-[160px]">Customer</TableHead>
-                      <TableHead className="font-semibold text-foreground min-w-[140px]">Vehicle</TableHead>
-                      <TableHead className="text-right font-semibold text-foreground">Advance (AED)</TableHead>
-                      <TableHead className="text-right font-semibold text-foreground">Used (AED)</TableHead>
-                      <TableHead className="text-right font-semibold text-foreground">Remaining (AED)</TableHead>
-                      <TableHead className="font-semibold text-foreground">Method</TableHead>
-                      <TableHead className="text-center font-semibold text-foreground">Status</TableHead>
-                      <TableHead className="w-[110px] min-w-[110px] text-right pr-4 font-semibold text-foreground">Actions</TableHead>
+                    <TableRow className="border-b border-slate-200/80 bg-slate-50/80 hover:bg-slate-50/80 text-[11px] font-bold text-slate-500 uppercase tracking-wider h-11">
+                      <TableHead className="text-slate-600 font-bold">Order No</TableHead>
+                      <TableHead className="text-slate-600 font-bold">Date</TableHead>
+                      <TableHead className="text-slate-600 font-bold min-w-[160px]">Customer</TableHead>
+                      <TableHead className="text-slate-600 font-bold min-w-[140px]">Vehicle</TableHead>
+                      <TableHead className="text-right text-slate-600 font-bold">Advance (AED)</TableHead>
+                      <TableHead className="text-right text-slate-600 font-bold">Used (AED)</TableHead>
+                      <TableHead className="text-right text-slate-600 font-bold">Remaining (AED)</TableHead>
+                      <TableHead className="text-slate-600 font-bold">Method</TableHead>
+                      <TableHead className="text-center text-slate-600 font-bold">Status</TableHead>
+                      <TableHead className="w-[110px] min-w-[110px] text-right pr-4 text-slate-600 font-bold">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {filteredOrders.map((ord) => {
-                      const isAvail = ord.status === "available";
                       return (
                         <TableRow
                           key={ord.id}
-                          className="h-13 border-b border-border/40 hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors"
+                          className="h-12 border-b border-slate-100 hover:bg-slate-50/60 transition-colors"
                         >
                           <TableCell className="py-2.5 font-mono font-bold text-xs text-blue-600">
                             {ord.order_number}
                           </TableCell>
 
-                          <TableCell className="py-2.5 font-mono text-muted-foreground">
+                          <TableCell className="py-2.5 font-mono text-slate-500">
                             {formatDate(ord.date)}
                           </TableCell>
 
                           <TableCell className="py-2.5">
-                            <div className="font-semibold text-foreground">{ord.customer_name}</div>
+                            <div className="font-semibold text-slate-900">{ord.customer_name}</div>
                             {ord.customer_phone && (
-                              <div className="text-[11px] text-muted-foreground font-mono">{ord.customer_phone}</div>
+                              <div className="text-[11px] text-slate-500 font-mono">{ord.customer_phone}</div>
                             )}
                           </TableCell>
 
                           <TableCell className="py-2.5">
-                            <div>{ord.vehicle_info || "—"}</div>
+                            <div className="text-slate-800">{ord.vehicle_info || "—"}</div>
                             {ord.plate && (
                               <div className="text-[11px] font-mono text-blue-600 font-bold">{ord.plate}</div>
                             )}
                           </TableCell>
 
-                          <TableCell className="text-right font-mono font-bold text-foreground py-2.5">
+                          <TableCell className="text-right font-mono font-bold text-slate-900 py-2.5 tabular-nums">
                             {formatCurrency(ord.advance_amount)}
                           </TableCell>
 
-                          <TableCell className="text-right font-mono font-bold text-amber-600 py-2.5">
+                          <TableCell className="text-right font-mono font-bold text-amber-600 py-2.5 tabular-nums">
                             {formatCurrency(ord.used_amount)}
                           </TableCell>
 
-                          <TableCell className="text-right font-mono font-black text-emerald-600 py-2.5">
+                          <TableCell className="text-right font-mono font-black text-emerald-600 py-2.5 tabular-nums">
                             {formatCurrency(ord.remaining_amount)}
                           </TableCell>
 
-                          <TableCell className="py-2.5 uppercase font-semibold text-[11px] text-muted-foreground">
+                          <TableCell className="py-2.5 uppercase font-semibold text-[11px] text-slate-500">
                             {ord.payment_method}
                           </TableCell>
 
                           <TableCell className="text-center py-2.5">
                             <span
-                              className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider border ${
+                              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${
                                 ord.status === "available"
                                   ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                                   : ord.status === "partially_used"
@@ -994,7 +985,7 @@ export function PaymentsManagementView() {
                                   ? "bg-blue-50 text-blue-700 border-blue-200"
                                   : ord.status === "refunded"
                                   ? "bg-purple-50 text-purple-700 border-purple-200"
-                                  : "bg-slate-100 text-slate-600 border-slate-300"
+                                  : "bg-slate-100 text-slate-600 border-slate-200"
                               }`}
                             >
                               {ord.status.replace("_", " ")}
@@ -1010,7 +1001,7 @@ export function PaymentsManagementView() {
                                   setRefundTargetOrder(ord);
                                   setRefundModalOpen(true);
                                 }}
-                                className="h-7.5 px-2 text-xs font-semibold text-rose-600 border-rose-200 hover:bg-rose-50 dark:hover:bg-rose-950/40 gap-1"
+                                className="h-8 px-2.5 text-xs font-semibold text-rose-600 border-rose-200 bg-white hover:bg-rose-50 rounded-xl gap-1 shadow-2xs"
                               >
                                 <RotateCcw className="h-3 w-3" /> Refund
                               </Button>
@@ -1024,17 +1015,17 @@ export function PaymentsManagementView() {
               </div>
             ) : (
               <div className="flex flex-col items-center justify-center py-12 px-4 min-h-[220px] max-h-[280px] text-center">
-                <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-muted-foreground/70 mb-3">
-                  <FileText className="h-5 w-5 text-muted-foreground" />
+                <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-400 mb-3">
+                  <FileText className="h-5 w-5 text-slate-400" />
                 </div>
-                <p className="text-sm font-bold text-foreground">No payment orders recorded</p>
-                <p className="text-xs text-muted-foreground mt-1 max-w-sm">
+                <p className="text-sm font-bold text-slate-900">No payment orders recorded</p>
+                <p className="text-xs text-slate-500 mt-1 max-w-sm">
                   Create a customer advance deposit order to record upfront parts procurement or labor advances.
                 </p>
                 <Button
                   size="sm"
                   onClick={() => setActiveTab("order")}
-                  className="mt-3.5 h-8 text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white"
+                  className="mt-3.5 h-9 text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-2xs px-4"
                 >
                   <Plus className="h-3.5 w-3.5 mr-1" /> Create First Order
                 </Button>
@@ -1050,48 +1041,48 @@ export function PaymentsManagementView() {
       {activeTab === "history" && (
         <div className="space-y-4">
           {/* Toolbar */}
-          <div className="bg-card border border-border/80 rounded-xl p-3 shadow-xs flex flex-col md:flex-row items-center justify-between gap-3">
+          <div className="bg-white border border-slate-200/90 rounded-2xl p-3.5 shadow-2xs flex flex-col md:flex-row items-center justify-between gap-3">
             <div className="relative w-full md:w-80">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
               <Input
                 type="search"
                 placeholder="Search transaction history by customer, invoice, ref..."
                 value={searchHistory}
                 onChange={(e) => setSearchHistory(e.target.value)}
-                className="pl-9 h-8.5 text-xs bg-muted/40 border-border/70 focus:bg-background transition-colors"
+                className="pl-9 h-10 text-xs rounded-xl border-slate-200 bg-white shadow-2xs focus:border-blue-500 focus:ring-blue-500"
               />
             </div>
-            <span className="text-xs text-muted-foreground">
+            <span className="text-xs text-slate-500 font-medium">
               Total {filteredHistory.length} recorded financial receipt(s)
             </span>
           </div>
 
           {/* Table */}
-          <div className="bg-card border border-border/80 rounded-xl shadow-xs overflow-hidden">
+          <div className="border border-slate-200/90 shadow-2xs bg-white rounded-2xl overflow-hidden">
             {filteredHistory.length > 0 ? (
               <div className="overflow-x-auto min-w-full">
                 <Table className="w-full text-xs min-w-[1050px]">
                   <TableHeader>
-                    <TableRow className="h-10 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider bg-slate-50/75 dark:bg-slate-800/40 border-b border-border/70">
-                      <TableHead className="font-semibold text-foreground">Date</TableHead>
-                      <TableHead className="font-semibold text-foreground">Payment No</TableHead>
-                      <TableHead className="font-semibold text-foreground min-w-[170px]">Customer</TableHead>
-                      <TableHead className="font-semibold text-foreground">Invoice / Order</TableHead>
-                      <TableHead className="font-semibold text-foreground">Type</TableHead>
-                      <TableHead className="font-semibold text-foreground">Method</TableHead>
-                      <TableHead className="text-right font-semibold text-foreground">Amount (AED)</TableHead>
-                      <TableHead className="font-semibold text-foreground">Reference</TableHead>
-                      <TableHead className="text-center font-semibold text-foreground">Status</TableHead>
-                      <TableHead className="font-semibold text-foreground">Received By</TableHead>
+                    <TableRow className="border-b border-slate-200/80 bg-slate-50/80 hover:bg-slate-50/80 text-[11px] font-bold text-slate-500 uppercase tracking-wider h-11">
+                      <TableHead className="text-slate-600 font-bold">Date</TableHead>
+                      <TableHead className="text-slate-600 font-bold">Payment No</TableHead>
+                      <TableHead className="text-slate-600 font-bold min-w-[170px]">Customer</TableHead>
+                      <TableHead className="text-slate-600 font-bold">Invoice / Order</TableHead>
+                      <TableHead className="text-slate-600 font-bold">Type</TableHead>
+                      <TableHead className="text-slate-600 font-bold">Method</TableHead>
+                      <TableHead className="text-right text-slate-600 font-bold">Amount (AED)</TableHead>
+                      <TableHead className="text-slate-600 font-bold">Reference</TableHead>
+                      <TableHead className="text-center text-slate-600 font-bold">Status</TableHead>
+                      <TableHead className="text-slate-600 font-bold">Received By</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {filteredHistory.map((pm, idx) => (
                       <TableRow
                         key={pm.id || idx}
-                        className="h-13 border-b border-border/40 hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors"
+                        className="h-12 border-b border-slate-100 hover:bg-slate-50/60 transition-colors"
                       >
-                        <TableCell className="py-2.5 font-mono text-muted-foreground whitespace-nowrap">
+                        <TableCell className="py-2.5 font-mono text-slate-500 whitespace-nowrap">
                           {formatDate(pm.payment_date || pm.created_at)}
                         </TableCell>
 
@@ -1100,43 +1091,43 @@ export function PaymentsManagementView() {
                         </TableCell>
 
                         <TableCell className="py-2.5">
-                          <div className="font-semibold text-foreground">
+                          <div className="font-semibold text-slate-900">
                             {pm.customer?.name || "Customer Settlement"}
                           </div>
                           {pm.customer?.mobile && (
-                            <div className="text-[11px] text-muted-foreground font-mono">{pm.customer.mobile}</div>
+                            <div className="text-[11px] text-slate-500 font-mono">{pm.customer.mobile}</div>
                           )}
                         </TableCell>
 
-                        <TableCell className="py-2.5 font-mono text-xs font-semibold">
+                        <TableCell className="py-2.5 font-mono text-xs font-semibold text-slate-800">
                           {pm.invoice?.invoice_number || (pm.job_card ? `JC: ${pm.job_card.job_card_number}` : "Direct Receipt")}
                         </TableCell>
 
                         <TableCell className="py-2.5">
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-lg text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
                             Invoice Settle
                           </span>
                         </TableCell>
 
-                        <TableCell className="py-2.5 uppercase font-semibold text-[11px]">
+                        <TableCell className="py-2.5 uppercase font-semibold text-[11px] text-slate-600">
                           {pm.payment_method}
                         </TableCell>
 
-                        <TableCell className="text-right font-mono font-bold text-emerald-600 dark:text-emerald-400 py-2.5 whitespace-nowrap">
+                        <TableCell className="text-right font-mono font-bold text-emerald-600 py-2.5 whitespace-nowrap tabular-nums">
                           {formatCurrency(pm.amount)}
                         </TableCell>
 
-                        <TableCell className="py-2.5 font-mono text-muted-foreground text-[11px]">
+                        <TableCell className="py-2.5 font-mono text-slate-500 text-[11px]">
                           {pm.reference_number || "—"}
                         </TableCell>
 
                         <TableCell className="text-center py-2.5">
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
                             RECEIVED
                           </span>
                         </TableCell>
 
-                        <TableCell className="py-2.5 text-muted-foreground text-xs">
+                        <TableCell className="py-2.5 text-slate-500 text-xs">
                           {pm.created_by || "Cashier"}
                         </TableCell>
                       </TableRow>
@@ -1146,11 +1137,11 @@ export function PaymentsManagementView() {
               </div>
             ) : (
               <div className="flex flex-col items-center justify-center py-12 px-4 min-h-[220px] max-h-[280px] text-center">
-                <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-muted-foreground/70 mb-3">
-                  <CreditCard className="h-5 w-5 text-muted-foreground" />
+                <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-400 mb-3">
+                  <CreditCard className="h-5 w-5 text-slate-400" />
                 </div>
-                <p className="text-sm font-bold text-foreground">No payment history found</p>
-                <p className="text-xs text-muted-foreground mt-1 max-w-sm">
+                <p className="text-sm font-bold text-slate-900">No payment history found</p>
+                <p className="text-xs text-slate-500 mt-1 max-w-sm">
                   Completed customer payments and settlements will appear here.
                 </p>
               </div>

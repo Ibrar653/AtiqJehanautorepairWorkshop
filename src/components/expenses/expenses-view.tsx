@@ -480,18 +480,16 @@ export function ExpensesView() {
         <div className="flex items-center gap-2.5">
           <Button
             variant="outline"
-            size="sm"
             onClick={loadExpenses}
             disabled={loading}
-            className="h-9 gap-1.5 text-xs text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-800"
+            className="rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-semibold h-10 px-3.5 shadow-2xs gap-1.5 text-xs transition-colors"
           >
             <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
             <span>Refresh</span>
           </Button>
           <Button
             variant="outline"
-            size="sm"
-            className="h-9 gap-2 text-xs border-slate-300 dark:border-slate-700"
+            className="rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-semibold h-10 px-3.5 shadow-2xs gap-2 text-xs transition-colors"
             onClick={handleOpenReport}
           >
             <BarChart3 className="h-3.5 w-3.5 text-blue-600" />
@@ -500,8 +498,7 @@ export function ExpensesView() {
 
           {canAdd && (
             <Button
-              size="sm"
-              className="h-9 gap-2 text-xs bg-blue-600 hover:bg-blue-700 text-white shadow-sm font-medium"
+              className="bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl shadow-2xs h-10 px-4 gap-2 text-xs transition-colors"
               onClick={openAddDialog}
             >
               <Plus className="h-4 w-4" />
@@ -511,92 +508,76 @@ export function ExpensesView() {
         </div>
       </div>
 
-      {/* ─── 1. TOP SUMMARY KPI CARDS (4 Compact Cards) ─── */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
+      {/* ─── 1. TOP SUMMARY KPI CARDS (4 Compact Enterprise Cards) ─── */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Expenses Today */}
-        <Card className="border border-slate-200/80 dark:border-slate-800 shadow-xs bg-white dark:bg-slate-900 rounded-xl">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Expenses Today</span>
-              <div className="h-7 w-7 rounded-lg bg-amber-50 dark:bg-amber-950/50 flex items-center justify-center">
-                <CalendarDays className="h-3.5 w-3.5 text-amber-600" />
-              </div>
+        <div className="bg-white rounded-2xl border border-slate-200/90 p-5 shadow-2xs flex items-center justify-between">
+          <div>
+            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Expenses Today</span>
+            <div className="text-2xl font-bold font-mono tracking-tight text-slate-900 mt-1 tabular-nums">
+              {formatCurrency(metrics.todayTotal)}
             </div>
-            <div className="mt-2 flex items-baseline gap-2">
-              <span className="text-xl font-bold font-mono tracking-tight text-slate-900 dark:text-white tabular-nums">
-                {formatCurrency(metrics.todayTotal)}
-              </span>
-            </div>
-            <p className="text-[11px] text-slate-400 mt-1 flex items-center gap-1">
-              <Clock className="h-3 w-3 inline" /> Logged today
+            <p className="text-xs text-slate-500 mt-1 flex items-center gap-1">
+              <Clock className="h-3 w-3 inline text-slate-400" /> Logged today
             </p>
-          </CardContent>
-        </Card>
+          </div>
+          <div className="h-10 w-10 rounded-xl bg-amber-50 flex items-center justify-center shrink-0 border border-amber-100">
+            <CalendarDays className="h-5 w-5 text-amber-600" />
+          </div>
+        </div>
 
         {/* This Month */}
-        <Card className="border border-slate-200/80 dark:border-slate-800 shadow-xs bg-white dark:bg-slate-900 rounded-xl">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">This Month</span>
-              <div className="h-7 w-7 rounded-lg bg-blue-50 dark:bg-blue-950/50 flex items-center justify-center">
-                <Wallet className="h-3.5 w-3.5 text-blue-600" />
-              </div>
+        <div className="bg-white rounded-2xl border border-slate-200/90 p-5 shadow-2xs flex items-center justify-between">
+          <div>
+            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">This Month</span>
+            <div className="text-2xl font-bold font-mono tracking-tight text-blue-600 mt-1 tabular-nums">
+              {formatCurrency(metrics.thisMonthTotal)}
             </div>
-            <div className="mt-2 flex items-baseline gap-2">
-              <span className="text-xl font-bold font-mono tracking-tight text-blue-600 dark:text-blue-400 tabular-nums">
-                {formatCurrency(metrics.thisMonthTotal)}
-              </span>
-            </div>
-            <p className="text-[11px] text-slate-400 mt-1 flex items-center gap-1">
-              <Receipt className="h-3 w-3 inline" /> Current monthly outflows
+            <p className="text-xs text-slate-500 mt-1 flex items-center gap-1">
+              <Receipt className="h-3 w-3 inline text-slate-400" /> Current monthly outflows
             </p>
-          </CardContent>
-        </Card>
+          </div>
+          <div className="h-10 w-10 rounded-xl bg-blue-50 flex items-center justify-center shrink-0 border border-blue-100">
+            <Wallet className="h-5 w-5 text-blue-600" />
+          </div>
+        </div>
 
         {/* Total Expenses (This Year) */}
-        <Card className="border border-slate-200/80 dark:border-slate-800 shadow-xs bg-white dark:bg-slate-900 rounded-xl">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Expenses</span>
-              <div className="h-7 w-7 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
-                <TrendingDown className="h-3.5 w-3.5 text-slate-600 dark:text-slate-300" />
-              </div>
+        <div className="bg-white rounded-2xl border border-slate-200/90 p-5 shadow-2xs flex items-center justify-between">
+          <div>
+            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Total Expenses</span>
+            <div className="text-2xl font-bold font-mono tracking-tight text-slate-900 mt-1 tabular-nums">
+              {formatCurrency(metrics.thisYearTotal)}
             </div>
-            <div className="mt-2 flex items-baseline gap-2">
-              <span className="text-xl font-bold font-mono tracking-tight text-slate-900 dark:text-white tabular-nums">
-                {formatCurrency(metrics.thisYearTotal)}
-              </span>
-            </div>
-            <p className="text-[11px] text-slate-400 mt-1 flex items-center gap-1">
-              <Building2 className="h-3 w-3 inline" /> Cumulative {new Date().getFullYear()}
+            <p className="text-xs text-slate-500 mt-1 flex items-center gap-1">
+              <Building2 className="h-3 w-3 inline text-slate-400" /> Cumulative {new Date().getFullYear()}
             </p>
-          </CardContent>
-        </Card>
+          </div>
+          <div className="h-10 w-10 rounded-xl bg-slate-100 flex items-center justify-center shrink-0 border border-slate-200">
+            <TrendingDown className="h-5 w-5 text-slate-600" />
+          </div>
+        </div>
 
         {/* Top Category */}
-        <Card className="border border-slate-200/80 dark:border-slate-800 shadow-xs bg-white dark:bg-slate-900 rounded-xl">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Top Category</span>
-              <div className="h-7 w-7 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 flex items-center justify-center">
-                <Tag className="h-3.5 w-3.5 text-emerald-600" />
-              </div>
+        <div className="bg-white rounded-2xl border border-slate-200/90 p-5 shadow-2xs flex items-center justify-between">
+          <div>
+            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Top Category</span>
+            <div className="text-xl font-bold tracking-tight text-slate-900 mt-1 truncate max-w-[160px]">
+              {topCategory.name}
             </div>
-            <div className="mt-2 flex items-baseline gap-2">
-              <span className="text-lg font-bold tracking-tight text-slate-900 dark:text-white truncate">
-                {topCategory.name}
-              </span>
-            </div>
-            <p className="text-[11px] text-slate-400 mt-1 font-mono tabular-nums">
+            <p className="text-xs text-slate-500 mt-1 font-mono tabular-nums">
               {topCategory.amount > 0 ? formatCurrency(topCategory.amount) : "No spend recorded"}
             </p>
-          </CardContent>
-        </Card>
+          </div>
+          <div className="h-10 w-10 rounded-xl bg-emerald-50 flex items-center justify-center shrink-0 border border-emerald-100">
+            <Tag className="h-5 w-5 text-emerald-600" />
+          </div>
+        </div>
       </div>
 
       {/* ─── 2. SEARCH & FILTER TOOLBAR ─── */}
-      <div className="bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-3">
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-2.5 items-center">
+      <div className="bg-white p-4 rounded-2xl border border-slate-200/90 shadow-2xs space-y-3">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
           {/* Search Input */}
           <div className="md:col-span-5">
             <SearchInput
@@ -618,10 +599,10 @@ export function ExpensesView() {
                 setPage(1);
               }}
             >
-              <SelectTrigger className="w-full text-xs h-9">
+              <SelectTrigger className="w-full text-xs h-10 rounded-xl border-slate-200 bg-white font-medium">
                 <SelectValue placeholder="Date Range" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="rounded-xl border-slate-200 shadow-lg">
                 <SelectItem value="today">Today</SelectItem>
                 <SelectItem value="this_week">This Week</SelectItem>
                 <SelectItem value="this_month">This Month</SelectItem>
@@ -644,10 +625,10 @@ export function ExpensesView() {
                 }
               }}
             >
-              <SelectTrigger className="w-full text-xs h-9">
+              <SelectTrigger className="w-full text-xs h-10 rounded-xl border-slate-200 bg-white font-medium">
                 <SelectValue placeholder="All Categories" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="rounded-xl border-slate-200 shadow-lg">
                 <SelectItem value="all">All Categories</SelectItem>
                 {availableCategories.map((cat) => (
                   <SelectItem key={cat} value={cat}>
@@ -669,10 +650,10 @@ export function ExpensesView() {
                 }
               }}
             >
-              <SelectTrigger className="w-full text-xs h-9">
+              <SelectTrigger className="w-full text-xs h-10 rounded-xl border-slate-200 bg-white font-medium">
                 <SelectValue placeholder="Payment Method" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="rounded-xl border-slate-200 shadow-lg">
                 <SelectItem value="all">All Methods</SelectItem>
                 <SelectItem value="cash">Cash</SelectItem>
                 <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
@@ -685,12 +666,12 @@ export function ExpensesView() {
 
         {/* Custom Date Range Row */}
         {dateFilter === "custom" && (
-          <div className="flex flex-wrap items-center gap-3 pt-2 border-t border-slate-100 dark:border-slate-800">
+          <div className="flex flex-wrap items-center gap-3 pt-3 border-t border-slate-100">
             <div className="flex items-center gap-2">
-              <Label className="text-xs text-muted-foreground whitespace-nowrap">From:</Label>
+              <Label className="text-xs font-semibold text-slate-500 whitespace-nowrap">From:</Label>
               <Input
                 type="date"
-                className="h-8 text-xs w-40"
+                className="h-10 text-xs w-40 rounded-xl border-slate-200"
                 value={customStartDate}
                 onChange={(e) => {
                   setCustomStartDate(e.target.value);
@@ -699,10 +680,10 @@ export function ExpensesView() {
               />
             </div>
             <div className="flex items-center gap-2">
-              <Label className="text-xs text-muted-foreground whitespace-nowrap">To:</Label>
+              <Label className="text-xs font-semibold text-slate-500 whitespace-nowrap">To:</Label>
               <Input
                 type="date"
-                className="h-8 text-xs w-40"
+                className="h-10 text-xs w-40 rounded-xl border-slate-200"
                 value={customEndDate}
                 onChange={(e) => {
                   setCustomEndDate(e.target.value);
@@ -713,7 +694,7 @@ export function ExpensesView() {
             <Button
               variant="ghost"
               size="sm"
-              className="h-8 text-xs text-muted-foreground"
+              className="h-10 text-xs font-medium text-slate-500 hover:text-slate-800 rounded-xl"
               onClick={() => {
                 setCustomStartDate("");
                 setCustomEndDate("");
@@ -727,261 +708,268 @@ export function ExpensesView() {
         )}
       </div>
 
-      {/* ─── 3. EXPENSES TABLE ─── */}
-      <Card className="border border-slate-200/80 dark:border-slate-800 shadow-xs overflow-hidden bg-white dark:bg-slate-900 rounded-xl">
-        <CardContent className="p-0">
-          {loading ? (
-            <div className="flex flex-col items-center justify-center py-20 text-slate-400">
-              <Loader2 className="h-7 w-7 animate-spin text-blue-600 mb-2" />
-              <p className="text-xs font-medium text-slate-500">Loading expenses...</p>
+      {/* ─── 3. EXPENSES TABLE CONTAINER ─── */}
+      <div className="border border-slate-200/90 shadow-2xs bg-white rounded-2xl overflow-hidden">
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-20 text-slate-400">
+            <Loader2 className="h-7 w-7 animate-spin text-blue-600 mb-2" />
+            <p className="text-xs font-medium text-slate-500">Loading expenses...</p>
+          </div>
+        ) : expenses.length === 0 ? (
+          <div className="text-center py-16 px-4 min-h-[220px] flex flex-col items-center justify-center">
+            <div className="h-12 w-12 rounded-2xl bg-slate-50 flex items-center justify-center mb-3 border border-slate-200">
+              <Receipt className="h-6 w-6 text-slate-400" />
             </div>
-          ) : expenses.length === 0 ? (
-            <div className="text-center py-16 px-4">
-              <Receipt className="h-10 w-10 mx-auto text-slate-300 dark:text-slate-600 mb-2.5" />
-              <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-200">No expenses found</h3>
-              <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
-                No expense records match your current date range and filters.
-              </p>
-              {canAdd && (
-                <Button size="sm" className="mt-3.5 gap-1.5 text-xs bg-blue-600 hover:bg-blue-700 text-white" onClick={openAddDialog}>
-                  <Plus className="h-3.5 w-3.5" />
-                  <span>Add Expense</span>
-                </Button>
-              )}
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow className="bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200/80 dark:border-slate-800 hover:bg-slate-50">
-                    <TableHead className="w-[38px] pl-3.5">
+            <h3 className="text-sm font-semibold text-slate-800">No expenses found</h3>
+            <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
+              No expense records match your current date range and filters.
+            </p>
+            {canAdd && (
+              <Button
+                size="sm"
+                className="mt-4 gap-2 text-xs bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl h-10 px-4 shadow-2xs"
+                onClick={openAddDialog}
+              >
+                <Plus className="h-4 w-4" />
+                <span>Add Expense</span>
+              </Button>
+            )}
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-slate-50/80 hover:bg-slate-50/80 border-b border-slate-200/80 h-11">
+                  <TableHead className="w-[42px] pl-4">
+                    <Checkbox
+                      checked={
+                        expenses.length > 0 && selectedExpenseIds.length === expenses.length
+                          ? true
+                          : selectedExpenseIds.length > 0
+                          ? "indeterminate"
+                          : false
+                      }
+                      onCheckedChange={handleSelectAll}
+                      aria-label="Select all visible expenses"
+                      className="rounded"
+                    />
+                  </TableHead>
+                  <TableHead className="w-[110px] text-[11px] font-bold text-slate-500 uppercase tracking-wider">Date</TableHead>
+                  <TableHead className="w-[150px] text-[11px] font-bold text-slate-500 uppercase tracking-wider">Category</TableHead>
+                  <TableHead className="min-w-[200px] text-[11px] font-bold text-slate-500 uppercase tracking-wider">Description</TableHead>
+                  <TableHead className="text-right w-[140px] text-[11px] font-bold text-slate-500 uppercase tracking-wider">Amount</TableHead>
+                  <TableHead className="w-[130px] text-[11px] font-bold text-slate-500 uppercase tracking-wider">Payment Method</TableHead>
+                  <TableHead className="min-w-[140px] text-[11px] font-bold text-slate-500 uppercase tracking-wider">Paid To</TableHead>
+                  <TableHead className="w-[120px] text-[11px] font-bold text-slate-500 uppercase tracking-wider">Reference</TableHead>
+                  <TableHead className="w-[120px] text-[11px] font-bold text-slate-500 uppercase tracking-wider">Created By</TableHead>
+                  <TableHead className="w-[90px] min-w-[90px] text-right pr-4 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {expenses.map((exp) => (
+                  <TableRow
+                    key={exp.id}
+                    className={`h-12 border-b border-slate-100 hover:bg-slate-50/60 transition-colors text-xs ${
+                      selectedExpenseIds.includes(exp.id) ? "bg-blue-50/40" : ""
+                    }`}
+                  >
+                    <TableCell className="pl-4">
                       <Checkbox
-                        checked={
-                          expenses.length > 0 && selectedExpenseIds.length === expenses.length
-                            ? true
-                            : selectedExpenseIds.length > 0
-                            ? "indeterminate"
-                            : false
-                        }
-                        onCheckedChange={handleSelectAll}
-                        aria-label="Select all visible expenses"
+                        checked={selectedExpenseIds.includes(exp.id)}
+                        onCheckedChange={() => handleToggleSelectExpense(exp.id)}
+                        aria-label={`Select expense ${exp.description || exp.id}`}
+                        className="rounded"
                       />
-                    </TableHead>
-                    <TableHead className="w-[100px] text-xs font-semibold text-slate-700 dark:text-slate-200">Date</TableHead>
-                    <TableHead className="w-[150px] text-xs font-semibold text-slate-700 dark:text-slate-200">Category</TableHead>
-                    <TableHead className="min-w-[200px] text-xs font-semibold text-slate-700 dark:text-slate-200">Description</TableHead>
-                    <TableHead className="text-right w-[130px] text-xs font-semibold text-slate-700 dark:text-slate-200">Amount</TableHead>
-                    <TableHead className="w-[120px] text-xs font-semibold text-slate-700 dark:text-slate-200">Payment Method</TableHead>
-                    <TableHead className="min-w-[140px] text-xs font-semibold text-slate-700 dark:text-slate-200">Paid To</TableHead>
-                    <TableHead className="w-[120px] text-xs font-semibold text-slate-700 dark:text-slate-200">Reference</TableHead>
-                    <TableHead className="w-[110px] text-xs font-semibold text-slate-700 dark:text-slate-200">Created By</TableHead>
-                    <TableHead className="w-[90px] min-w-[90px] text-right pr-4 text-xs font-semibold text-slate-700 dark:text-slate-200">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {expenses.map((exp) => (
-                    <TableRow
-                      key={exp.id}
-                      className={`h-12 border-b border-slate-100 dark:border-slate-800/60 hover:bg-slate-50/70 dark:hover:bg-slate-800/50 transition-colors text-[13px] ${
-                        selectedExpenseIds.includes(exp.id) ? "bg-blue-50/40 dark:bg-blue-950/20" : ""
-                      }`}
-                    >
-                      <TableCell className="pl-3.5">
-                        <Checkbox
-                          checked={selectedExpenseIds.includes(exp.id)}
-                          onCheckedChange={() => handleToggleSelectExpense(exp.id)}
-                          aria-label={`Select expense ${exp.description || exp.id}`}
-                        />
-                      </TableCell>
+                    </TableCell>
 
-                      {/* Date */}
-                      <TableCell className="font-mono text-xs text-slate-700 dark:text-slate-300 whitespace-nowrap">
-                        {exp.date || exp.expense_date || (exp.created_at ? exp.created_at.slice(0, 10) : "N/A")}
-                      </TableCell>
+                    {/* Date */}
+                    <TableCell className="font-mono text-xs text-slate-600 whitespace-nowrap">
+                      {exp.date || exp.expense_date || (exp.created_at ? exp.created_at.slice(0, 10) : "N/A")}
+                    </TableCell>
 
-                      {/* Category */}
-                      <TableCell>
-                        <Badge variant="secondary" className="font-medium text-[11px] bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-none gap-1 py-0.5">
-                          <Tag className="h-2.5 w-2.5 text-slate-400" />
-                          <span>{exp.category}</span>
-                        </Badge>
-                      </TableCell>
+                    {/* Category */}
+                    <TableCell>
+                      <Badge variant="secondary" className="font-medium text-[11px] bg-slate-100 text-slate-700 border-none gap-1 py-0.5 rounded-lg">
+                        <Tag className="h-2.5 w-2.5 text-slate-400" />
+                        <span>{exp.category}</span>
+                      </Badge>
+                    </TableCell>
 
-                      {/* Description */}
-                      <TableCell>
-                        <div className="flex items-center gap-1.5">
-                          <span className="font-medium text-slate-900 dark:text-white line-clamp-1">
-                            {exp.description || "—"}
-                          </span>
-                          {exp.attachment_path && (
-                            <a
-                              href={exp.attachment_path}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-blue-600 hover:text-blue-700 inline-flex items-center shrink-0"
-                              title="View receipt attachment"
-                            >
-                              <Paperclip className="h-3 w-3" />
-                            </a>
-                          )}
-                        </div>
-                      </TableCell>
-
-                      {/* Amount (Right Aligned, Tabular Nums) */}
-                      <TableCell className="text-right font-mono font-bold text-xs text-slate-900 dark:text-white tabular-nums whitespace-nowrap">
-                        {formatCurrency(Number(exp.amount) || 0)}
-                      </TableCell>
-
-                      {/* Payment Method */}
-                      <TableCell className="whitespace-nowrap">
-                        {getMethodBadge(exp.payment_method)}
-                      </TableCell>
-
-                      {/* Paid To */}
-                      <TableCell className="text-xs text-slate-600 dark:text-slate-300 whitespace-nowrap">
-                        {exp.paid_to || "—"}
-                      </TableCell>
-
-                      {/* Reference */}
-                      <TableCell className="text-xs font-mono text-slate-500 whitespace-nowrap">
-                        {exp.reference_number || "—"}
-                      </TableCell>
-
-                      {/* Created By */}
-                      <TableCell className="text-xs text-slate-500 truncate max-w-[110px]" title={exp.created_by || "Staff"}>
-                        {exp.created_by || "Staff"}
-                      </TableCell>
-
-                      {/* Actions (Unclipped) */}
-                      <TableCell className="text-right pr-4 whitespace-nowrap">
-                        <div className="flex items-center justify-end gap-1">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7 text-slate-500 hover:text-slate-900 dark:text-slate-300"
-                            onClick={() => {
-                              setSelectedExpense(exp);
-                              setViewDialogOpen(true);
-                            }}
-                            title="View Details"
+                    {/* Description */}
+                    <TableCell>
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-medium text-slate-900 line-clamp-1">
+                          {exp.description || "—"}
+                        </span>
+                        {exp.attachment_path && (
+                          <a
+                            href={exp.attachment_path}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:text-blue-700 inline-flex items-center shrink-0"
+                            title="View receipt attachment"
                           >
-                            <Eye className="h-3.5 w-3.5" />
-                          </Button>
+                            <Paperclip className="h-3 w-3" />
+                          </a>
+                        )}
+                      </div>
+                    </TableCell>
 
-                          <DropdownMenu>
-                            <DropdownMenuTrigger className="h-7 w-7 inline-flex items-center justify-center rounded-md border border-slate-200 dark:border-slate-700 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 focus:outline-none">
-                              <MoreVertical className="h-3.5 w-3.5" />
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-44 text-xs">
-                              <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                              <DropdownMenuItem
-                                onClick={() => {
-                                  setSelectedExpense(exp);
-                                  setViewDialogOpen(true);
-                                }}
-                              >
-                                <Eye className="h-3.5 w-3.5 mr-2 text-blue-600" /> View Details
+                    {/* Amount (Right Aligned, Tabular Nums) */}
+                    <TableCell className="text-right font-mono font-bold text-xs text-slate-900 tabular-nums whitespace-nowrap">
+                      {formatCurrency(Number(exp.amount) || 0)}
+                    </TableCell>
+
+                    {/* Payment Method */}
+                    <TableCell className="whitespace-nowrap">
+                      {getMethodBadge(exp.payment_method)}
+                    </TableCell>
+
+                    {/* Paid To */}
+                    <TableCell className="text-xs text-slate-600 whitespace-nowrap">
+                      {exp.paid_to || "—"}
+                    </TableCell>
+
+                    {/* Reference */}
+                    <TableCell className="text-xs font-mono text-slate-500 whitespace-nowrap">
+                      {exp.reference_number || "—"}
+                    </TableCell>
+
+                    {/* Created By */}
+                    <TableCell className="text-xs text-slate-500 truncate max-w-[120px]" title={exp.created_by || "Staff"}>
+                      {exp.created_by || "Staff"}
+                    </TableCell>
+
+                    {/* Actions (Unclipped) */}
+                    <TableCell className="text-right pr-4 whitespace-nowrap">
+                      <div className="flex items-center justify-end gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 rounded-xl text-slate-500 hover:text-slate-900 hover:bg-slate-100"
+                          onClick={() => {
+                            setSelectedExpense(exp);
+                            setViewDialogOpen(true);
+                          }}
+                          title="View Details"
+                        >
+                          <Eye className="h-3.5 w-3.5" />
+                        </Button>
+
+                        <DropdownMenu>
+                          <DropdownMenuTrigger className="h-8 w-8 inline-flex items-center justify-center rounded-xl border border-slate-200 text-slate-500 hover:bg-slate-100 hover:text-slate-900 focus:outline-none transition-colors">
+                            <MoreVertical className="h-3.5 w-3.5" />
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-44 text-xs rounded-xl border-slate-200 shadow-lg">
+                            <DropdownMenuLabel className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Actions</DropdownMenuLabel>
+                            <DropdownMenuItem
+                              onClick={() => {
+                                setSelectedExpense(exp);
+                                setViewDialogOpen(true);
+                              }}
+                              className="cursor-pointer"
+                            >
+                              <Eye className="h-3.5 w-3.5 mr-2 text-blue-600" /> View Details
+                            </DropdownMenuItem>
+                            {canEdit && (
+                              <DropdownMenuItem onClick={() => openEditDialog(exp)} className="cursor-pointer">
+                                <Edit className="h-3.5 w-3.5 mr-2 text-slate-600" /> Edit Expense
                               </DropdownMenuItem>
-                              {canEdit && (
-                                <DropdownMenuItem onClick={() => openEditDialog(exp)}>
-                                  <Edit className="h-3.5 w-3.5 mr-2 text-slate-600" /> Edit Expense
+                            )}
+                            {canDelete && (
+                              <>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  onClick={() => openDeleteDialog(exp)}
+                                  className="text-rose-600 hover:text-rose-700 font-semibold focus:text-rose-600 cursor-pointer"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5 mr-2" /> Delete
                                 </DropdownMenuItem>
-                              )}
-                              {canDelete && (
-                                <>
-                                  <DropdownMenuSeparator />
-                                  <DropdownMenuItem
-                                    onClick={() => openDeleteDialog(exp)}
-                                    className="text-rose-600 hover:text-rose-700 font-semibold focus:text-rose-600"
-                                  >
-                                    <Trash2 className="h-3.5 w-3.5 mr-2" /> Delete
-                                  </DropdownMenuItem>
-                                </>
-                              )}
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
+                              </>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        )}
 
-          {/* Pagination Controls */}
-          {totalCount > pageSize && (
-            <div className="flex items-center justify-between px-4 py-3 border-t border-slate-200/80 dark:border-slate-800 text-xs text-muted-foreground">
-              <div>
-                Showing {(page - 1) * pageSize + 1} to {Math.min(page * pageSize, totalCount)} of {totalCount} expenses
-              </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={page <= 1}
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  className="h-8 text-xs gap-1"
-                >
-                  <ChevronLeft className="h-3.5 w-3.5" /> Previous
-                </Button>
-                <span className="font-medium text-foreground px-2">
-                  Page {page} of {totalPages}
-                </span>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={page >= totalPages}
-                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                  className="h-8 text-xs gap-1"
-                >
-                  Next <ChevronRight className="h-3.5 w-3.5" />
-                </Button>
-              </div>
+        {/* Pagination Controls */}
+        {totalCount > pageSize && (
+          <div className="flex items-center justify-between px-4 py-3 border-t border-slate-200/80 text-xs text-slate-500">
+            <div>
+              Showing {(page - 1) * pageSize + 1} to {Math.min(page * pageSize, totalCount)} of {totalCount} expenses
             </div>
-          )}
-        </CardContent>
-      </Card>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={page <= 1}
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                className="h-8 text-xs gap-1 rounded-xl border-slate-200 font-semibold text-slate-700"
+              >
+                <ChevronLeft className="h-3.5 w-3.5" /> Previous
+              </Button>
+              <span className="font-medium text-slate-700 px-2">
+                Page {page} of {totalPages}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={page >= totalPages}
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                className="h-8 text-xs gap-1 rounded-xl border-slate-200 font-semibold text-slate-700"
+              >
+                Next <ChevronRight className="h-3.5 w-3.5" />
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* ─── 4. ADD / EDIT EXPENSE MODAL (Standardized Sections) ─── */}
       <Dialog open={formDialogOpen} onOpenChange={setFormDialogOpen}>
-        <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto p-0 gap-0 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xl">
+        <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto p-0 gap-0 rounded-2xl border border-slate-200/90 shadow-xl">
           <form onSubmit={handleSaveExpense}>
-            <div className="p-5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
-              <DialogTitle className="text-base font-bold text-foreground">
+            <div className="p-6 border-b border-slate-100 bg-slate-50/50">
+              <DialogTitle className="text-base font-bold text-slate-900">
                 {editingExpense ? "Edit Expense" : "Record Expense"}
               </DialogTitle>
-              <DialogDescription className="text-xs text-muted-foreground mt-0.5">
+              <DialogDescription className="text-xs text-slate-500 mt-1">
                 Record workshop operational costs and financial outflows.
               </DialogDescription>
             </div>
 
-            <div className="p-5 space-y-5 text-xs">
+            <div className="p-6 space-y-6 text-xs">
               {/* SECTION 1: EXPENSE DETAILS */}
-              <div className="space-y-3">
-                <div className="flex items-center gap-2 pb-1 border-b border-slate-100 dark:border-slate-800">
+              <div className="space-y-3.5">
+                <div className="flex items-center gap-2 pb-1.5 border-b border-slate-100">
                   <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
                     1. Expense Details
                   </span>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {/* Date */}
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-medium">Date *</Label>
+                    <Label className="text-xs font-semibold text-slate-700">Date *</Label>
                     <Input
                       type="date"
                       required
                       value={formDate}
                       onChange={(e) => setFormDate(e.target.value)}
-                      className="text-xs h-9"
+                      className="text-xs h-10 rounded-xl border-slate-200"
                     />
                   </div>
 
                   {/* Amount (AED) */}
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-medium">Amount (AED) *</Label>
+                    <Label className="text-xs font-semibold text-slate-700">Amount (AED) *</Label>
                     <div className="relative">
-                      <span className="absolute left-3 top-2.5 text-xs font-bold text-slate-400">AED</span>
+                      <span className="absolute left-3.5 top-2.5 text-xs font-bold text-slate-400">AED</span>
                       <Input
                         type="number"
                         step="0.01"
@@ -990,7 +978,7 @@ export function ExpensesView() {
                         placeholder="0.00"
                         value={formAmount}
                         onChange={(e) => setFormAmount(e.target.value)}
-                        className="text-xs h-9 pl-12 font-mono font-bold tabular-nums"
+                        className="text-xs h-10 pl-13 font-mono font-bold tabular-nums rounded-xl border-slate-200"
                       />
                     </div>
                   </div>
@@ -998,10 +986,10 @@ export function ExpensesView() {
                   {/* Category */}
                   <div className="space-y-1.5 sm:col-span-2">
                     <div className="flex items-center justify-between">
-                      <Label className="text-xs font-medium">Category *</Label>
+                      <Label className="text-xs font-semibold text-slate-700">Category *</Label>
                       <button
                         type="button"
-                        className="text-[11px] text-blue-600 hover:underline font-medium"
+                        className="text-[11px] text-blue-600 hover:text-blue-700 font-semibold"
                         onClick={() => {
                           setIsCustomCategory(!isCustomCategory);
                           if (!isCustomCategory) {
@@ -1022,10 +1010,10 @@ export function ExpensesView() {
                           if (val) setFormCategory(val);
                         }}
                       >
-                        <SelectTrigger className="text-xs h-9">
+                        <SelectTrigger className="text-xs h-10 rounded-xl border-slate-200 bg-white font-medium">
                           <SelectValue placeholder="Select Category" />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="rounded-xl border-slate-200 shadow-lg">
                           {availableCategories.map((cat) => (
                             <SelectItem key={cat} value={cat}>
                               {cat}
@@ -1039,46 +1027,46 @@ export function ExpensesView() {
                         value={customCategoryInput}
                         onChange={(e) => setCustomCategoryInput(e.target.value)}
                         required
-                        className="text-xs h-9"
+                        className="text-xs h-10 rounded-xl border-slate-200"
                       />
                     )}
                   </div>
 
                   {/* Description */}
                   <div className="space-y-1.5 sm:col-span-2">
-                    <Label className="text-xs font-medium">Description *</Label>
+                    <Label className="text-xs font-semibold text-slate-700">Description *</Label>
                     <Input
                       required
                       placeholder="e.g. Workshop compressor service, DEWA bill, Engine oil stock"
                       value={formDescription}
                       onChange={(e) => setFormDescription(e.target.value)}
-                      className="text-xs h-9"
+                      className="text-xs h-10 rounded-xl border-slate-200"
                     />
                   </div>
                 </div>
               </div>
 
               {/* SECTION 2: PAYMENT */}
-              <div className="space-y-3">
-                <div className="flex items-center gap-2 pb-1 border-b border-slate-100 dark:border-slate-800">
+              <div className="space-y-3.5">
+                <div className="flex items-center gap-2 pb-1.5 border-b border-slate-100">
                   <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
                     2. Payment
                   </span>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {/* Payment Method */}
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-medium">Payment Method *</Label>
+                    <Label className="text-xs font-semibold text-slate-700">Payment Method *</Label>
                     <Select
                       value={formPaymentMethod}
                       onValueChange={(val) => {
                         if (val) setFormPaymentMethod(val);
                       }}
                     >
-                      <SelectTrigger className="text-xs h-9">
+                      <SelectTrigger className="text-xs h-10 rounded-xl border-slate-200 bg-white font-medium">
                         <SelectValue placeholder="Payment Method" />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="rounded-xl border-slate-200 shadow-lg">
                         {EXPENSE_PAYMENT_METHODS.map((method) => (
                           <SelectItem key={method.value} value={method.value}>
                             {method.label}
@@ -1090,37 +1078,37 @@ export function ExpensesView() {
 
                   {/* Paid To */}
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-medium">Paid To / Vendor</Label>
+                    <Label className="text-xs font-semibold text-slate-700">Paid To / Vendor</Label>
                     <Input
                       placeholder="e.g. ADNOC, DEWA, Al Futtaim Tools"
                       value={formPaidTo}
                       onChange={(e) => setFormPaidTo(e.target.value)}
-                      className="text-xs h-9"
+                      className="text-xs h-10 rounded-xl border-slate-200"
                     />
                   </div>
 
                   {/* Reference */}
                   <div className="space-y-1.5 sm:col-span-2">
-                    <Label className="text-xs font-medium">Reference / Receipt Number</Label>
+                    <Label className="text-xs font-semibold text-slate-700">Reference / Receipt Number</Label>
                     <Input
                       placeholder="e.g. INV-9042, TXN-5481"
                       value={formReference}
                       onChange={(e) => setFormReference(e.target.value)}
-                      className="text-xs h-9 font-mono"
+                      className="text-xs h-10 font-mono rounded-xl border-slate-200"
                     />
                   </div>
 
                   {/* Ledger Posting Info */}
-                  <div className="sm:col-span-2 p-3 bg-slate-50 dark:bg-slate-800/40 rounded-lg border border-slate-200/80 dark:border-slate-700/60 text-xs">
+                  <div className="sm:col-span-2 p-3.5 bg-slate-50 rounded-xl border border-slate-200/80 text-xs">
                     <div className="flex items-center justify-between">
-                      <span className="text-[11px] text-slate-500">Debit (Expense)</span>
-                      <span className="font-mono font-medium text-slate-700 dark:text-slate-300">
+                      <span className="text-[11px] text-slate-500 font-medium">Debit (Expense)</span>
+                      <span className="font-mono font-semibold text-slate-800">
                         {formCategory || "General"} Expense
                       </span>
                     </div>
-                    <div className="flex items-center justify-between mt-1 pt-1 border-t border-slate-200/50 dark:border-slate-700/50">
-                      <span className="text-[11px] text-slate-500">Credit (Payment Source)</span>
-                      <span className="font-mono font-medium text-slate-700 dark:text-slate-300">
+                    <div className="flex items-center justify-between mt-1.5 pt-1.5 border-t border-slate-200/60">
+                      <span className="text-[11px] text-slate-500 font-medium">Credit (Payment Source)</span>
+                      <span className="font-mono font-semibold text-slate-800">
                         {formPaymentMethod === "cash" ? "Cash on Hand" : "Bank Account"}
                       </span>
                     </div>
@@ -1129,45 +1117,45 @@ export function ExpensesView() {
               </div>
 
               {/* SECTION 3: ADDITIONAL */}
-              <div className="space-y-3">
-                <div className="flex items-center gap-2 pb-1 border-b border-slate-100 dark:border-slate-800">
+              <div className="space-y-3.5">
+                <div className="flex items-center gap-2 pb-1.5 border-b border-slate-100">
                   <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
                     3. Additional
                   </span>
                 </div>
-                <div className="grid grid-cols-1 gap-3.5">
+                <div className="grid grid-cols-1 gap-4">
                   {/* Notes */}
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-medium">Notes</Label>
+                    <Label className="text-xs font-semibold text-slate-700">Notes</Label>
                     <Textarea
                       rows={2}
                       placeholder="Optional remarks or additional details..."
                       value={formNotes}
                       onChange={(e) => setFormNotes(e.target.value)}
-                      className="text-xs resize-none"
+                      className="text-xs resize-none rounded-xl border-slate-200"
                     />
                   </div>
 
                   {/* Attachment */}
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-medium">Attachment (Receipt)</Label>
+                    <Label className="text-xs font-semibold text-slate-700">Attachment (Receipt)</Label>
                     {formAttachmentPath ? (
-                      <div className="flex items-center justify-between p-2.5 rounded-lg border bg-slate-50 dark:bg-slate-800 text-xs">
+                      <div className="flex items-center justify-between p-3 rounded-xl border border-slate-200 bg-slate-50 text-xs">
                         <div className="flex items-center gap-2 truncate">
-                          <Paperclip className="h-3.5 w-3.5 text-blue-600 shrink-0" />
-                          <span className="truncate font-medium">{formAttachmentName || "Attached Receipt"}</span>
+                          <Paperclip className="h-4 w-4 text-blue-600 shrink-0" />
+                          <span className="truncate font-medium text-slate-700">{formAttachmentName || "Attached Receipt"}</span>
                         </div>
                         <Button
                           type="button"
                           variant="ghost"
                           size="icon"
-                          className="h-6 w-6 text-rose-600 hover:text-rose-700"
+                          className="h-7 w-7 text-rose-600 hover:text-rose-700 hover:bg-rose-50 rounded-lg"
                           onClick={() => {
                             setFormAttachmentPath(null);
                             setFormAttachmentName(null);
                           }}
                         >
-                          <X className="h-3.5 w-3.5" />
+                          <X className="h-4 w-4" />
                         </Button>
                       </div>
                     ) : (
@@ -1182,12 +1170,12 @@ export function ExpensesView() {
                         />
                         <label
                           htmlFor="expense-receipt-file"
-                          className="flex items-center justify-center gap-2 h-9 px-3 rounded-md border border-dashed border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer text-xs font-medium text-slate-600 dark:text-slate-300"
+                          className="flex items-center justify-center gap-2 h-10 px-4 rounded-xl border border-dashed border-slate-300 hover:bg-slate-50 cursor-pointer text-xs font-medium text-slate-600 transition-colors"
                         >
                           {uploadingAttachment ? (
-                            <Loader2 className="h-3.5 w-3.5 animate-spin text-blue-600" />
+                            <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
                           ) : (
-                            <Upload className="h-3.5 w-3.5 text-blue-600" />
+                            <Upload className="h-4 w-4 text-blue-600" />
                           )}
                           <span>{uploadingAttachment ? "Uploading..." : "Upload Receipt (JPG, PNG, PDF)"}</span>
                         </label>
@@ -1198,21 +1186,19 @@ export function ExpensesView() {
               </div>
             </div>
 
-            <DialogFooter className="p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 flex items-center justify-end gap-2">
+            <DialogFooter className="p-4 border-t border-slate-100 bg-slate-50/50 flex items-center justify-end gap-2.5">
               <Button
                 type="button"
                 variant="outline"
-                size="sm"
                 onClick={() => setFormDialogOpen(false)}
                 disabled={formLoading}
-                className="text-xs"
+                className="text-xs rounded-xl border-slate-200 h-10 px-4 font-semibold text-slate-700 hover:bg-slate-100"
               >
                 Cancel
               </Button>
               <Button
                 type="submit"
-                size="sm"
-                className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium"
+                className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-xl h-10 px-4 shadow-2xs"
                 disabled={formLoading}
               >
                 {formLoading ? (
@@ -1233,59 +1219,59 @@ export function ExpensesView() {
 
       {/* ─── 5. VIEW EXPENSE DETAILS MODAL ─── */}
       <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
-        <DialogContent className="max-w-md p-0 gap-0 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-xl">
+        <DialogContent className="max-w-md p-0 gap-0 rounded-2xl overflow-hidden border border-slate-200/90 shadow-xl">
           {selectedExpense && (
             <div>
-              <div className="p-5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 flex items-center justify-between">
+              <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
                 <div>
-                  <DialogTitle className="text-base font-bold text-foreground">Expense Record</DialogTitle>
-                  <p className="text-[11px] text-muted-foreground font-mono mt-0.5">
+                  <DialogTitle className="text-base font-bold text-slate-900">Expense Record</DialogTitle>
+                  <p className="text-[11px] text-slate-400 font-mono mt-0.5">
                     ID: {selectedExpense.id}
                   </p>
                 </div>
                 <div className="text-right">
-                  <span className="text-lg font-mono font-bold text-blue-600 tabular-nums">
+                  <span className="text-xl font-mono font-bold text-blue-600 tabular-nums">
                     {formatCurrency(Number(selectedExpense.amount) || 0)}
                   </span>
                   <div className="mt-1">{getMethodBadge(selectedExpense.payment_method)}</div>
                 </div>
               </div>
 
-              <div className="p-5 space-y-3.5 text-xs">
-                <div className="grid grid-cols-2 gap-2.5 p-3 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700/60">
+              <div className="p-6 space-y-4 text-xs">
+                <div className="grid grid-cols-2 gap-3 p-4 rounded-xl bg-slate-50 border border-slate-200/80">
                   <div>
-                    <span className="text-[10px] uppercase font-bold text-muted-foreground">Date</span>
-                    <p className="font-semibold text-foreground font-mono mt-0.5">
+                    <span className="text-[10px] uppercase font-bold text-slate-400">Date</span>
+                    <p className="font-semibold text-slate-800 font-mono mt-0.5">
                       {selectedExpense.date || selectedExpense.expense_date || "—"}
                     </p>
                   </div>
                   <div>
-                    <span className="text-[10px] uppercase font-bold text-muted-foreground">Category</span>
-                    <p className="font-semibold text-foreground mt-0.5">{selectedExpense.category}</p>
+                    <span className="text-[10px] uppercase font-bold text-slate-400">Category</span>
+                    <p className="font-semibold text-slate-800 mt-0.5">{selectedExpense.category}</p>
                   </div>
                   <div>
-                    <span className="text-[10px] uppercase font-bold text-muted-foreground">Paid To</span>
-                    <p className="font-semibold text-foreground mt-0.5">{selectedExpense.paid_to || "—"}</p>
+                    <span className="text-[10px] uppercase font-bold text-slate-400">Paid To</span>
+                    <p className="font-semibold text-slate-800 mt-0.5">{selectedExpense.paid_to || "—"}</p>
                   </div>
                   <div>
-                    <span className="text-[10px] uppercase font-bold text-muted-foreground">Reference</span>
-                    <p className="font-semibold text-foreground font-mono mt-0.5">
+                    <span className="text-[10px] uppercase font-bold text-slate-400">Reference</span>
+                    <p className="font-semibold text-slate-800 font-mono mt-0.5">
                       {selectedExpense.reference_number || "—"}
                     </p>
                   </div>
                 </div>
 
                 <div>
-                  <span className="text-[10px] uppercase font-bold text-muted-foreground">Description</span>
-                  <p className="text-xs font-medium text-foreground mt-1 p-2.5 rounded-lg bg-slate-50 dark:bg-slate-800/40 border border-slate-200/80 dark:border-slate-700/60">
+                  <span className="text-[10px] uppercase font-bold text-slate-400">Description</span>
+                  <p className="text-xs font-medium text-slate-800 mt-1 p-3 rounded-xl bg-slate-50 border border-slate-200/80">
                     {selectedExpense.description || "No description provided."}
                   </p>
                 </div>
 
                 {selectedExpense.notes && (
                   <div>
-                    <span className="text-[10px] uppercase font-bold text-muted-foreground">Notes</span>
-                    <p className="text-xs text-muted-foreground mt-1 p-2.5 rounded-lg bg-slate-50 dark:bg-slate-800/40 border border-slate-200/80 dark:border-slate-700/60">
+                    <span className="text-[10px] uppercase font-bold text-slate-400">Notes</span>
+                    <p className="text-xs text-slate-600 mt-1 p-3 rounded-xl bg-slate-50 border border-slate-200/80">
                       {selectedExpense.notes}
                     </p>
                   </div>
@@ -1293,11 +1279,11 @@ export function ExpensesView() {
 
                 {selectedExpense.attachment_path && (
                   <div>
-                    <span className="text-[10px] uppercase font-bold text-muted-foreground">Receipt Attachment</span>
-                    <div className="mt-1 p-2.5 rounded-lg border border-blue-200 bg-blue-50/50 dark:bg-blue-950/20 flex items-center justify-between">
+                    <span className="text-[10px] uppercase font-bold text-slate-400">Receipt Attachment</span>
+                    <div className="mt-1 p-3 rounded-xl border border-blue-200 bg-blue-50/50 flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <Paperclip className="h-4 w-4 text-blue-600" />
-                        <span className="font-medium text-foreground">Receipt attached</span>
+                        <span className="font-medium text-slate-900">Receipt attached</span>
                       </div>
                       <a
                         href={selectedExpense.attachment_path}
@@ -1312,8 +1298,13 @@ export function ExpensesView() {
                 )}
               </div>
 
-              <div className="p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
-                <Button variant="outline" size="sm" onClick={() => setViewDialogOpen(false)} className="w-full text-xs">
+              <div className="p-4 border-t border-slate-100 bg-slate-50/50">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setViewDialogOpen(false)}
+                  className="w-full text-xs rounded-xl h-10 font-semibold border-slate-200 text-slate-700 hover:bg-slate-100"
+                >
                   Close
                 </Button>
               </div>
@@ -1344,18 +1335,18 @@ export function ExpensesView() {
 
       {/* ─── 7. EXPENSE REPORT MODAL ─── */}
       <Dialog open={reportDialogOpen} onOpenChange={setReportDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-0 gap-0 rounded-xl">
-          <div className="p-5 border-b flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/50">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-0 gap-0 rounded-2xl border border-slate-200/90 shadow-xl">
+          <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
             <div>
-              <DialogTitle className="text-base font-bold text-foreground">Workshop Expense Report</DialogTitle>
-              <DialogDescription className="text-xs text-muted-foreground mt-0.5">
+              <DialogTitle className="text-base font-bold text-slate-900">Workshop Expense Report</DialogTitle>
+              <DialogDescription className="text-xs text-slate-500 mt-1">
                 Breakdown of operational expenditures by category and payment method
               </DialogDescription>
             </div>
             <Button
               variant="outline"
               size="sm"
-              className="gap-1.5 text-xs print:hidden"
+              className="gap-1.5 text-xs print:hidden rounded-xl border-slate-200 font-semibold h-9 px-3 text-slate-700 hover:bg-slate-100"
               onClick={() => window.print()}
             >
               <Printer className="h-3.5 w-3.5" />
@@ -1363,30 +1354,30 @@ export function ExpensesView() {
             </Button>
           </div>
 
-          <div className="p-5 space-y-4">
+          <div className="p-6 space-y-5">
             {/* Date Range Selector */}
-            <div className="flex flex-wrap items-center gap-3 p-3 rounded-lg bg-slate-50 dark:bg-slate-800/60 border text-xs">
+            <div className="flex flex-wrap items-center gap-3 p-4 rounded-xl bg-slate-50 border border-slate-200/80 text-xs">
               <div className="flex items-center gap-2">
-                <Label className="text-xs font-semibold">Start:</Label>
+                <Label className="text-xs font-semibold text-slate-600">Start:</Label>
                 <Input
                   type="date"
                   value={reportStartDate}
                   onChange={(e) => setReportStartDate(e.target.value)}
-                  className="h-8 text-xs w-36"
+                  className="h-10 text-xs w-38 rounded-xl border-slate-200 bg-white"
                 />
               </div>
               <div className="flex items-center gap-2">
-                <Label className="text-xs font-semibold">End:</Label>
+                <Label className="text-xs font-semibold text-slate-600">End:</Label>
                 <Input
                   type="date"
                   value={reportEndDate}
                   onChange={(e) => setReportEndDate(e.target.value)}
-                  className="h-8 text-xs w-36"
+                  className="h-10 text-xs w-38 rounded-xl border-slate-200 bg-white"
                 />
               </div>
               <Button
                 size="sm"
-                className="h-8 text-xs gap-1 bg-blue-600 hover:bg-blue-700 text-white"
+                className="h-10 text-xs gap-1.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl px-4 shadow-2xs"
                 onClick={handleRefreshReport}
                 disabled={reportLoading}
               >
@@ -1398,49 +1389,49 @@ export function ExpensesView() {
             {reportLoading ? (
               <div className="py-12 text-center text-slate-400">
                 <Loader2 className="h-6 w-6 animate-spin mx-auto text-blue-600 mb-2" />
-                <p className="text-xs font-medium">Generating financial audit metrics...</p>
+                <p className="text-xs font-medium text-slate-500">Generating financial audit metrics...</p>
               </div>
             ) : reportData ? (
-              <div className="space-y-4">
-                <div className="p-4 rounded-xl bg-blue-600 text-white flex items-center justify-between">
+              <div className="space-y-5">
+                <div className="p-5 rounded-2xl bg-blue-600 text-white flex items-center justify-between shadow-2xs">
                   <div>
                     <span className="text-[11px] uppercase tracking-wider text-blue-100 font-semibold">Total Expenses In Period</span>
-                    <p className="text-2xl font-bold font-mono mt-0.5 tabular-nums">
+                    <p className="text-2xl font-bold font-mono mt-1 tabular-nums">
                       {formatCurrency(reportData.totalExpenses)}
                     </p>
                   </div>
                   <div className="text-right text-xs text-blue-100">
-                    <p className="font-semibold">{reportData.expensesCount} transactions</p>
-                    <p className="text-[11px] opacity-80">{reportData.startDate} to {reportData.endDate}</p>
+                    <p className="font-semibold text-white">{reportData.expensesCount} transactions</p>
+                    <p className="text-[11px] opacity-80 mt-0.5">{reportData.startDate} to {reportData.endDate}</p>
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-foreground">
+                  <h4 className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
                     Category Breakdown
                   </h4>
                   {reportData.categoryBreakdown.length === 0 ? (
-                    <p className="text-xs text-muted-foreground italic">No expenses recorded in this period.</p>
+                    <p className="text-xs text-slate-500 italic">No expenses recorded in this period.</p>
                   ) : (
-                    <div className="border rounded-lg overflow-hidden">
+                    <div className="border border-slate-200/90 rounded-2xl overflow-hidden shadow-2xs">
                       <Table>
                         <TableHeader>
-                          <TableRow className="bg-slate-50 dark:bg-slate-800 hover:bg-slate-50">
-                            <TableHead className="text-xs font-semibold">Category</TableHead>
-                            <TableHead className="text-center text-xs font-semibold w-20">Count</TableHead>
-                            <TableHead className="text-right text-xs font-semibold w-28">Amount</TableHead>
-                            <TableHead className="text-right text-xs font-semibold w-24">Share</TableHead>
+                          <TableRow className="bg-slate-50/80 hover:bg-slate-50/80 border-b border-slate-200/80 h-10">
+                            <TableHead className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Category</TableHead>
+                            <TableHead className="text-center text-[11px] font-bold text-slate-500 uppercase tracking-wider w-20">Count</TableHead>
+                            <TableHead className="text-right text-[11px] font-bold text-slate-500 uppercase tracking-wider w-32">Amount</TableHead>
+                            <TableHead className="text-right text-[11px] font-bold text-slate-500 uppercase tracking-wider w-24">Share</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
                           {reportData.categoryBreakdown.map((item) => (
-                            <TableRow key={item.category} className="text-xs">
-                              <TableCell className="font-medium text-foreground">{item.category}</TableCell>
-                              <TableCell className="text-center font-mono text-muted-foreground">{item.count}</TableCell>
-                              <TableCell className="text-right font-mono font-bold text-foreground tabular-nums">
+                            <TableRow key={item.category} className="text-xs h-10 border-b border-slate-100">
+                              <TableCell className="font-semibold text-slate-800">{item.category}</TableCell>
+                              <TableCell className="text-center font-mono text-slate-500">{item.count}</TableCell>
+                              <TableCell className="text-right font-mono font-bold text-slate-900 tabular-nums">
                                 {formatCurrency(item.amount)}
                               </TableCell>
-                              <TableCell className="text-right font-mono text-muted-foreground">
+                              <TableCell className="text-right font-mono text-slate-500">
                                 {item.percentage}%
                               </TableCell>
                             </TableRow>
@@ -1452,17 +1443,17 @@ export function ExpensesView() {
                 </div>
 
                 <div className="space-y-2">
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-foreground">
+                  <h4 className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
                     Payment Method Breakdown
                   </h4>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                     {reportData.paymentMethodBreakdown.map((pm) => (
-                      <div key={pm.paymentMethod} className="p-3 rounded-lg border bg-slate-50 dark:bg-slate-800 text-xs">
-                        <span className="text-[10px] uppercase font-bold text-muted-foreground">{pm.label}</span>
-                        <p className="text-sm font-bold font-mono text-foreground mt-1 tabular-nums">
+                      <div key={pm.paymentMethod} className="p-3.5 rounded-xl border border-slate-200/90 bg-white shadow-2xs text-xs">
+                        <span className="text-[10px] uppercase font-bold text-slate-400">{pm.label}</span>
+                        <p className="text-sm font-bold font-mono text-slate-900 mt-1 tabular-nums">
                           {formatCurrency(pm.amount)}
                         </p>
-                        <p className="text-[11px] text-muted-foreground font-mono mt-0.5">
+                        <p className="text-[11px] text-slate-500 font-mono mt-0.5">
                           {pm.count} txns ({pm.percentage}%)
                         </p>
                       </div>
@@ -1473,8 +1464,13 @@ export function ExpensesView() {
             ) : null}
           </div>
 
-          <DialogFooter className="p-4 border-t bg-slate-50/50 dark:bg-slate-900/50">
-            <Button variant="outline" size="sm" onClick={() => setReportDialogOpen(false)} className="text-xs">
+          <DialogFooter className="p-4 border-t border-slate-100 bg-slate-50/50">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setReportDialogOpen(false)}
+              className="text-xs rounded-xl h-10 px-4 font-semibold border-slate-200 text-slate-700 hover:bg-slate-100"
+            >
               Close
             </Button>
           </DialogFooter>

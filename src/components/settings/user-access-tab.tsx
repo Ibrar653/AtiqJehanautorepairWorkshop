@@ -626,61 +626,71 @@ export function UserAccessTab() {
       )}
 
       {/* ─── 1. TOP 5 SUMMARY CARDS (Requirement 1 & Section 1) ───────────── */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-        <div className="bg-white border border-slate-200/80 rounded-xl p-3.5 shadow-xs flex items-center justify-between">
-          <div>
-            <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Total Staff</p>
-            <p className="text-2xl font-bold font-mono tabular-nums text-slate-900 mt-0.5">{totalStaff}</p>
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-5 shadow-2xs flex flex-col justify-between">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Total Staff</span>
+            <div className="w-9 h-9 rounded-xl bg-blue-50 dark:bg-blue-950/50 text-blue-600 flex items-center justify-center">
+              <Users className="w-4 h-4" />
+            </div>
           </div>
-          <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
-            <Users className="w-4 h-4" />
-          </div>
+          <p className="text-2xl font-bold font-mono tracking-tight text-slate-900 dark:text-slate-100 tabular-nums mt-2">
+            {totalStaff}
+          </p>
         </div>
 
-        <div className="bg-white border border-slate-200/80 rounded-xl p-3.5 shadow-xs flex items-center justify-between">
-          <div>
-            <p className="text-[11px] font-semibold text-emerald-700 uppercase tracking-wider">Active Staff</p>
-            <p className="text-2xl font-bold font-mono tabular-nums text-emerald-700 mt-0.5">{activeStaff}</p>
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-5 shadow-2xs flex flex-col justify-between">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold text-emerald-700 uppercase tracking-wider">Active Staff</span>
+            <div className="w-9 h-9 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 flex items-center justify-center">
+              <UserCheck className="w-4 h-4" />
+            </div>
           </div>
-          <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
-            <UserCheck className="w-4 h-4" />
-          </div>
+          <p className="text-2xl font-bold font-mono tracking-tight text-emerald-700 dark:text-emerald-400 tabular-nums mt-2">
+            {activeStaff}
+          </p>
         </div>
 
-        <div className="bg-white border border-slate-200/80 rounded-xl p-3.5 shadow-xs flex items-center justify-between">
-          <div>
-            <p className="text-[11px] font-semibold text-blue-700 uppercase tracking-wider">Pending Invites</p>
-            <p className="text-2xl font-bold font-mono tabular-nums text-blue-700 mt-0.5">{pendingInvitations}</p>
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-5 shadow-2xs flex flex-col justify-between">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold text-blue-700 uppercase tracking-wider">Pending Invites</span>
+            <div className="w-9 h-9 rounded-xl bg-blue-50 dark:bg-blue-950/50 text-blue-600 flex items-center justify-center">
+              <Mail className="w-4 h-4" />
+            </div>
           </div>
-          <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
-            <Mail className="w-4 h-4" />
-          </div>
+          <p className="text-2xl font-bold font-mono tracking-tight text-blue-700 dark:text-blue-400 tabular-nums mt-2">
+            {pendingInvitations}
+          </p>
         </div>
 
-        <div className="bg-white border border-slate-200/80 rounded-xl p-3.5 shadow-xs flex items-center justify-between">
-          <div>
-            <p className="text-[11px] font-semibold text-amber-700 uppercase tracking-wider">Suspended Staff</p>
-            <p className="text-2xl font-bold font-mono tabular-nums text-amber-700 mt-0.5">{suspendedStaff}</p>
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-5 shadow-2xs flex flex-col justify-between">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold text-amber-700 uppercase tracking-wider">Suspended Staff</span>
+            <div className="w-9 h-9 rounded-xl bg-amber-50 dark:bg-amber-950/50 text-amber-600 flex items-center justify-center">
+              <UserX className="w-4 h-4" />
+            </div>
           </div>
-          <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
-            <UserX className="w-4 h-4" />
-          </div>
+          <p className="text-2xl font-bold font-mono tracking-tight text-amber-700 dark:text-amber-400 tabular-nums mt-2">
+            {suspendedStaff}
+          </p>
         </div>
 
-        <div className="bg-white border border-slate-200/80 rounded-xl p-3.5 shadow-xs flex items-center justify-between">
-          <div>
-            <p className="text-[11px] font-semibold text-rose-700 uppercase tracking-wider">Removed Staff</p>
-            <p className="text-2xl font-bold font-mono tabular-nums text-rose-700 mt-0.5">{removedStaff}</p>
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-5 shadow-2xs flex flex-col justify-between">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold text-rose-700 uppercase tracking-wider">Removed Staff</span>
+            <div className="w-9 h-9 rounded-xl bg-rose-50 dark:bg-rose-950/50 text-rose-600 flex items-center justify-center">
+              <UserMinus className="w-4 h-4" />
+            </div>
           </div>
-          <div className="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center">
-            <UserMinus className="w-4 h-4" />
-          </div>
+          <p className="text-2xl font-bold font-mono tracking-tight text-rose-700 dark:text-rose-400 tabular-nums mt-2">
+            {removedStaff}
+          </p>
         </div>
       </div>
 
       {/* ─── 2. MAIN SUBTABS NAVIGATION ───────────────────────────────────── */}
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-800 pb-2">
-        <div className="flex flex-wrap items-center gap-1">
+      <div className="flex flex-wrap items-center justify-between gap-3 bg-white dark:bg-slate-900 p-2.5 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-2xs">
+        <div className="flex flex-wrap items-center gap-1.5">
           {[
             { id: "users", label: "Users", icon: Users, badge: totalStaff },
             { id: "roles", label: "Roles", icon: Shield },
@@ -709,9 +719,9 @@ export function UserAccessTab() {
               <button
                 key={tab.id}
                 onClick={() => setActiveSubTab(tab.id as AccessSubTab)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors ${
+                className={`px-3.5 h-9 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all ${
                   isActive
-                    ? "bg-blue-600 text-white shadow-sm"
+                    ? "bg-blue-600 text-white shadow-2xs"
                     : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60"
                 }`}
               >
@@ -719,7 +729,7 @@ export function UserAccessTab() {
                 <span>{tab.label}</span>
                 {tab.badge !== undefined && (
                   <span
-                    className={`ml-1 px-1.5 py-0.2 rounded-full text-[10px] font-black ${
+                    className={`ml-1 px-1.5 py-0.5 rounded-lg text-[10px] font-black ${
                       isActive
                         ? "bg-white/20 text-white"
                         : tab.badgeColor
@@ -740,7 +750,7 @@ export function UserAccessTab() {
             variant="outline"
             size="sm"
             onClick={refreshData}
-            className="h-8 text-xs px-2.5 gap-1"
+            className="h-9 text-xs px-3.5 rounded-xl border-slate-200 font-semibold gap-1.5 hover:bg-slate-50"
           >
             <RotateCcw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
             Refresh
@@ -749,7 +759,7 @@ export function UserAccessTab() {
           <Button
             size="sm"
             onClick={() => setInviteModalOpen(true)}
-            className="bg-blue-600 hover:bg-blue-700 text-white h-8 text-xs font-bold gap-1.5"
+            className="bg-blue-600 hover:bg-blue-700 text-white h-9 text-xs font-semibold rounded-xl shadow-2xs gap-1.5 px-4"
           >
             <UserPlus className="w-3.5 h-3.5" /> + Invite Staff
           </Button>
@@ -762,7 +772,7 @@ export function UserAccessTab() {
       {activeSubTab === "users" && (
         <div className="space-y-4">
           {/* Status Filter Pills (Requirement 4 & 5) */}
-          <div className="flex flex-wrap items-center gap-1.5 bg-white dark:bg-slate-900 p-2.5 rounded-xl border border-slate-200 dark:border-slate-800">
+          <div className="flex flex-wrap items-center gap-2 bg-white dark:bg-slate-900 p-3 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-2xs">
             {[
               {
                 id: "active",
@@ -800,17 +810,17 @@ export function UserAccessTab() {
                 <button
                   key={f.id}
                   onClick={() => setStatusFilter(f.id)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-2 ${
+                  className={`px-3.5 h-8.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-2 ${
                     isSelected
-                      ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-xs"
-                      : "bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400"
+                      ? "bg-blue-600 text-white shadow-2xs hover:bg-blue-700"
+                      : "bg-white dark:bg-slate-900 border border-slate-200 text-slate-600 dark:border-slate-800 dark:text-slate-400 hover:text-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800"
                   }`}
                 >
                   <span>{f.label}</span>
                   <span
-                    className={`text-[10px] px-1.5 py-0.2 rounded-full font-black ${
+                    className={`text-[10px] px-1.5 py-0.5 rounded-md font-black ${
                       isSelected
-                        ? "bg-white/20 text-white dark:bg-black/20 dark:text-black"
+                        ? "bg-white/20 text-white dark:bg-white/30 dark:text-white"
                         : f.color
                     }`}
                   >
@@ -823,7 +833,7 @@ export function UserAccessTab() {
 
           {/* Removed Users Historical Preservation Banner */}
           {statusFilter === "removed" && (
-            <div className="p-3.5 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/60 rounded-xl flex items-center justify-between text-xs text-amber-900 dark:text-amber-200">
+            <div className="p-4 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/60 rounded-2xl flex items-center justify-between text-xs text-amber-900 dark:text-amber-200 shadow-2xs">
               <div className="flex items-center gap-2.5">
                 <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
                 <span>
@@ -834,15 +844,15 @@ export function UserAccessTab() {
           )}
 
           {/* Search and Secondary Role Filter */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-200 dark:border-slate-800">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white dark:bg-slate-900 p-3.5 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-2xs">
             <div className="flex flex-1 items-center gap-2">
               <div className="relative flex-1 max-w-sm">
-                <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
+                <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                 <Input
                   placeholder="Search by name, email, role, phone..."
                   value={searchFilter}
                   onChange={(e) => setSearchFilter(e.target.value)}
-                  className="pl-8 h-8 text-xs"
+                  className="pl-8 h-10 text-xs rounded-xl border-slate-200"
                 />
               </div>
 
@@ -850,7 +860,7 @@ export function UserAccessTab() {
                 aria-label="Role Filter"
                 value={roleFilter}
                 onChange={(e) => setRoleFilter(e.target.value)}
-                className="h-8 text-xs px-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg"
+                className="h-10 text-xs px-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl font-medium"
               >
                 <option value="all">All Roles</option>
                 {USER_ROLES.map((r) => (
@@ -863,284 +873,268 @@ export function UserAccessTab() {
           </div>
 
           {/* User Table (Requirement 2) */}
-          <Card className="border border-slate-200/80 shadow-xs bg-white overflow-hidden rounded-xl">
-            <CardContent className="p-0">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs border-collapse">
-                  <thead className="bg-slate-50/80 border-b border-slate-200/80 text-slate-600 font-semibold text-[11px] uppercase tracking-wider sticky top-0 z-10">
-                    <tr className="h-10">
-                      <th className="w-[40px] pl-4 py-2">
-                        <Checkbox
-                          checked={
-                            selectableUsers.length > 0 && selectedStaffUserIds.length === selectableUsers.length
-                              ? true
-                              : selectedStaffUserIds.length > 0
-                              ? "indeterminate"
-                              : false
-                          }
-                          disabled={selectableUsers.length === 0}
-                          onCheckedChange={handleSelectAllStaff}
-                          aria-label="Select all visible staff"
-                        />
-                      </th>
-                      <th className="px-4 py-2 min-w-[200px]">Staff Identity</th>
-                      <th className="px-3 py-2">Role</th>
-                      <th className="px-3 py-2">Workspace</th>
-                      <th className="px-3 py-2">Status</th>
-                      <th className="px-3 py-2">Last Login</th>
-                      <th className="px-3 py-2">Access Expiry</th>
-                      <th className="px-4 py-2 text-right w-[150px] whitespace-nowrap">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {filteredUsers.map((u) => {
-                      const isPrimaryOwner = isUserPrimaryOwner(u);
-                      const currentStatus: UserStatus =
-                        u.status || (u.is_active ? "active" : "disabled");
-                      const hierarchy = getUserHierarchyLevel(u);
-                      const hConfig = HIERARCHY_BADGE_CONFIG[hierarchy];
+          <div className="border border-slate-200/90 dark:border-slate-800 shadow-2xs bg-white dark:bg-slate-900 overflow-hidden rounded-2xl">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs border-collapse">
+                <thead className="bg-slate-50/80 hover:bg-slate-50/80 border-b border-slate-200/80 text-slate-500 font-bold text-[11px] uppercase tracking-wider sticky top-0 z-10 h-11">
+                  <tr>
+                    <th className="w-[40px] pl-4 py-2">
+                      <Checkbox
+                        checked={
+                          selectableUsers.length > 0 && selectedStaffUserIds.length === selectableUsers.length
+                            ? true
+                            : selectedStaffUserIds.length > 0
+                            ? "indeterminate"
+                            : false
+                        }
+                        disabled={selectableUsers.length === 0}
+                        onCheckedChange={handleSelectAllStaff}
+                        aria-label="Select all visible staff"
+                      />
+                    </th>
+                    <th className="px-4 py-2 min-w-[200px] text-[11px] font-bold text-slate-500 uppercase tracking-wider">Staff Identity</th>
+                    <th className="px-3 py-2 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Role</th>
+                    <th className="px-3 py-2 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Workspace</th>
+                    <th className="px-3 py-2 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Status</th>
+                    <th className="px-3 py-2 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Last Login</th>
+                    <th className="px-3 py-2 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Access Expiry</th>
+                    <th className="px-4 py-2 text-right w-[150px] whitespace-nowrap text-[11px] font-bold text-slate-500 uppercase tracking-wider pr-4">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                  {filteredUsers.map((u) => {
+                    const isPrimaryOwner = isUserPrimaryOwner(u);
+                    const currentStatus: UserStatus =
+                      u.status || (u.is_active ? "active" : "disabled");
+                    const hierarchy = getUserHierarchyLevel(u);
+                    const hConfig = HIERARCHY_BADGE_CONFIG[hierarchy];
 
-                      return (
-                        <tr
-                          key={u.id}
-                          className={`hover:bg-slate-50/70 dark:hover:bg-slate-800/50 transition-colors ${
-                            selectedStaffUserIds.includes(u.id) ? "bg-blue-50/40 dark:bg-blue-950/20" : ""
-                          } ${
-                            currentStatus === "suspended"
-                              ? "bg-amber-50/20 dark:bg-amber-950/10"
-                              : currentStatus === "removed" || currentStatus === "deleted"
-                              ? "bg-rose-50/20 dark:bg-rose-950/10 opacity-80"
-                              : currentStatus === "expired"
-                              ? "bg-rose-50/20 dark:bg-rose-950/10"
-                              : ""
-                          }`}
-                        >
-                          {/* Checkbox */}
-                          <td className="pl-4 py-3">
-                            {isPrimaryOwner ? (
-                              <span title="Primary Owner account is protected and cannot be selected or deleted">
-                                <Checkbox checked={false} disabled aria-label="Primary Owner protected" />
-                              </span>
-                            ) : (
-                              <Checkbox
-                                checked={selectedStaffUserIds.includes(u.id)}
-                                onCheckedChange={() => handleToggleSelectStaff(u.id)}
-                                aria-label={`Select ${u.full_name}`}
-                              />
-                            )}
-                          </td>
-                          {/* User Identity */}
-                          <td className="px-4 py-3">
-                            <div className="flex items-center gap-2.5">
-                              <div
-                                className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs uppercase shrink-0 ${
-                                  isPrimaryOwner
-                                    ? "bg-blue-600 text-white"
-                                    : currentStatus === "removed"
-                                    ? "bg-rose-100 text-rose-700 dark:bg-rose-950/50"
-                                    : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
-                                }`}
-                              >
-                                {u.full_name.slice(0, 2)}
-                              </div>
-                              <div className="min-w-0">
-                                <div className="font-bold text-slate-900 dark:text-slate-100 truncate flex items-center gap-1.5">
-                                  <span>{u.full_name}</span>
-                                  {isPrimaryOwner && (
-                                    <Badge className="text-[9px] px-1 py-0 bg-blue-100 text-blue-800 border-blue-200">
-                                      Owner
-                                    </Badge>
-                                  )}
-                                </div>
-                                <div className="text-[11px] text-slate-500 dark:text-slate-400 truncate flex items-center gap-1">
-                                  <Mail className="w-3 h-3 shrink-0" />
-                                  {u.email}
-                                </div>
-                                {u.removed_at && (
-                                  <div className="text-[10px] text-rose-500 font-medium">
-                                    Removed: {new Date(u.removed_at).toLocaleDateString()}
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          </td>
-
-                          {/* Role */}
-                          <td className="px-3 py-3">
-                            <span
-                              className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider border ${hConfig.bg} ${hConfig.text} ${hConfig.border}`}
-                            >
-                              {hierarchy === "PRIMARY_OWNER" && (
-                                <Crown className="h-2.5 w-2.5 mr-1" />
-                              )}
-                              {u.role}
+                    return (
+                      <tr
+                        key={u.id}
+                        className={`h-12 hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition-colors border-b border-slate-100 dark:border-slate-800 ${
+                          selectedStaffUserIds.includes(u.id) ? "bg-blue-50/40 dark:bg-blue-950/20" : ""
+                        } ${
+                          currentStatus === "suspended"
+                            ? "bg-amber-50/20 dark:bg-amber-950/10"
+                            : currentStatus === "removed" || currentStatus === "deleted"
+                            ? "bg-rose-50/20 dark:bg-rose-950/10 opacity-80"
+                            : currentStatus === "expired"
+                            ? "bg-rose-50/20 dark:bg-rose-950/10"
+                            : ""
+                        }`}
+                      >
+                        <td className="pl-4 py-3">
+                          {isPrimaryOwner ? (
+                            <span title="Primary Owner account is protected and cannot be selected or deleted">
+                              <Checkbox checked={false} disabled aria-label="Primary Owner protected" />
                             </span>
-                          </td>
-
-                          {/* Workspace */}
-                          <td className="px-3 py-3 font-medium text-slate-700 dark:text-slate-300">
-                            {currentWorkspace?.name || "ATIQ JEHAN"}
-                          </td>
-
-                          {/* Status */}
-                          <td className="px-3 py-3">
-                            <Badge
-                              className={`text-[10px] uppercase font-bold ${
-                                currentStatus === "active"
-                                  ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-400 border-emerald-200"
-                                  : currentStatus === "invited"
-                                  ? "bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-400 border-blue-200"
-                                  : currentStatus === "suspended"
-                                  ? "bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-400 border-amber-200"
+                          ) : (
+                            <Checkbox
+                              checked={selectedStaffUserIds.includes(u.id)}
+                              onCheckedChange={() => handleToggleSelectStaff(u.id)}
+                              aria-label={`Select ${u.full_name}`}
+                            />
+                          )}
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-2.5">
+                            <div
+                              className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs uppercase shrink-0 ${
+                                isPrimaryOwner
+                                  ? "bg-blue-600 text-white shadow-2xs"
                                   : currentStatus === "removed"
-                                  ? "bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-400 border-rose-200"
-                                  : currentStatus === "deleted"
-                                  ? "bg-slate-200 text-slate-800 dark:bg-slate-800 dark:text-slate-300 border-slate-300"
-                                  : currentStatus === "expired"
-                                  ? "bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-400 border-rose-200"
-                                  : "bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-300"
+                                  ? "bg-rose-100 text-rose-700 dark:bg-rose-950/50"
+                                  : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
                               }`}
                             >
-                              {currentStatus}
-                            </Badge>
-                          </td>
-
-                          {/* Last Login */}
-                          <td className="px-3 py-3 text-slate-600 dark:text-slate-400 text-[11px]">
-                            {u.last_login_at ? (
-                              <span className="font-medium text-slate-700 dark:text-slate-300">
-                                {new Date(u.last_login_at).toLocaleDateString()}
-                              </span>
-                            ) : (
-                              <span className="text-slate-400">Never</span>
-                            )}
-                          </td>
-
-                          {/* Expiry */}
-                          <td className="px-3 py-3 text-slate-600 dark:text-slate-400 text-[11px]">
-                            {u.access_expiry_date ? (
-                              <span className="font-medium text-amber-600 dark:text-amber-400">
-                                {new Date(u.access_expiry_date).toLocaleDateString()}
-                              </span>
-                            ) : (
-                              <span className="text-slate-400">No Expiry</span>
-                            )}
-                          </td>
-
-                          {/* Actions (Requirement 2 & 6) */}
-                          <td className="px-4 py-3 text-right">
-                            <div className="flex items-center justify-end gap-1.5">
-                              {currentStatus === "removed" ? (
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => handleRestoreAccess(u)}
-                                  disabled={actionProcessing}
-                                  className="h-7 text-xs px-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border-emerald-300 font-bold gap-1"
-                                >
-                                  <RotateCcw className="w-3 h-3" /> Restore Access
-                                </Button>
-                              ) : (
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => setManageAccessUser(u)}
-                                  className="h-7 text-xs px-2.5 bg-blue-50/50 hover:bg-blue-100 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800 font-semibold"
-                                >
-                                  Manage Access
-                                </Button>
-                              )}
-
-                              {!isPrimaryOwner && (
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  onClick={() => handleOpenDeleteUser(u)}
-                                  title="Delete User Account"
-                                  className="h-7 w-7 p-0 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40"
-                                >
-                                  <Trash2 className="w-3.5 h-3.5" />
-                                </Button>
-                              )}
-
-                              <DropdownMenu>
-                                <DropdownMenuTrigger className="h-7 w-7 inline-flex items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800">
-                                  <MoreVertical className="w-3.5 h-3.5" />
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end" className="text-xs">
-                                  <DropdownMenuLabel>Staff Actions</DropdownMenuLabel>
-                                  <DropdownMenuItem onClick={() => setManageAccessUser(u)}>
-                                    <Sliders className="w-3.5 h-3.5 mr-2" /> Edit Permissions
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem onClick={() => setActivityModalUser(u)}>
-                                    <History className="w-3.5 h-3.5 mr-2" /> View Activity
-                                  </DropdownMenuItem>
-                                  {currentStatus === "invited" && (
-                                    <DropdownMenuItem onClick={() => handleResendInvite(u)}>
-                                      <Send className="w-3.5 h-3.5 mr-2" /> Resend Invitation
-                                    </DropdownMenuItem>
-                                  )}
-                                  <DropdownMenuItem onClick={() => handleTerminateSessions(u)}>
-                                    <KeyRound className="w-3.5 h-3.5 mr-2" /> Terminate Active Sessions
-                                  </DropdownMenuItem>
-                                  {!isPrimaryOwner && (
-                                    <>
-                                      <DropdownMenuSeparator />
-                                      <DropdownMenuItem
-                                        onClick={() => handleToggleSuspend(u)}
-                                        className={
-                                          currentStatus === "suspended"
-                                            ? "text-emerald-600 font-semibold"
-                                            : "text-amber-600 font-semibold"
-                                        }
-                                      >
-                                        <Power className="w-3.5 h-3.5 mr-2" />
-                                        {currentStatus === "suspended" ? "Reactivate Staff" : "Suspend Access"}
-                                      </DropdownMenuItem>
-                                      {currentStatus === "removed" ? (
-                                        <DropdownMenuItem
-                                          onClick={() => handleRestoreAccess(u)}
-                                          className="text-emerald-600 font-semibold"
-                                        >
-                                          <RotateCcw className="w-3.5 h-3.5 mr-2" /> Restore Access
-                                        </DropdownMenuItem>
-                                      ) : (
-                                        <DropdownMenuItem
-                                          onClick={() => handleOpenRemoveAccess(u)}
-                                          className="text-orange-600 font-semibold"
-                                        >
-                                          <UserMinus className="w-3.5 h-3.5 mr-2" /> Remove Access
-                                        </DropdownMenuItem>
-                                      )}
-                                      <DropdownMenuSeparator />
-                                      <DropdownMenuItem
-                                        onClick={() => handleOpenDeleteUser(u)}
-                                        className="text-rose-600 font-semibold"
-                                      >
-                                        <Trash2 className="w-3.5 h-3.5 mr-2 text-rose-600" /> Delete Login Account
-                                      </DropdownMenuItem>
-                                    </>
-                                  )}
-                                </DropdownMenuContent>
-                              </DropdownMenu>
+                              {u.full_name.slice(0, 2)}
                             </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
+                            <div className="min-w-0">
+                              <div className="font-bold text-slate-900 dark:text-slate-100 truncate flex items-center gap-1.5">
+                                <span>{u.full_name}</span>
+                                {isPrimaryOwner && (
+                                  <Badge className="text-[9px] px-1.5 py-0.5 bg-blue-100 text-blue-800 border-blue-200 rounded-md">
+                                    Owner
+                                  </Badge>
+                                )}
+                              </div>
+                              <div className="text-[11px] text-slate-500 dark:text-slate-400 truncate flex items-center gap-1">
+                                <Mail className="w-3 h-3 shrink-0" />
+                                {u.email}
+                              </div>
+                              {u.removed_at && (
+                                <div className="text-[10px] text-rose-500 font-medium">
+                                  Removed: {new Date(u.removed_at).toLocaleDateString()}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-3 py-3">
+                          <span
+                            className={`inline-flex items-center px-2 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-wider border ${hConfig.bg} ${hConfig.text} ${hConfig.border}`}
+                          >
+                            {hierarchy === "PRIMARY_OWNER" && (
+                              <Crown className="h-2.5 w-2.5 mr-1" />
+                            )}
+                            {u.role}
+                          </span>
+                        </td>
+                        <td className="px-3 py-3 font-medium text-slate-700 dark:text-slate-300">
+                          {currentWorkspace?.name || "ATIQ JEHAN"}
+                        </td>
+                        <td className="px-3 py-3">
+                          <Badge
+                            className={`text-[10px] uppercase font-bold rounded-lg ${
+                              currentStatus === "active"
+                                ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-400 border-emerald-200"
+                                : currentStatus === "invited"
+                                ? "bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-400 border-blue-200"
+                                : currentStatus === "suspended"
+                                ? "bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-400 border-amber-200"
+                                : currentStatus === "removed"
+                                ? "bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-400 border-rose-200"
+                                : currentStatus === "deleted"
+                                ? "bg-slate-200 text-slate-800 dark:bg-slate-800 dark:text-slate-300 border-slate-300"
+                                : currentStatus === "expired"
+                                ? "bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-400 border-rose-200"
+                                : "bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-300"
+                            }`}
+                          >
+                            {currentStatus}
+                          </Badge>
+                        </td>
+                        <td className="px-3 py-3 text-slate-600 dark:text-slate-400 text-[11px] font-mono tabular-nums">
+                          {u.last_login_at ? (
+                            <span className="font-medium text-slate-700 dark:text-slate-300">
+                              {new Date(u.last_login_at).toLocaleDateString()}
+                            </span>
+                          ) : (
+                            <span className="text-slate-400">Never</span>
+                          )}
+                        </td>
+                        <td className="px-3 py-3 text-slate-600 dark:text-slate-400 text-[11px] font-mono tabular-nums">
+                          {u.access_expiry_date ? (
+                            <span className="font-medium text-amber-600 dark:text-amber-400">
+                              {new Date(u.access_expiry_date).toLocaleDateString()}
+                            </span>
+                          ) : (
+                            <span className="text-slate-400">No Expiry</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-right pr-4">
+                          <div className="flex items-center justify-end gap-1.5">
+                            {currentStatus === "removed" ? (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleRestoreAccess(u)}
+                                disabled={actionProcessing}
+                                className="h-8 text-xs px-3 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border-emerald-300 font-semibold gap-1.5"
+                              >
+                                <RotateCcw className="w-3.5 h-3.5" /> Restore Access
+                              </Button>
+                            ) : (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => setManageAccessUser(u)}
+                                className="h-8 text-xs px-3 rounded-xl bg-blue-50/50 hover:bg-blue-100 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800 font-semibold"
+                              >
+                                Manage Access
+                              </Button>
+                            )}
 
-                    {filteredUsers.length === 0 && (
-                      <tr>
-                        <td colSpan={8} className="py-8 text-center text-slate-400">
-                          No {statusFilter === "all" ? "" : statusFilter} users found matching your filters.
+                            {!isPrimaryOwner && (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => handleOpenDeleteUser(u)}
+                                title="Delete User Account"
+                                className="h-8 w-8 p-0 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            )}
+
+                            <DropdownMenu>
+                              <DropdownMenuTrigger className="h-8 w-8 inline-flex items-center justify-center rounded-xl border border-slate-200 dark:border-slate-700 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+                                <MoreVertical className="w-4 h-4" />
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="text-xs rounded-xl shadow-lg border-slate-200">
+                                <DropdownMenuLabel>Staff Actions</DropdownMenuLabel>
+                                <DropdownMenuItem onClick={() => setManageAccessUser(u)}>
+                                  <Sliders className="w-3.5 h-3.5 mr-2" /> Edit Permissions
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => setActivityModalUser(u)}>
+                                  <History className="w-3.5 h-3.5 mr-2" /> View Activity
+                                </DropdownMenuItem>
+                                {currentStatus === "invited" && (
+                                  <DropdownMenuItem onClick={() => handleResendInvite(u)}>
+                                    <Send className="w-3.5 h-3.5 mr-2" /> Resend Invitation
+                                  </DropdownMenuItem>
+                                )}
+                                <DropdownMenuItem onClick={() => handleTerminateSessions(u)}>
+                                  <KeyRound className="w-3.5 h-3.5 mr-2" /> Terminate Active Sessions
+                                </DropdownMenuItem>
+                                {!isPrimaryOwner && (
+                                  <>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem
+                                      onClick={() => handleToggleSuspend(u)}
+                                      className={
+                                        currentStatus === "suspended"
+                                          ? "text-emerald-600 font-semibold"
+                                          : "text-amber-600 font-semibold"
+                                      }
+                                    >
+                                      <Power className="w-3.5 h-3.5 mr-2" />
+                                      {currentStatus === "suspended" ? "Reactivate Staff" : "Suspend Access"}
+                                    </DropdownMenuItem>
+                                    {currentStatus === "removed" ? (
+                                      <DropdownMenuItem
+                                        onClick={() => handleRestoreAccess(u)}
+                                        className="text-emerald-600 font-semibold"
+                                      >
+                                        <RotateCcw className="w-3.5 h-3.5 mr-2" /> Restore Access
+                                      </DropdownMenuItem>
+                                    ) : (
+                                      <DropdownMenuItem
+                                        onClick={() => handleOpenRemoveAccess(u)}
+                                        className="text-orange-600 font-semibold"
+                                      >
+                                        <UserMinus className="w-3.5 h-3.5 mr-2" /> Remove Access
+                                      </DropdownMenuItem>
+                                    )}
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem
+                                      onClick={() => handleOpenDeleteUser(u)}
+                                      className="text-rose-600 font-semibold"
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5 mr-2 text-rose-600" /> Delete Login Account
+                                    </DropdownMenuItem>
+                                  </>
+                                )}
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
                         </td>
                       </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </CardContent>
-          </Card>
+                    );
+                  })}
+
+                  {filteredUsers.length === 0 && (
+                    <tr>
+                      <td colSpan={8} className="py-12 text-center text-slate-400">
+                        No {statusFilter === "all" ? "" : statusFilter} users found matching your filters.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       )}
 
@@ -1148,21 +1142,23 @@ export function UserAccessTab() {
       {activeSubTab === "roles" && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {STAFF_USER_ROLES.map((r) => (
-            <Card key={r.value} className="border border-slate-200 dark:border-slate-800 shadow-xs bg-white dark:bg-slate-900">
-              <CardHeader className="pb-2">
+            <Card key={r.value} className="rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-2xs bg-white dark:bg-slate-900">
+              <CardHeader className="p-5 pb-3">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-sm font-bold flex items-center gap-2">
-                    <Shield className="w-4 h-4 text-blue-600" />
+                    <div className="h-8 w-8 rounded-xl bg-blue-50 dark:bg-blue-950/50 flex items-center justify-center text-blue-600">
+                      <Shield className="w-4 h-4" />
+                    </div>
                     {r.label}
                   </CardTitle>
-                  <Badge variant="outline" className="text-[10px] uppercase">
+                  <Badge variant="outline" className="text-[10px] uppercase font-bold rounded-lg">
                     Role Template
                   </Badge>
                 </div>
-                <CardDescription className="text-xs">{r.description}</CardDescription>
+                <CardDescription className="text-xs mt-1">{r.description}</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-2 text-xs text-slate-600 dark:text-slate-400">
-                <div className="p-2.5 bg-slate-50 dark:bg-slate-800/60 rounded-lg">
+              <CardContent className="p-5 pt-0 space-y-2 text-xs text-slate-600 dark:text-slate-400">
+                <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-100 dark:border-slate-800">
                   <span className="font-semibold text-slate-800 dark:text-slate-200">
                     Governance Scope:{" "}
                   </span>
@@ -1224,23 +1220,23 @@ export function UserAccessTab() {
               color: "text-slate-600",
             },
           ].map((profile, i) => (
-            <Card key={i} className="border border-slate-200 dark:border-slate-800 shadow-xs bg-white dark:bg-slate-900">
-              <CardHeader className="pb-2">
+            <Card key={i} className="rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-2xs bg-white dark:bg-slate-900">
+              <CardHeader className="p-5 pb-3">
                 <CardTitle className={`text-sm font-bold ${profile.color}`}>
                   {profile.title}
                 </CardTitle>
-                <CardDescription className="text-xs">{profile.desc}</CardDescription>
+                <CardDescription className="text-xs mt-1">{profile.desc}</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-2 text-xs">
+              <CardContent className="p-5 pt-0 space-y-2 text-xs">
                 <div className="flex justify-between items-center text-slate-500">
                   <span>Modules Included:</span>
-                  <span className="font-bold text-slate-800 dark:text-slate-200">
+                  <span className="font-bold text-slate-800 dark:text-slate-200 font-mono">
                     {profile.modules} Modules
                   </span>
                 </div>
                 <div className="flex justify-between items-center text-slate-500">
                   <span>Security Tier:</span>
-                  <Badge variant="outline" className="text-[10px]">
+                  <Badge variant="outline" className="text-[10px] font-bold rounded-lg">
                     {profile.risk}
                   </Badge>
                 </div>
@@ -1252,17 +1248,19 @@ export function UserAccessTab() {
 
       {/* SUBTAB 4: INVITATIONS (REQUIREMENT 13) */}
       {activeSubTab === "invitations" && (
-        <Card className="border border-slate-200 dark:border-slate-800 shadow-xs bg-white dark:bg-slate-900 overflow-hidden">
+        <Card className="rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-2xs bg-white dark:bg-slate-900 overflow-hidden">
           <CardContent className="p-0">
             {workspaceInvitations.length === 0 && users.filter((u) => u.status === "invited").length === 0 ? (
-              <div className="py-16 text-center text-slate-500">
-                <Mail className="h-8 w-8 mx-auto text-slate-300 mb-2" />
-                <p className="text-xs font-semibold">No pending staff or workspace invitations.</p>
+              <div className="min-h-[220px] max-h-[280px] flex flex-col items-center justify-center p-6 text-center text-slate-500">
+                <div className="h-12 w-12 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-3">
+                  <Mail className="h-6 w-6 text-slate-400" />
+                </div>
+                <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">No pending staff or workspace invitations.</p>
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs border-collapse">
-                  <thead className="bg-slate-50 dark:bg-slate-800 border-b text-slate-600 dark:text-slate-300 font-bold uppercase text-[10px] tracking-wider">
+                  <thead className="bg-slate-50/80 dark:bg-slate-800/80 border-b border-slate-200/80 text-slate-500 font-bold uppercase text-[11px] tracking-wider h-11">
                     <tr>
                       <th className="px-4 py-3">Invited User</th>
                       <th className="px-3 py-3">Email</th>
@@ -1278,7 +1276,7 @@ export function UserAccessTab() {
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                     {/* Workspace Invitations */}
                     {workspaceInvitations.map((inv) => (
-                      <tr key={inv.id} className="hover:bg-slate-50/50">
+                      <tr key={inv.id} className="h-12 hover:bg-slate-50/60 transition-colors">
                         <td className="px-4 py-3 font-bold text-slate-900 dark:text-slate-100">
                           {inv.invited_user_name}
                         </td>
@@ -1291,21 +1289,21 @@ export function UserAccessTab() {
                           </span>
                         </td>
                         <td className="px-3 py-3">
-                          <Badge variant="outline" className="text-[10px] uppercase font-bold">
+                          <Badge variant="outline" className="text-[10px] uppercase font-bold rounded-md">
                             {inv.role}
                           </Badge>
                         </td>
                         <td className="px-3 py-3 text-slate-500">{inv.invited_by}</td>
-                        <td className="px-3 py-3 text-slate-500">
+                        <td className="px-3 py-3 text-slate-500 font-mono">
                           {new Date(inv.created_at).toLocaleDateString()}
                         </td>
-                        <td className="px-3 py-3 text-slate-500">
+                        <td className="px-3 py-3 text-slate-500 font-mono">
                           {new Date(inv.expires_at).toLocaleDateString()}
                         </td>
                         <td className="px-3 py-3">
                           <Badge
                             title={inv.error_message || undefined}
-                            className={`text-[10px] uppercase font-bold ${
+                            className={`text-[10px] uppercase font-bold rounded-md ${
                               inv.status === "accepted"
                                 ? "bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300"
                                 : inv.status === "sent"
@@ -1334,10 +1332,10 @@ export function UserAccessTab() {
                                 size="sm"
                                 variant="outline"
                                 onClick={() => handleResendWsInvite(inv)}
-                                className="h-7 text-[11px] px-2 text-red-700 border-red-200 hover:bg-red-50 font-bold"
+                                className="h-8 text-xs px-2.5 rounded-xl text-red-700 border-red-200 hover:bg-red-50 font-semibold"
                                 title="Retry sending invitation email via Supabase Auth"
                               >
-                                Retry Invitation
+                                Retry
                               </Button>
                             )}
 
@@ -1346,7 +1344,7 @@ export function UserAccessTab() {
                                 size="sm"
                                 variant="outline"
                                 onClick={() => handleResendWsInvite(inv)}
-                                className="h-7 text-[11px] px-2 font-semibold"
+                                className="h-8 text-xs px-2.5 rounded-xl font-semibold border-slate-200 bg-white hover:bg-slate-50 text-slate-700"
                                 title="Resend invitation email via Supabase Auth"
                               >
                                 Resend
@@ -1359,7 +1357,7 @@ export function UserAccessTab() {
                                   size="sm"
                                   variant="outline"
                                   onClick={() => handleRegenerateWsCode(inv)}
-                                  className="h-7 text-[11px] px-2 text-blue-600 border-blue-200 hover:bg-blue-50"
+                                  className="h-8 text-xs px-2.5 rounded-xl text-blue-600 border-blue-200 hover:bg-blue-50 font-semibold"
                                   title="Generate new One-Time Activation Code"
                                 >
                                   <KeyRound className="w-3 h-3 mr-1" /> Code
@@ -1368,7 +1366,7 @@ export function UserAccessTab() {
                                   size="sm"
                                   variant="ghost"
                                   onClick={() => handleRevokeWsInvite(inv)}
-                                  className="h-7 text-[11px] px-2 text-red-600 hover:bg-red-50"
+                                  className="h-8 text-xs px-2.5 rounded-xl text-red-600 hover:bg-red-50 font-semibold"
                                   title="Revoke Invitation"
                                 >
                                   Revoke
@@ -1384,23 +1382,23 @@ export function UserAccessTab() {
                     {users
                       .filter((u) => u.status === "invited" && !workspaceInvitations.some((i) => i.email.toLowerCase() === u.email.toLowerCase()))
                       .map((u) => (
-                        <tr key={u.id} className="hover:bg-slate-50/50">
+                        <tr key={u.id} className="h-12 hover:bg-slate-50/60 transition-colors">
                           <td className="px-4 py-3 font-bold text-slate-900 dark:text-slate-100">{u.full_name}</td>
                           <td className="px-3 py-3 text-slate-600">{u.email}</td>
                           <td className="px-3 py-3 text-slate-500">HQ Primary</td>
                           <td className="px-3 py-3 uppercase text-xs font-semibold">{u.role}</td>
                           <td className="px-3 py-3 text-slate-500">Primary Owner</td>
-                          <td className="px-3 py-3 text-slate-500">{new Date(u.created_at).toLocaleDateString()}</td>
+                          <td className="px-3 py-3 text-slate-500 font-mono">{new Date(u.created_at).toLocaleDateString()}</td>
                           <td className="px-3 py-3 text-slate-500">72 Hours</td>
                           <td className="px-3 py-3">
-                            <Badge className="bg-blue-100 text-blue-800 text-[10px]">Pending</Badge>
+                            <Badge className="bg-blue-100 text-blue-800 text-[10px] font-bold rounded-md">Pending</Badge>
                           </td>
                           <td className="px-4 py-3 text-right">
                             <Button
                               size="sm"
                               variant="outline"
                               onClick={() => handleResendInvite(u)}
-                              className="h-7 text-xs px-2"
+                              className="h-8 text-xs px-2.5 rounded-xl font-semibold border-slate-200 bg-white hover:bg-slate-50 text-slate-700"
                             >
                               Resend
                             </Button>
@@ -1417,17 +1415,19 @@ export function UserAccessTab() {
 
       {/* SUBTAB 5: ACCESS REQUESTS QUEUE */}
       {activeSubTab === "access_requests" && (
-        <Card className="border border-slate-200 dark:border-slate-800 shadow-xs bg-white dark:bg-slate-900 overflow-hidden">
+        <Card className="rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-2xs bg-white dark:bg-slate-900 overflow-hidden">
           <CardContent className="p-0">
             {accessRequests.length === 0 ? (
-              <div className="py-16 text-center text-slate-500">
-                <CheckCircle2 className="h-8 w-8 mx-auto text-emerald-500 mb-2" />
-                <p className="text-xs font-semibold">No pending access requests.</p>
+              <div className="min-h-[220px] max-h-[280px] flex flex-col items-center justify-center p-6 text-center text-slate-500">
+                <div className="h-12 w-12 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-3">
+                  <CheckCircle2 className="h-6 w-6 text-emerald-500" />
+                </div>
+                <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">No pending access requests.</p>
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs border-collapse">
-                  <thead className="bg-slate-50 dark:bg-slate-800 border-b text-slate-600 dark:text-slate-300 font-bold uppercase">
+                  <thead className="bg-slate-50/80 dark:bg-slate-800/80 border-b border-slate-200/80 text-slate-500 font-bold uppercase text-[11px] tracking-wider h-11">
                     <tr>
                       <th className="px-4 py-3">Staff Member</th>
                       <th className="px-3 py-3">Requested Module</th>
@@ -1437,23 +1437,23 @@ export function UserAccessTab() {
                       <th className="px-4 py-3 text-right">Review</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y">
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                     {accessRequests.map((req) => (
-                      <tr key={req.id} className="hover:bg-slate-50/50">
+                      <tr key={req.id} className="h-12 hover:bg-slate-50/60 transition-colors">
                         <td className="px-4 py-3">
-                          <div className="font-bold">{req.user_name}</div>
+                          <div className="font-bold text-slate-900 dark:text-slate-100">{req.user_name}</div>
                           <div className="text-[11px] text-slate-500">{req.user_email}</div>
                         </td>
                         <td className="px-3 py-3 font-semibold uppercase text-blue-600">
                           {req.requested_module}
                         </td>
                         <td className="px-3 py-3 uppercase">{req.requested_action}</td>
-                        <td className="px-4 py-3 text-slate-600 max-w-xs truncate">
+                        <td className="px-4 py-3 text-slate-600 dark:text-slate-400 max-w-xs truncate">
                           {req.reason || "Operational need"}
                         </td>
                         <td className="px-3 py-3">
                           <Badge
-                            className={`text-[10px] uppercase font-bold ${
+                            className={`text-[10px] uppercase font-bold rounded-md ${
                               req.status === "approved"
                                 ? "bg-emerald-100 text-emerald-800"
                                 : req.status === "rejected"
@@ -1470,7 +1470,7 @@ export function UserAccessTab() {
                               <Button
                                 size="sm"
                                 onClick={() => handleApproveAccessRequest(req)}
-                                className="h-7 text-xs bg-emerald-600 hover:bg-emerald-700 text-white px-2.5"
+                                className="h-8 text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-3 rounded-xl shadow-2xs"
                               >
                                 Approve
                               </Button>
@@ -1486,7 +1486,7 @@ export function UserAccessTab() {
                                     reason: "",
                                   })
                                 }
-                                className="h-7 text-xs text-rose-600 hover:bg-rose-50 px-2.5"
+                                className="h-8 text-xs text-rose-600 hover:bg-rose-50 border-rose-200 px-3 rounded-xl font-semibold"
                               >
                                 Reject
                               </Button>
@@ -1509,38 +1509,40 @@ export function UserAccessTab() {
 
       {/* SUBTAB 6: PENDING APPROVALS QUEUE */}
       {activeSubTab === "approvals" && (
-        <Card className="border border-slate-200 dark:border-slate-800 shadow-xs bg-white dark:bg-slate-900 overflow-hidden">
+        <Card className="rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-2xs bg-white dark:bg-slate-900 overflow-hidden">
           <CardContent className="p-0">
             {approvalRequests.length === 0 ? (
-              <div className="py-16 text-center text-slate-500">
-                <CheckCircle2 className="h-8 w-8 mx-auto text-emerald-500 mb-2" />
-                <p className="text-xs font-semibold">No pending transactions requiring owner signoff.</p>
+              <div className="min-h-[220px] max-h-[280px] flex flex-col items-center justify-center p-6 text-center text-slate-500">
+                <div className="h-12 w-12 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-3">
+                  <CheckCircle2 className="h-6 w-6 text-emerald-500" />
+                </div>
+                <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">No pending transactions requiring owner signoff.</p>
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs border-collapse">
-                  <thead className="bg-slate-50 dark:bg-slate-800 border-b text-slate-600 dark:text-slate-300 font-bold uppercase">
+                  <thead className="bg-slate-50/80 dark:bg-slate-800/80 border-b border-slate-200/80 text-slate-500 font-bold uppercase text-[11px] tracking-wider h-11">
                     <tr>
                       <th className="px-4 py-3">Initiated By</th>
                       <th className="px-3 py-3">Transaction Type</th>
-                      <th className="px-3 py-3">Amount</th>
+                      <th className="px-3 py-3 text-right">Amount</th>
                       <th className="px-3 py-3">Status</th>
                       <th className="px-4 py-3 text-right">Signoff</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y">
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                     {approvalRequests.map((req) => (
-                      <tr key={req.id} className="hover:bg-slate-50/50">
-                        <td className="px-4 py-3 font-semibold">{req.user_name}</td>
+                      <tr key={req.id} className="h-12 hover:bg-slate-50/60 transition-colors">
+                        <td className="px-4 py-3 font-semibold text-slate-900 dark:text-slate-100">{req.user_name}</td>
                         <td className="px-3 py-3 font-bold uppercase text-slate-800 dark:text-slate-200">
                           {req.request_type.replace("_", " ")}
                         </td>
-                        <td className="px-3 py-3 font-bold text-slate-900 dark:text-slate-100">
+                        <td className="px-3 py-3 text-right font-bold font-mono tabular-nums text-slate-900 dark:text-slate-100">
                           {req.amount !== null && req.amount !== undefined ? `${req.currency || "AED"} ${req.amount.toLocaleString()}` : "N/A"}
                         </td>
                         <td className="px-3 py-3">
                           <Badge
-                            className={`text-[10px] uppercase font-bold ${
+                            className={`text-[10px] uppercase font-bold rounded-md ${
                               req.status === "approved"
                                 ? "bg-emerald-100 text-emerald-800"
                                 : req.status === "rejected"
@@ -1557,7 +1559,7 @@ export function UserAccessTab() {
                               <Button
                                 size="sm"
                                 onClick={() => handleApproveTransaction(req)}
-                                className="h-7 text-xs bg-emerald-600 hover:bg-emerald-700 text-white px-2.5"
+                                className="h-8 text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-3 rounded-xl shadow-2xs"
                               >
                                 Approve
                               </Button>
@@ -1573,7 +1575,7 @@ export function UserAccessTab() {
                                     reason: "",
                                   })
                                 }
-                                className="h-7 text-xs text-rose-600 hover:bg-rose-50 px-2.5"
+                                className="h-8 text-xs text-rose-600 hover:bg-rose-50 border-rose-200 px-3 rounded-xl font-semibold"
                               >
                                 Reject
                               </Button>
@@ -1596,11 +1598,11 @@ export function UserAccessTab() {
 
       {/* SUBTAB 7: ACTIVITY LOG */}
       {activeSubTab === "activity" && (
-        <Card className="border border-slate-200 dark:border-slate-800 shadow-xs bg-white dark:bg-slate-900 overflow-hidden">
+        <Card className="rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-2xs bg-white dark:bg-slate-900 overflow-hidden">
           <CardContent className="p-0">
             <div className="overflow-x-auto max-h-[60vh]">
               <table className="w-full text-left text-xs border-collapse">
-                <thead className="bg-slate-50 dark:bg-slate-800 border-b text-slate-600 dark:text-slate-300 font-bold uppercase sticky top-0">
+                <thead className="bg-slate-50/80 dark:bg-slate-800/80 border-b border-slate-200/80 text-slate-500 font-bold uppercase text-[11px] tracking-wider sticky top-0 h-11">
                   <tr>
                     <th className="px-4 py-3">Timestamp</th>
                     <th className="px-3 py-3">User</th>
@@ -1609,18 +1611,18 @@ export function UserAccessTab() {
                     <th className="px-4 py-3">Description</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y">
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                   {activityLogs.map((log) => (
-                    <tr key={log.id} className="hover:bg-slate-50/50">
-                      <td className="px-4 py-2.5 text-slate-400 text-[11px] whitespace-nowrap">
+                    <tr key={log.id} className="h-12 hover:bg-slate-50/60 transition-colors">
+                      <td className="px-4 py-2.5 text-slate-400 text-[11px] whitespace-nowrap font-mono">
                         {new Date(log.timestamp).toLocaleString()}
                       </td>
-                      <td className="px-3 py-2.5 font-bold">{log.user_name}</td>
-                      <td className="px-3 py-2.5 uppercase font-medium text-slate-600">
+                      <td className="px-3 py-2.5 font-bold text-slate-900 dark:text-slate-100">{log.user_name}</td>
+                      <td className="px-3 py-2.5 uppercase font-medium text-slate-600 dark:text-slate-400">
                         {log.module}
                       </td>
                       <td className="px-3 py-2.5">
-                        <Badge variant="outline" className="text-[10px] uppercase">
+                        <Badge variant="outline" className="text-[10px] uppercase font-bold rounded-md">
                           {log.action}
                         </Badge>
                       </td>
@@ -1639,17 +1641,19 @@ export function UserAccessTab() {
       {/* SUBTAB 8: SECURITY & LOCKOUT */}
       {activeSubTab === "security" && (
         <div className="space-y-4 max-w-3xl">
-          <Card className="border border-blue-200 dark:border-blue-900 bg-blue-50/20 dark:bg-blue-950/20">
-            <CardHeader className="pb-2">
+          <Card className="rounded-2xl border border-blue-200 dark:border-blue-900 bg-blue-50/20 dark:bg-blue-950/20 shadow-2xs">
+            <CardHeader className="p-5 pb-3">
               <CardTitle className="text-sm font-bold flex items-center gap-2 text-blue-900 dark:text-blue-200">
-                <Crown className="w-4 h-4 text-blue-600" />
+                <div className="h-8 w-8 rounded-xl bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center text-blue-600">
+                  <Crown className="w-4 h-4" />
+                </div>
                 Primary Owner Lockout Protection Active
               </CardTitle>
-              <CardDescription className="text-xs">
+              <CardDescription className="text-xs mt-1">
                 Guaranteed permanent administrative authority for {PRIMARY_OWNER_EMAIL}.
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-2 text-xs text-slate-700 dark:text-slate-300">
+            <CardContent className="p-5 pt-0 space-y-2 text-xs text-slate-700 dark:text-slate-300">
               <p>
                 The Primary Owner account has permanent, hard-coded safety protections ensuring that:
               </p>
@@ -1661,14 +1665,16 @@ export function UserAccessTab() {
             </CardContent>
           </Card>
 
-          <Card className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
-            <CardHeader className="pb-2">
+          <Card className="rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xs">
+            <CardHeader className="p-5 pb-3">
               <CardTitle className="text-sm font-bold flex items-center gap-2">
-                <Lock className="w-4 h-4 text-slate-600" />
+                <div className="h-8 w-8 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600">
+                  <Lock className="w-4 h-4" />
+                </div>
                 Session &amp; 2FA Governance
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3 text-xs text-slate-600 dark:text-slate-400">
+            <CardContent className="p-5 pt-0 space-y-3 text-xs text-slate-600 dark:text-slate-400">
               <p>
                 Staff sessions can be remotely invalidated at any time via the User Actions menu.
                 Temporary access automatically revokes operational access at 23:59 on the designated expiry date.
@@ -1720,23 +1726,23 @@ export function UserAccessTab() {
       {/* Rejection Reason Modal */}
       {rejectDialog.open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <Card className="max-w-md w-full bg-white dark:bg-slate-900 shadow-2xl">
-            <CardHeader className="pb-2">
+          <Card className="max-w-md w-full bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-xl overflow-hidden">
+            <CardHeader className="p-5 pb-3">
               <CardTitle className="text-sm font-bold text-slate-900 dark:text-slate-100">
                 {rejectDialog.title}
               </CardTitle>
-              <CardDescription className="text-xs">
+              <CardDescription className="text-xs mt-1">
                 Provide an audit explanation for declining this request.
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-3 pt-2">
+            <CardContent className="p-5 pt-2 space-y-3">
               <Input
                 placeholder="e.g. Transaction exceeds authorized monthly budget allocation..."
                 value={rejectDialog.reason}
                 onChange={(e) =>
                   setRejectDialog((prev) => ({ ...prev, reason: e.target.value }))
                 }
-                className="text-xs"
+                className="h-10 text-xs rounded-xl border-slate-200"
               />
               <div className="flex items-center justify-end gap-2 pt-2">
                 <Button
@@ -1745,14 +1751,14 @@ export function UserAccessTab() {
                   onClick={() =>
                     setRejectDialog({ open: false, type: "access", id: "", title: "", reason: "" })
                   }
-                  className="text-xs"
+                  className="rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-semibold h-10 px-4 shadow-2xs transition-colors text-xs"
                 >
                   Cancel
                 </Button>
                 <Button
                   size="sm"
                   onClick={handleConfirmReject}
-                  className="bg-rose-600 hover:bg-rose-700 text-white text-xs"
+                  className="bg-rose-600 hover:bg-rose-700 text-white font-semibold text-xs h-10 px-4 rounded-xl shadow-2xs transition-colors"
                 >
                   Confirm Rejection
                 </Button>
@@ -1768,22 +1774,22 @@ export function UserAccessTab() {
           open={regeneratedCodeModal.open}
           onOpenChange={(open) => !open && setRegeneratedCodeModal(null)}
         >
-          <DialogContent className="max-w-md bg-card border border-border shadow-md rounded-[10px] p-6">
+          <DialogContent className="max-w-md bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-xl rounded-2xl p-6">
             <DialogHeader className="pb-2">
-              <DialogTitle className="text-section font-semibold flex items-center gap-2 text-foreground">
-                <KeyRound className="w-5 h-5 text-primary" />
+              <DialogTitle className="text-base font-bold flex items-center gap-2 text-slate-900 dark:text-slate-100">
+                <KeyRound className="w-5 h-5 text-blue-600" />
                 New One-Time Activation Code
               </DialogTitle>
-              <DialogDescription className="text-caption text-muted-foreground">
+              <DialogDescription className="text-xs text-slate-500">
                 A fresh one-time activation code has been generated for {regeneratedCodeModal.email}. Previous codes have been invalidated.
               </DialogDescription>
             </DialogHeader>
 
-            <div className="p-4 bg-primary/5 border border-primary/20 rounded-[10px] my-2 text-center">
-              <span className="text-eyebrow text-primary block mb-1">
+            <div className="p-4 bg-blue-50/50 dark:bg-blue-950/20 border border-blue-200/80 dark:border-blue-800 rounded-xl my-2 text-center">
+              <span className="text-[11px] font-bold text-blue-600 uppercase tracking-wider block mb-1">
                 One-Time Activation Code
               </span>
-              <p className="font-mono font-bold text-2xl tracking-widest text-primary select-all">
+              <p className="font-mono font-bold text-2xl tracking-widest text-blue-600 select-all">
                 {regeneratedCodeModal.code}
               </p>
             </div>
@@ -1795,7 +1801,7 @@ export function UserAccessTab() {
                   showToast("success", "Code copied to clipboard!");
                   setRegeneratedCodeModal(null);
                 }}
-                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-medium text-xs h-9 rounded-lg shadow-xs"
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs h-10 rounded-xl shadow-2xs transition-colors"
               >
                 Copy Code &amp; Close
               </Button>
@@ -1810,13 +1816,13 @@ export function UserAccessTab() {
           open={Boolean(removeAccessModalUser)}
           onOpenChange={(open) => !open && setRemoveAccessModalUser(null)}
         >
-          <DialogContent className="max-w-md bg-card border border-border shadow-md rounded-[10px] p-6">
+          <DialogContent className="max-w-md bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-xl rounded-2xl p-6">
             <DialogHeader className="pb-2">
-              <DialogTitle className="text-section font-semibold flex items-center gap-2 text-foreground">
+              <DialogTitle className="text-base font-bold flex items-center gap-2 text-slate-900 dark:text-slate-100">
                 <UserMinus className="w-5 h-5 text-amber-600" />
                 Remove Access
               </DialogTitle>
-              <DialogDescription className="text-caption text-muted-foreground">
+              <DialogDescription className="text-xs text-slate-500">
                 Remove this user&apos;s access to this workspace?
               </DialogDescription>
             </DialogHeader>
@@ -1846,7 +1852,7 @@ export function UserAccessTab() {
                 size="sm"
                 onClick={() => setRemoveAccessModalUser(null)}
                 disabled={actionProcessing}
-                className="text-xs h-9"
+                className="rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-semibold h-10 px-4 shadow-2xs transition-colors text-xs"
               >
                 Cancel
               </Button>
@@ -1854,7 +1860,7 @@ export function UserAccessTab() {
                 size="sm"
                 onClick={handleConfirmRemoveAccess}
                 disabled={actionProcessing}
-                className="bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs h-9 gap-1.5"
+                className="bg-orange-600 hover:bg-orange-700 text-white font-semibold text-xs h-10 px-4 rounded-xl shadow-2xs gap-1.5 transition-colors"
               >
                 {actionProcessing && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                 Remove Access
@@ -1870,7 +1876,7 @@ export function UserAccessTab() {
           open={Boolean(deleteUserModalUser)}
           onOpenChange={(open) => !open && setDeleteUserModalUser(null)}
         >
-          <DialogContent className="max-w-md bg-white dark:bg-slate-900 p-6 border-rose-200 dark:border-rose-900">
+          <DialogContent className="max-w-md bg-white dark:bg-slate-900 p-6 border border-rose-200 dark:border-rose-900 shadow-xl rounded-2xl">
             <DialogHeader className="pb-2">
               <DialogTitle className="text-base font-bold flex items-center gap-2 text-rose-600">
                 <Trash2 className="w-5 h-5 text-rose-600" />
@@ -1904,7 +1910,7 @@ export function UserAccessTab() {
                 size="sm"
                 onClick={() => setDeleteUserModalUser(null)}
                 disabled={actionProcessing}
-                className="text-xs h-9"
+                className="rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-semibold h-10 px-4 shadow-2xs transition-colors text-xs"
               >
                 Cancel
               </Button>
@@ -1912,7 +1918,7 @@ export function UserAccessTab() {
                 size="sm"
                 onClick={handleConfirmDeleteUser}
                 disabled={actionProcessing}
-                className="bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs h-9 gap-1.5"
+                className="bg-rose-600 hover:bg-rose-700 text-white font-semibold text-xs h-10 px-4 rounded-xl shadow-2xs gap-1.5 transition-colors"
               >
                 {actionProcessing && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                 Delete User

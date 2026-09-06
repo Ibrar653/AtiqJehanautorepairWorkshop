@@ -475,19 +475,22 @@ export default function SettingsPage() {
       <PageHeader
         title="Settings"
         description="Manage workshop configuration, staff user access, permissions, and business workspaces."
-        breadcrumbs={[{ label: "Dashboard", href: "/" }, { label: "Settings" }]}
+        breadcrumbs={[
+          { label: "System & Administration" },
+          { label: "Settings" },
+        ]}
       />
 
       {/* Toast Banner */}
       {toast && (
         <div
-          className={`flex items-center justify-between p-3.5 rounded-xl border text-xs font-semibold shadow-xs animate-in fade-in-50 ${
+          className={`flex items-center justify-between p-4 rounded-2xl border text-xs font-semibold shadow-2xs animate-in fade-in-50 ${
             toast.type === "success"
               ? "bg-emerald-50 border-emerald-200 text-emerald-800 dark:bg-emerald-950/40 dark:border-emerald-800 dark:text-emerald-300"
               : "bg-red-50 border-red-200 text-red-800 dark:bg-red-950/40 dark:border-red-800 dark:text-red-300"
           }`}
         >
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2.5">
             {toast.type === "success" ? (
               <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
             ) : (
@@ -497,7 +500,7 @@ export default function SettingsPage() {
           </div>
           <button
             onClick={() => setToast(null)}
-            className="text-[11px] underline hover:opacity-75 cursor-pointer ml-4"
+            className="text-[11px] underline hover:opacity-75 cursor-pointer ml-4 font-semibold"
           >
             Dismiss
           </button>
@@ -505,38 +508,38 @@ export default function SettingsPage() {
       )}
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="bg-slate-100 dark:bg-slate-800/70 p-1 rounded-xl border border-slate-200 dark:border-slate-800 flex flex-wrap gap-1">
+        <TabsList className="bg-slate-100/80 dark:bg-slate-800/70 p-1.5 rounded-2xl border border-slate-200/90 dark:border-slate-700/80 flex flex-wrap gap-1.5 shadow-2xs">
           <TabsTrigger
             value="user_access"
-            className="data-[state=active]:bg-white dark:data-[state=active]:bg-slate-900 data-[state=active]:text-blue-600 dark:data-[state=active]:text-blue-400 data-[state=active]:shadow-sm px-4 py-2 font-bold text-xs flex items-center gap-2 rounded-lg"
+            className="data-[state=active]:bg-white dark:data-[state=active]:bg-slate-900 data-[state=active]:text-blue-600 dark:data-[state=active]:text-blue-400 data-[state=active]:shadow-xs px-4 h-10 font-semibold text-xs flex items-center gap-2 rounded-xl transition-all"
           >
             <ShieldCheck className="h-4 w-4" /> User Access &amp; Permissions
           </TabsTrigger>
           <TabsTrigger
             value="activity_audit"
-            className="data-[state=active]:bg-white dark:data-[state=active]:bg-slate-900 data-[state=active]:text-blue-600 dark:data-[state=active]:text-blue-400 data-[state=active]:shadow-sm px-4 py-2 font-bold text-xs flex items-center gap-2 rounded-lg"
+            className="data-[state=active]:bg-white dark:data-[state=active]:bg-slate-900 data-[state=active]:text-blue-600 dark:data-[state=active]:text-blue-400 data-[state=active]:shadow-xs px-4 h-10 font-semibold text-xs flex items-center gap-2 rounded-xl transition-all"
           >
             <History className="h-4 w-4" /> Activity &amp; Audit Logs
           </TabsTrigger>
           <TabsTrigger
             value="security"
-            className="data-[state=active]:bg-white dark:data-[state=active]:bg-slate-900 data-[state=active]:text-blue-600 dark:data-[state=active]:text-blue-400 data-[state=active]:shadow-sm px-4 py-2 font-bold text-xs flex items-center gap-2 rounded-lg"
+            className="data-[state=active]:bg-white dark:data-[state=active]:bg-slate-900 data-[state=active]:text-blue-600 dark:data-[state=active]:text-blue-400 data-[state=active]:shadow-xs px-4 h-10 font-semibold text-xs flex items-center gap-2 rounded-xl transition-all"
           >
             <Shield className="h-4 w-4" /> Role Templates &amp; Policies
           </TabsTrigger>
           <TabsTrigger
             value="workshop"
-            className="data-[state=active]:bg-white dark:data-[state=active]:bg-slate-900 data-[state=active]:text-blue-600 dark:data-[state=active]:text-blue-400 data-[state=active]:shadow-sm px-4 py-2 font-bold text-xs flex items-center gap-2 rounded-lg"
+            className="data-[state=active]:bg-white dark:data-[state=active]:bg-slate-900 data-[state=active]:text-blue-600 dark:data-[state=active]:text-blue-400 data-[state=active]:shadow-xs px-4 h-10 font-semibold text-xs flex items-center gap-2 rounded-xl transition-all"
           >
             <Building2 className="h-4 w-4" /> Workspace Details &amp; VAT
           </TabsTrigger>
           {isPlatformOwner && (
             <TabsTrigger
               value="workspaces"
-              className="data-[state=active]:bg-white dark:data-[state=active]:bg-slate-900 data-[state=active]:text-purple-600 dark:data-[state=active]:text-purple-400 data-[state=active]:shadow-sm px-4 py-2 font-bold text-xs flex items-center gap-2 rounded-lg"
+              className="data-[state=active]:bg-white dark:data-[state=active]:bg-slate-900 data-[state=active]:text-purple-600 dark:data-[state=active]:text-purple-400 data-[state=active]:shadow-xs px-4 h-10 font-semibold text-xs flex items-center gap-2 rounded-xl transition-all"
             >
               <Building2 className="h-4 w-4 text-purple-600" /> Workspaces &amp; Businesses
-              <span className="bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300 text-[10px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider">
+              <span className="bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300 text-[10px] font-black px-2 py-0.5 rounded-lg uppercase tracking-wider">
                 Super Admin
               </span>
             </TabsTrigger>
@@ -544,16 +547,15 @@ export default function SettingsPage() {
           {isPlatformOwner && (
             <TabsTrigger
               value="test_reset"
-              className="data-[state=active]:bg-white dark:data-[state=active]:bg-slate-900 data-[state=active]:text-rose-600 dark:data-[state=active]:text-rose-400 data-[state=active]:shadow-sm px-4 py-2 font-bold text-xs flex items-center gap-2 rounded-lg"
+              className="data-[state=active]:bg-white dark:data-[state=active]:bg-slate-900 data-[state=active]:text-rose-600 dark:data-[state=active]:text-rose-400 data-[state=active]:shadow-xs px-4 h-10 font-semibold text-xs flex items-center gap-2 rounded-xl transition-all"
             >
               <RotateCcw className="h-4 w-4 text-rose-600" /> Test Data Reset
-              <span className="bg-rose-100 text-rose-700 dark:bg-rose-900/50 dark:text-rose-300 text-[10px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider">
+              <span className="bg-rose-100 text-rose-700 dark:bg-rose-900/50 dark:text-rose-300 text-[10px] font-black px-2 py-0.5 rounded-lg uppercase tracking-wider">
                 Owner Only
               </span>
             </TabsTrigger>
           )}
         </TabsList>
-
 
         {/* ─── TAB 1: USER ACCESS & SECURITY (ENTERPRISE DELEGATED ACCESS) ─── */}
         <TabsContent value="user_access">
@@ -562,14 +564,14 @@ export default function SettingsPage() {
 
         {/* ─── TAB 2: ACTIVITY & AUDIT LOGS ───────────────────────────────── */}
         <TabsContent value="activity_audit">
-          <Card className="border border-slate-200 dark:border-slate-800 shadow-xs bg-white dark:bg-slate-900">
-            <CardHeader className="flex flex-row items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+          <Card className="border border-slate-200/90 dark:border-slate-800 shadow-2xs bg-white dark:bg-slate-900 rounded-2xl overflow-hidden">
+            <CardHeader className="flex flex-row items-center justify-between p-6 border-b border-slate-100 dark:border-slate-800">
               <div>
-                <CardTitle className="text-base font-bold flex items-center gap-2">
+                <CardTitle className="text-base font-bold flex items-center gap-2 text-slate-900 dark:text-slate-100">
                   <History className="w-5 h-5 text-blue-600" />
                   Workshop Staff Activity &amp; Audit Trail
                 </CardTitle>
-                <CardDescription className="text-xs text-slate-500">
+                <CardDescription className="text-xs text-slate-500 mt-1">
                   Full security history: logins, job cards, financial transactions, status changes, and permission modifications
                 </CardDescription>
               </div>
@@ -580,13 +582,13 @@ export default function SettingsPage() {
                   setActivityUser(null);
                   setActivityModalOpen(true);
                 }}
-                className="text-xs h-8 gap-1.5"
+                className="text-xs h-10 px-4 rounded-xl border-slate-200 font-semibold gap-2"
               >
-                <Eye className="w-3.5 h-3.5" /> Open Full Audit Explorer
+                <Eye className="w-4 h-4" /> Open Full Audit Explorer
               </Button>
             </CardHeader>
-            <CardContent className="pt-4">
-              <p className="text-xs text-slate-600 dark:text-slate-400 mb-4">
+            <CardContent className="p-6">
+              <p className="text-xs text-slate-600 dark:text-slate-400 mb-5 leading-relaxed">
                 Click below to launch the dedicated audit inspector to search, filter, and trace operational logs across all workshop staff.
               </p>
               <Button
@@ -594,7 +596,7 @@ export default function SettingsPage() {
                   setActivityUser(null);
                   setActivityModalOpen(true);
                 }}
-                className="bg-blue-600 hover:bg-blue-700 text-white text-xs gap-2"
+                className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-xl shadow-2xs h-10 px-5 gap-2"
               >
                 <History className="w-4 h-4" /> Launch Activity &amp; Permission Audit Log Modal
               </Button>
@@ -604,44 +606,44 @@ export default function SettingsPage() {
 
         {/* ─── TAB 3: WORKSHOP DETAILS & VAT ──────────────────────────────── */}
         <TabsContent value="workshop">
-          <Card className="border border-slate-200 dark:border-slate-800 shadow-xs bg-white dark:bg-slate-900">
-            <CardHeader className="border-b border-slate-100 dark:border-slate-800 pb-4">
-              <CardTitle className="text-base font-bold">Workshop Business Profile &amp; VAT Settings</CardTitle>
-              <CardDescription className="text-xs text-slate-500">
+          <Card className="border border-slate-200/90 dark:border-slate-800 shadow-2xs bg-white dark:bg-slate-900 rounded-2xl overflow-hidden">
+            <CardHeader className="p-6 border-b border-slate-100 dark:border-slate-800">
+              <CardTitle className="text-base font-bold text-slate-900 dark:text-slate-100">Workshop Business Profile &amp; VAT Settings</CardTitle>
+              <CardDescription className="text-xs text-slate-500 mt-1">
                 Official business registration and tax invoicing credentials in the UAE
               </CardDescription>
             </CardHeader>
-            <CardContent className="pt-6 space-y-4 max-w-xl">
+            <CardContent className="p-6 space-y-4 max-w-xl">
               <div className="space-y-1.5">
-                <Label className="text-xs font-bold">Company Full Name</Label>
-                <Input value={COMPANY_FULL_NAME} readOnly className="text-xs bg-slate-50 dark:bg-slate-800" />
+                <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">Company Full Name</Label>
+                <Input value={COMPANY_FULL_NAME} readOnly className="text-xs h-10 rounded-xl border-slate-200 bg-slate-50/60 dark:bg-slate-800 font-medium" />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <Label className="text-xs font-bold">Trade License TRN</Label>
-                  <Input value="100482910400003" readOnly className="text-xs bg-slate-50 dark:bg-slate-800 font-mono" />
+                  <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">Trade License TRN</Label>
+                  <Input value="100482910400003" readOnly className="text-xs h-10 rounded-xl border-slate-200 bg-slate-50/60 dark:bg-slate-800 font-mono font-medium" />
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-xs font-bold">Standard UAE VAT Rate</Label>
-                  <Input value={`${DEFAULT_VAT_RATE}%`} readOnly className="text-xs bg-slate-50 dark:bg-slate-800" />
+                  <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">Standard UAE VAT Rate</Label>
+                  <Input value={`${DEFAULT_VAT_RATE}%`} readOnly className="text-xs h-10 rounded-xl border-slate-200 bg-slate-50/60 dark:bg-slate-800 font-medium" />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <Label className="text-xs font-bold">Operating Currency</Label>
-                  <Input value={CURRENCY} readOnly className="text-xs bg-slate-50 dark:bg-slate-800" />
+                  <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">Operating Currency</Label>
+                  <Input value={CURRENCY} readOnly className="text-xs h-10 rounded-xl border-slate-200 bg-slate-50/60 dark:bg-slate-800 font-medium" />
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-xs font-bold">Primary Workshop Email</Label>
-                  <Input value={PRIMARY_OWNER_EMAIL} readOnly className="text-xs bg-slate-50 dark:bg-slate-800" />
+                  <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">Primary Workshop Email</Label>
+                  <Input value={PRIMARY_OWNER_EMAIL} readOnly className="text-xs h-10 rounded-xl border-slate-200 bg-slate-50/60 dark:bg-slate-800 font-medium" />
                 </div>
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-xs font-bold">Workshop Facility Location</Label>
-                <Input value="Industrial Area 4, Sharjah, United Arab Emirates" readOnly className="text-xs bg-slate-50 dark:bg-slate-800" />
+                <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">Workshop Facility Location</Label>
+                <Input value="Industrial Area 4, Sharjah, United Arab Emirates" readOnly className="text-xs h-10 rounded-xl border-slate-200 bg-slate-50/60 dark:bg-slate-800 font-medium" />
               </div>
             </CardContent>
           </Card>
@@ -649,23 +651,23 @@ export default function SettingsPage() {
 
         {/* ─── TAB 4: ROLE MATRIX & POLICIES ──────────────────────────────── */}
         <TabsContent value="security">
-          <Card className="border border-slate-200 dark:border-slate-800 shadow-xs bg-white dark:bg-slate-900">
-            <CardHeader className="border-b border-slate-100 dark:border-slate-800 pb-4">
-              <CardTitle className="text-base font-bold">Role Templates Reference &amp; Protected Actions</CardTitle>
-              <CardDescription className="text-xs text-slate-500">
+          <Card className="border border-slate-200/90 dark:border-slate-800 shadow-2xs bg-white dark:bg-slate-900 rounded-2xl overflow-hidden">
+            <CardHeader className="p-6 border-b border-slate-100 dark:border-slate-800">
+              <CardTitle className="text-base font-bold text-slate-900 dark:text-slate-100">Role Templates Reference &amp; Protected Actions</CardTitle>
+              <CardDescription className="text-xs text-slate-500 mt-1">
                 Default templates and strict security rules governing Owner and Staff accounts
               </CardDescription>
             </CardHeader>
-            <CardContent className="pt-6 space-y-4">
+            <CardContent className="p-6 space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {USER_ROLES.map((r) => (
-                  <div key={r.value} className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 space-y-1.5">
+                  <div key={r.value} className="p-4 rounded-xl border border-slate-200/80 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 space-y-2">
                     <div className="flex items-center justify-between">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs border uppercase font-bold ${roleBadgeColors[r.value]}`}>
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-lg text-xs border uppercase font-bold ${roleBadgeColors[r.value]}`}>
                         {r.label}
                       </span>
                       {r.value === "owner" && (
-                        <span className="text-[10px] font-bold text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200">
+                        <span className="text-[10px] font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-lg border border-blue-200">
                           Unrestricted Access
                         </span>
                       )}
@@ -706,7 +708,7 @@ export default function SettingsPage() {
           MODAL: ADD STAFF USER
          ──────────────────────────────────────────────────────────────────── */}
       <Dialog open={addModalOpen} onOpenChange={setAddModalOpen}>
-        <DialogContent className="max-w-4xl w-full max-h-[90vh] flex flex-col p-6 gap-4 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100">
+        <DialogContent className="max-w-4xl w-full max-h-[90vh] flex flex-col p-6 gap-4 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 rounded-2xl border border-slate-200/90 shadow-xl">
           <DialogHeader className="border-b border-slate-100 dark:border-slate-800 pb-3">
             <DialogTitle className="text-lg font-bold flex items-center gap-2">
               <Plus className="w-5 h-5 text-blue-600" />
@@ -722,10 +724,10 @@ export default function SettingsPage() {
             <button
               type="button"
               onClick={() => setAddModalTab("profile")}
-              className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-colors flex items-center gap-1.5 ${
+              className={`px-3.5 py-2 text-xs font-bold rounded-xl transition-colors flex items-center gap-1.5 ${
                 addModalTab === "profile"
-                  ? "bg-blue-600 text-white shadow-xs"
-                  : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
+                  ? "bg-blue-600 text-white shadow-2xs"
+                  : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200/60"
               }`}
             >
               <Users className="w-3.5 h-3.5" />
@@ -734,10 +736,10 @@ export default function SettingsPage() {
             <button
               type="button"
               onClick={() => setAddModalTab("permissions")}
-              className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-colors flex items-center gap-1.5 ${
+              className={`px-3.5 py-2 text-xs font-bold rounded-xl transition-colors flex items-center gap-1.5 ${
                 addModalTab === "permissions"
-                  ? "bg-blue-600 text-white shadow-xs"
-                  : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
+                  ? "bg-blue-600 text-white shadow-2xs"
+                  : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200/60"
               }`}
             >
               <Sliders className="w-3.5 h-3.5" />
@@ -746,7 +748,7 @@ export default function SettingsPage() {
           </div>
 
           {formError && (
-            <div className="p-3 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 rounded-lg text-xs font-semibold flex items-center gap-2">
+            <div className="p-3 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 rounded-xl text-xs font-semibold flex items-center gap-2">
               <AlertCircle className="w-4 h-4 shrink-0" />
               <span>{formError}</span>
             </div>
@@ -763,7 +765,7 @@ export default function SettingsPage() {
                         placeholder="e.g. Tariq Mahmood"
                         value={newFullName}
                         onChange={(e) => setNewFullName(e.target.value)}
-                        className="text-xs h-9"
+                        className="text-xs h-10 rounded-xl border-slate-200"
                         required
                       />
                     </div>
@@ -775,7 +777,7 @@ export default function SettingsPage() {
                         placeholder="e.g. tariq@atiqjehan.ae"
                         value={newEmail}
                         onChange={(e) => setNewEmail(e.target.value)}
-                        className="text-xs h-9"
+                        className="text-xs h-10 rounded-xl border-slate-200"
                         required
                       />
                     </div>
@@ -788,7 +790,7 @@ export default function SettingsPage() {
                         placeholder="e.g. +971 52 123 4567"
                         value={newPhone}
                         onChange={(e) => setNewPhone(e.target.value)}
-                        className="text-xs h-9"
+                        className="text-xs h-10 rounded-xl border-slate-200"
                       />
                     </div>
 
@@ -798,7 +800,7 @@ export default function SettingsPage() {
                         placeholder="e.g. Workshop Service Advisor"
                         value={newJobTitle}
                         onChange={(e) => setNewJobTitle(e.target.value)}
-                        className="text-xs h-9"
+                        className="text-xs h-10 rounded-xl border-slate-200"
                       />
                     </div>
                   </div>
@@ -810,7 +812,7 @@ export default function SettingsPage() {
                         aria-label="Select role for new staff user"
                         value={newRole}
                         onChange={(e) => handleNewRoleChange(e.target.value as UserRole)}
-                        className="w-full h-9 text-xs px-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-800 dark:text-slate-200 font-semibold"
+                        className="w-full h-10 text-xs px-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-800 dark:text-slate-200 font-semibold"
                       >
                         {STAFF_USER_ROLES.map((r) => (
                           <option key={r.value} value={r.value}>
@@ -829,7 +831,7 @@ export default function SettingsPage() {
                         aria-label="Select initial account status"
                         value={newStatus}
                         onChange={(e) => setNewStatus(e.target.value as UserStatus)}
-                        className="w-full h-9 text-xs px-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-800 dark:text-slate-200 font-semibold"
+                        className="w-full h-10 text-xs px-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-800 dark:text-slate-200 font-semibold"
                       >
                         <option value="active">Active (Full login enabled)</option>
                         <option value="suspended">Suspended (Login blocked)</option>
@@ -839,7 +841,7 @@ export default function SettingsPage() {
                   </div>
 
                   {/* Password / Invitation Option */}
-                  <div className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 space-y-3">
+                  <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 space-y-3">
                     <Label className="text-xs font-bold flex items-center gap-1.5">
                       <KeyRound className="w-4 h-4 text-blue-600" />
                       Login Credential Delivery
@@ -877,7 +879,7 @@ export default function SettingsPage() {
                           placeholder="At least 6 characters"
                           value={newPassword}
                           onChange={(e) => setNewPassword(e.target.value)}
-                          className="text-xs h-9 mt-1"
+                          className="text-xs h-10 rounded-xl border-slate-200 mt-1"
                         />
                       </div>
                     )}
@@ -890,7 +892,7 @@ export default function SettingsPage() {
                         type="date"
                         value={newExpiryDate}
                         onChange={(e) => setNewExpiryDate(e.target.value)}
-                        className="text-xs h-9"
+                        className="text-xs h-10 rounded-xl border-slate-200"
                       />
                     </div>
 
@@ -900,19 +902,19 @@ export default function SettingsPage() {
                         placeholder="Internal notes regarding staff responsibilities..."
                         value={newNotes}
                         onChange={(e) => setNewNotes(e.target.value)}
-                        className="text-xs h-9"
+                        className="text-xs h-10 rounded-xl border-slate-200"
                       />
                     </div>
                   </div>
                 </div>
               ) : (
                 <div className="py-2 space-y-2">
-                  <div className="flex items-center justify-between p-2 bg-blue-50/50 dark:bg-blue-950/20 rounded-lg border border-blue-100 dark:border-blue-900/40 text-xs text-blue-900 dark:text-blue-300">
-                    <span className="flex items-center gap-1 font-semibold">
-                      <Sliders className="w-3.5 h-3.5 text-blue-600" />
+                  <div className="flex items-center justify-between p-3 bg-blue-50/50 dark:bg-blue-950/20 rounded-xl border border-blue-100 dark:border-blue-900/40 text-xs text-blue-900 dark:text-blue-300">
+                    <span className="flex items-center gap-1.5 font-semibold">
+                      <Sliders className="w-4 h-4 text-blue-600" />
                       Current Role Template Applied: <strong className="uppercase">{newRole}</strong>
                     </span>
-                    <span className="text-[11px] text-blue-700 dark:text-blue-400">
+                    <span className="text-[11px] text-blue-700 dark:text-blue-400 font-medium">
                       Customize toggles as needed before creating user
                     </span>
                   </div>
@@ -934,7 +936,7 @@ export default function SettingsPage() {
                     variant="outline"
                     size="sm"
                     onClick={() => setAddModalTab("permissions")}
-                    className="text-xs"
+                    className="text-xs h-10 px-4 rounded-xl border-slate-200 font-semibold"
                   >
                     Next: Review Permissions &rarr;
                   </Button>
@@ -944,7 +946,7 @@ export default function SettingsPage() {
                     variant="outline"
                     size="sm"
                     onClick={() => setAddModalTab("profile")}
-                    className="text-xs"
+                    className="text-xs h-10 px-4 rounded-xl border-slate-200 font-semibold"
                   >
                     &larr; Back to Profile
                   </Button>
@@ -957,14 +959,14 @@ export default function SettingsPage() {
                   variant="outline"
                   size="sm"
                   onClick={() => setAddModalOpen(false)}
-                  className="text-xs"
+                  className="text-xs h-10 px-4 rounded-xl border-slate-200 font-semibold"
                 >
                   Cancel
                 </Button>
                 <Button
                   type="submit"
                   disabled={savingUser}
-                  className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold gap-1.5 h-9"
+                  className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-xl shadow-2xs gap-1.5 h-10 px-5"
                 >
                   {savingUser && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                   Save &amp; Create Staff User
@@ -979,7 +981,7 @@ export default function SettingsPage() {
           MODAL: EDIT GRANULAR PERMISSIONS
          ──────────────────────────────────────────────────────────────────── */}
       <Dialog open={editPermsModalOpen} onOpenChange={setEditPermsModalOpen}>
-        <DialogContent className="max-w-5xl w-full max-h-[90vh] flex flex-col p-6 gap-4 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100">
+        <DialogContent className="max-w-5xl w-full max-h-[90vh] flex flex-col p-6 gap-4 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 rounded-2xl border border-slate-200/90 shadow-xl">
           <DialogHeader className="border-b border-slate-100 dark:border-slate-800 pb-3">
             <div className="flex items-center justify-between">
               <div>
@@ -994,7 +996,7 @@ export default function SettingsPage() {
                   </span>
                 </DialogDescription>
               </div>
-              <span className="text-[11px] px-2 py-1 bg-purple-50 text-purple-700 dark:bg-purple-950/50 dark:text-purple-300 rounded border border-purple-200 dark:border-purple-800 font-semibold">
+              <span className="text-[11px] px-2.5 py-1 bg-purple-50 text-purple-700 dark:bg-purple-950/50 dark:text-purple-300 rounded-xl border border-purple-200 dark:border-purple-800 font-semibold">
                 Audit Trail Enabled
               </span>
             </div>
@@ -1018,7 +1020,7 @@ export default function SettingsPage() {
                   setEditingPermsMatrix(getDefaultPermissionsForRole(editingPermsUser.role));
                 }
               }}
-              className="text-xs gap-1"
+              className="text-xs h-10 px-4 rounded-xl border-slate-200 font-semibold gap-1.5"
             >
               <RotateCcw className="w-3.5 h-3.5 text-slate-500" />
               Reset to Role Defaults
@@ -1030,7 +1032,7 @@ export default function SettingsPage() {
                 variant="outline"
                 size="sm"
                 onClick={() => setEditPermsModalOpen(false)}
-                className="text-xs"
+                className="text-xs h-10 px-4 rounded-xl border-slate-200 font-semibold"
               >
                 Cancel
               </Button>
@@ -1038,7 +1040,7 @@ export default function SettingsPage() {
                 type="button"
                 onClick={handleSavePermissions}
                 disabled={savingPerms}
-                className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold gap-1.5 h-9"
+                className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-xl shadow-2xs gap-1.5 h-10 px-5"
               >
                 {savingPerms && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                 Save Changes &amp; Log Audit
@@ -1052,7 +1054,7 @@ export default function SettingsPage() {
           MODAL: VIEW READ-ONLY PERMISSIONS
          ──────────────────────────────────────────────────────────────────── */}
       <Dialog open={viewPermsModalOpen} onOpenChange={setViewPermsModalOpen}>
-        <DialogContent className="max-w-4xl w-full max-h-[85vh] flex flex-col p-6 gap-4 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100">
+        <DialogContent className="max-w-4xl w-full max-h-[85vh] flex flex-col p-6 gap-4 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 rounded-2xl border border-slate-200/90 shadow-xl">
           <DialogHeader className="border-b border-slate-100 dark:border-slate-800 pb-3">
             <DialogTitle className="text-lg font-bold flex items-center gap-2">
               <Eye className="w-5 h-5 text-blue-600" />
@@ -1076,7 +1078,7 @@ export default function SettingsPage() {
               type="button"
               size="sm"
               onClick={() => setViewPermsModalOpen(false)}
-              className="text-xs"
+              className="text-xs h-10 px-4 rounded-xl border-slate-200 font-semibold"
             >
               Close
             </Button>
@@ -1088,7 +1090,7 @@ export default function SettingsPage() {
           MODAL: CHANGE ROLE
          ──────────────────────────────────────────────────────────────────── */}
       <Dialog open={editRoleModalOpen} onOpenChange={setEditRoleModalOpen}>
-        <DialogContent className="max-w-md w-full p-6 gap-4 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100">
+        <DialogContent className="max-w-md w-full p-6 gap-4 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 rounded-2xl border border-slate-200/90 shadow-xl">
           <DialogHeader>
             <DialogTitle className="text-base font-bold flex items-center gap-2">
               <Edit2 className="w-4 h-4 text-blue-600" />
@@ -1106,7 +1108,7 @@ export default function SettingsPage() {
                 aria-label="Select new role"
                 value={selectedRole}
                 onChange={(e) => setSelectedRole(e.target.value as UserRole)}
-                className="w-full h-9 text-xs px-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-800 dark:text-slate-200 font-semibold"
+                className="w-full h-10 text-xs px-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-800 dark:text-slate-200 font-semibold"
               >
                 {STAFF_USER_ROLES.map((r) => (
                   <option key={r.value} value={r.value}>
@@ -1134,13 +1136,13 @@ export default function SettingsPage() {
             </label>
           </div>
 
-          <DialogFooter className="gap-2">
+          <DialogFooter className="gap-2 pt-2">
             <Button
               type="button"
               variant="outline"
               size="sm"
               onClick={() => setEditRoleModalOpen(false)}
-              className="text-xs"
+              className="text-xs h-10 px-4 rounded-xl border-slate-200 font-semibold"
             >
               Cancel
             </Button>
@@ -1148,7 +1150,7 @@ export default function SettingsPage() {
               type="button"
               onClick={handleSaveRoleChange}
               disabled={updatingRole}
-              className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold gap-1.5 h-9"
+              className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-xl shadow-2xs gap-1.5 h-10 px-5"
             >
               {updatingRole && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
               Update Role
@@ -1161,7 +1163,7 @@ export default function SettingsPage() {
           MODAL: DELETE CONFIRMATION
          ──────────────────────────────────────────────────────────────────── */}
       <Dialog open={deleteModalOpen} onOpenChange={setDeleteModalOpen}>
-        <DialogContent className="max-w-md w-full p-6 gap-4 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100">
+        <DialogContent className="max-w-md w-full p-6 gap-4 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 rounded-2xl border border-slate-200/90 shadow-xl">
           <DialogHeader>
             <DialogTitle className="text-base font-bold text-red-600 flex items-center gap-2">
               <AlertTriangle className="w-5 h-5 text-red-600" />
@@ -1172,7 +1174,7 @@ export default function SettingsPage() {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="p-3 bg-red-50 dark:bg-red-950/40 rounded-xl border border-red-200 dark:border-red-800 text-xs space-y-1">
+          <div className="p-3.5 bg-red-50 dark:bg-red-950/40 rounded-xl border border-red-200 dark:border-red-800 text-xs space-y-1">
             <p className="font-bold text-red-900 dark:text-red-200">{userToDelete?.full_name}</p>
             <p className="text-red-700 dark:text-red-300 font-mono text-[11px]">{userToDelete?.email}</p>
             <p className="text-slate-600 dark:text-slate-400 text-[11px] mt-1">
@@ -1180,17 +1182,17 @@ export default function SettingsPage() {
             </p>
           </div>
 
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-slate-500 leading-relaxed">
             Historical workshop and financial records created by this user will be preserved.
           </p>
 
-          <DialogFooter className="gap-2">
+          <DialogFooter className="gap-2 pt-2">
             <Button
               type="button"
               variant="outline"
               size="sm"
               onClick={() => setDeleteModalOpen(false)}
-              className="text-xs"
+              className="text-xs h-10 px-4 rounded-xl border-slate-200 font-semibold"
             >
               Cancel
             </Button>
@@ -1200,7 +1202,7 @@ export default function SettingsPage() {
               size="sm"
               onClick={handleConfirmDelete}
               disabled={deleting}
-              className="text-xs font-bold gap-1.5 h-9 bg-red-600 hover:bg-red-700 text-white"
+              className="text-xs font-semibold rounded-xl shadow-2xs gap-1.5 h-10 px-5 bg-red-600 hover:bg-red-700 text-white"
             >
               {deleting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
               Remove Access

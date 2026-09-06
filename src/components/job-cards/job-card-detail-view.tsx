@@ -270,42 +270,42 @@ export function JobCardDetailView({ id }: JobCardDetailViewProps) {
               <Button
                 variant="outline"
                 render={<Link href={`/job-cards/${id}/edit`} />}
-                className="h-9 px-3.5 text-xs font-semibold rounded-lg border-border"
+                className="h-10 px-3.5 text-xs font-semibold rounded-xl border-slate-200 bg-white hover:bg-slate-50 text-slate-700 shadow-2xs gap-1.5"
               >
-                <Pencil className="mr-1.5 h-3.5 w-3.5 text-muted-foreground" /> Edit Job Card
+                <Pencil className="h-3.5 w-3.5 text-slate-500" /> Edit Job Card
               </Button>
               <Button
                 variant="outline"
                 onClick={handlePrint}
-                className="h-9 px-3.5 text-xs font-semibold rounded-lg border-border gap-1.5"
+                className="h-10 px-3.5 text-xs font-semibold rounded-xl border-slate-200 bg-white hover:bg-slate-50 text-slate-700 shadow-2xs gap-1.5"
               >
-                <Printer className="h-3.5 w-3.5 text-muted-foreground" /> Print Sheet
+                <Printer className="h-3.5 w-3.5 text-slate-500" /> Print Sheet
               </Button>
               <Button
                 variant="outline"
                 onClick={handlePrint}
-                className="h-9 px-3.5 text-xs font-semibold rounded-lg border-border gap-1.5"
+                className="h-10 px-3.5 text-xs font-semibold rounded-xl border-slate-200 bg-white hover:bg-slate-50 text-slate-700 shadow-2xs gap-1.5"
                 title="Save or export clean A4 PDF"
               >
-                <Download className="h-3.5 w-3.5 text-muted-foreground" /> Export PDF
+                <Download className="h-3.5 w-3.5 text-slate-500" /> Export PDF
               </Button>
               {existingInvoice ? (
                 <Button
                   render={<Link href={`/invoices?invoice_id=${existingInvoice.id}`} />}
-                  className="h-9 px-4 text-xs font-semibold rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs"
+                  className="h-10 px-4 text-xs font-semibold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white shadow-2xs gap-1.5"
                 >
-                  <FileText className="mr-1.5 h-3.5 w-3.5" /> View Invoice (#{existingInvoice.invoice_number})
+                  <FileText className="h-3.5 w-3.5" /> View Invoice (#{existingInvoice.invoice_number})
                 </Button>
               ) : (
                 <Button
                   disabled={convertingInvoice}
                   onClick={handleConvertToInvoice}
-                  className="h-9 px-4 text-xs font-semibold rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs"
+                  className="h-10 px-4 text-xs font-semibold rounded-xl bg-blue-600 hover:bg-blue-700 text-white shadow-2xs gap-1.5"
                 >
                   {convertingInvoice ? (
-                    <><Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> Generating...</>
+                    <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Generating...</>
                   ) : (
-                    <><FileText className="mr-1.5 h-3.5 w-3.5" /> Convert to Invoice</>
+                    <><FileText className="h-3.5 w-3.5" /> Convert to Invoice</>
                   )}
                 </Button>
               )}
@@ -317,8 +317,8 @@ export function JobCardDetailView({ id }: JobCardDetailViewProps) {
           <div
             className={`flex items-center justify-between p-3.5 rounded-xl border text-sm transition-all ${
               toastMessage.type === "success"
-                ? "bg-emerald-50 text-emerald-800 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-300 dark:border-emerald-800"
-                : "bg-rose-50 text-rose-800 border-rose-200 dark:bg-rose-950/30 dark:text-rose-300 dark:border-rose-800"
+                ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                : "bg-rose-50 text-rose-800 border-rose-200"
             }`}
           >
             <div className="flex items-center gap-2">
@@ -329,103 +329,109 @@ export function JobCardDetailView({ id }: JobCardDetailViewProps) {
               )}
               <span className="font-medium">{toastMessage.text}</span>
             </div>
-            <button onClick={() => setToastMessage(null)} className="text-xs hover:underline font-medium text-muted-foreground">
+            <button onClick={() => setToastMessage(null)} className="text-xs hover:underline font-medium text-slate-500">
               Dismiss
             </button>
           </div>
         )}
 
         {/* Status Transition Control Bar */}
-        <Card className="border border-border/80 shadow-xs bg-card rounded-xl">
-          <CardContent className="p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Status:</span>
-                {getStatusBadge(jobCard.status)}
-              </div>
-              <div className="flex items-center gap-2 border-l border-border pl-3">
-                <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Payment:</span>
-                <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-muted text-foreground border border-border uppercase">
-                  {jobCard.payment_status || "Pending"}
-                </span>
-              </div>
+        <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Status:</span>
+              {getStatusBadge(jobCard.status)}
             </div>
-            <div className="flex flex-wrap items-center gap-1.5">
-              <span className="text-xs text-muted-foreground mr-1 font-medium">Update Status:</span>
-              <Button
-                size="sm"
-                variant={jobCard.status === "new" ? "default" : "outline"}
-                disabled={updatingStatus}
-                onClick={() => handleStatusChange("new")}
-                className="h-7 px-2.5 text-xs font-medium rounded-md"
-              >
-                New
-              </Button>
-              <Button
-                size="sm"
-                variant={jobCard.status === "in_progress" ? "default" : "outline"}
-                disabled={updatingStatus}
-                onClick={() => handleStatusChange("in_progress")}
-                className="h-7 px-2.5 text-xs font-medium rounded-md"
-              >
-                In Progress
-              </Button>
-              <Button
-                size="sm"
-                variant={jobCard.status === "waiting" ? "default" : "outline"}
-                disabled={updatingStatus}
-                onClick={() => handleStatusChange("waiting")}
-                className="h-7 px-2.5 text-xs font-medium rounded-md"
-              >
-                Waiting
-              </Button>
-              <Button
-                size="sm"
-                variant={jobCard.status === "completed" ? "default" : "outline"}
-                disabled={updatingStatus}
-                onClick={() => handleStatusChange("completed")}
-                className="h-7 px-2.5 text-xs font-medium rounded-md"
-              >
-                Completed
-              </Button>
-              <Button
-                size="sm"
-                variant={jobCard.status === "cancelled" ? "destructive" : "outline"}
-                disabled={updatingStatus}
-                onClick={() => handleStatusChange("cancelled")}
-                className="h-7 px-2.5 text-xs font-medium rounded-md"
-              >
-                Cancelled
-              </Button>
+            <div className="flex items-center gap-2 border-l border-slate-200 pl-3">
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Payment:</span>
+              <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200 uppercase">
+                {jobCard.payment_status || "Pending"}
+              </span>
             </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Structured Screen Job Sheet (Hidden during browser print) */}
-      <div className="no-print p-8 rounded-xl border border-border/80 bg-card text-card-foreground shadow-xs space-y-6">
+          </div>
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="text-xs text-slate-500 mr-1 font-semibold">Update Status:</span>
+            <Button
+              size="sm"
+              variant={jobCard.status === "new" ? "default" : "outline"}
+              disabled={updatingStatus}
+              onClick={() => handleStatusChange("new")}
+              className={`h-8 px-3 text-xs font-semibold rounded-xl ${
+                jobCard.status === "new" ? "bg-blue-600 hover:bg-blue-700 text-white" : "border-slate-200 text-slate-700 bg-white hover:bg-slate-50"
+              }`}
+            >
+              New
+            </Button>
+            <Button
+              size="sm"
+              variant={jobCard.status === "in_progress" ? "default" : "outline"}
+              disabled={updatingStatus}
+              onClick={() => handleStatusChange("in_progress")}
+              className={`h-8 px-3 text-xs font-semibold rounded-xl ${
+                jobCard.status === "in_progress" ? "bg-amber-600 hover:bg-amber-700 text-white" : "border-slate-200 text-slate-700 bg-white hover:bg-slate-50"
+              }`}
+            >
+              In Progress
+            </Button>
+            <Button
+              size="sm"
+              variant={jobCard.status === "waiting" ? "default" : "outline"}
+              disabled={updatingStatus}
+              onClick={() => handleStatusChange("waiting")}
+              className={`h-8 px-3 text-xs font-semibold rounded-xl ${
+                jobCard.status === "waiting" ? "bg-purple-600 hover:bg-purple-700 text-white" : "border-slate-200 text-slate-700 bg-white hover:bg-slate-50"
+              }`}
+            >
+              Waiting
+            </Button>
+            <Button
+              size="sm"
+              variant={jobCard.status === "completed" ? "default" : "outline"}
+              disabled={updatingStatus}
+              onClick={() => handleStatusChange("completed")}
+              className={`h-8 px-3 text-xs font-semibold rounded-xl ${
+                jobCard.status === "completed" ? "bg-emerald-600 hover:bg-emerald-700 text-white" : "border-slate-200 text-slate-700 bg-white hover:bg-slate-50"
+              }`}
+            >
+              Completed
+            </Button>
+            <Button
+              size="sm"
+              variant={jobCard.status === "cancelled" ? "destructive" : "outline"}
+              disabled={updatingStatus}
+              onClick={() => handleStatusChange("cancelled")}
+              className={`h-8 px-3 text-xs font-semibold rounded-xl ${
+                jobCard.status === "cancelled" ? "bg-rose-600 hover:bg-rose-700 text-white" : "border-slate-200 text-slate-700 bg-white hover:bg-slate-50"
+              }`}
+            >
+              Cancelled
+            </Button>
+          </div>
+        </div>
+      </div>      {/* Structured Screen Job Sheet (Hidden during browser print) */}
+      <div className="no-print p-8 rounded-2xl border border-slate-200/90 bg-white text-slate-900 shadow-2xs space-y-6">
         {/* Document Header with Professional Workshop Branding */}
-        <div className="flex flex-col md:flex-row justify-between border-b border-border pb-6 gap-4">
+        <div className="flex flex-col md:flex-row justify-between border-b border-slate-100 pb-6 gap-4">
           <div>
-            <h2 className="text-lg font-bold tracking-tight text-foreground uppercase">
+            <h2 className="text-lg font-bold tracking-tight text-slate-900 uppercase">
               ATIQ JEHAN AUTO REPAIR &amp; USED SPARE PARTS L.L.C.
             </h2>
-            <p className="text-xs text-muted-foreground mt-0.5 font-medium">Specialized Auto Repairing, Maintenance &amp; Diagnostic Workshop</p>
-            <p className="text-xs text-muted-foreground mt-0.5">Al Dhafra Region, Madinat Zayed, MZE16, ST 04 • Tel: +971-501233517, +971-501517497</p>
-            <p className="text-xs font-mono text-primary font-semibold mt-1">TRN: 100456789000003</p>
+            <p className="text-xs text-slate-500 mt-0.5 font-medium">Specialized Auto Repairing, Maintenance &amp; Diagnostic Workshop</p>
+            <p className="text-xs text-slate-500 mt-0.5">Al Dhafra Region, Madinat Zayed, MZE16, ST 04 • Tel: +971-501233517, +971-501517497</p>
+            <p className="text-xs font-mono text-blue-700 font-semibold mt-1">TRN: 100456789000003</p>
           </div>
           <div className="md:text-right">
-            <span className="text-[11px] font-bold text-primary uppercase tracking-wider bg-primary/10 border border-primary/20 px-2.5 py-1 rounded-full">
+            <span className="text-[11px] font-bold text-blue-700 uppercase tracking-wider bg-blue-50 border border-blue-200 px-3 py-1 rounded-full">
               WORKSHOP JOB CARD
             </span>
-            <p className="text-2xl font-bold text-primary mt-2 font-mono">{jobCard.job_card_number}</p>
+            <p className="text-2xl font-bold text-blue-600 mt-2 font-mono">{jobCard.job_card_number}</p>
             {jobCard.invoice_number && (
-              <div className="mt-1 inline-block border border-border px-2.5 py-0.5 font-bold text-xs bg-muted text-foreground rounded font-mono">
-                INVOICE NO: <span className="font-bold text-primary ml-1">{jobCard.invoice_number}</span>
+              <div className="mt-1 inline-block border border-slate-200 px-2.5 py-0.5 font-bold text-xs bg-slate-50 text-slate-800 rounded-lg font-mono">
+                INVOICE NO: <span className="font-bold text-blue-700 ml-1">{jobCard.invoice_number}</span>
               </div>
             )}
-            <p className="text-xs text-muted-foreground mt-1">
-              Order Date: <span className="font-semibold text-foreground">{formatDate(jobCard.date || jobCard.created_at)}</span>
+            <p className="text-xs text-slate-500 mt-1">
+              Order Date: <span className="font-semibold text-slate-900">{formatDate(jobCard.date || jobCard.created_at)}</span>
             </p>
           </div>
         </div>
@@ -433,78 +439,78 @@ export function JobCardDetailView({ id }: JobCardDetailViewProps) {
         {/* Section A: Customer & Vehicle Information Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Customer Details Box */}
-          <div className="p-4 rounded-xl border border-border/80 bg-muted/20 space-y-2 text-xs">
-            <div className="flex items-center justify-between border-b border-border/60 pb-2">
-              <span className="font-bold text-foreground text-xs uppercase tracking-wider flex items-center gap-1.5">
-                <User className="h-3.5 w-3.5 text-primary" /> Customer Owner Details
+          <div className="p-5 rounded-xl border border-slate-200/80 bg-slate-50/60 space-y-2.5 text-xs">
+            <div className="flex items-center justify-between border-b border-slate-200/60 pb-2">
+              <span className="font-bold text-slate-900 text-xs uppercase tracking-wider flex items-center gap-1.5">
+                <User className="h-3.5 w-3.5 text-blue-600" /> Customer Owner Details
               </span>
               {jobCard.customer_id && (
-                <Link href={`/customers/${jobCard.customer_id}`} className="text-primary hover:underline text-[11px] font-medium">
+                <Link href={`/customers/${jobCard.customer_id}`} className="text-blue-600 hover:underline text-[11px] font-semibold">
                   View Profile →
                 </Link>
               )}
             </div>
             <div className="grid grid-cols-2 gap-3 pt-1">
               <div>
-                <span className="text-muted-foreground uppercase text-[10px] font-semibold">Customer Name:</span>
-                <p className="font-bold text-foreground text-xs">{jobCard.customer?.name || "N/A"}</p>
+                <span className="text-slate-400 uppercase text-[10px] font-bold tracking-wider">Customer Name:</span>
+                <p className="font-bold text-slate-900 text-xs mt-0.5">{jobCard.customer?.name || "N/A"}</p>
                 {jobCard.customer?.company_name && (
-                  <p className="text-[11px] text-muted-foreground mt-0.5">{jobCard.customer.company_name}</p>
+                  <p className="text-[11px] text-slate-500 mt-0.5">{jobCard.customer.company_name}</p>
                 )}
               </div>
               <div>
-                <span className="text-muted-foreground uppercase text-[10px] font-semibold">TRN Number:</span>
-                <p className="font-mono font-bold text-primary mt-0.5">{jobCard.customer?.trn_number || "—"}</p>
+                <span className="text-slate-400 uppercase text-[10px] font-bold tracking-wider">TRN Number:</span>
+                <p className="font-mono font-bold text-blue-700 mt-0.5">{jobCard.customer?.trn_number || "—"}</p>
               </div>
               <div>
-                <span className="text-muted-foreground uppercase text-[10px] font-semibold">Mobile Phone:</span>
-                <p className="font-semibold font-mono text-foreground">{jobCard.customer?.mobile || "N/A"}</p>
+                <span className="text-slate-400 uppercase text-[10px] font-bold tracking-wider">Mobile Phone:</span>
+                <p className="font-semibold font-mono text-slate-900 mt-0.5">{jobCard.customer?.mobile || "N/A"}</p>
               </div>
               <div>
-                <span className="text-muted-foreground uppercase text-[10px] font-semibold">Address / Emirate:</span>
-                <p className="font-medium text-foreground">{jobCard.customer?.address || "UAE"}</p>
+                <span className="text-slate-400 uppercase text-[10px] font-bold tracking-wider">Address / Emirate:</span>
+                <p className="font-medium text-slate-700 mt-0.5">{jobCard.customer?.address || "UAE"}</p>
               </div>
             </div>
           </div>
 
           {/* Vehicle Specifications Box */}
-          <div className="p-4 rounded-xl border border-border/80 bg-muted/20 space-y-2 text-xs">
-            <div className="flex items-center justify-between border-b border-border/60 pb-2">
-              <span className="font-bold text-foreground text-xs uppercase tracking-wider flex items-center gap-1.5">
-                <Car className="h-3.5 w-3.5 text-primary" /> Vehicle Specifications
+          <div className="p-5 rounded-xl border border-slate-200/80 bg-slate-50/60 space-y-2.5 text-xs">
+            <div className="flex items-center justify-between border-b border-slate-200/60 pb-2">
+              <span className="font-bold text-slate-900 text-xs uppercase tracking-wider flex items-center gap-1.5">
+                <Car className="h-3.5 w-3.5 text-blue-600" /> Vehicle Specifications
               </span>
               {jobCard.vehicle_id && (
-                <Link href={`/vehicles/${jobCard.vehicle_id}`} className="text-primary hover:underline text-[11px] font-medium">
+                <Link href={`/vehicles/${jobCard.vehicle_id}`} className="text-blue-600 hover:underline text-[11px] font-semibold">
                   View Vehicle →
                 </Link>
               )}
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-1">
               <div>
-                <span className="text-muted-foreground uppercase text-[10px] font-semibold">Vehicle:</span>
-                <p className="font-bold text-foreground text-xs">
+                <span className="text-slate-400 uppercase text-[10px] font-bold tracking-wider">Vehicle:</span>
+                <p className="font-bold text-slate-900 text-xs mt-0.5">
                   {jobCard.vehicle?.make} {jobCard.vehicle?.model}
                 </p>
               </div>
               <div>
-                <span className="text-muted-foreground uppercase text-[10px] font-semibold">Year:</span>
-                <p className="font-bold text-foreground text-xs font-mono">{jobCard.vehicle?.year || "N/A"}</p>
+                <span className="text-slate-400 uppercase text-[10px] font-bold tracking-wider">Year:</span>
+                <p className="font-bold text-slate-900 text-xs font-mono mt-0.5">{jobCard.vehicle?.year || "N/A"}</p>
               </div>
               <div>
-                <span className="text-muted-foreground uppercase text-[10px] font-semibold">Color:</span>
-                <p className="font-bold text-foreground text-xs">{jobCard.vehicle?.color || "N/A"}</p>
+                <span className="text-slate-400 uppercase text-[10px] font-bold tracking-wider">Color:</span>
+                <p className="font-bold text-slate-900 text-xs mt-0.5">{jobCard.vehicle?.color || "N/A"}</p>
               </div>
               <div>
-                <span className="text-muted-foreground uppercase text-[10px] font-semibold">Plate Number:</span>
-                <p className="font-bold text-primary text-xs font-mono">{jobCard.vehicle?.registration_number || "N/A"}</p>
+                <span className="text-slate-400 uppercase text-[10px] font-bold tracking-wider">Plate Number:</span>
+                <p className="font-bold text-blue-700 text-xs font-mono mt-0.5">{jobCard.vehicle?.registration_number || "N/A"}</p>
               </div>
               <div>
-                <span className="text-muted-foreground uppercase text-[10px] font-semibold">Chassis / VIN:</span>
-                <p className="font-mono text-xs text-muted-foreground break-all">{jobCard.vehicle?.chassis_vin || "N/A"}</p>
+                <span className="text-slate-400 uppercase text-[10px] font-bold tracking-wider">Chassis / VIN:</span>
+                <p className="font-mono text-xs text-slate-500 break-all mt-0.5">{jobCard.vehicle?.chassis_vin || "N/A"}</p>
               </div>
               <div>
-                <span className="text-muted-foreground uppercase text-[10px] font-semibold">Mileage:</span>
-                <p className="font-bold text-foreground font-mono">
+                <span className="text-slate-400 uppercase text-[10px] font-bold tracking-wider">Mileage:</span>
+                <p className="font-bold text-slate-900 font-mono mt-0.5">
                   {jobCard.mileage_in
                     ? `${jobCard.mileage_in.toLocaleString()} KM`
                     : jobCard.vehicle?.mileage
@@ -517,35 +523,35 @@ export function JobCardDetailView({ id }: JobCardDetailViewProps) {
         </div>
 
         {/* Section B: Customer Complaints, Mechanic Assignment & Workshop Findings */}
-        <div className="p-4 rounded-xl border border-border/80 bg-muted/10 space-y-3 text-xs">
+        <div className="p-5 rounded-xl border border-slate-200/80 bg-slate-50/50 space-y-3 text-xs">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <span className="font-bold text-foreground uppercase tracking-wide text-xs">
+              <span className="font-bold text-slate-900 uppercase tracking-wide text-xs">
                 Customer Complaint / Reported Issue:
               </span>
-              <p className="mt-1 text-foreground whitespace-pre-wrap leading-relaxed">
+              <p className="mt-1 text-slate-700 whitespace-pre-wrap leading-relaxed">
                 {jobCard.customer_complaint || "No specific customer complaint documented."}
               </p>
             </div>
             <div>
-              <span className="font-bold text-foreground uppercase tracking-wide text-xs">
+              <span className="font-bold text-slate-900 uppercase tracking-wide text-xs">
                 Assigned Mechanic &amp; Workshop Notes:
               </span>
-              <p className="mt-1 text-foreground font-semibold">
-                Technician: <span className="text-primary font-bold">{jobCard.assigned_mechanic || "Unassigned"}</span>
+              <p className="mt-1 text-slate-800 font-semibold">
+                Technician: <span className="text-blue-700 font-bold">{jobCard.assigned_mechanic || "Unassigned"}</span>
               </p>
-              <p className="mt-1 text-muted-foreground whitespace-pre-wrap leading-relaxed">
+              <p className="mt-1 text-slate-500 whitespace-pre-wrap leading-relaxed">
                 {jobCard.notes || "No internal supervisor notes recorded."}
               </p>
             </div>
           </div>
 
           {/* Work Details / Findings */}
-          <div className="pt-3 border-t border-border/60">
-            <span className="font-bold text-foreground uppercase tracking-wide text-xs flex items-center gap-1.5 text-primary">
+          <div className="pt-3 border-t border-slate-200/70">
+            <span className="font-bold text-slate-900 uppercase tracking-wide text-xs flex items-center gap-1.5 text-blue-600">
               <Sparkles className="h-3.5 w-3.5" /> Work Details &amp; Technician Findings:
             </span>
-            <p className="mt-1 text-xs bg-background p-3 rounded-lg border border-border text-foreground whitespace-pre-wrap leading-relaxed">
+            <p className="mt-1 text-xs bg-white p-3.5 rounded-xl border border-slate-200/80 text-slate-800 whitespace-pre-wrap leading-relaxed">
               {jobCard.work_details || "Standard diagnostic and workshop maintenance procedures completed."}
             </p>
           </div>
@@ -553,29 +559,29 @@ export function JobCardDetailView({ id }: JobCardDetailViewProps) {
 
         {/* Section C: Services & Labour Breakdown Table */}
         <div className="space-y-3">
-          <h4 className="font-bold text-xs uppercase tracking-wider text-foreground flex items-center gap-2">
-            <Wrench className="h-4 w-4 text-primary" /> Services &amp; Labour Breakdown ({serviceItems.length})
+          <h4 className="font-bold text-xs uppercase tracking-wider text-slate-900 flex items-center gap-2">
+            <Wrench className="h-4 w-4 text-blue-600" /> Services &amp; Labour Breakdown ({serviceItems.length})
           </h4>
           {serviceItems.length > 0 ? (
-            <div className="border border-border/80 rounded-xl overflow-hidden">
+            <div className="border border-slate-200/90 rounded-xl overflow-hidden shadow-2xs">
               <Table>
                 <TableHeader>
-                  <TableRow className="bg-muted/50 hover:bg-muted/50 border-b border-border h-10">
-                    <TableHead className="font-semibold text-foreground text-xs uppercase tracking-wider w-[45%]">Service Description / Scope</TableHead>
-                    <TableHead className="font-semibold text-foreground text-xs uppercase tracking-wider w-[10%] text-center">Qty</TableHead>
-                    <TableHead className="font-semibold text-foreground text-xs uppercase tracking-wider w-[15%] text-right">Unit Rate</TableHead>
-                    <TableHead className="font-semibold text-foreground text-xs uppercase tracking-wider w-[15%] text-right">Labour</TableHead>
-                    <TableHead className="font-semibold text-foreground text-xs uppercase tracking-wider w-[15%] text-right pr-4">Amount</TableHead>
+                  <TableRow className="bg-slate-50/80 hover:bg-slate-50/80 border-b border-slate-200/80 h-10">
+                    <TableHead className="font-bold text-slate-500 text-[11px] uppercase tracking-wider w-[45%]">Service Description / Scope</TableHead>
+                    <TableHead className="font-bold text-slate-500 text-[11px] uppercase tracking-wider w-[10%] text-center">Qty</TableHead>
+                    <TableHead className="font-bold text-slate-500 text-[11px] uppercase tracking-wider w-[15%] text-right">Unit Rate</TableHead>
+                    <TableHead className="font-bold text-slate-500 text-[11px] uppercase tracking-wider w-[15%] text-right">Labour</TableHead>
+                    <TableHead className="font-bold text-slate-500 text-[11px] uppercase tracking-wider w-[15%] text-right pr-4">Amount</TableHead>
                   </TableRow>
                 </TableHeader>
-                <TableBody className="divide-y divide-border/60">
+                <TableBody className="divide-y divide-slate-100">
                   {serviceItems.map((item) => (
-                    <TableRow key={item.id} className="h-11 hover:bg-muted/30 transition-colors">
-                      <TableCell className="font-medium text-foreground text-xs">{item.description}</TableCell>
-                      <TableCell className="text-center text-xs font-mono">{item.quantity}</TableCell>
-                      <TableCell className="text-right font-mono text-xs">{formatAmount(item.unit_price)}</TableCell>
-                      <TableCell className="text-right font-mono text-xs">{formatAmount(item.labour_charge || 0)}</TableCell>
-                      <TableCell className="text-right font-bold font-mono text-foreground text-xs pr-4">
+                    <TableRow key={item.id} className="h-11 hover:bg-slate-50/60 transition-colors">
+                      <TableCell className="font-semibold text-slate-900 text-xs">{item.description}</TableCell>
+                      <TableCell className="text-center text-xs font-mono text-slate-700">{item.quantity}</TableCell>
+                      <TableCell className="text-right font-mono text-xs tabular-nums text-slate-700">{formatAmount(item.unit_price)}</TableCell>
+                      <TableCell className="text-right font-mono text-xs tabular-nums text-slate-700">{formatAmount(item.labour_charge || 0)}</TableCell>
+                      <TableCell className="text-right font-bold font-mono text-slate-900 text-xs tabular-nums pr-4">
                         {formatAmount(item.total_price)}
                       </TableCell>
                     </TableRow>
@@ -584,46 +590,46 @@ export function JobCardDetailView({ id }: JobCardDetailViewProps) {
               </Table>
             </div>
           ) : (
-            <p className="text-xs text-muted-foreground italic py-2">No service lines recorded.</p>
+            <p className="text-xs text-slate-500 italic py-2">No service lines recorded.</p>
           )}
         </div>
 
         {/* Section D: Spare Parts Breakdown Table */}
         <div className="space-y-3">
-          <h4 className="font-bold text-xs uppercase tracking-wider text-foreground flex items-center gap-2">
-            <Package className="h-4 w-4 text-primary" /> Spare Parts Installed ({partItems.length})
+          <h4 className="font-bold text-xs uppercase tracking-wider text-slate-900 flex items-center gap-2">
+            <Package className="h-4 w-4 text-blue-600" /> Spare Parts Installed ({partItems.length})
           </h4>
           {partItems.length > 0 ? (
-            <div className="border border-border/80 rounded-xl overflow-hidden">
+            <div className="border border-slate-200/90 rounded-xl overflow-hidden shadow-2xs">
               <Table>
                 <TableHeader>
-                  <TableRow className="bg-muted/50 hover:bg-muted/50 border-b border-border h-10">
-                    <TableHead className="font-semibold text-foreground text-xs uppercase tracking-wider w-[50%]">Spare Part Name / Code</TableHead>
-                    <TableHead className="font-semibold text-foreground text-xs uppercase tracking-wider w-[15%] text-center">Qty Used</TableHead>
-                    <TableHead className="font-semibold text-foreground text-xs uppercase tracking-wider w-[15%] text-right">Unit Price</TableHead>
-                    <TableHead className="font-semibold text-foreground text-xs uppercase tracking-wider w-[20%] text-right pr-4">Amount</TableHead>
+                  <TableRow className="bg-slate-50/80 hover:bg-slate-50/80 border-b border-slate-200/80 h-10">
+                    <TableHead className="font-bold text-slate-500 text-[11px] uppercase tracking-wider w-[50%]">Spare Part Name / Code</TableHead>
+                    <TableHead className="font-bold text-slate-500 text-[11px] uppercase tracking-wider w-[15%] text-center">Qty Used</TableHead>
+                    <TableHead className="font-bold text-slate-500 text-[11px] uppercase tracking-wider w-[15%] text-right">Unit Price</TableHead>
+                    <TableHead className="font-bold text-slate-500 text-[11px] uppercase tracking-wider w-[20%] text-right pr-4">Amount</TableHead>
                   </TableRow>
                 </TableHeader>
-                <TableBody className="divide-y divide-border/60">
+                <TableBody className="divide-y divide-slate-100">
                   {partItems.map((item) => (
-                    <TableRow key={item.id} className="h-11 hover:bg-muted/30 transition-colors">
-                      <TableCell className="font-medium text-foreground text-xs">
+                    <TableRow key={item.id} className="h-11 hover:bg-slate-50/60 transition-colors">
+                      <TableCell className="font-semibold text-slate-900 text-xs">
                         <div className="flex items-center gap-2">
                           <span>{item.description}</span>
                           {item.part_id ? (
-                            <span className="inline-flex items-center text-[10px] font-semibold px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-950/40 dark:text-blue-300">
+                            <span className="inline-flex items-center text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
                               Inventory
                             </span>
                           ) : (
-                            <span className="inline-flex items-center text-[10px] font-medium px-1.5 py-0.5 rounded bg-muted text-muted-foreground border border-border">
+                            <span className="inline-flex items-center text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200">
                               Custom Part
                             </span>
                           )}
                         </div>
                       </TableCell>
-                      <TableCell className="text-center font-mono font-bold text-foreground text-xs">{item.quantity}</TableCell>
-                      <TableCell className="text-right font-mono text-xs">{formatAmount(item.unit_price)}</TableCell>
-                      <TableCell className="text-right font-bold font-mono text-foreground text-xs pr-4">
+                      <TableCell className="text-center font-mono font-bold text-slate-900 text-xs">{item.quantity}</TableCell>
+                      <TableCell className="text-right font-mono text-xs tabular-nums text-slate-700">{formatAmount(item.unit_price)}</TableCell>
+                      <TableCell className="text-right font-bold font-mono text-slate-900 text-xs tabular-nums pr-4">
                         {formatAmount(item.total_price)}
                       </TableCell>
                     </TableRow>
@@ -632,40 +638,40 @@ export function JobCardDetailView({ id }: JobCardDetailViewProps) {
               </Table>
             </div>
           ) : (
-            <p className="text-xs text-muted-foreground italic py-2">No spare parts recorded on this job card.</p>
+            <p className="text-xs text-slate-500 italic py-2">No spare parts recorded on this job card.</p>
           )}
         </div>
 
         {/* Section E: Attachments Section */}
-        <div className="space-y-3 border-t border-border pt-4">
+        <div className="space-y-3 border-t border-slate-100 pt-4">
           <div className="flex items-center justify-between">
-            <h4 className="font-bold text-xs uppercase tracking-wider text-foreground flex items-center gap-2">
-              <Paperclip className="h-4 w-4 text-primary" /> Attachments &amp; Inspection Scans ({attachments.length})
+            <h4 className="font-bold text-xs uppercase tracking-wider text-slate-900 flex items-center gap-2">
+              <Paperclip className="h-4 w-4 text-blue-600" /> Attachments &amp; Inspection Scans ({attachments.length})
             </h4>
             <Button
               size="sm"
               variant="outline"
               onClick={() => setAttachmentModalOpen(true)}
-              className="h-8 px-3 text-xs font-semibold rounded-lg border-border"
+              className="h-9 px-3.5 text-xs font-semibold rounded-xl border-slate-200 bg-white hover:bg-slate-50 text-slate-700 shadow-2xs gap-1.5"
             >
-              <Plus className="mr-1.5 h-3.5 w-3.5" /> Add Attachment
+              <Plus className="h-3.5 w-3.5 text-slate-500" /> Add Attachment
             </Button>
           </div>
 
           {attachments.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
               {attachments.map((att) => (
-                <div key={att.id} className="p-3 rounded-xl border border-border/80 bg-muted/20 space-y-2 text-xs">
+                <div key={att.id} className="p-3.5 rounded-xl border border-slate-200/80 bg-white shadow-2xs space-y-2 text-xs">
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex items-center gap-2 min-w-0">
                       {att.file_type.includes("pdf") ? (
-                        <FileText className="h-5 w-5 text-primary shrink-0" />
+                        <FileText className="h-5 w-5 text-blue-600 shrink-0" />
                       ) : (
-                        <ImageIcon className="h-5 w-5 text-emerald-500 shrink-0" />
+                        <ImageIcon className="h-5 w-5 text-emerald-600 shrink-0" />
                       )}
                       <div className="min-w-0">
-                        <p className="font-bold truncate text-foreground">{att.file_name}</p>
-                        <span className="inline-block px-1.5 py-0.5 rounded text-[9px] bg-primary/10 text-primary uppercase font-bold mt-0.5">
+                        <p className="font-bold truncate text-slate-900">{att.file_name}</p>
+                        <span className="inline-block px-1.5 py-0.5 rounded text-[9px] bg-blue-50 text-blue-700 uppercase font-bold mt-0.5">
                           {att.document_type.replace("_", " ")}
                         </span>
                       </div>
@@ -674,20 +680,20 @@ export function JobCardDetailView({ id }: JobCardDetailViewProps) {
                       variant="ghost"
                       size="sm"
                       onClick={() => handleDeleteAttachment(att.id)}
-                      className="h-6 w-6 p-0 text-muted-foreground hover:text-rose-600 shrink-0"
+                      className="h-6 w-6 p-0 text-slate-400 hover:text-rose-600 shrink-0 rounded-lg"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                     </Button>
                   </div>
-                  {att.description && <p className="text-[11px] text-muted-foreground line-clamp-2">{att.description}</p>}
-                  <div className="flex items-center justify-between pt-2 border-t border-border/60 text-[10px] text-muted-foreground">
+                  {att.description && <p className="text-[11px] text-slate-500 line-clamp-2">{att.description}</p>}
+                  <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-[10px] text-slate-500">
                     <span>{(att.file_size / 1024 / 1024).toFixed(2)} MB</span>
                     <div className="flex items-center gap-2">
                       <Button
                         size="sm"
                         variant="ghost"
                         onClick={() => setPreviewDoc(att)}
-                        className="h-6 px-2 text-[10px] gap-1 text-primary hover:text-primary"
+                        className="h-6 px-2 text-[10px] gap-1 text-blue-600 hover:text-blue-700 rounded-lg"
                       >
                         <Eye className="h-3 w-3" /> View
                       </Button>
@@ -696,7 +702,7 @@ export function JobCardDetailView({ id }: JobCardDetailViewProps) {
                         download={att.file_name}
                         target="_blank"
                         rel="noreferrer"
-                        className="inline-flex items-center gap-1 font-semibold text-primary hover:underline"
+                        className="inline-flex items-center gap-1 font-semibold text-blue-600 hover:underline"
                       >
                         <Download className="h-3 w-3" /> Download
                       </a>
@@ -706,97 +712,97 @@ export function JobCardDetailView({ id }: JobCardDetailViewProps) {
               ))}
             </div>
           ) : (
-            <div className="p-4 text-center rounded-xl border border-dashed border-border/80 text-xs text-muted-foreground">
+            <div className="p-4 text-center rounded-xl border border-dashed border-slate-200 text-xs text-slate-500">
               No files or photos attached to this job card. Click "Add Attachment" to upload vehicle photos, inspection reports, or parts invoices.
             </div>
           )}
         </div>
 
         {/* Section F: Financial Summary & Auto-Calculated Totals Panel */}
-        <div className="border-t border-border pt-4 flex flex-col md:flex-row justify-between items-start gap-6">
-          <div className="text-xs text-muted-foreground space-y-1.5 max-w-md">
-            <p className="font-bold text-foreground uppercase tracking-wider text-[11px]">Workshop Terms &amp; Conditions:</p>
+        <div className="border-t border-slate-100 pt-6 flex flex-col md:flex-row justify-between items-start gap-6">
+          <div className="text-xs text-slate-500 space-y-1.5 max-w-md">
+            <p className="font-bold text-slate-900 uppercase tracking-wider text-[11px]">Workshop Terms &amp; Conditions:</p>
             <p>1. Repair estimates are subject to initial mechanical inspection.</p>
             <p>2. Replaced parts warranty applies for 7 days unless specified otherwise.</p>
             <p>3. Vehicle release is subject to full settlement of the final tax invoice.</p>
           </div>
 
-          <div className="w-full md:w-84 p-5 rounded-xl border border-border/80 bg-muted/20 space-y-2 text-xs">
-            <div className="flex justify-between text-muted-foreground">
+          <div className="w-full md:w-88 p-5 rounded-2xl border border-slate-200/90 bg-slate-50/70 space-y-2.5 text-xs">
+            <div className="flex justify-between text-slate-600">
               <span>Services Total:</span>
-              <span className="font-medium text-foreground font-mono">{formatAmount(serviceSubtotal)}</span>
+              <span className="font-semibold text-slate-900 font-mono tabular-nums">{formatAmount(serviceSubtotal)}</span>
             </div>
-            <div className="flex justify-between text-muted-foreground">
+            <div className="flex justify-between text-slate-600">
               <span>Labour Total:</span>
-              <span className="font-medium text-foreground font-mono">{formatAmount(labourSubtotal)}</span>
+              <span className="font-semibold text-slate-900 font-mono tabular-nums">{formatAmount(labourSubtotal)}</span>
             </div>
-            <div className="flex justify-between text-muted-foreground">
+            <div className="flex justify-between text-slate-600">
               <span>Parts Total:</span>
-              <span className="font-medium text-foreground font-mono">{formatAmount(partsSubtotal)}</span>
+              <span className="font-semibold text-slate-900 font-mono tabular-nums">{formatAmount(partsSubtotal)}</span>
             </div>
-            <div className="border-t border-border/60 pt-2 flex justify-between font-semibold">
+            <div className="border-t border-slate-200/70 pt-2 flex justify-between font-semibold">
               <span>Subtotal:</span>
-              <span className="font-bold text-foreground font-mono">{formatAmount(jobCard.subtotal)}</span>
+              <span className="font-bold text-slate-900 font-mono tabular-nums">{formatAmount(jobCard.subtotal)}</span>
             </div>
             {Number(jobCard.discount) > 0 && (
-              <div className="flex justify-between text-emerald-600 dark:text-emerald-400 font-medium">
+              <div className="flex justify-between text-emerald-600 font-medium">
                 <span>Discount:</span>
-                <span className="font-mono">-{formatAmount(jobCard.discount)}</span>
+                <span className="font-mono tabular-nums">-{formatAmount(jobCard.discount)}</span>
               </div>
             )}
-            <div className="flex justify-between text-muted-foreground">
+            <div className="flex justify-between text-slate-600">
               <span>VAT ({jobCard.vat_rate}%):</span>
-              <span className="font-medium text-foreground font-mono">{formatAmount(jobCard.vat_amount)}</span>
+              <span className="font-semibold text-slate-900 font-mono tabular-nums">{formatAmount(jobCard.vat_amount)}</span>
             </div>
-            <div className="border-t border-border pt-2 bg-primary/10 p-3 rounded-lg flex justify-between text-sm font-bold text-primary">
-              <span className="uppercase tracking-wider">Total Amount:</span>
-              <span className="font-mono font-bold text-base">AED {formatAmount(jobCard.total)}</span>
+            <div className="border-t border-slate-200/80 pt-2.5 bg-blue-50 border border-blue-200/80 p-3.5 rounded-xl flex justify-between items-center text-sm font-bold text-blue-900">
+              <span className="uppercase tracking-wider text-xs">Total Amount:</span>
+              <span className="font-mono font-bold text-base text-blue-700">AED {formatAmount(jobCard.total)}</span>
             </div>
-            <div className="flex justify-between text-xs text-muted-foreground pt-1">
+            <div className="flex justify-between text-xs text-slate-600 pt-1">
               <span>Paid Amount:</span>
-              <span className="font-semibold text-emerald-600 dark:text-emerald-400 font-mono">{formatAmount(jobCard.paid || 0)}</span>
+              <span className="font-semibold text-emerald-600 font-mono tabular-nums">{formatAmount(jobCard.paid || 0)}</span>
             </div>
-            <div className="flex justify-between text-xs font-bold text-amber-600 dark:text-amber-400">
+            <div className="flex justify-between text-xs font-bold text-amber-700">
               <span>Outstanding Balance:</span>
-              <span className="font-mono">{formatAmount(jobCard.balance)}</span>
+              <span className="font-mono tabular-nums">{formatAmount(jobCard.balance)}</span>
             </div>
           </div>
         </div>
 
         {/* Section G: Signatures Section */}
-        <div className="pt-6 border-t border-border">
+        <div className="pt-6 border-t border-slate-100">
           <div className="flex items-center justify-between mb-3">
-            <h4 className="font-bold text-xs uppercase tracking-wider text-foreground">Signatures</h4>
-            <span className="text-[11px] text-muted-foreground">Authorized Workshop &amp; Customer Manual Signature Area</span>
+            <h4 className="font-bold text-xs uppercase tracking-wider text-slate-900">Signatures</h4>
+            <span className="text-[11px] text-slate-500">Authorized Workshop &amp; Customer Manual Signature Area</span>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 text-xs">
             {/* Workshop Authorized Signature */}
-            <div className="p-4 rounded-xl border border-border/80 bg-muted/20 flex flex-col justify-between min-h-[110px]">
+            <div className="p-4 rounded-xl border border-slate-200/80 bg-slate-50/60 flex flex-col justify-between min-h-[110px]">
               <div>
-                <p className="font-bold text-xs uppercase tracking-wider text-foreground">
+                <p className="font-bold text-xs uppercase tracking-wider text-slate-900">
                   ATIQ JEHAN AUTO REPAIR
                 </p>
-                <p className="text-[11px] text-muted-foreground font-medium mt-0.5">
+                <p className="text-[11px] text-slate-500 font-medium mt-0.5">
                   Authorized Signature &amp; Stamp
                 </p>
               </div>
               <div className="pt-8">
-                <div className="border-b-2 border-dashed border-border/80 w-full"></div>
+                <div className="border-b-2 border-dashed border-slate-300 w-full"></div>
               </div>
             </div>
 
             {/* Customer Signature */}
-            <div className="p-4 rounded-xl border border-border/80 bg-muted/20 flex flex-col justify-between min-h-[110px]">
+            <div className="p-4 rounded-xl border border-slate-200/80 bg-slate-50/60 flex flex-col justify-between min-h-[110px]">
               <div>
-                <p className="font-bold text-xs uppercase tracking-wider text-foreground">
+                <p className="font-bold text-xs uppercase tracking-wider text-slate-900">
                   CUSTOMER
                 </p>
-                <p className="text-[11px] text-muted-foreground font-medium mt-0.5">
+                <p className="text-[11px] text-slate-500 font-medium mt-0.5">
                   Customer Acceptance Signature
                 </p>
               </div>
               <div className="pt-8">
-                <div className="border-b-2 border-dashed border-border/80 w-full"></div>
+                <div className="border-b-2 border-dashed border-slate-300 w-full"></div>
               </div>
             </div>
           </div>

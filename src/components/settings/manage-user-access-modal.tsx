@@ -460,7 +460,7 @@ export function ManageUserAccessModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-6xl w-[95vw] h-[90vh] p-0 flex flex-col bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden rounded-xl">
+      <DialogContent className="max-w-6xl w-[95vw] h-[90vh] p-0 flex flex-col bg-slate-50 dark:bg-slate-950 border border-slate-200/90 dark:border-slate-800 shadow-xl overflow-hidden rounded-2xl">
         {/* ─── 1. Header Banner ─────────────────────────────────────────── */}
         <DialogHeader className="px-6 py-4 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex flex-row items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
@@ -1193,14 +1193,20 @@ export function ManageUserAccessModal({
           </div>
 
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={onClose} disabled={saving}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onClose}
+              disabled={saving}
+              className="rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-semibold h-10 px-4 shadow-2xs transition-colors text-xs"
+            >
               Cancel
             </Button>
             <Button
               size="sm"
               onClick={handleSave}
               disabled={saving || isOwner}
-              className="bg-blue-600 hover:bg-blue-700 text-white gap-1.5"
+              className="bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl shadow-2xs h-10 px-4 transition-colors text-xs gap-1.5"
             >
               {saving ? "Applying Changes..." : "Save Delegated Access"}
             </Button>

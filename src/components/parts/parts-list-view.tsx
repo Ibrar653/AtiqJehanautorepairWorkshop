@@ -540,18 +540,18 @@ export function PartsListView() {
             size="sm"
             onClick={loadParts}
             disabled={loading}
-            className="text-xs h-9 font-medium border-border/80 hover:bg-muted/50 rounded-lg"
+            className="text-xs h-10 px-3.5 font-semibold border-slate-200 bg-white hover:bg-slate-50 text-slate-700 shadow-2xs rounded-xl gap-1.5"
           >
-            <RefreshCw className={`h-3.5 w-3.5 mr-1.5 ${loading ? "animate-spin text-primary" : ""}`} />
+            <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin text-blue-600" : "text-slate-500"}`} />
             Refresh
           </Button>
           {canEdit && (
             <Button
               size="sm"
               onClick={openCreateDialog}
-              className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs h-9 font-semibold shadow-xs rounded-lg"
+              className="bg-blue-600 hover:bg-blue-700 text-white text-xs h-10 px-4 font-semibold shadow-2xs rounded-xl gap-1.5"
             >
-              <Plus className="h-4 w-4 mr-1.5" />
+              <Plus className="h-4 w-4" />
               Add Spare Part
             </Button>
           )}
@@ -560,61 +560,53 @@ export function PartsListView() {
 
       {/* Summary KPI Cards (4 equal height cards with subtle semantic accents) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="border border-border/80 shadow-xs bg-card rounded-xl">
-          <CardContent className="p-4 flex items-center justify-between">
-            <div>
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Total Registered Parts</p>
-              <p className="text-2xl font-bold tracking-tight text-foreground font-mono mt-1">{totalCount}</p>
-              <p className="text-[11px] text-muted-foreground mt-0.5">Catalog master items</p>
+        <div className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-2xs">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Total Registered Parts</span>
+            <div className="h-9 w-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+              <Boxes className="h-4 w-4" />
             </div>
-            <div className="h-10 w-10 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
-              <Boxes className="h-5 w-5" />
-            </div>
-          </CardContent>
-        </Card>
+          </div>
+          <p className="text-2xl font-bold tracking-tight text-slate-900 font-mono mt-2">{totalCount}</p>
+          <p className="text-xs text-slate-500 mt-1">Catalog master items</p>
+        </div>
 
-        <Card className="border border-border/80 shadow-xs bg-card rounded-xl">
-          <CardContent className="p-4 flex items-center justify-between">
-            <div>
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Units in Stock</p>
-              <p className="text-2xl font-bold tracking-tight text-foreground font-mono mt-1">{totalStockCount}</p>
-              <p className="text-[11px] text-muted-foreground mt-0.5">Physical items available</p>
+        <div className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-2xs">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold text-emerald-600 uppercase tracking-wider">Units in Stock</span>
+            <div className="h-9 w-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+              <Package className="h-4 w-4" />
             </div>
-            <div className="h-10 w-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
-              <Package className="h-5 w-5" />
-            </div>
-          </CardContent>
-        </Card>
+          </div>
+          <p className="text-2xl font-bold tracking-tight text-emerald-600 font-mono mt-2">{totalStockCount}</p>
+          <p className="text-xs text-slate-500 mt-1">Physical items available</p>
+        </div>
 
-        <Card className="border border-border/80 shadow-xs bg-card rounded-xl">
-          <CardContent className="p-4 flex items-center justify-between">
-            <div>
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Low Stock</p>
-              <p className="text-2xl font-bold tracking-tight text-amber-600 dark:text-amber-400 font-mono mt-1">{lowStockCount}</p>
-              <p className="text-[11px] text-muted-foreground mt-0.5">Below minimum alert</p>
+        <div className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-2xs">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold text-amber-600 uppercase tracking-wider">Low Stock</span>
+            <div className="h-9 w-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
+              <AlertTriangle className="h-4 w-4" />
             </div>
-            <div className="h-10 w-10 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
-              <AlertTriangle className="h-5 w-5" />
-            </div>
-          </CardContent>
-        </Card>
+          </div>
+          <p className="text-2xl font-bold tracking-tight text-amber-600 font-mono mt-2">{lowStockCount}</p>
+          <p className="text-xs text-slate-500 mt-1">Below minimum alert</p>
+        </div>
 
-        <Card className="border border-border/80 shadow-xs bg-card rounded-xl">
-          <CardContent className="p-4 flex items-center justify-between">
-            <div>
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Out of Stock</p>
-              <p className="text-2xl font-bold tracking-tight text-rose-600 dark:text-rose-400 font-mono mt-1">{outOfStockCount}</p>
-              <p className="text-[11px] text-muted-foreground mt-0.5">Zero stock remaining</p>
+        <div className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-2xs">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold text-rose-600 uppercase tracking-wider">Out of Stock</span>
+            <div className="h-9 w-9 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
+              <PowerOff className="h-4 w-4" />
             </div>
-            <div className="h-10 w-10 rounded-xl bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0">
-              <PowerOff className="h-5 w-5" />
-            </div>
-          </CardContent>
-        </Card>
+          </div>
+          <p className="text-2xl font-bold tracking-tight text-rose-600 font-mono mt-2">{outOfStockCount}</p>
+          <p className="text-xs text-slate-500 mt-1">Zero stock remaining</p>
+        </div>
       </div>
 
       {/* Unified Toolbar Container */}
-      <div className="bg-card border border-border/80 rounded-xl p-3 shadow-xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+      <div className="bg-white border border-slate-200/90 rounded-2xl p-4 shadow-2xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
         <div className="flex-1 max-w-md">
           <SearchInput
             placeholder="Search by Part Name, Part #, Brand, or Supplier..."
@@ -646,10 +638,10 @@ export function PartsListView() {
                 setStatusFilter(st.key);
                 setPage(1);
               }}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
                 statusFilter === st.key
-                  ? "bg-primary text-primary-foreground shadow-xs"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
+                  ? "bg-slate-900 text-white shadow-2xs"
+                  : "text-slate-500 hover:text-slate-900 hover:bg-slate-100"
               }`}
             >
               {st.label}
@@ -659,28 +651,28 @@ export function PartsListView() {
       </div>
 
       {/* Main Spare Parts Table */}
-      <Card className="border border-border/80 shadow-xs bg-card rounded-xl overflow-hidden">
-        <CardContent className="p-0">
+      <div className="border border-slate-200/90 rounded-2xl bg-white shadow-2xs overflow-hidden">
+        <div className="p-0">
           {error ? (
             <div className="py-16 text-center space-y-3">
               <div className="p-3 bg-rose-50 text-rose-500 rounded-full w-12 h-12 mx-auto flex items-center justify-center border border-rose-200">
                 <AlertCircle className="h-6 w-6" />
               </div>
-              <p className="font-bold text-foreground text-sm">{error}</p>
-              <Button size="sm" variant="outline" onClick={loadParts} className="gap-2 text-xs">
+              <p className="font-bold text-slate-900 text-sm">{error}</p>
+              <Button size="sm" variant="outline" onClick={loadParts} className="gap-2 text-xs rounded-xl border-slate-200 bg-white hover:bg-slate-50 text-slate-700">
                 <RefreshCw className="h-3.5 w-3.5" /> Retry
               </Button>
             </div>
           ) : loading ? (
-            <div className="py-20 text-center text-muted-foreground">
-              <Loader2 className="h-8 w-8 mx-auto animate-spin mb-3 text-primary" />
+            <div className="py-20 text-center text-slate-500">
+              <Loader2 className="h-8 w-8 mx-auto animate-spin mb-3 text-blue-600" />
               <p className="text-xs font-semibold">Loading spare parts catalog...</p>
             </div>
           ) : parts.length > 0 ? (
             <div className="overflow-x-auto min-w-full">
               <Table className="min-w-[1050px]">
                 <TableHeader>
-                  <TableRow className="border-b border-border/80 bg-muted/40 hover:bg-muted/40 text-xs text-muted-foreground font-semibold">
+                  <TableRow className="border-b border-slate-200/80 bg-slate-50/80 hover:bg-slate-50/80 h-11 text-[11px] text-slate-500 font-bold uppercase tracking-wider">
                     <TableHead className="w-[44px] pl-4">
                       <Checkbox
                         checked={
@@ -694,16 +686,16 @@ export function PartsListView() {
                         aria-label="Select all parts"
                       />
                     </TableHead>
-                    <TableHead className="w-[24%] min-w-[200px] text-foreground font-semibold">Part</TableHead>
-                    <TableHead className="w-[14%] min-w-[130px] text-foreground font-semibold">Part No / OEM</TableHead>
-                    <TableHead className="w-[10%] min-w-[90px] text-foreground font-semibold">Brand</TableHead>
-                    <TableHead className="w-[9%] min-w-[85px] text-right text-foreground font-semibold">Cost</TableHead>
-                    <TableHead className="w-[10%] min-w-[95px] text-right text-foreground font-semibold">Selling Price</TableHead>
-                    <TableHead className="w-[12%] min-w-[110px] text-center text-foreground font-semibold">Stock</TableHead>
-                    <TableHead className="w-[11%] min-w-[110px] text-foreground font-semibold">Supplier</TableHead>
-                    <TableHead className="w-[8%] min-w-[80px] text-foreground font-semibold">Location</TableHead>
-                    <TableHead className="w-[7%] min-w-[70px] text-center text-foreground font-semibold">Status</TableHead>
-                    <TableHead className="w-[105px] min-w-[105px] text-right pr-4 text-foreground font-semibold">Actions</TableHead>
+                    <TableHead className="w-[24%] min-w-[200px] text-slate-500 font-bold uppercase tracking-wider text-[11px]">Part</TableHead>
+                    <TableHead className="w-[14%] min-w-[130px] text-slate-500 font-bold uppercase tracking-wider text-[11px]">Part No / OEM</TableHead>
+                    <TableHead className="w-[10%] min-w-[90px] text-slate-500 font-bold uppercase tracking-wider text-[11px]">Brand</TableHead>
+                    <TableHead className="w-[9%] min-w-[85px] text-right text-slate-500 font-bold uppercase tracking-wider text-[11px]">Cost</TableHead>
+                    <TableHead className="w-[10%] min-w-[95px] text-right text-slate-500 font-bold uppercase tracking-wider text-[11px]">Selling Price</TableHead>
+                    <TableHead className="w-[12%] min-w-[110px] text-center text-slate-500 font-bold uppercase tracking-wider text-[11px]">Stock</TableHead>
+                    <TableHead className="w-[11%] min-w-[110px] text-slate-500 font-bold uppercase tracking-wider text-[11px]">Supplier</TableHead>
+                    <TableHead className="w-[8%] min-w-[80px] text-slate-500 font-bold uppercase tracking-wider text-[11px]">Location</TableHead>
+                    <TableHead className="w-[7%] min-w-[70px] text-center text-slate-500 font-bold uppercase tracking-wider text-[11px]">Status</TableHead>
+                    <TableHead className="w-[105px] min-w-[105px] text-right pr-4 text-slate-500 font-bold uppercase tracking-wider text-[11px]">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -979,8 +971,8 @@ export function PartsListView() {
               )}
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* ─── View Part Details Dialog ─── */}
       <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
