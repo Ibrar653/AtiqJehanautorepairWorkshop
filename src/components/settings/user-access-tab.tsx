@@ -627,65 +627,55 @@ export function UserAccessTab() {
 
       {/* ─── 1. TOP 5 SUMMARY CARDS (Requirement 1 & Section 1) ───────────── */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-        <Card className="border border-slate-200 dark:border-slate-800 shadow-xs bg-white dark:bg-slate-900">
-          <CardContent className="p-3.5 flex items-center justify-between">
-            <div>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Staff</p>
-              <p className="text-xl font-black text-slate-900 dark:text-slate-100 mt-0.5">{totalStaff}</p>
-            </div>
-            <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-600 flex items-center justify-center">
-              <Users className="w-4 h-4" />
-            </div>
-          </CardContent>
-        </Card>
+        <div className="bg-white border border-slate-200/80 rounded-xl p-3.5 shadow-xs flex items-center justify-between">
+          <div>
+            <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Total Staff</p>
+            <p className="text-2xl font-bold font-mono tabular-nums text-slate-900 mt-0.5">{totalStaff}</p>
+          </div>
+          <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
+            <Users className="w-4 h-4" />
+          </div>
+        </div>
 
-        <Card className="border border-emerald-200/80 dark:border-emerald-900/60 shadow-xs bg-emerald-50/20 dark:bg-emerald-950/20">
-          <CardContent className="p-3.5 flex items-center justify-between">
-            <div>
-              <p className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider">Active Staff</p>
-              <p className="text-xl font-black text-emerald-700 dark:text-emerald-400 mt-0.5">{activeStaff}</p>
-            </div>
-            <div className="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 flex items-center justify-center">
-              <UserCheck className="w-4 h-4" />
-            </div>
-          </CardContent>
-        </Card>
+        <div className="bg-white border border-slate-200/80 rounded-xl p-3.5 shadow-xs flex items-center justify-between">
+          <div>
+            <p className="text-[11px] font-semibold text-emerald-700 uppercase tracking-wider">Active Staff</p>
+            <p className="text-2xl font-bold font-mono tabular-nums text-emerald-700 mt-0.5">{activeStaff}</p>
+          </div>
+          <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
+            <UserCheck className="w-4 h-4" />
+          </div>
+        </div>
 
-        <Card className="border border-blue-200/80 dark:border-blue-900/60 shadow-xs bg-blue-50/20 dark:bg-blue-950/20">
-          <CardContent className="p-3.5 flex items-center justify-between">
-            <div>
-              <p className="text-[10px] font-bold text-blue-700 dark:text-blue-400 uppercase tracking-wider">Pending Invitations</p>
-              <p className="text-xl font-black text-blue-700 dark:text-blue-400 mt-0.5">{pendingInvitations}</p>
-            </div>
-            <div className="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-900/60 text-blue-700 flex items-center justify-center">
-              <Mail className="w-4 h-4" />
-            </div>
-          </CardContent>
-        </Card>
+        <div className="bg-white border border-slate-200/80 rounded-xl p-3.5 shadow-xs flex items-center justify-between">
+          <div>
+            <p className="text-[11px] font-semibold text-blue-700 uppercase tracking-wider">Pending Invites</p>
+            <p className="text-2xl font-bold font-mono tabular-nums text-blue-700 mt-0.5">{pendingInvitations}</p>
+          </div>
+          <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
+            <Mail className="w-4 h-4" />
+          </div>
+        </div>
 
-        <Card className="border border-amber-200/80 dark:border-amber-900/60 shadow-xs bg-amber-50/20 dark:bg-amber-950/20">
-          <CardContent className="p-3.5 flex items-center justify-between">
-            <div>
-              <p className="text-[10px] font-bold text-amber-700 dark:text-amber-400 uppercase tracking-wider">Suspended Staff</p>
-              <p className="text-xl font-black text-amber-700 dark:text-amber-400 mt-0.5">{suspendedStaff}</p>
-            </div>
-            <div className="w-8 h-8 rounded-lg bg-amber-100 dark:bg-amber-900/60 text-amber-700 flex items-center justify-center">
-              <UserX className="w-4 h-4" />
-            </div>
-          </CardContent>
-        </Card>
+        <div className="bg-white border border-slate-200/80 rounded-xl p-3.5 shadow-xs flex items-center justify-between">
+          <div>
+            <p className="text-[11px] font-semibold text-amber-700 uppercase tracking-wider">Suspended Staff</p>
+            <p className="text-2xl font-bold font-mono tabular-nums text-amber-700 mt-0.5">{suspendedStaff}</p>
+          </div>
+          <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
+            <UserX className="w-4 h-4" />
+          </div>
+        </div>
 
-        <Card className="border border-rose-200/80 dark:border-rose-900/60 shadow-xs bg-rose-50/20 dark:bg-rose-950/20">
-          <CardContent className="p-3.5 flex items-center justify-between">
-            <div>
-              <p className="text-[10px] font-bold text-rose-700 dark:text-rose-400 uppercase tracking-wider">Removed Staff</p>
-              <p className="text-xl font-black text-rose-700 dark:text-rose-400 mt-0.5">{removedStaff}</p>
-            </div>
-            <div className="w-8 h-8 rounded-lg bg-rose-100 dark:bg-rose-900/60 text-rose-700 flex items-center justify-center">
-              <UserMinus className="w-4 h-4" />
-            </div>
-          </CardContent>
-        </Card>
+        <div className="bg-white border border-slate-200/80 rounded-xl p-3.5 shadow-xs flex items-center justify-between">
+          <div>
+            <p className="text-[11px] font-semibold text-rose-700 uppercase tracking-wider">Removed Staff</p>
+            <p className="text-2xl font-bold font-mono tabular-nums text-rose-700 mt-0.5">{removedStaff}</p>
+          </div>
+          <div className="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center">
+            <UserMinus className="w-4 h-4" />
+          </div>
+        </div>
       </div>
 
       {/* ─── 2. MAIN SUBTABS NAVIGATION ───────────────────────────────────── */}
@@ -873,13 +863,13 @@ export function UserAccessTab() {
           </div>
 
           {/* User Table (Requirement 2) */}
-          <Card className="border border-border shadow-xs bg-card overflow-hidden rounded-[10px]">
+          <Card className="border border-slate-200/80 shadow-xs bg-white overflow-hidden rounded-xl">
             <CardContent className="p-0">
               <div className="overflow-x-auto">
-                <table className="w-full text-left text-table border-collapse">
-                  <thead className="bg-muted/70 border-b border-border text-foreground font-semibold text-table-head sticky top-0 z-10 shadow-xs">
-                    <tr className="h-11">
-                      <th className="w-[40px] pl-4 py-2.5">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead className="bg-slate-50/80 border-b border-slate-200/80 text-slate-600 font-semibold text-[11px] uppercase tracking-wider sticky top-0 z-10">
+                    <tr className="h-10">
+                      <th className="w-[40px] pl-4 py-2">
                         <Checkbox
                           checked={
                             selectableUsers.length > 0 && selectedStaffUserIds.length === selectableUsers.length
@@ -893,16 +883,16 @@ export function UserAccessTab() {
                           aria-label="Select all visible staff"
                         />
                       </th>
-                      <th className="px-4 py-2.5 min-w-[200px]">Staff Identity</th>
-                      <th className="px-3 py-2.5">Role</th>
-                      <th className="px-3 py-2.5">Workspace</th>
-                      <th className="px-3 py-2.5">Status</th>
-                      <th className="px-3 py-2.5">Last Login</th>
-                      <th className="px-3 py-2.5">Access Expiry</th>
-                      <th className="px-4 py-2.5 text-right">Actions</th>
+                      <th className="px-4 py-2 min-w-[200px]">Staff Identity</th>
+                      <th className="px-3 py-2">Role</th>
+                      <th className="px-3 py-2">Workspace</th>
+                      <th className="px-3 py-2">Status</th>
+                      <th className="px-3 py-2">Last Login</th>
+                      <th className="px-3 py-2">Access Expiry</th>
+                      <th className="px-4 py-2 text-right w-[150px] whitespace-nowrap">Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-border/60">
+                  <tbody className="divide-y divide-slate-100">
                     {filteredUsers.map((u) => {
                       const isPrimaryOwner = isUserPrimaryOwner(u);
                       const currentStatus: UserStatus =

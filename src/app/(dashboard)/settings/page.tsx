@@ -473,8 +473,8 @@ export default function SettingsPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Settings &amp; Staff User Access"
-        description="Comprehensive staff user management, role assignments, granular module permissions, and security audit log"
+        title="Settings"
+        description="Manage workshop configuration, staff user access, permissions, and business workspaces."
         breadcrumbs={[{ label: "Dashboard", href: "/" }, { label: "Settings" }]}
       />
 

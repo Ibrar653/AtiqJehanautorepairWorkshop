@@ -325,73 +325,65 @@ export function WorkspacesTab({ embedded = false }: WorkspacesTabProps) {
 
       {/* ─── 1. TOP STATS CARDS (Requirement 2) ───────────────────────────── */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
-        <Card className="border border-slate-200 dark:border-slate-800 shadow-xs bg-white dark:bg-slate-900">
-          <CardContent className="p-4 flex items-center justify-between">
-            <div>
-              <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                Total Workspaces
-              </p>
-              <p className="text-2xl font-black text-slate-900 dark:text-slate-100 mt-0.5">
-                {workspaces.length}
-              </p>
-            </div>
-            <div className="w-10 h-10 rounded-xl bg-purple-50 dark:bg-purple-950/60 text-purple-600 flex items-center justify-center">
-              <Building2 className="w-5 h-5" />
-            </div>
-          </CardContent>
-        </Card>
+        <div className="bg-white border border-slate-200/80 rounded-xl p-4 shadow-xs flex items-center justify-between">
+          <div>
+            <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+              Total Workspaces
+            </p>
+            <p className="text-2xl font-bold font-mono tabular-nums text-slate-900 mt-0.5">
+              {workspaces.length}
+            </p>
+          </div>
+          <div className="w-9 h-9 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center">
+            <Building2 className="w-4 h-4" />
+          </div>
+        </div>
 
-        <Card className="border border-emerald-200/80 dark:border-emerald-900/60 shadow-xs bg-emerald-50/30 dark:bg-emerald-950/20">
-          <CardContent className="p-4 flex items-center justify-between">
-            <div>
-              <p className="text-[11px] font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider">
-                Active Workspaces
-              </p>
-              <p className="text-2xl font-black text-emerald-700 dark:text-emerald-400 mt-0.5">
-                {activeCount}
-              </p>
-            </div>
-            <div className="w-10 h-10 rounded-xl bg-emerald-100/80 dark:bg-emerald-950 text-emerald-600 flex items-center justify-center">
-              <CheckCircle2 className="w-5 h-5" />
-            </div>
-          </CardContent>
-        </Card>
+        <div className="bg-white border border-slate-200/80 rounded-xl p-4 shadow-xs flex items-center justify-between">
+          <div>
+            <p className="text-[11px] font-semibold text-emerald-700 uppercase tracking-wider">
+              Active Workspaces
+            </p>
+            <p className="text-2xl font-bold font-mono tabular-nums text-emerald-700 mt-0.5">
+              {activeCount}
+            </p>
+          </div>
+          <div className="w-9 h-9 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
+            <CheckCircle2 className="w-4 h-4" />
+          </div>
+        </div>
 
-        <Card className="border border-amber-200/80 dark:border-amber-900/60 shadow-xs bg-amber-50/30 dark:bg-amber-950/20">
-          <CardContent className="p-4 flex items-center justify-between">
-            <div>
-              <p className="text-[11px] font-bold text-amber-700 dark:text-amber-400 uppercase tracking-wider">
-                Archived Workspaces
-              </p>
-              <p className="text-2xl font-black text-amber-700 dark:text-amber-400 mt-0.5">
-                {archivedCount}
-              </p>
-            </div>
-            <div className="w-10 h-10 rounded-xl bg-amber-100/80 dark:bg-amber-950 text-amber-600 flex items-center justify-center">
-              <Archive className="w-5 h-5" />
-            </div>
-          </CardContent>
-        </Card>
+        <div className="bg-white border border-slate-200/80 rounded-xl p-4 shadow-xs flex items-center justify-between">
+          <div>
+            <p className="text-[11px] font-semibold text-amber-700 uppercase tracking-wider">
+              Archived Workspaces
+            </p>
+            <p className="text-2xl font-bold font-mono tabular-nums text-amber-700 mt-0.5">
+              {archivedCount}
+            </p>
+          </div>
+          <div className="w-9 h-9 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
+            <Archive className="w-4 h-4" />
+          </div>
+        </div>
 
-        <Card className="border border-blue-200/80 dark:border-blue-900/60 shadow-xs bg-blue-50/30 dark:bg-blue-950/20">
-          <CardContent className="p-4 flex items-center justify-between">
-            <div>
-              <p className="text-[11px] font-bold text-blue-700 dark:text-blue-400 uppercase tracking-wider">
-                Total Workspace Users
-              </p>
-              <p className="text-2xl font-black text-blue-700 dark:text-blue-400 mt-0.5">
-                {totalWorkspaceUsers}
-              </p>
-            </div>
-            <div className="w-10 h-10 rounded-xl bg-blue-100/80 dark:bg-blue-950 text-blue-600 flex items-center justify-center">
-              <Users className="w-5 h-5" />
-            </div>
-          </CardContent>
-        </Card>
+        <div className="bg-white border border-slate-200/80 rounded-xl p-4 shadow-xs flex items-center justify-between">
+          <div>
+            <p className="text-[11px] font-semibold text-blue-700 uppercase tracking-wider">
+              Total Workspace Users
+            </p>
+            <p className="text-2xl font-bold font-mono tabular-nums text-blue-700 mt-0.5">
+              {totalWorkspaceUsers}
+            </p>
+          </div>
+          <div className="w-9 h-9 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
+            <Users className="w-4 h-4" />
+          </div>
+        </div>
       </div>
 
       {/* ─── 2. WORKSPACES DIRECTORY TABLE (Requirement 3 & 4) ────────────── */}
-      <Card className="border border-slate-200 dark:border-slate-800 shadow-xs bg-white dark:bg-slate-900 overflow-hidden">
+      <Card className="border border-slate-200/80 shadow-xs bg-white rounded-xl overflow-hidden">
         <CardHeader className="pb-3 border-b border-slate-100 dark:border-slate-800">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
@@ -473,16 +465,16 @@ export function WorkspacesTab({ embedded = false }: WorkspacesTabProps) {
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-slate-50 dark:bg-slate-800/60 text-slate-500 font-bold uppercase tracking-wider text-[10px] border-b border-slate-200 dark:border-slate-800">
-                <tr>
-                  <th className="py-3 px-4">Workspace Name</th>
-                  <th className="py-3 px-4">Workspace Owner</th>
-                  <th className="py-3 px-4">Owner Email</th>
-                  <th className="py-3 px-4">Status</th>
-                  <th className="py-3 px-4">Users</th>
-                  <th className="py-3 px-4">Created Date</th>
-                  <th className="py-3 px-4">Last Activity</th>
-                  <th className="py-3 px-4 text-right">Actions</th>
+              <thead className="bg-slate-50/80 text-slate-600 font-semibold text-[11px] uppercase tracking-wider border-b border-slate-200/80 sticky top-0 z-10">
+                <tr className="h-10">
+                  <th className="py-2 px-4">Workspace Name</th>
+                  <th className="py-2 px-4">Workspace Owner</th>
+                  <th className="py-2 px-4">Owner Email</th>
+                  <th className="py-2 px-4">Status</th>
+                  <th className="py-2 px-4">Users</th>
+                  <th className="py-2 px-4">Created Date</th>
+                  <th className="py-2 px-4">Last Activity</th>
+                  <th className="py-2 px-4 text-right w-[200px] whitespace-nowrap">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -499,15 +491,15 @@ export function WorkspacesTab({ embedded = false }: WorkspacesTabProps) {
                   return (
                     <tr
                       key={ws.id}
-                      className={`transition-colors hover:bg-slate-50/70 dark:hover:bg-slate-800/30 ${
+                      className={`h-12 transition-colors hover:bg-slate-50/70 dark:hover:bg-slate-800/30 ${
                         isCurrent ? "bg-purple-50/30 dark:bg-purple-950/20" : ""
                       }`}
                     >
                       {/* Workspace Name */}
-                      <td className="py-3.5 px-4">
+                      <td className="py-2.5 px-4">
                         <div className="flex items-center gap-3">
                           <div
-                            className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold text-sm shrink-0 ${
+                            className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs shrink-0 ${
                               isPrimary
                                 ? "bg-blue-600 text-white shadow-xs"
                                 : "bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300"
@@ -543,21 +535,21 @@ export function WorkspacesTab({ embedded = false }: WorkspacesTabProps) {
                       </td>
 
                       {/* Workspace Owner */}
-                      <td className="py-3.5 px-4">
+                      <td className="py-2.5 px-4">
                         <span className="font-bold text-slate-800 dark:text-slate-200">
                           {ownerName}
                         </span>
                       </td>
 
                       {/* Owner Email */}
-                      <td className="py-3.5 px-4">
+                      <td className="py-2.5 px-4">
                         <span className="font-mono text-slate-600 dark:text-slate-400 text-[11px]">
                           {ownerEmail}
                         </span>
                       </td>
 
                       {/* Status */}
-                      <td className="py-3.5 px-4">
+                      <td className="py-2.5 px-4">
                         <Badge
                           className={`text-[10px] uppercase font-black ${
                             ws.status === "active"
@@ -572,19 +564,19 @@ export function WorkspacesTab({ embedded = false }: WorkspacesTabProps) {
                       </td>
 
                       {/* Users Count (Requirement 3) */}
-                      <td className="py-3.5 px-4">
-                        <span className="font-bold text-slate-900 dark:text-slate-100">
+                      <td className="py-2.5 px-4">
+                        <span className="font-bold text-slate-900 dark:text-slate-100 font-mono tabular-nums">
                           {wsUsersCount} {wsUsersCount === 1 ? "User" : "Users"}
                         </span>
                       </td>
 
                       {/* Created Date */}
-                      <td className="py-3.5 px-4 text-slate-500 text-[11px]">
+                      <td className="py-2.5 px-4 text-slate-500 text-[11px]">
                         {ws.created_at ? new Date(ws.created_at).toLocaleDateString() : "2024-01-01"}
                       </td>
 
                       {/* Last Activity */}
-                      <td className="py-3.5 px-4 text-slate-500 text-[11px]">
+                      <td className="py-2.5 px-4 text-slate-500 text-[11px]">
                         {ws.last_activity ? (
                           <span className="flex items-center gap-1 text-slate-700 dark:text-slate-300">
                             <Clock className="w-3 h-3 text-slate-400" />
@@ -596,7 +588,7 @@ export function WorkspacesTab({ embedded = false }: WorkspacesTabProps) {
                       </td>
 
                       {/* Actions (Requirement 4) */}
-                      <td className="py-3.5 px-4 text-right">
+                      <td className="py-2.5 px-4 text-right w-[200px] whitespace-nowrap">
                         <div className="flex items-center justify-end gap-1.5">
                           {!isCurrent && ws.status !== "archived" && (
                             <Button
