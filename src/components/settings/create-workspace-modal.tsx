@@ -39,12 +39,11 @@ import {
   Briefcase,
   Layers,
   Send,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { useWorkspace } from "@/lib/context/workspace-context";
-import {
-  createWorkspaceInvitation,
-  resendWorkspaceInvitation,
-} from "@/lib/services/workspace-invitation-service";
+import { createDirectWorkspace } from "@/lib/services/workspace-service";
 import {
   getDefaultPermissionsForRole,
   getDefaultDataScope,
@@ -149,13 +148,17 @@ const ROLE_OPTIONS: { role: UserRole; title: string; desc: string; badge: string
 ];
 
 export function CreateWorkspaceModal({ isOpen, onClose, onCreated }: CreateWorkspaceModalProps) {
-  const { createWorkspace } = useWorkspace();
+  const { switchWorkspace } = useWorkspace();
 
   // Wizard Navigation
   const [currentStep, setCurrentStep] = useState<WizardStep>(1);
 
+  // Mode: "direct" (Default) vs "invite"
+  const [mode, setMode] = useState<"direct" | "invite">("direct");
+
   // STEP 1: Business Details
   const [name, setName] = useState("");
+  const [code, setCode] = useState("");
   const [businessName, setBusinessName] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
@@ -169,8 +172,10 @@ export function CreateWorkspaceModal({ isOpen, onClose, onCreated }: CreateWorks
   const [assignedEmail, setAssignedEmail] = useState("");
   const [assignedPhone, setAssignedPhone] = useState("");
   const [assignedJobTitle, setAssignedJobTitle] = useState("");
-  const [credentialMethod, setCredentialMethod] = useState<"invite" | "temp_password">("invite");
   const [tempPassword, setTempPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   // STEP 3: Access Level (Defaults to Workspace Owner)
   const [selectedRole, setSelectedRole] = useState<UserRole>("owner");
@@ -189,24 +194,20 @@ export function CreateWorkspaceModal({ isOpen, onClose, onCreated }: CreateWorks
 
   // Submission & Results
   const [submitting, setSubmitting] = useState(false);
-  const [retrying, setRetrying] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [failedInvId, setFailedInvId] = useState<string | null>(null);
-  const [invitationSuccess, setInvitationSuccess] = useState<{
+  const [createdSuccess, setCreatedSuccess] = useState<{
     workspace: Workspace;
-    email: string;
-    role: UserRole;
-    oneTimeCode: string;
-    inviteLink: string;
-    status: WorkspaceInvitationStatus;
+    code?: string | null;
+    ownerName: string;
+    ownerEmail: string;
+    role: string;
+    status: string;
+    loginUrl: string;
+    mode: "direct" | "invite";
     alreadyExists?: boolean;
-    sentMessage?: string;
-    generatedTempPassword?: string;
   } | null>(null);
 
-  const [copiedCode, setCopiedCode] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
-  const [copiedTempPass, setCopiedTempPass] = useState(false);
 
   // Update permissions when role changes in Step 3
   const handleRoleSelect = (role: UserRole) => {
@@ -219,7 +220,9 @@ export function CreateWorkspaceModal({ isOpen, onClose, onCreated }: CreateWorks
 
   const resetAll = () => {
     setCurrentStep(1);
+    setMode("direct");
     setName("");
+    setCode("");
     setBusinessName("");
     setPhone("");
     setAddress("");
@@ -231,19 +234,18 @@ export function CreateWorkspaceModal({ isOpen, onClose, onCreated }: CreateWorks
     setAssignedEmail("");
     setAssignedPhone("");
     setAssignedJobTitle("");
-    setCredentialMethod("invite");
     setTempPassword("");
+    setConfirmPassword("");
+    setShowPassword(false);
+    setShowConfirmPassword(false);
     setSelectedRole("owner");
     setPermissions(getDefaultPermissionsForRole("owner"));
     setDataScope("all");
     setFinancialVisibility(getDefaultFinancialVisibility("owner"));
     setApprovalLimits(getDefaultApprovalLimits("owner"));
     setError(null);
-    setFailedInvId(null);
-    setInvitationSuccess(null);
-    setCopiedCode(false);
+    setCreatedSuccess(null);
     setCopiedLink(false);
-    setCopiedTempPass(false);
   };
 
   const handleNext = () => {
@@ -256,12 +258,22 @@ export function CreateWorkspaceModal({ isOpen, onClose, onCreated }: CreateWorks
       setCurrentStep(2);
     } else if (currentStep === 2) {
       if (!assignedFullName.trim()) {
-        setError("Please enter the user's Full Name.");
+        setError("Please enter the Owner's Full Name.");
         return;
       }
       if (!assignedEmail.trim() || !assignedEmail.includes("@")) {
         setError("Please enter a valid work email address.");
         return;
+      }
+      if (mode === "direct") {
+        if (!tempPassword || tempPassword.trim().length < 6) {
+          setError("Temporary Password must be at least 6 characters long.");
+          return;
+        }
+        if (tempPassword.trim() !== confirmPassword.trim()) {
+          setError("Passwords do not match. Please verify the confirmation password.");
+          return;
+        }
       }
       setCurrentStep(3);
     } else if (currentStep === 3) {
@@ -314,121 +326,53 @@ export function CreateWorkspaceModal({ isOpen, onClose, onCreated }: CreateWorks
     });
   };
 
-  // Retry sending invitation for failed email
-  const handleRetryInvitation = async () => {
-    if (!failedInvId) return;
-    setRetrying(true);
-    setError(null);
-    try {
-      const res = await resendWorkspaceInvitation(failedInvId);
-      if (res.success) {
-        setFailedInvId(null);
-        setError(null);
-        alert(res.message || "Invitation email successfully resent!");
-      } else {
-        setError(`Invitation could not be sent: ${res.error}`);
-      }
-    } catch (e: any) {
-      setError(`Retry failed: ${e?.message || "Unknown error"}`);
-    } finally {
-      setRetrying(false);
-    }
-  };
-
-  // Final Submission: Create Workspace & Send Invitation
+  // Final Submission: Create Workspace on Server
   const handleSubmit = async () => {
     setSubmitting(true);
     setError(null);
-    setFailedInvId(null);
 
     try {
-      // 1. Create Workspace
-      const wsRes = await createWorkspace({
+      const cleanCode = code.trim() ? code.trim().toUpperCase() : undefined;
+      const res = await createDirectWorkspace({
+        mode,
         name: name.trim(),
+        code: cleanCode,
         business_name: (businessName || name).trim(),
-        owner_name: assignedFullName.trim(),
-        owner_email: assignedEmail.trim().toLowerCase(),
         phone: phone.trim() || undefined,
         country: country.trim() || "United Arab Emirates",
         currency: currency.trim() || "AED",
         address: address.trim() || undefined,
         trn: trn.trim() || undefined,
-        status: "active",
-      });
-
-      if (!wsRes.success || !wsRes.workspace) {
-        setError(wsRes.error || "Failed to create workspace.");
-        setSubmitting(false);
-        return;
-      }
-
-      const createdWs = wsRes.workspace;
-
-      // 2. Dispatch Invitation via Supabase Auth Admin
-      const invRes = await createWorkspaceInvitation({
-        workspace_id: createdWs.id,
-        workspace_name: createdWs.name,
-        email: assignedEmail.trim().toLowerCase(),
-        full_name: assignedFullName.trim(),
+        owner_name: assignedFullName.trim(),
+        owner_email: assignedEmail.trim().toLowerCase(),
+        temporary_password: mode === "direct" ? tempPassword.trim() : undefined,
         role: selectedRole,
         permissions,
         data_scope: dataScope,
         financial_visibility: financialVisibility,
         approval_limits: approvalLimits,
-        invited_by: "Primary Owner",
       });
 
-      // Existing User Handling (Requirement 7)
-      if (invRes.success && invRes.already_exists) {
-        setInvitationSuccess({
-          workspace: createdWs,
-          email: assignedEmail.trim().toLowerCase(),
-          role: selectedRole,
-          oneTimeCode: invRes.invitation?.one_time_code || "EXISTING-USER",
-          inviteLink: invRes.invitation?.invite_link || "/login",
-          status: "accepted",
-          alreadyExists: true,
-          sentMessage: "User already has an account. Workspace access has been assigned.",
-        });
-        if (onCreated) onCreated(createdWs);
-        return;
-      }
-
-      // Email Delivery Failure Handling (Requirement 8)
-      if (!invRes.success || invRes.invitation?.status === "failed") {
-        const errorMsg = invRes.error || "Invitation could not be sent: email delivery failed.";
-        setError(errorMsg);
-        setFailedInvId(invRes.invitation?.id || null);
+      if (!res.success || !res.workspace) {
+        setError(res.error || "Failed to create workspace.");
         setSubmitting(false);
         return;
       }
 
-      let generatedPass: string | undefined = undefined;
-      if (credentialMethod === "temp_password") {
-        let pass = tempPassword.trim();
-        if (!pass) {
-          const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-          let rand = "";
-          for (let i = 0; i < 8; i++) rand += chars.charAt(Math.floor(Math.random() * chars.length));
-          pass = `Temp-${rand.slice(0, 4)}-${rand.slice(4, 8)}!`;
-        }
-        generatedPass = pass;
-      }
-
-      // Success: Credentials dispatched or generated!
-      setInvitationSuccess({
-        workspace: createdWs,
-        email: assignedEmail.trim().toLowerCase(),
-        role: selectedRole,
-        oneTimeCode: invRes.invitation?.one_time_code || "",
-        inviteLink: invRes.invitation?.invite_link || "",
-        status: invRes.invitation?.status || "sent",
-        sentMessage: invRes.message || `Official credentials created for ${assignedEmail}.`,
-        generatedTempPassword: generatedPass,
+      setCreatedSuccess({
+        workspace: res.workspace,
+        code: res.workspace.code || cleanCode || null,
+        ownerName: assignedFullName.trim(),
+        ownerEmail: assignedEmail.trim().toLowerCase(),
+        role: "Workspace Owner",
+        status: "ACTIVE",
+        loginUrl: res.login_url || `${window.location.origin}/login`,
+        mode,
+        alreadyExists: res.already_exists,
       });
 
       if (onCreated) {
-        onCreated(createdWs);
+        onCreated(res.workspace);
       }
     } catch (err: any) {
       setError(err?.message || "An unexpected error occurred.");
@@ -437,16 +381,9 @@ export function CreateWorkspaceModal({ isOpen, onClose, onCreated }: CreateWorks
     }
   };
 
-  const handleCopyCode = () => {
-    if (!invitationSuccess?.oneTimeCode) return;
-    navigator.clipboard.writeText(invitationSuccess.oneTimeCode);
-    setCopiedCode(true);
-    setTimeout(() => setCopiedCode(false), 2500);
-  };
-
   const handleCopyLink = () => {
-    if (!invitationSuccess?.inviteLink) return;
-    navigator.clipboard.writeText(invitationSuccess.inviteLink);
+    if (!createdSuccess?.loginUrl) return;
+    navigator.clipboard.writeText(createdSuccess.loginUrl);
     setCopiedLink(true);
     setTimeout(() => setCopiedLink(false), 2500);
   };
@@ -465,127 +402,80 @@ export function CreateWorkspaceModal({ isOpen, onClose, onCreated }: CreateWorks
     >
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 p-6">
         {/* If Invitation is Successful, show the One-Time Code Dialog */}
-        {invitationSuccess ? (
+        {createdSuccess ? (
           <div className="space-y-6 py-2">
             <div className="text-center space-y-2">
               <div className="w-14 h-14 bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 rounded-full flex items-center justify-center mx-auto shadow-inner">
                 <CheckCircle2 className="w-7 h-7" />
               </div>
-              <DialogTitle className="text-xl font-black text-slate-900 dark:text-slate-100">
-                {invitationSuccess.alreadyExists
-                  ? "Workspace Created & Staff Account Assigned!"
-                  : "Workspace Created & Invitation Dispatched!"}
+              <DialogTitle className="text-xl font-black text-slate-900 dark:text-slate-100 tracking-tight">
+                WORKSPACE CREATED SUCCESSFULLY
               </DialogTitle>
               <DialogDescription className="text-xs text-slate-500 max-w-md mx-auto">
-                {invitationSuccess.alreadyExists
-                  ? "The user already has an existing account. Workspace access and role permissions have been assigned directly."
-                  : "The official Supabase Auth invitation email has been dispatched to the user's inbox with a secure activation link."}
+                {createdSuccess.mode === "direct"
+                  ? "The business workspace and owner login account have been configured on the server. The owner can sign in immediately on any computer."
+                  : "The business workspace has been created and an invitation email has been dispatched."}
               </DialogDescription>
             </div>
 
-            {/* Summary Details */}
-            <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-200 dark:border-slate-700 text-xs space-y-2">
-              <div className="flex justify-between">
+            {/* Summary Details Card */}
+            <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-200 dark:border-slate-700 text-xs space-y-2.5">
+              <div className="flex justify-between items-center pb-2 border-b border-slate-200 dark:border-slate-700/60">
                 <span className="text-slate-500">Workspace:</span>
-                <span className="font-bold text-slate-900 dark:text-slate-100">
-                  {invitationSuccess.workspace.name}
+                <span className="font-bold text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
+                  <Building2 className="w-3.5 h-3.5 text-blue-600" />
+                  {createdSuccess.workspace.name}
                 </span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-slate-500">Invited User:</span>
-                <span className="font-semibold">{invitationSuccess.email}</span>
+
+              {createdSuccess.code && (
+                <div className="flex justify-between items-center pb-2 border-b border-slate-200 dark:border-slate-700/60">
+                  <span className="text-slate-500">Workspace Code:</span>
+                  <Badge variant="outline" className="font-mono font-bold text-xs bg-white dark:bg-slate-900 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-900">
+                    {createdSuccess.code}
+                  </Badge>
+                </div>
+              )}
+
+              <div className="flex justify-between items-center pb-2 border-b border-slate-200 dark:border-slate-700/60">
+                <span className="text-slate-500">Workspace Owner:</span>
+                <span className="font-semibold text-slate-800 dark:text-slate-200">
+                  {createdSuccess.ownerName}
+                </span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-slate-500">Assigned Role:</span>
-                <Badge variant="outline" className="text-[10px] uppercase font-bold">
-                  {invitationSuccess.role}
+
+              <div className="flex justify-between items-center pb-2 border-b border-slate-200 dark:border-slate-700/60">
+                <span className="text-slate-500">Email:</span>
+                <span className="font-mono text-slate-800 dark:text-slate-200">
+                  {createdSuccess.ownerEmail}
+                </span>
+              </div>
+
+              <div className="flex justify-between items-center pb-2 border-b border-slate-200 dark:border-slate-700/60">
+                <span className="text-slate-500">Role:</span>
+                <Badge variant="outline" className="text-[10px] uppercase font-bold bg-blue-50 text-blue-800 dark:bg-blue-950 dark:text-blue-300 border-blue-200">
+                  {createdSuccess.role}
                 </Badge>
               </div>
-              <div className="flex justify-between">
+
+              <div className="flex justify-between items-center">
                 <span className="text-slate-500">Status:</span>
-                {invitationSuccess.alreadyExists ? (
-                  <Badge className="bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300 text-[10px] uppercase font-bold">
-                    Active (Existing Account)
-                  </Badge>
-                ) : (
-                  <Badge className="bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 text-[10px] uppercase font-bold">
-                    Invitation Dispatched
-                  </Badge>
-                )}
-              </div>
-            </div>
-
-            {/* TEMPORARY PASSWORD (Requirement 1 & 2) */}
-            {invitationSuccess.generatedTempPassword && (
-              <div className="p-4 bg-purple-50/60 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-800 rounded-xl space-y-2.5">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-purple-900 dark:text-purple-200 flex items-center gap-1.5">
-                    <KeyRound className="w-4 h-4 text-purple-600" />
-                    Temporary Password Credentials
-                  </span>
-                  <Badge variant="outline" className="text-[10px] border-purple-300 text-purple-700">
-                    Change Required On First Login
-                  </Badge>
-                </div>
-                <p className="text-[11px] text-slate-600 dark:text-slate-400">
-                  Share this temporary password with the Second Workspace Owner. For security, this password is never stored in plaintext and will not be displayed again.
-                </p>
-
-                <div className="flex items-center gap-2">
-                  <div className="flex-1 bg-white dark:bg-slate-900 border border-purple-200 dark:border-purple-800 rounded-lg p-2.5 font-mono font-black text-lg text-center tracking-widest text-purple-700 dark:text-purple-300 select-all">
-                    {invitationSuccess.generatedTempPassword}
-                  </div>
-                  <Button
-                    onClick={() => {
-                      navigator.clipboard.writeText(invitationSuccess.generatedTempPassword || "");
-                      setCopiedTempPass(true);
-                      setTimeout(() => setCopiedTempPass(false), 2500);
-                    }}
-                    className="bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs gap-1.5 h-11 px-4"
-                  >
-                    {copiedTempPass ? <Check className="w-4 h-4 text-emerald-300" /> : <Copy className="w-4 h-4" />}
-                    {copiedTempPass ? "Copied!" : "Copy Password"}
-                  </Button>
-                </div>
-              </div>
-            )}
-
-            {/* ONE-TIME ACCESS CODE (Crucial Requirement) */}
-            <div className="p-4 bg-blue-50/60 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900 rounded-xl space-y-2.5">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-blue-900 dark:text-blue-200 flex items-center gap-1.5">
-                  <KeyRound className="w-4 h-4 text-blue-600" />
-                  Secure One-Time Activation Code
-                </span>
-                <Badge variant="outline" className="text-[10px] border-blue-300 text-blue-700">
-                  Valid 72 Hours
+                <Badge className="bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 text-[10px] uppercase font-bold flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  {createdSuccess.status}
                 </Badge>
               </div>
-              <p className="text-[11px] text-slate-600 dark:text-slate-400">
-                Share this code with the user if they activate manually at login. This code is single-use and expires after account activation.
-              </p>
-
-              <div className="flex items-center gap-2">
-                <div className="flex-1 bg-white dark:bg-slate-900 border border-blue-200 dark:border-blue-800 rounded-lg p-2.5 font-mono font-black text-lg text-center tracking-widest text-blue-700 dark:text-blue-400 select-all">
-                  {invitationSuccess.oneTimeCode}
-                </div>
-                <Button
-                  onClick={handleCopyCode}
-                  className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs gap-1.5 h-11 px-4"
-                >
-                  {copiedCode ? <Check className="w-4 h-4 text-emerald-300" /> : <Copy className="w-4 h-4" />}
-                  {copiedCode ? "Copied!" : "Copy Code"}
-                </Button>
-              </div>
             </div>
 
-            {/* Direct Activation Link */}
+            {/* Login URL Section */}
             <div className="space-y-1.5">
-              <Label className="text-xs text-slate-500">Direct Invitation Link:</Label>
+              <Label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                Application Login URL:
+              </Label>
               <div className="flex items-center gap-2">
                 <Input
                   readOnly
-                  value={invitationSuccess.inviteLink}
+                  value={createdSuccess.loginUrl}
                   className="text-xs font-mono h-9 bg-slate-50 dark:bg-slate-800 select-all"
                 />
                 <Button
@@ -594,20 +484,46 @@ export function CreateWorkspaceModal({ isOpen, onClose, onCreated }: CreateWorks
                   className="text-xs font-semibold h-9 shrink-0 gap-1.5"
                 >
                   {copiedLink ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
-                  {copiedLink ? "Copied" : "Copy Link"}
+                  {copiedLink ? "Copied" : "Copy Login URL"}
                 </Button>
               </div>
+              <p className="text-[11px] text-slate-500">
+                The Workspace Owner can navigate to this URL from any computer and sign in with their Email and Temporary Password.
+              </p>
             </div>
 
-            <DialogFooter className="pt-2">
+            {/* Action Buttons */}
+            <DialogFooter className="pt-2 gap-2 flex-col sm:flex-row">
               <Button
+                type="button"
+                variant="outline"
+                onClick={handleCopyLink}
+                className="text-xs font-bold h-10 gap-1.5"
+              >
+                {copiedLink ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                {copiedLink ? "URL Copied" : "Copy Login URL"}
+              </Button>
+              <Button
+                type="button"
+                onClick={() => {
+                  switchWorkspace(createdSuccess.workspace.id);
+                  resetAll();
+                  onClose();
+                }}
+                className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs h-10 gap-1.5"
+              >
+                <Building2 className="w-4 h-4" />
+                Open Workspace
+              </Button>
+              <Button
+                type="button"
                 onClick={() => {
                   resetAll();
                   onClose();
                 }}
-                className="w-full bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900 text-white font-bold text-xs h-10"
+                className="bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900 text-white font-bold text-xs h-10"
               >
-                Done
+                Manage Access
               </Button>
             </DialogFooter>
           </div>
@@ -619,15 +535,15 @@ export function CreateWorkspaceModal({ isOpen, onClose, onCreated }: CreateWorks
                 <div>
                   <DialogTitle className="text-base font-black flex items-center gap-2 text-slate-900 dark:text-slate-100">
                     <Building2 className="w-5 h-5 text-blue-600" />
-                    Create Business Workspace &amp; Invite User
+                    {mode === "direct" ? "Create Business Workspace & Login Account" : "Create Business Workspace & Send Invitation"}
                   </DialogTitle>
                   <DialogDescription className="text-xs text-slate-500 mt-0.5">
                     Step {currentStep} of 5:{" "}
                     {currentStep === 1 && "Business Details"}
-                    {currentStep === 2 && "Assign User"}
+                    {currentStep === 2 && (mode === "direct" ? "Owner Account & Password" : "Assign User")}
                     {currentStep === 3 && "Access Level & Role Template"}
                     {currentStep === 4 && "Module Access & Granular Permissions"}
-                    {currentStep === 5 && "Review & Send Invitation"}
+                    {currentStep === 5 && "Review & Confirmation"}
                   </DialogDescription>
                 </div>
                 <Badge variant="outline" className="text-[10px] font-bold uppercase">
@@ -651,23 +567,9 @@ export function CreateWorkspaceModal({ isOpen, onClose, onCreated }: CreateWorks
             </DialogHeader>
 
             {error && (
-              <div className="p-3 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 rounded-xl flex items-center justify-between gap-2 text-xs font-semibold text-red-700 dark:text-red-400">
-                <div className="flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4 shrink-0" />
-                  <span>{error}</span>
-                </div>
-                {failedInvId && (
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    onClick={handleRetryInvitation}
-                    disabled={retrying}
-                    className="h-7 text-xs font-bold border-red-300 text-red-700 hover:bg-red-100 shrink-0"
-                  >
-                    {retrying ? "Retrying..." : "Retry Invitation"}
-                  </Button>
-                )}
+              <div className="p-3 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 rounded-xl flex items-center gap-2 text-xs font-semibold text-red-700 dark:text-red-400">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <span>{error}</span>
               </div>
             )}
 
@@ -675,7 +577,7 @@ export function CreateWorkspaceModal({ isOpen, onClose, onCreated }: CreateWorks
             {currentStep === 1 && (
               <div className="space-y-4 py-2">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                  <div className="space-y-1.5 sm:col-span-2">
+                  <div className="space-y-1.5">
                     <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
                       <Building2 className="w-3.5 h-3.5 text-blue-600" />
                       Workspace / Business Name *
@@ -689,6 +591,22 @@ export function CreateWorkspaceModal({ isOpen, onClose, onCreated }: CreateWorks
                   </div>
 
                   <div className="space-y-1.5">
+                    <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center justify-between">
+                      <span className="flex items-center gap-1.5">
+                        <Shield className="w-3.5 h-3.5 text-blue-600" />
+                        Workspace Code (Optional)
+                      </span>
+                      <span className="text-[10px] text-slate-400 font-normal">e.g. IBRAR01</span>
+                    </Label>
+                    <Input
+                      placeholder="e.g. IBRAR01"
+                      value={code}
+                      onChange={(e) => setCode(e.target.value.toUpperCase())}
+                      className="text-xs h-9 font-mono uppercase tracking-wider"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5 sm:col-span-2">
                     <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">
                       Legal Business Name (Optional)
                     </Label>
@@ -778,27 +696,72 @@ export function CreateWorkspaceModal({ isOpen, onClose, onCreated }: CreateWorks
               </div>
             )}
 
-            {/* ─── STEP 2: ASSIGN USER ───────────────────────────────────────── */}
+            {/* ─── STEP 2: ASSIGN USER & ACCOUNT SETUP ───────────────────────── */}
             {currentStep === 2 && (
               <div className="space-y-4 py-2">
                 <div className="p-3 bg-blue-50/50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900 rounded-xl text-xs text-blue-900 dark:text-blue-300 space-y-1">
                   <p className="font-bold flex items-center gap-1.5">
                     <User className="w-3.5 h-3.5 text-blue-600" />
-                    Assign Workspace Operator
+                    Workspace Owner &amp; Login Setup
                   </p>
                   <p className="text-[11px] text-slate-600 dark:text-slate-400">
-                    This user will receive an invitation email and secure code to set up their own account and password. They will not have access to ATIQ JEHAN records.
+                    Create the login account directly with a password or send an invitation link. All data in this workspace will be completely isolated from ATIQ JEHAN.
                   </p>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                {/* Mode Selector */}
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                    Account Creation Mode *
+                  </Label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <div
+                      onClick={() => setMode("direct")}
+                      className={`p-3 rounded-xl border cursor-pointer transition-all ${
+                        mode === "direct"
+                          ? "border-blue-600 bg-blue-50/50 dark:bg-blue-950/30 text-blue-900 dark:text-blue-100 ring-1 ring-blue-600"
+                          : "border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 font-bold text-xs">
+                        <KeyRound className="w-4 h-4 text-blue-600" />
+                        Create Login Directly
+                        <Badge variant="outline" className="text-[9px] bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 border-blue-300">
+                          Recommended
+                        </Badge>
+                      </div>
+                      <p className="text-[11px] text-slate-500 mt-1">
+                        Instantly create user with email &amp; temporary password. Can login from any computer immediately without waiting for email.
+                      </p>
+                    </div>
+
+                    <div
+                      onClick={() => setMode("invite")}
+                      className={`p-3 rounded-xl border cursor-pointer transition-all ${
+                        mode === "invite"
+                          ? "border-blue-600 bg-blue-50/50 dark:bg-blue-950/30 text-blue-900 dark:text-blue-100 ring-1 ring-blue-600"
+                          : "border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 font-bold text-xs">
+                        <Mail className="w-4 h-4 text-slate-500" />
+                        Send Email Invitation
+                      </div>
+                      <p className="text-[11px] text-slate-500 mt-1">
+                        Send an invitation link via email. The owner creates their own password upon clicking the link.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-1">
                   <div className="space-y-1.5 sm:col-span-2">
                     <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
                       <User className="w-3.5 h-3.5 text-blue-600" />
-                      Full Name *
+                      Owner Full Name *
                     </Label>
                     <Input
-                      placeholder="e.g. Ahmed Khan"
+                      placeholder="e.g. Ibrar Khan"
                       value={assignedFullName}
                       onChange={(e) => setAssignedFullName(e.target.value)}
                       className="text-xs h-9"
@@ -808,21 +771,80 @@ export function CreateWorkspaceModal({ isOpen, onClose, onCreated }: CreateWorks
                   <div className="space-y-1.5 sm:col-span-2">
                     <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
                       <Mail className="w-3.5 h-3.5 text-blue-600" />
-                      Work Email *
+                      Owner Login Email *
                     </Label>
                     <Input
                       type="email"
-                      placeholder="e.g. ahmed@example.com"
+                      placeholder="e.g. ibrar@example.com"
                       value={assignedEmail}
                       onChange={(e) => setAssignedEmail(e.target.value)}
                       className="text-xs h-9"
                     />
                   </div>
 
+                  {/* Passwords for Direct Mode */}
+                  {mode === "direct" && (
+                    <>
+                      <div className="space-y-1.5">
+                        <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                          <KeyRound className="w-3.5 h-3.5 text-blue-600" />
+                          Temporary Password *
+                        </Label>
+                        <div className="relative">
+                          <Input
+                            type={showPassword ? "text" : "password"}
+                            placeholder="At least 6 characters"
+                            value={tempPassword}
+                            onChange={(e) => setTempPassword(e.target.value)}
+                            className="text-xs h-9 pr-8"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                            tabIndex={-1}
+                          >
+                            {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                          <KeyRound className="w-3.5 h-3.5 text-blue-600" />
+                          Confirm Password *
+                        </Label>
+                        <div className="relative">
+                          <Input
+                            type={showConfirmPassword ? "text" : "password"}
+                            placeholder="Re-type password"
+                            value={confirmPassword}
+                            onChange={(e) => setConfirmPassword(e.target.value)}
+                            className="text-xs h-9 pr-8"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                            tabIndex={-1}
+                          >
+                            {showConfirmPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="sm:col-span-2">
+                        <p className="text-[11px] text-slate-500">
+                          Password must be at least 6 characters. The user can log in immediately from any computer using this email and password.
+                        </p>
+                      </div>
+                    </>
+                  )}
+
                   <div className="space-y-1.5">
                     <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
                       <Phone className="w-3.5 h-3.5 text-slate-400" />
-                      Mobile Phone
+                      Mobile Phone (Optional)
                     </Label>
                     <Input
                       placeholder="+971 55 123 4567"
@@ -835,71 +857,28 @@ export function CreateWorkspaceModal({ isOpen, onClose, onCreated }: CreateWorks
                   <div className="space-y-1.5">
                     <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
                       <Briefcase className="w-3.5 h-3.5 text-slate-400" />
-                      Job Title
+                      Job Title (Optional)
                     </Label>
                     <Input
-                      placeholder="e.g. General Manager / Workshop Lead"
+                      placeholder="e.g. Managing Partner / Workshop Owner"
                       value={assignedJobTitle}
                       onChange={(e) => setAssignedJobTitle(e.target.value)}
                       className="text-xs h-9"
                     />
                   </div>
 
-                  {/* Credential Method Selector (Requirement 1 & 2) */}
-                  <div className="space-y-2 sm:col-span-2 pt-3 border-t border-slate-100 dark:border-slate-800">
-                    <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                      Login Authentication &amp; Password Setup *
-                    </Label>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      <div
-                        onClick={() => setCredentialMethod("invite")}
-                        className={`p-3 rounded-xl border cursor-pointer transition-all ${
-                          credentialMethod === "invite"
-                            ? "border-blue-600 bg-blue-50/50 dark:bg-blue-950/30 text-blue-900 dark:text-blue-100 ring-1 ring-blue-600"
-                            : "border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50"
-                        }`}
-                      >
-                        <div className="flex items-center gap-2 font-bold text-xs">
-                          <Mail className="w-4 h-4 text-blue-600" />
-                          Send Invitation Link (Recommended)
-                        </div>
-                        <p className="text-[11px] text-slate-500 mt-1">
-                          Dispatches an invitation link/email where the owner securely creates their own private password.
-                        </p>
+                  <div className="sm:col-span-2 pt-2">
+                    <div className="flex items-center justify-between p-2.5 bg-slate-50 dark:bg-slate-800/40 rounded-xl border text-xs">
+                      <div className="flex items-center gap-2">
+                        <Crown className="w-4 h-4 text-amber-600" />
+                        <span className="font-semibold text-slate-700 dark:text-slate-300">
+                          Assigned Role: <span className="font-bold text-blue-600 uppercase">Workspace Owner</span>
+                        </span>
                       </div>
-
-                      <div
-                        onClick={() => setCredentialMethod("temp_password")}
-                        className={`p-3 rounded-xl border cursor-pointer transition-all ${
-                          credentialMethod === "temp_password"
-                            ? "border-blue-600 bg-blue-50/50 dark:bg-blue-950/30 text-blue-900 dark:text-blue-100 ring-1 ring-blue-600"
-                            : "border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50"
-                        }`}
-                      >
-                        <div className="flex items-center gap-2 font-bold text-xs">
-                          <KeyRound className="w-4 h-4 text-purple-600" />
-                          Set / Auto-Generate Temporary Password
-                        </div>
-                        <p className="text-[11px] text-slate-500 mt-1">
-                          Creates account with temporary credentials. User must change their password on first login.
-                        </p>
-                      </div>
+                      <Badge variant="outline" className="text-[10px] text-emerald-600 border-emerald-300 uppercase font-bold">
+                        {mode === "direct" ? "Active Immediately" : "Pending Activation"}
+                      </Badge>
                     </div>
-
-                    {credentialMethod === "temp_password" && (
-                      <div className="pt-2 space-y-1.5">
-                        <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                          Temporary Password (Optional - leave blank to auto-generate)
-                        </Label>
-                        <Input
-                          type="text"
-                          placeholder="Leave blank to auto-generate secure temporary password"
-                          value={tempPassword}
-                          onChange={(e) => setTempPassword(e.target.value)}
-                          className="text-xs h-9 font-mono"
-                        />
-                      </div>
-                    )}
                   </div>
                 </div>
               </div>
@@ -1000,7 +979,7 @@ export function CreateWorkspaceModal({ isOpen, onClose, onCreated }: CreateWorks
                           <div className="pt-2.5 mt-2 border-t border-slate-100 dark:border-slate-800 flex flex-wrap gap-1.5">
                             {(["can_view", "can_create", "can_edit", "can_delete", "can_print", "can_export"] as const).map(
                               (actionKey) => {
-                                const actionLabel = actionKey.replace("can_", "");
+                                actionKey.replace("can_", "");
                                 const isActionOn = Boolean(modPerm[actionKey]);
                                 return (
                                   <button
@@ -1013,7 +992,7 @@ export function CreateWorkspaceModal({ isOpen, onClose, onCreated }: CreateWorks
                                         : "bg-slate-100 dark:bg-slate-800 text-slate-400 border border-slate-200 dark:border-slate-700"
                                     }`}
                                   >
-                                    {actionLabel}
+                                    {actionKey.replace("can_", "")}
                                   </button>
                                 );
                               }
@@ -1042,10 +1021,17 @@ export function CreateWorkspaceModal({ isOpen, onClose, onCreated }: CreateWorks
                       <div>
                         <span className="text-slate-500 text-[11px]">Target Workspace:</span>
                         <p className="font-black text-sm text-slate-900 dark:text-slate-100">{name}</p>
+                        {code.trim() && (
+                          <span className="text-[10px] font-mono text-blue-600 bg-blue-50 dark:bg-blue-950 px-1.5 py-0.5 rounded">
+                            CODE: {code.trim().toUpperCase()}
+                          </span>
+                        )}
                       </div>
                       <div>
-                        <span className="text-slate-500 text-[11px]">Assigned Role:</span>
-                        <p className="font-bold text-sm text-blue-600 uppercase">{selectedRole}</p>
+                        <span className="text-slate-500 text-[11px]">Setup Mode:</span>
+                        <p className="font-bold text-xs text-blue-600 uppercase">
+                          {mode === "direct" ? "Direct Login Account" : "Email Invitation Link"}
+                        </p>
                       </div>
                     </div>
 
@@ -1055,7 +1041,7 @@ export function CreateWorkspaceModal({ isOpen, onClose, onCreated }: CreateWorks
                         <p className="font-bold text-slate-800 dark:text-slate-200">{assignedFullName}</p>
                       </div>
                       <div>
-                        <span className="text-slate-500 text-[11px]">Invitation Email:</span>
+                        <span className="text-slate-500 text-[11px]">Owner Login Email:</span>
                         <p className="font-bold text-slate-800 dark:text-slate-200">{assignedEmail}</p>
                       </div>
                     </div>
@@ -1068,9 +1054,9 @@ export function CreateWorkspaceModal({ isOpen, onClose, onCreated }: CreateWorks
                         </p>
                       </div>
                       <div>
-                        <span className="text-slate-500 text-[11px]">Data Access Scope:</span>
-                        <Badge variant="outline" className="text-[10px] uppercase font-bold mt-0.5">
-                          {dataScope}
+                        <span className="text-slate-500 text-[11px]">Assigned Role:</span>
+                        <Badge variant="outline" className="text-[10px] uppercase font-bold mt-0.5 text-blue-600 border-blue-300">
+                          {selectedRole}
                         </Badge>
                       </div>
                     </div>
@@ -1078,8 +1064,16 @@ export function CreateWorkspaceModal({ isOpen, onClose, onCreated }: CreateWorks
                     <div className="pt-1">
                       <span className="text-slate-500 text-[11px]">Activation Policy:</span>
                       <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-0.5">
-                        User will create their own password via link or code. Membership will remain{" "}
-                        <span className="font-bold text-amber-600">PENDING</span> until activation.
+                        {mode === "direct" ? (
+                          <span className="text-emerald-600 dark:text-emerald-400 font-semibold">
+                            Active immediately. Owner account is created with temporary password and linked to {name}. User can log in immediately from any computer.
+                          </span>
+                        ) : (
+                          <span>
+                            User will receive an invitation link to set up their password. Membership will remain{" "}
+                            <span className="font-bold text-amber-600">PENDING</span> until activation.
+                          </span>
+                        )}
                       </p>
                     </div>
                   </div>
@@ -1136,6 +1130,11 @@ export function CreateWorkspaceModal({ isOpen, onClose, onCreated }: CreateWorks
                       <>
                         <Loader2 className="w-3.5 h-3.5 animate-spin" />
                         Creating Workspace...
+                      </>
+                    ) : mode === "direct" ? (
+                      <>
+                        <ShieldCheck className="w-3.5 h-3.5" />
+                        Create Workspace &amp; Login Account
                       </>
                     ) : (
                       <>

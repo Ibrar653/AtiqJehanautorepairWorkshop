@@ -21,6 +21,8 @@ import type {
   WorkspaceAuditLog,
   WorkspaceAuditAction,
   FinancialRecordCounts,
+  CreateDirectWorkspacePayload,
+  CreateDirectWorkspaceResponse,
 } from "@/types/database";
 
 export interface CreateWorkspaceInput {
@@ -421,16 +423,72 @@ export async function getWorkspaces(userEmail?: string): Promise<Workspace[]> {
     if (isPlatformOwner) {
       return local;
     }
-    return local.filter((w) => w.status === "active");
+
+    // Strictly filter local workspaces by active membership for non-platform users
+    const allMembers = getLocalMembers();
+    const userMembers = allMembers.filter(
+      (m) =>
+        (userEmail && m.user_id.toLowerCase() === userEmail.toLowerCase()) &&
+        m.status === "active"
+    );
+    if (userMembers.length === 0) {
+      return [];
+    }
+    const memberWsIds = new Set(userMembers.map((m) => m.workspace_id));
+    return local.filter((w) => memberWsIds.has(w.id) && w.status === "active");
   })();
 
   return inFlightWorkspacesPromise;
 }
 
-
 export async function getWorkspaceById(id: string): Promise<Workspace | null> {
   const all = await getWorkspaces();
   return all.find((w) => w.id === id) || null;
+}
+
+// ─── Direct Workspace & User Creation (Server-Side) ──────────────────────────
+
+export async function createDirectWorkspace(
+  payload: CreateDirectWorkspacePayload
+): Promise<CreateDirectWorkspaceResponse> {
+  try {
+    const res = await fetch("/api/workspaces/create", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    const data: CreateDirectWorkspaceResponse = await res.json();
+    if (!res.ok || !data.success) {
+      return { success: false, error: data.error || "Failed to create workspace." };
+    }
+
+    // Sync created workspace and membership into local cache for immediate UI responsiveness
+    if (data.workspace) {
+      const current = getLocalWorkspaces();
+      if (!current.some((w) => w.id === data.workspace!.id)) {
+        saveLocalWorkspaces([data.workspace, ...current]);
+      }
+      if (data.owner?.id) {
+        const members = getLocalMembers();
+        const newMember: WorkspaceMember = {
+          id: `wm-${Date.now().toString(36)}`,
+          workspace_id: data.workspace.id,
+          user_id: data.owner.id,
+          role: "owner",
+          status: "active",
+          is_workspace_owner: true,
+          joined_at: new Date().toISOString(),
+        };
+        saveLocalMembers([...members, newMember]);
+      }
+    }
+
+    return data;
+  } catch (err: any) {
+    console.error("createDirectWorkspace network error:", err);
+    return { success: false, error: err.message || "Network error creating workspace." };
+  }
 }
 
 // ─── Workspace Creation ──────────────────────────────────────────────────────

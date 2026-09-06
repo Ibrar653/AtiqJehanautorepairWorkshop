@@ -30,10 +30,12 @@ import {
   ArrowRight,
   Sparkles,
 } from "lucide-react";
-import { APP_NAME, COMPANY_FULL_NAME, PRIMARY_OWNER_EMAIL, DEFAULT_WORKSPACE_ID } from "@/lib/constants";
-import { getLocalUsers, logUserActivity } from "@/lib/services/user-service";
+import { APP_NAME, COMPANY_FULL_NAME, PRIMARY_OWNER_EMAIL } from "@/lib/constants";
+import { getLocalUsers, saveLocalUsers, logUserActivity } from "@/lib/services/user-service";
 import {
   getLocalMembers,
+  saveLocalMembers,
+  saveLocalWorkspaces,
   getWorkspaces,
   setActiveWorkspaceId,
 } from "@/lib/services/workspace-service";
@@ -161,33 +163,16 @@ function LoginForm() {
           return;
         }
 
-        const localUsers = getLocalUsers();
-        const staffUser = localUsers.find((u) => u.email.toLowerCase() === authenticatedEmail);
-
-        if (!staffUser) {
-          // If no local record yet, allow entry if auth user metadata contains workspace_id
-          const userMeta = data.user.user_metadata || {};
-          const metaWsId = userMeta.workspace_id || DEFAULT_WORKSPACE_ID;
-          setActiveWorkspaceId(metaWsId);
-          router.push("/dashboard");
-          router.refresh();
-          return;
-        }
-
-        // Account Status Check
-        if (staffUser.status === "suspended" || staffUser.status === "disabled" || !staffUser.is_active) {
-          await supabase.auth.signOut();
-          setError("Your staff account is currently suspended or disabled. Please contact the workshop administrator.");
-          setLoading(false);
-          return;
-        }
+        // Non-Primary Owner: Resolve workspace strictly from Supabase workspace_members
+        const userMeta = data.user.user_metadata || {};
+        const metaFullName = userMeta.full_name || authenticatedEmail.split("@")[0];
 
         await handlePostLoginRouting(
-          staffUser.id,
+          data.user.id,
           authenticatedEmail,
-          staffUser.full_name,
-          staffUser.role,
-          staffUser.workspace_id
+          metaFullName,
+          "owner",
+          userMeta.workspace_id
         );
       }
     } catch (err: any) {
@@ -197,7 +182,7 @@ function LoginForm() {
     }
   };
 
-  // ─── POST-LOGIN WORKSPACE ROUTING (REQUIREMENT 8) ─────────────────────────
+  // ─── POST-LOGIN WORKSPACE ROUTING (DATABASE-BACKED) ──────────────────────
   const handlePostLoginRouting = async (
     userId: string,
     userEmail: string,
@@ -205,38 +190,155 @@ function LoginForm() {
     role: string,
     assignedWorkspaceId?: string
   ) => {
-    // 1. Fetch user's active workspace memberships
-    const allMembers = getLocalMembers();
-    const activeMembers = allMembers.filter(
-      (m) =>
-        (m.user_id === userId || m.user_id === userEmail) &&
-        m.status === "active"
-    );
+    const supabase = createClient();
+    let memberWorkspaces: Workspace[] = [];
+    let memberRole = role || "owner";
 
-    const allWorkspaces = await getWorkspaces();
+    try {
+      // 1. Fetch user's active workspace memberships directly from Supabase
+      const { data: dbMembers, error: dbError } = await supabase
+        .from("workspace_members")
+        .select("id, workspace_id, user_id, role, status, is_workspace_owner, permissions")
+        .or(`user_id.eq.${userId},user_id.eq.${userEmail}`)
+        .eq("status", "active");
 
-    // Map active memberships to workspace objects
-    let memberWorkspaces = allWorkspaces.filter((w) =>
-      activeMembers.some((m) => m.workspace_id === w.id) && w.status === "active"
-    );
+      if (!dbError && dbMembers && dbMembers.length > 0) {
+        const wsIds = dbMembers.map((m) => m.workspace_id).filter(Boolean);
+        if (wsIds.length > 0) {
+          const { data: wsRows, error: wsErr } = await supabase
+            .from("workspaces")
+            .select("*")
+            .in("id", wsIds);
 
-    // If no membership found in table but user has assignedWorkspaceId
-    if (memberWorkspaces.length === 0 && assignedWorkspaceId) {
-      const assignedWs = allWorkspaces.find((w) => w.id === assignedWorkspaceId);
-      if (assignedWs) memberWorkspaces = [assignedWs];
+          if (!wsErr && wsRows) {
+            for (const ws of wsRows) {
+              if (ws.status === "active" || !ws.status) {
+                memberWorkspaces.push(ws as Workspace);
+              }
+            }
+          }
+        }
+        if (dbMembers[0]?.role) {
+          memberRole = dbMembers[0].role;
+        }
+      }
+
+      // 2. If no DB memberships found, check user metadata workspace_id
+      if (memberWorkspaces.length === 0 && assignedWorkspaceId) {
+        const { data: wsData, error: wsError } = await supabase
+          .from("workspaces")
+          .select("*")
+          .eq("id", assignedWorkspaceId)
+          .single();
+
+        if (!wsError && wsData && (wsData.status === "active" || !wsData.status)) {
+          memberWorkspaces.push(wsData as Workspace);
+        }
+      }
+
+      // 3. Fallback to local storage memberships if database is offline or local dev
+      if (memberWorkspaces.length === 0) {
+        const allMembers = getLocalMembers();
+        const activeMembers = allMembers.filter(
+          (m) =>
+            (m.user_id === userId || m.user_id.toLowerCase() === userEmail.toLowerCase()) &&
+            m.status === "active"
+        );
+        const allWorkspaces = await getWorkspaces(userEmail);
+        const localMatched = allWorkspaces.filter((w) =>
+          activeMembers.some((m) => m.workspace_id === w.id) && (w.status === "active" || !w.status)
+        );
+        if (localMatched.length > 0) {
+          memberWorkspaces = localMatched;
+        }
+      }
+    } catch (queryErr) {
+      console.warn("Could not query workspace memberships from database:", queryErr);
+    }
+
+    // STRICT ACCESS ENFORCEMENT: Never fall back to DEFAULT_WORKSPACE_ID for non-primary owners!
+    if (memberWorkspaces.length === 0) {
+      try {
+        await supabase.auth.signOut();
+      } catch {}
+
+      setError("Access Denied: No active workspace found for this account. Please contact the workshop administrator.");
+      setLoading(false);
+      return;
+    }
+
+    // Sync resolved workspaces into local cache for this browser session
+    try {
+      const existingLocalWs = await getWorkspaces(userEmail);
+      const mergedWs = [...existingLocalWs];
+      for (const nw of memberWorkspaces) {
+        const idx = mergedWs.findIndex((w) => w.id === nw.id);
+        if (idx >= 0) mergedWs[idx] = nw;
+        else mergedWs.push(nw);
+      }
+      saveLocalWorkspaces(mergedWs);
+
+      // Sync local user record for UI display
+      const localUsers = getLocalUsers();
+      const existingUserIdx = localUsers.findIndex(
+        (u) => u.email.toLowerCase() === userEmail.toLowerCase()
+      );
+      if (existingUserIdx >= 0) {
+        localUsers[existingUserIdx].workspace_id = memberWorkspaces[0].id;
+        localUsers[existingUserIdx].role = memberRole as any;
+        saveLocalUsers(localUsers);
+      } else {
+        localUsers.push({
+          id: userId,
+          email: userEmail,
+          full_name: userName || userEmail.split("@")[0],
+          role: memberRole as any,
+          workspace_id: memberWorkspaces[0].id,
+          is_active: true,
+          status: "active",
+          created_at: new Date().toISOString(),
+        } as any);
+        saveLocalUsers(localUsers);
+      }
+
+      // Sync local members
+      const localMembers = getLocalMembers();
+      for (const nw of memberWorkspaces) {
+        const mIdx = localMembers.findIndex(
+          (m) =>
+            (m.user_id === userId || m.user_id.toLowerCase() === userEmail.toLowerCase()) &&
+            m.workspace_id === nw.id
+        );
+        if (mIdx === -1) {
+          localMembers.push({
+            id: `wm-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`,
+            workspace_id: nw.id,
+            user_id: userId,
+            role: memberRole as any,
+            status: "active",
+            is_workspace_owner: memberRole === "owner",
+            joined_at: new Date().toISOString(),
+          });
+        }
+      }
+      saveLocalMembers(localMembers);
+    } catch (cacheErr) {
+      console.warn("Failed to sync workspace cache locally", cacheErr);
     }
 
     // Log Activity
-    await logUserActivity({
-      user_id: userId,
-      user_email: userEmail,
-      user_name: userName,
-      action: "LOGIN",
-      module: "auth",
-      description: `User ${userName} (${role.toUpperCase()}) authenticated successfully`,
-    });
+    try {
+      await logUserActivity({
+        user_id: userId,
+        user_email: userEmail,
+        user_name: userName,
+        action: "LOGIN",
+        module: "auth",
+        description: `User ${userName} (${memberRole.toUpperCase()}) authenticated successfully`,
+      });
+    } catch {}
 
-    // RULE: If user belongs to exactly ONE workspace -> open that workspace dashboard automatically
+    // RULE 1: Exactly ONE workspace -> route directly to dashboard
     if (memberWorkspaces.length === 1) {
       setActiveWorkspaceId(memberWorkspaces[0].id);
       router.push("/dashboard");
@@ -244,49 +346,22 @@ function LoginForm() {
       return;
     }
 
-    // RULE: If user belongs to MULTIPLE workspaces -> show "Choose Workspace" screen
-    if (memberWorkspaces.length > 1) {
-      setUserWorkspaces(memberWorkspaces);
-      setWorkspacePickerOpen(true);
-      setLoading(false);
-      return;
-    }
-
-    // 0 ACTIVE WORKSPACES: Lockout enforcement (Requirement 12 & 8)
-    const userMemberships = allMembers.filter(
-      (m) => m.user_id === userId || m.user_id.toLowerCase() === userEmail.toLowerCase()
-    );
-
-    const hasSuspended = userMemberships.some((m) => m.status === "suspended");
-    const hasRemoved = userMemberships.some((m) => m.status === "removed");
-
-    const assignedWsList = allWorkspaces.filter((w) =>
-      userMemberships.some((m) => m.workspace_id === w.id)
-    );
-    const hasArchivedWs = assignedWsList.some((w) => w.status === "archived");
-    const hasSuspendedWs = assignedWsList.some((w) => w.status === "suspended");
-
-    try {
-      const supabase = createClient();
-      await supabase.auth.signOut();
-    } catch {}
-
-    if (hasSuspended || hasSuspendedWs) {
-      setError("Your workspace access is currently suspended. Please contact the workshop administrator.");
-    } else if (hasArchivedWs) {
-      setError("Your assigned workspace has been archived. Please contact the Primary Owner.");
-    } else if (hasRemoved) {
-      setError("Your access to this workspace has been removed.");
-    } else {
-      setError("No active workspace access. Your account does not have access to any active workspace.");
-    }
-
+    // RULE 2: Multiple workspaces -> show workspace selector
+    setUserWorkspaces(memberWorkspaces);
+    setWorkspacePickerOpen(true);
     setLoading(false);
-    return;
   };
 
   const handleSelectWorkspace = (wsId: string) => {
     setActiveWorkspaceId(wsId);
+    try {
+      const localUsers = getLocalUsers();
+      const userIdx = localUsers.findIndex((u) => u.email.toLowerCase() === email.trim().toLowerCase());
+      if (userIdx >= 0) {
+        localUsers[userIdx].workspace_id = wsId;
+        saveLocalUsers(localUsers);
+      }
+    } catch {}
     setWorkspacePickerOpen(false);
     router.push("/dashboard");
     router.refresh();
@@ -609,6 +684,11 @@ function LoginForm() {
                   <h4 className="text-xs font-bold text-slate-900 group-hover:text-blue-600 flex items-center gap-1.5">
                     <Building2 className="w-3.5 h-3.5 text-slate-400 group-hover:text-blue-600" />
                     {ws.name}
+                    {ws.code && (
+                      <Badge variant="outline" className="text-[9px] font-mono text-blue-700 bg-blue-50 border-blue-200">
+                        {ws.code}
+                      </Badge>
+                    )}
                   </h4>
                   <p className="text-[11px] text-slate-500">{ws.business_name || ws.name}</p>
                 </div>

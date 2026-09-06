@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
-import { createClient } from "@supabase/supabase-js";
+import { getAdminClient, isServerAdminConfigured } from "@/lib/supabase/admin";
 
 function hashValue(val: string): string {
   return crypto.createHash("sha256").update(val.trim()).digest("hex");
@@ -35,16 +35,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://dnrrwcccclulidhyglub.supabase.co";
-    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
     let invitation: any = null;
     let supabaseAdmin: any = null;
 
-    if (serviceRoleKey) {
-      supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
-        auth: { autoRefreshToken: false, persistSession: false },
-      });
+    if (isServerAdminConfigured()) {
+      supabaseAdmin = getAdminClient();
 
       let query = supabaseAdmin
         .from("workspace_invitations")

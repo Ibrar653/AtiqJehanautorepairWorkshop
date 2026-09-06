@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
-import { createClient } from "@supabase/supabase-js";
 import { DEFAULT_WORKSPACE_ID, PRIMARY_OWNER_EMAIL } from "@/lib/constants";
+import { getAdminClient, ADMIN_AUTH_CONFIG_ERROR } from "@/lib/supabase/admin";
 
 function generateOneTimeCode(): string {
   // Generate 8 uppercase alphanumeric characters, split into 2 chunks of 4: AJ-XXXX-XXXX (12 chars total)
@@ -99,13 +99,12 @@ export async function POST(request: NextRequest) {
       updated_at: now,
     };
 
-    // 3. Check Server Environment Credentials
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://dnrrwcccclulidhyglub.supabase.co";
-    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-    if (!serviceRoleKey || !serviceRoleKey.trim()) {
-      const missingKeyMsg =
-        "SUPABASE_SERVICE_ROLE_KEY is missing in server environment (.env.local). Invitation email cannot be dispatched via Supabase Auth without the service_role key.";
+    // 3. Check Server Environment Credentials & Instantiate Supabase Admin
+    let supabaseAdmin;
+    try {
+      supabaseAdmin = getAdminClient();
+    } catch (e: any) {
+      const missingKeyMsg = ADMIN_AUTH_CONFIG_ERROR;
       console.error("[CRITICAL AUTH CONFIG ERROR]", missingKeyMsg);
 
       invitationRecord.status = "failed";
@@ -134,11 +133,6 @@ export async function POST(request: NextRequest) {
         { status: 500 }
       );
     }
-
-    // 4. Instantiate Server-Side Elevated Supabase Admin Client
-    const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
-      auth: { autoRefreshToken: false, persistSession: false },
-    });
 
     // 5. Existing User Detection (Requirement 7)
     let existingAuthUser: any = null;

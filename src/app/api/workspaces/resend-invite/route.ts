@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { getAdminClient, ADMIN_AUTH_CONFIG_ERROR } from "@/lib/supabase/admin";
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,23 +13,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const supabaseUrl =
-      process.env.NEXT_PUBLIC_SUPABASE_URL || "https://dnrrwcccclulidhyglub.supabase.co";
-    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-    if (!serviceRoleKey || !serviceRoleKey.trim()) {
-      const missingKeyMsg =
-        "SUPABASE_SERVICE_ROLE_KEY is missing in server environment (.env.local). Cannot dispatch email without the service_role key.";
-      console.error("[RESEND AUTH ERROR]", missingKeyMsg);
+    let supabaseAdmin;
+    try {
+      supabaseAdmin = getAdminClient();
+    } catch {
+      console.error("[RESEND AUTH ERROR]", ADMIN_AUTH_CONFIG_ERROR);
       return NextResponse.json(
-        { success: false, error: missingKeyMsg },
+        { success: false, error: ADMIN_AUTH_CONFIG_ERROR },
         { status: 500 }
       );
     }
-
-    const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
-      auth: { autoRefreshToken: false, persistSession: false },
-    });
 
     // 1. Fetch existing invitation
     const { data: invitations, error: fetchErr } = await supabaseAdmin

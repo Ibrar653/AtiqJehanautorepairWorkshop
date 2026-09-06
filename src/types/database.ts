@@ -126,6 +126,7 @@ export type WorkspaceMemberStatus = 'active' | 'invited' | 'pending' | 'suspende
 export interface Workspace {
   id: string;
   name: string;
+  code?: string | null;
   business_name: string;
   owner_user_id?: string | null;
   owner_name?: string | null;
@@ -143,6 +144,42 @@ export interface Workspace {
   updated_at: string;
   users_count?: number;
   last_activity?: string | null;
+}
+
+export interface CreateDirectWorkspacePayload {
+  mode: "direct" | "invite";
+  name: string;
+  code?: string;
+  business_name?: string;
+  phone?: string;
+  address?: string;
+  country?: string;
+  currency?: string;
+  trn?: string;
+  owner_name: string;
+  owner_email: string;
+  temporary_password?: string;
+  role?: UserRole;
+  permissions?: Record<AppModule, UserModulePermission>;
+  data_scope?: DataAccessScope;
+  financial_visibility?: Partial<FinancialVisibilitySettings>;
+  approval_limits?: Partial<UserApprovalLimits>;
+}
+
+export interface CreateDirectWorkspaceResponse {
+  success: boolean;
+  workspace?: Workspace;
+  owner?: {
+    id: string;
+    email: string;
+    name: string;
+    role: string;
+    status: string;
+  };
+  login_url?: string;
+  mode?: "direct" | "invite";
+  already_exists?: boolean;
+  error?: string;
 }
 
 export interface WorkspaceMember {
