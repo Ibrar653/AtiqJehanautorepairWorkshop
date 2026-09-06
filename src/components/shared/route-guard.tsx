@@ -28,6 +28,14 @@ export function RouteGuard({ children }: { children: React.ReactNode }) {
     return <>{children}</>;
   }
 
+  // If unauthenticated, redirect to login
+  if (!user) {
+    if (typeof window !== "undefined") {
+      router.replace("/login");
+    }
+    return null;
+  }
+
   // If Owner: Unrestricted full access
   if (isOwner) {
     return <>{children}</>;

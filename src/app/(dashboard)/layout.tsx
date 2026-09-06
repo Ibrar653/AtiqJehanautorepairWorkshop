@@ -17,7 +17,7 @@ export default function DashboardLayout({
 
   return (
     <WorkspaceProvider>
-      <div className="min-h-screen bg-[#F6F8FB] flex text-slate-900 font-sans antialiased">
+      <div className="min-h-screen bg-[#F6F8FB] dark:bg-[#0B1120] flex text-[#111827] dark:text-[#F8FAFC] font-sans antialiased">
         {/* Desktop Sidebar */}
         <div className="hidden lg:block w-[240px] shrink-0">
           <Sidebar user={user} className="w-[240px]" />
@@ -39,7 +39,7 @@ export default function DashboardLayout({
         )}
 
         {/* Main Content Area */}
-        <div className="flex-1 flex flex-col min-w-0 bg-[#F6F8FB]">
+        <div className="flex-1 flex flex-col min-w-0 bg-[#F6F8FB] dark:bg-[#0B1120]">
           <Header
             user={user}
             onOpenMobileMenu={() => setMobileMenuOpen(true)}

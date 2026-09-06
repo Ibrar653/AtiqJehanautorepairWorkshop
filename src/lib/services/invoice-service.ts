@@ -1,5 +1,20 @@
 import { createClient } from "@/lib/supabase/client";
-import type { Invoice, InvoiceItem, Payment, PaymentStatus, PaymentMethod } from "@/types/database";
+import type {
+  Invoice,
+  InvoiceItem,
+  Payment,
+  PaymentStatus,
+  PaymentMethod,
+  CreateDirectInvoicePayload,
+  DirectInvoiceServiceItemPayload,
+  DirectInvoicePartItemPayload,
+} from "@/types/database";
+
+export type {
+  CreateDirectInvoicePayload,
+  DirectInvoiceServiceItemPayload,
+  DirectInvoicePartItemPayload,
+};
 import { invalidateDashboardCache } from "./dashboard-service";
 import { getActiveWorkspaceId } from "./workspace-service";
 import { DEFAULT_WORKSPACE_ID } from "@/lib/constants";
@@ -352,8 +367,14 @@ export async function getInvoiceById(id: string, workspaceId?: string): Promise<
     return await withTimeout(fetchWithTimeout(), 2000);
   } catch (err: any) {
     console.warn(`Reading invoice ${id} from local fallback:`, err.message || err);
-    const list = getLocalInvoices(targetWsId);
-    const inv = list.find((item) => item.id === id);
+    let allInvs: any[] = inMemoryInvoices;
+    if (typeof window !== "undefined") {
+      try {
+        const raw = localStorage.getItem(LOCAL_INVOICES_KEY);
+        if (raw) allInvs = JSON.parse(raw);
+      } catch {}
+    }
+    const inv = allInvs.find((item) => item.id === id);
     if (!inv) return null;
 
     const { getLocalCustomers } = await import("./customer-service");
@@ -608,6 +629,576 @@ export async function generateInvoiceFromJobCard(
   }
 }
 
+export interface DirectPartsSaleItemPayload {
+  part_id: string;
+  part_name: string;
+  part_number?: string;
+  brand?: string;
+  quantity: number;
+  unit_price: number;
+  discount?: number;
+  cost_price?: number;
+}
+
+export interface CreateDirectPartsInvoicePayload {
+  customer_type: "walk_in" | "existing" | "new";
+  customer_id?: string;
+  customer_name: string;
+  customer_phone?: string;
+  company_name?: string;
+  trn_number?: string;
+
+  // Optional Vehicle fields
+  vehicle_id?: string | null;
+  vehicle_make?: string;
+  vehicle_model?: string;
+  vehicle_plate?: string;
+  vehicle_vin?: string;
+
+  items: DirectPartsSaleItemPayload[];
+
+  discount?: number;
+  vat_rate?: number;
+
+  payment_status: "paid" | "partially_paid" | "credit";
+  payment_method: "cash" | "bank" | "credit";
+  bank_account_id?: string;
+  paid_amount?: number;
+
+  notes?: string;
+  created_by?: string;
+  date?: string;
+}
+
+export async function generateNextInvoiceNumber(workspaceId?: string): Promise<string> {
+  const targetWsId = workspaceId || getActiveWorkspaceId();
+  const supabase = createClient();
+  let maxNum = 1000;
+
+  try {
+    const { data } = await supabase
+      .from("invoices")
+      .select("invoice_number")
+      .eq("workspace_id", targetWsId);
+
+    if (data && data.length > 0) {
+      for (const row of data) {
+        const match = (row.invoice_number || "").match(/(\d+)/);
+        if (match) {
+          const n = parseInt(match[1], 10);
+          if (!isNaN(n) && n > maxNum) maxNum = n;
+        }
+      }
+    }
+  } catch {}
+
+  const local = getLocalInvoices(targetWsId);
+  for (const row of local) {
+    const match = (row.invoice_number || "").match(/(\d+)/);
+    if (match) {
+      const n = parseInt(match[1], 10);
+      if (!isNaN(n) && n > maxNum) maxNum = n;
+    }
+  }
+
+  return `INV-${maxNum + 1}`;
+}
+
+/**
+ * Create a Direct Invoice without requiring a Job Card.
+ * Supports:
+ * 1. Direct Service Invoices (mode: "service")
+ * 2. Direct Spare Parts Invoices (mode: "parts")
+ * 3. Combined Service + Spare Parts Invoices (mode: "mixed")
+ *
+ * - Job Card is optional (job_card_id = null).
+ * - Vehicle is optional.
+ * - Only spare parts deduct inventory; services NEVER affect stock.
+ * - Posts revenue cleanly to Labor Revenue (acc-4001) and/or Spare Parts Revenue (acc-4002).
+ * - Records settlement payments and updates dashboard cache.
+ */
+export async function createDirectInvoice(
+  payload: CreateDirectInvoicePayload,
+  workspaceId?: string
+): Promise<any> {
+  const targetWsId = workspaceId || getActiveWorkspaceId();
+  const supabase = createClient();
+  const now = new Date().toISOString();
+  const invoiceDate = payload.date || now.slice(0, 10);
+
+  const mode = payload.invoice_type_mode || "mixed";
+  const rawServices = payload.services || [];
+  const rawParts = payload.parts || [];
+
+  // Validation according to mode
+  if (mode === "service" && rawServices.length === 0) {
+    throw new Error("Direct Service Invoice must contain at least one service item.");
+  }
+  if (mode === "parts" && rawParts.length === 0) {
+    throw new Error("Direct Spare Parts Invoice must contain at least one spare part.");
+  }
+  if (rawServices.length === 0 && rawParts.length === 0) {
+    throw new Error("Direct Invoice must contain at least one service or spare part.");
+  }
+
+  // Determine internal invoice type
+  let invoiceType: "direct_service" | "direct_parts" | "direct_mixed" = "direct_mixed";
+  if (rawServices.length > 0 && rawParts.length === 0) {
+    invoiceType = "direct_service";
+  } else if (rawServices.length === 0 && rawParts.length > 0) {
+    invoiceType = "direct_parts";
+  } else {
+    invoiceType = "direct_mixed";
+  }
+
+  // 1. Process Services & Optional Save to Catalog
+  const verifiedServices: Array<{
+    service_id: string | null;
+    description: string;
+    quantity: number;
+    unit_price: number;
+    discount: number;
+    total_price: number;
+  }> = [];
+
+  for (const s of rawServices) {
+    const desc = s.description?.trim();
+    if (!desc) {
+      throw new Error("Service description is required.");
+    }
+    const qty = Number(s.quantity) > 0 ? Number(s.quantity) : 1;
+    const rate = Number(s.unit_price) >= 0 ? Number(s.unit_price) : 0;
+    const disc = Number(s.discount) >= 0 ? Number(s.discount) : 0;
+    const lineTotal = Math.max(0, qty * rate - disc);
+
+    let resolvedServiceId = s.service_id || null;
+
+    // If manual entry requested to be saved to catalog
+    if (s.save_to_catalog && !resolvedServiceId) {
+      try {
+        const { createService } = await import("./service-catalog-service");
+        const createdSrv = await createService({
+          name: desc,
+          category: "General Maintenance",
+          description: desc,
+          default_price: rate,
+          estimated_time: "1 hr",
+          is_active: true,
+        });
+        if (createdSrv?.id) {
+          resolvedServiceId = createdSrv.id;
+        }
+      } catch (catErr) {
+        console.warn("Could not save manual service to catalog:", catErr);
+      }
+    }
+
+    verifiedServices.push({
+      service_id: resolvedServiceId,
+      description: desc,
+      quantity: qty,
+      unit_price: rate,
+      discount: disc,
+      total_price: lineTotal,
+    });
+  }
+
+  // 2. Strict Stock Validation for Spare Parts
+  const verifiedParts: Array<{
+    part_id: string;
+    part_name: string;
+    part_number?: string | null;
+    quantity: number;
+    unit_price: number;
+    discount: number;
+    total_price: number;
+    cost_price: number;
+    currentStock: number;
+    partObj: any;
+  }> = [];
+
+  if (rawParts.length > 0) {
+    const { getPartById } = await import("./parts-service");
+    for (const item of rawParts) {
+      const qty = Number(item.quantity);
+      if (isNaN(qty) || qty <= 0) {
+        throw new Error(`Quantity for "${item.part_name}" must be greater than zero.`);
+      }
+
+      const part = await getPartById(item.part_id);
+      if (!part) {
+        throw new Error(`Spare part "${item.part_name || item.part_id}" was not found in catalog.`);
+      }
+
+      const availableStock = Number(part.current_stock) || 0;
+      if (qty > availableStock) {
+        throw new Error(`Only ${availableStock} units are available in stock for "${part.name}".`);
+      }
+
+      const price = Number(item.unit_price) >= 0 ? Number(item.unit_price) : Number(part.selling_price) || 0;
+      const disc = Number(item.discount) >= 0 ? Number(item.discount) : 0;
+      const lineTotal = Math.max(0, qty * price - disc);
+
+      verifiedParts.push({
+        part_id: item.part_id,
+        part_name: part.name || item.part_name,
+        part_number: item.part_number || part.part_number || null,
+        quantity: qty,
+        unit_price: price,
+        discount: disc,
+        total_price: lineTotal,
+        cost_price: Number(item.cost_price) >= 0 ? Number(item.cost_price) : Number(part.purchase_price) || 0,
+        currentStock: availableStock,
+        partObj: part,
+      });
+    }
+  }
+
+  // 3. Resolve Customer
+  const { getCustomers, createCustomer } = await import("./customer-service");
+  let resolvedCustomerId = payload.customer_id;
+  let resolvedCustomerName = payload.customer_name?.trim() || "Walk-in Customer";
+  let resolvedCustomerPhone = payload.customer_phone?.trim() || null;
+  let resolvedCompany = payload.company_name?.trim() || null;
+  let resolvedTrn = payload.trn_number?.trim() || null;
+
+  if (payload.customer_type === "walk_in") {
+    try {
+      const res = await getCustomers("Walk-in", 1, 10, targetWsId);
+      const found = (res.customers || []).find((c: any) =>
+        c.name.toLowerCase().includes("walk-in")
+      );
+      if (found) {
+        resolvedCustomerId = found.id;
+        resolvedCustomerName = found.name;
+        if (!resolvedCustomerPhone) resolvedCustomerPhone = found.mobile;
+      } else {
+        const created = await createCustomer({
+          name: "Walk-in Customer",
+          mobile: resolvedCustomerPhone,
+          email: null,
+          address: null,
+          company_name: resolvedCompany,
+          trn_number: resolvedTrn,
+          notes: "Walk-in counter customer",
+        }, targetWsId);
+        resolvedCustomerId = created.id;
+        resolvedCustomerName = created.name;
+      }
+    } catch {
+      resolvedCustomerId = "cust-walkin-" + targetWsId;
+    }
+  } else if (payload.customer_type === "new" || !resolvedCustomerId) {
+    const created = await createCustomer({
+      name: resolvedCustomerName,
+      mobile: resolvedCustomerPhone,
+      email: null,
+      address: null,
+      company_name: resolvedCompany,
+      trn_number: resolvedTrn,
+      notes: "Direct invoice customer",
+    }, targetWsId);
+    resolvedCustomerId = created.id;
+    resolvedCustomerName = created.name;
+  }
+
+  // 4. Optional Vehicle Resolution
+  let resolvedVehicleId: string | null = payload.vehicle_id || null;
+  if (!resolvedVehicleId && payload.vehicle_make && payload.vehicle_make.trim()) {
+    try {
+      const { createVehicle } = await import("./vehicle-service");
+      const veh = await createVehicle({
+        customer_id: resolvedCustomerId!,
+        make: payload.vehicle_make.trim(),
+        model: payload.vehicle_model?.trim() || "Standard",
+        year: payload.vehicle_year ? Number(payload.vehicle_year) : null,
+        color: null,
+        mileage: null,
+        registration_number: payload.vehicle_plate?.trim() || null,
+        chassis_vin: payload.vehicle_vin?.trim() || null,
+      });
+      resolvedVehicleId = veh.id;
+    } catch (e) {
+      console.warn("Could not create optional vehicle for direct invoice:", e);
+    }
+  }
+
+  // 5. Financial Calculations
+  const servicesSubtotal = verifiedServices.reduce((sum, s) => sum + s.total_price, 0);
+  const partsSubtotal = verifiedParts.reduce((sum, p) => sum + p.total_price, 0);
+  const itemsTotal = servicesSubtotal + partsSubtotal;
+
+  const overallDiscount = Number(payload.discount) || 0;
+  const taxableSubtotal = Math.max(0, itemsTotal - overallDiscount);
+
+  // Split overall discount proportionally for accounting accuracy
+  let netServices = servicesSubtotal;
+  let netParts = partsSubtotal;
+  if (overallDiscount > 0 && itemsTotal > 0) {
+    const discountRatio = 1 - (overallDiscount / itemsTotal);
+    netServices = Math.round(servicesSubtotal * discountRatio * 100) / 100;
+    netParts = Math.max(0, taxableSubtotal - netServices);
+  }
+
+  const vatRate = payload.vat_rate !== undefined && Number.isFinite(Number(payload.vat_rate))
+    ? Number(payload.vat_rate)
+    : 5;
+  const vatAmount = Math.round(taxableSubtotal * (vatRate / 100) * 100) / 100;
+  const grandTotal = Math.round((taxableSubtotal + vatAmount) * 100) / 100;
+
+  const paidAmount = payload.payment_status === "credit"
+    ? 0
+    : payload.payment_status === "paid"
+    ? grandTotal
+    : Math.min(grandTotal, Math.max(0, Number(payload.paid_amount) || 0));
+
+  const balance = Math.max(0, grandTotal - paidAmount);
+
+  let payment_status: PaymentStatus = "credit";
+  if (balance === 0 && grandTotal > 0) {
+    payment_status = "paid";
+  } else if (paidAmount > 0 && balance > 0) {
+    payment_status = "partially_paid";
+  }
+
+  const formattedInvoiceNumber = await generateNextInvoiceNumber(targetWsId);
+  const invoiceId = "inv-" + Date.now() + "-" + Math.random().toString(36).substring(2, 6);
+
+  const invoicePayload: any = {
+    id: invoiceId,
+    workspace_id: targetWsId,
+    invoice_number: formattedInvoiceNumber,
+    job_card_id: null,
+    customer_id: resolvedCustomerId!,
+    vehicle_id: resolvedVehicleId,
+    subtotal: taxableSubtotal,
+    discount: overallDiscount,
+    vat_rate: vatRate,
+    vat_amount: vatAmount,
+    total: grandTotal,
+    paid: paidAmount,
+    balance: balance,
+    payment_status,
+    invoice_type: invoiceType,
+    notes: payload.notes || `Direct ${invoiceType === "direct_service" ? "Service" : invoiceType === "direct_parts" ? "Spare Parts" : "Service & Parts"} Invoice`,
+    created_by: payload.created_by || "Owner",
+    created_at: payload.date ? `${payload.date}T${now.slice(11)}` : now,
+    updated_at: now,
+  };
+
+  // 6. Build Line Items
+  const invoiceItemsToInsert: any[] = [];
+
+  // Service line items
+  for (const s of verifiedServices) {
+    invoiceItemsToInsert.push({
+      id: "invi-" + Date.now() + "-" + Math.random().toString(36).substring(2, 6),
+      invoice_id: invoiceId,
+      item_type: "service" as const,
+      service_id: s.service_id,
+      part_id: null,
+      description: s.description,
+      quantity: s.quantity,
+      unit_price: s.unit_price,
+      total_price: s.total_price,
+      cost_price: 0,
+      created_at: now,
+    });
+  }
+
+  // Spare part line items
+  for (const p of verifiedParts) {
+    invoiceItemsToInsert.push({
+      id: "invi-" + Date.now() + "-" + Math.random().toString(36).substring(2, 6),
+      invoice_id: invoiceId,
+      item_type: "part" as const,
+      service_id: null,
+      part_id: p.part_id,
+      description: p.part_number ? `${p.part_name} (${p.part_number})` : p.part_name,
+      quantity: p.quantity,
+      unit_price: p.unit_price,
+      total_price: p.total_price,
+      cost_price: p.cost_price,
+      created_at: now,
+    });
+  }
+
+  // 7. Inventory Deduction: ONLY Spare Parts Deduct Inventory (Services NEVER touch stock)
+  if (verifiedParts.length > 0) {
+    const { recordStockTransaction } = await import("./inventory-service");
+    for (const item of verifiedParts) {
+      try {
+        await recordStockTransaction({
+          partId: item.part_id,
+          transactionType: "direct_sale",
+          quantityChange: -item.quantity,
+          unitCost: item.cost_price,
+          referenceType: "invoice",
+          referenceId: formattedInvoiceNumber,
+          notes: `Direct Sale on Invoice #${formattedInvoiceNumber} (${item.quantity} units)`,
+          createdBy: payload.created_by || "Owner",
+        });
+      } catch (err: any) {
+        console.error(`Failed to deduct inventory for part ${item.part_id}:`, err);
+        throw new Error(`Inventory deduction failed: ${err.message}`);
+      }
+    }
+  }
+
+  // 8. Persist to Supabase & Local Cache
+  try {
+    await withTimeout(
+      supabase.from("invoices").insert(invoicePayload),
+      2000
+    );
+
+    if (invoiceItemsToInsert.length > 0) {
+      await withTimeout(
+        supabase.from("invoice_items").insert(invoiceItemsToInsert),
+        2000
+      );
+    }
+  } catch (err: any) {
+    console.warn("Direct invoice written to local fallback store:", err.message || err);
+  }
+
+  // Save to local invoice cache
+  const fullCreatedInvoice = {
+    ...invoicePayload,
+    customer: {
+      id: resolvedCustomerId,
+      name: resolvedCustomerName,
+      mobile: resolvedCustomerPhone,
+      company_name: resolvedCompany,
+      trn_number: resolvedTrn,
+    },
+    items: invoiceItemsToInsert,
+    payments: [],
+  };
+
+  const list = getLocalInvoices(targetWsId);
+  list.unshift(fullCreatedInvoice);
+  saveLocalInvoices(list, targetWsId);
+
+  const existingItems = getLocalInvoiceItems();
+  saveLocalInvoiceItems([...invoiceItemsToInsert, ...existingItems]);
+
+  // 9. Record Payment if paidAmount > 0
+  if (paidAmount > 0) {
+    const paymentId = "pay-" + Date.now() + "-" + Math.random().toString(36).substring(2, 6);
+    const methodStr = payload.payment_method === "bank" ? "bank_transfer" : "cash";
+    const paymentRecord = {
+      id: paymentId,
+      invoice_id: invoiceId,
+      job_card_id: null,
+      customer_id: resolvedCustomerId!,
+      amount: paidAmount,
+      payment_method: methodStr as PaymentMethod,
+      payment_date: invoiceDate,
+      reference_number: formattedInvoiceNumber,
+      notes: `Direct Invoice Settlement (${payload.payment_method.toUpperCase()})`,
+      created_by: payload.created_by || "Owner",
+      created_at: now,
+    };
+
+    try {
+      await supabase.from("payments").insert(paymentRecord);
+    } catch {}
+
+    const { getLocalPayments, saveLocalPayments } = await import("./payment-service");
+    const localPayments = getLocalPayments();
+    localPayments.unshift(paymentRecord);
+    saveLocalPayments(localPayments);
+    fullCreatedInvoice.payments = [paymentRecord];
+
+    // Post Payment to Ledger
+    try {
+      const { postCustomerPaymentLedger } = await import("./ledger-service");
+      await postCustomerPaymentLedger({
+        id: paymentId,
+        customer_id: resolvedCustomerId,
+        customer_name: resolvedCustomerName,
+        invoice_number: formattedInvoiceNumber,
+        amount: paidAmount,
+        payment_method: methodStr,
+        reference_number: formattedInvoiceNumber,
+        payment_date: invoiceDate,
+        created_by: payload.created_by || "Owner",
+      });
+    } catch (ledgPayErr) {
+      console.warn("Ledger customer payment posting notice:", ledgPayErr);
+    }
+  }
+
+  // 10. Post Invoice to Ledger (acc-4001 Service Revenue and/or acc-4002 Spare Parts Revenue)
+  try {
+    const { postInvoiceLedger } = await import("./ledger-service");
+    await postInvoiceLedger({
+      id: invoiceId,
+      invoice_number: formattedInvoiceNumber,
+      customer_id: resolvedCustomerId,
+      customer_name: resolvedCustomerName,
+      date: invoiceDate,
+      created_at: invoicePayload.created_at,
+      services_total: netServices,
+      parts_total: netParts,
+      subtotal: taxableSubtotal,
+      vat_amount: vatAmount,
+      total: grandTotal,
+      created_by: payload.created_by || "Owner",
+    });
+  } catch (ledgInvErr) {
+    console.warn("Ledger invoice posting notice:", ledgInvErr);
+  }
+
+  invalidateDashboardCache();
+  return fullCreatedInvoice;
+}
+
+/**
+ * Backward compatibility wrapper for Direct Spare Parts Sale.
+ */
+export async function createDirectPartsInvoice(
+  payload: CreateDirectPartsInvoicePayload,
+  workspaceId?: string
+): Promise<any> {
+  return createDirectInvoice(
+    {
+      invoice_type_mode: "parts",
+      customer_type: payload.customer_type,
+      customer_id: payload.customer_id,
+      customer_name: payload.customer_name,
+      customer_phone: payload.customer_phone,
+      company_name: payload.company_name,
+      trn_number: payload.trn_number,
+      vehicle_id: payload.vehicle_id,
+      vehicle_make: payload.vehicle_make,
+      vehicle_model: payload.vehicle_model,
+      vehicle_plate: payload.vehicle_plate,
+      vehicle_vin: payload.vehicle_vin,
+      parts: (payload.items || []).map((it) => ({
+        part_id: it.part_id,
+        part_name: it.part_name,
+        part_number: it.part_number,
+        quantity: it.quantity,
+        unit_price: it.unit_price,
+        discount: it.discount,
+        cost_price: it.cost_price,
+      })),
+      discount: payload.discount,
+      vat_rate: payload.vat_rate,
+      payment_status: payload.payment_status,
+      payment_method: payload.payment_method,
+      bank_account_id: payload.bank_account_id,
+      paid_amount: payload.paid_amount,
+      notes: payload.notes,
+      created_by: payload.created_by,
+      date: payload.date,
+    },
+    workspaceId
+  );
+}
+
 /**
  * Record payment against an invoice
  * - Handles multiple split payments (e.g. Cash 400 + Bank Transfer 440).
@@ -777,11 +1368,11 @@ export async function recordInvoicePayment(
  * - Does NOT destroy existing payment records (preserves financial audit trail).
  * - Marks status as 'void'.
  */
-export async function voidInvoice(invoiceId: string, voidReason: string, voidedBy?: string): Promise<any> {
+export async function voidInvoice(invoiceId: string, voidReason: string, voidedBy?: string, workspaceId?: string): Promise<any> {
   const supabase = createClient();
   const now = new Date().toISOString();
 
-  const invoice = await getInvoiceById(invoiceId);
+  const invoice = await getInvoiceById(invoiceId, workspaceId);
   if (!invoice) throw new Error("Invoice not found.");
 
   const voidData = {
@@ -793,6 +1384,29 @@ export async function voidInvoice(invoiceId: string, voidReason: string, voidedB
     voided_at: now,
     updated_at: now,
   };
+
+  // Reverse stock deductions for any spare parts sold on this invoice
+  if (invoice.items && Array.isArray(invoice.items)) {
+    for (const item of invoice.items) {
+      if (item.item_type === "part" && item.part_id) {
+        try {
+          const { recordStockTransaction } = await import("./inventory-service");
+          await recordStockTransaction({
+            partId: item.part_id,
+            transactionType: "return",
+            quantityChange: Math.abs(Number(item.quantity) || 1),
+            unitCost: Number(item.cost_price || item.unit_price || 0),
+            referenceType: "invoice_void",
+            referenceId: invoice.invoice_number,
+            notes: `Stock reversal for voided invoice #${invoice.invoice_number}`,
+            createdBy: voidedBy || "Owner",
+          });
+        } catch (stockErr) {
+          console.warn(`Could not reverse stock for item ${item.part_id}:`, stockErr);
+        }
+      }
+    }
+  }
 
   try {
     const { data: updated, error } = await withTimeout(
@@ -813,13 +1427,19 @@ export async function voidInvoice(invoiceId: string, voidReason: string, voidedB
     return updated;
   } catch (err: any) {
     console.warn("Voiding invoice in local fallback store:", err.message || err);
-    const list = getLocalInvoices();
-    const idx = list.findIndex((i) => i.id === invoiceId);
+    let allInvs: any[] = inMemoryInvoices;
+    if (typeof window !== "undefined") {
+      try {
+        const raw = localStorage.getItem(LOCAL_INVOICES_KEY);
+        if (raw) allInvs = JSON.parse(raw);
+      } catch {}
+    }
+    const idx = allInvs.findIndex((i) => i.id === invoiceId);
     if (idx !== -1) {
-      list[idx] = { ...list[idx], ...voidData };
-      saveLocalInvoices(list);
+      allInvs[idx] = { ...allInvs[idx], ...voidData };
+      saveLocalInvoices(allInvs, allInvs[idx].workspace_id);
       invalidateDashboardCache();
-      return list[idx];
+      return allInvs[idx];
     }
     throw err;
   }

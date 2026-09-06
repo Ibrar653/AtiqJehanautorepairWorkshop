@@ -165,7 +165,9 @@ export async function getDashboardData(
       // 4. Fetch Invoices in date range
       const invoicesPromise = supabase
         .from("invoices")
-        .select("id, created_at, paid, balance")
+        .select(
+          "id, invoice_number, job_card_id, invoice_type, created_at, total, subtotal, discount, vat_amount, paid, balance, payment_status, is_void, items:invoice_items(id, item_type, description, quantity, unit_price, total_price, part_id, cost_price)"
+        )
         .eq("workspace_id", targetWsId)
         .gte("created_at", `${startDate}T00:00:00Z`)
         .lte("created_at", `${endDate}T23:59:59Z`);
@@ -204,6 +206,19 @@ export async function getDashboardData(
     let payments: any[] = paymentsData || [];
     let invoices: any[] = invoicesData || [];
     let parts: Part[] = (partsData as any[]) || [];
+
+    if (invErr) {
+      const { getLocalInvoices, getLocalInvoiceItems } = await import("./invoice-service");
+      const localInvs = getLocalInvoices(targetWsId).filter((inv: any) => {
+        const d = (inv.created_at || "").slice(0, 10);
+        return !inv.is_deleted && (!inv.created_at || (d >= startDate && d <= endDate));
+      });
+      const localItems = getLocalInvoiceItems();
+      invoices = localInvs.map((inv: any) => ({
+        ...inv,
+        items: inv.items && inv.items.length > 0 ? inv.items : localItems.filter((it: any) => it.invoice_id === inv.id),
+      }));
+    }
 
     if (expErr) {
       const { getLocalExpenses } = await import("./expense-service");
@@ -286,6 +301,69 @@ export async function getDashboardData(
         dateMap.set(jcDate, { sales: 0, expenses: 0, cost: 0 });
       }
       dateMap.get(jcDate)!.sales += Number(jc.total) || 0;
+    });
+
+    // Process Direct Invoices (Invoices without a Job Card or marked as direct_service / direct_parts / direct_mixed)
+    const directInvoices = invoices.filter(
+      (inv: any) =>
+        !inv.is_void &&
+        inv.payment_status !== "void" &&
+        (!inv.job_card_id || (inv.invoice_type && inv.invoice_type.startsWith("direct_")))
+    );
+
+    directInvoices.forEach((inv: any) => {
+      const invTotal = Number(inv.total) || 0;
+      const invBalance = Number(inv.balance) !== undefined ? Number(inv.balance) : Math.max(0, invTotal - (Number(inv.paid) || 0));
+      totalSales += invTotal;
+      outstandingCredit += invBalance;
+
+      // Extract services and parts revenue
+      const invItems = inv.items && Array.isArray(inv.items) ? inv.items : [];
+      let invoiceServicesRevenue = 0;
+      let invoicePartsRevenue = 0;
+
+      if (invItems.length > 0) {
+        invItems.forEach((item: any) => {
+          const qty = Number(item.quantity) || 1;
+          const lineTotal = Number(item.total_price) || (qty * (Number(item.unit_price) || 0));
+          if (item.item_type === "service" || item.item_type === "labour") {
+            invoiceServicesRevenue += lineTotal;
+          } else if (item.item_type === "part") {
+            invoicePartsRevenue += lineTotal;
+            totalPartItemsCount++;
+
+            const unitCost = Number(item.cost_price) || (item.part_id && partCostMap.get(item.part_id)) || 0;
+            if (unitCost > 0) {
+              partsCost += unitCost * qty;
+            } else {
+              missingCostItemsCount++;
+            }
+          } else {
+            // Unspecified item_type: infer from invoice_type
+            if (inv.invoice_type === "direct_service") {
+              invoiceServicesRevenue += lineTotal;
+            } else {
+              invoicePartsRevenue += lineTotal;
+            }
+          }
+        });
+      } else {
+        if (inv.invoice_type === "direct_service") {
+          invoiceServicesRevenue = Number(inv.subtotal) || invTotal;
+        } else {
+          invoicePartsRevenue = Number(inv.subtotal) || invTotal;
+        }
+      }
+
+      serviceSales += invoiceServicesRevenue;
+      partsSales += invoicePartsRevenue;
+
+      // Add to timeline chart aggregation
+      const invDate = inv.created_at ? inv.created_at.slice(0, 10) : startDate;
+      if (!dateMap.has(invDate)) {
+        dateMap.set(invDate, { sales: 0, expenses: 0, cost: 0 });
+      }
+      dateMap.get(invDate)!.sales += invTotal;
     });
 
     // Process Expenses
@@ -433,6 +511,57 @@ function getLocalDashboardDataFallback(startDate: string, endDate: string, works
         else serviceSales += line;
       });
     }
+  });
+
+  // Include direct parts invoices in local fallback
+  let localInvoices: any[] = [];
+  try {
+    if (typeof window !== "undefined") {
+      const rawInv = localStorage.getItem("atiq_local_invoices");
+      if (rawInv) localInvoices = JSON.parse(rawInv);
+    }
+  } catch {}
+
+  const activeDirectInvoices = localInvoices.filter(
+    (inv) =>
+      !inv.is_deleted &&
+      !inv.is_void &&
+      inv.payment_status !== "void" &&
+      (!inv.job_card_id || (inv.invoice_type && inv.invoice_type.startsWith("direct_"))) &&
+      (inv.workspace_id === targetWsId || (!inv.workspace_id && targetWsId === DEFAULT_WORKSPACE_ID)) &&
+      (!inv.created_at || (inv.created_at.slice(0, 10) >= startDate && inv.created_at.slice(0, 10) <= endDate))
+  );
+
+  activeDirectInvoices.forEach((inv) => {
+    const invTotal = Number(inv.total) || 0;
+    const invBalance = Number(inv.balance) !== undefined ? Number(inv.balance) : Math.max(0, invTotal - (Number(inv.paid) || 0));
+    totalSales += invTotal;
+    outstandingCredit += invBalance;
+
+    let sSub = 0;
+    let pSub = 0;
+    if (inv.items && Array.isArray(inv.items)) {
+      inv.items.forEach((it: any) => {
+        const line = Number(it.total_price) || 0;
+        if (it.item_type === "service" || it.item_type === "labour") {
+          sSub += line;
+        } else if (it.item_type === "part") {
+          pSub += line;
+        } else if (inv.invoice_type === "direct_service") {
+          sSub += line;
+        } else {
+          pSub += line;
+        }
+      });
+    } else {
+      if (inv.invoice_type === "direct_service") {
+        sSub = Number(inv.subtotal) || invTotal;
+      } else {
+        pSub = Number(inv.subtotal) || invTotal;
+      }
+    }
+    serviceSales += sSub;
+    partsSales += pSub;
   });
 
   let totalExpenses = 0;

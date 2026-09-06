@@ -510,11 +510,58 @@ export interface Invoice {
   paid: number;
   balance: number;
   payment_status: PaymentStatus;
+  invoice_type?: "job_card" | "direct_service" | "direct_parts" | "direct_mixed" | "direct_parts_sale" | string;
   notes: string | null;
   workspace_id?: string;
   created_by: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface DirectInvoiceServiceItemPayload {
+  service_id?: string | null;
+  description: string;
+  quantity: number;
+  unit_price: number;
+  discount?: number;
+  save_to_catalog?: boolean;
+}
+
+export interface DirectInvoicePartItemPayload {
+  part_id: string;
+  part_name: string;
+  part_number?: string | null;
+  quantity: number;
+  unit_price: number;
+  discount?: number;
+  cost_price?: number;
+}
+
+export interface CreateDirectInvoicePayload {
+  invoice_type_mode: "service" | "parts" | "mixed";
+  customer_type: "walk_in" | "existing" | "new";
+  customer_id?: string;
+  customer_name?: string;
+  customer_phone?: string | null;
+  company_name?: string | null;
+  trn_number?: string | null;
+  vehicle_id?: string | null;
+  vehicle_make?: string | null;
+  vehicle_model?: string | null;
+  vehicle_year?: number | string | null;
+  vehicle_plate?: string | null;
+  vehicle_vin?: string | null;
+  services?: DirectInvoiceServiceItemPayload[];
+  parts?: DirectInvoicePartItemPayload[];
+  discount?: number;
+  vat_rate?: number;
+  payment_status: "paid" | "partially_paid" | "credit";
+  payment_method: "cash" | "bank" | "credit";
+  paid_amount?: number;
+  bank_account_id?: string;
+  notes?: string;
+  date?: string;
+  created_by?: string;
 }
 
 export interface InvoiceItem {
@@ -525,6 +572,10 @@ export interface InvoiceItem {
   quantity: number;
   unit_price: number;
   total_price: number;
+  part_id?: string | null;
+  service_id?: string | null;
+  cost_price?: number;
+  part_number?: string | null;
   workspace_id?: string;
   created_at: string;
 }

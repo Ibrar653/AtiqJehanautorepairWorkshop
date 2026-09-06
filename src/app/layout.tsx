@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/lib/context/auth-context";
+import { ThemeProvider } from "@/lib/context/theme-context";
 import "./globals.css";
 
 const inter = Inter({
@@ -44,15 +45,28 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${inter.variable} ${jetbrainsMono.variable}`}>
+    <html
+      lang="en"
+      className={`${inter.variable} ${jetbrainsMono.variable}`}
+      suppressHydrationWarning
+    >
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var k='atiq_theme_preference';var t=localStorage.getItem(k);var d=false;if(t==='dark'){d=true;}else if(t==='light'){d=false;}else{d=window.matchMedia('(prefers-color-scheme: dark)').matches;}if(d){document.documentElement.classList.add('dark');}else{document.documentElement.classList.remove('dark');}}catch(e){}})();`,
+          }}
+        />
+      </head>
       <body
         className="font-sans antialiased bg-background text-foreground min-h-screen text-[14px] leading-[20px]"
       >
-        <AuthProvider>
-          <TooltipProvider delay={0}>
-            {children}
-          </TooltipProvider>
-        </AuthProvider>
+        <ThemeProvider>
+          <AuthProvider>
+            <TooltipProvider delay={0}>
+              {children}
+            </TooltipProvider>
+          </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

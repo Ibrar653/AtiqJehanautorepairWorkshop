@@ -2,7 +2,7 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
-@custom-variant dark (&:is(.dark *));
+@custom-variant dark (&:is(.dark, .dark *));
 
 @theme inline {
   --color-background: var(--background);
@@ -95,26 +95,26 @@
   --sidebar-ring: #2563EB;
 }
 
-/* ─── Dark Theme ───────────────────────────────────────────────────────── */
+/* ─── Dark Theme — Professional Automotive ERP Palette ──────────────────── */
 .dark {
-  --background: #0B111E;
-  --foreground: #F1F5F9;
-  --card: #121A2A;
-  --card-foreground: #F1F5F9;
-  --popover: #121A2A;
-  --popover-foreground: #F1F5F9;
+  --background: #0B1120;
+  --foreground: #F8FAFC;
+  --card: #172033;
+  --card-foreground: #F8FAFC;
+  --popover: #172033;
+  --popover-foreground: #F8FAFC;
   --primary: #3B82F6;
   --primary-foreground: #FFFFFF;
-  --secondary: #1E293B;
-  --secondary-foreground: #F1F5F9;
+  --secondary: #111827;
+  --secondary-foreground: #F8FAFC;
   --muted: #1E293B;
   --muted-foreground: #94A3B8;
   --accent: #1E293B;
-  --accent-foreground: #F1F5F9;
+  --accent-foreground: #F8FAFC;
   --destructive: #EF4444;
   --destructive-foreground: #FFFFFF;
-  --border: #1E293B;
-  --input: #1E293B;
+  --border: #273449;
+  --input: #111827;
   --ring: #3B82F6;
   --success: #10B981;
   --warning: #F59E0B;
@@ -125,14 +125,14 @@
   --chart-3: #F59E0B;
   --chart-4: #8B5CF6;
   --chart-5: #10B981;
-  --sidebar: #090E17;
-  --sidebar-foreground: #E2E8F0;
-  --sidebar-primary: #3B82F6;
+  --sidebar: #0F172A;
+  --sidebar-foreground: #F8FAFC;
+  --sidebar-primary: #2563EB;
   --sidebar-primary-foreground: #FFFFFF;
-  --sidebar-accent: rgba(255, 255, 255, 0.07);
+  --sidebar-accent: rgba(255, 255, 255, 0.08);
   --sidebar-accent-foreground: #FFFFFF;
-  --sidebar-border: #192336;
-  --sidebar-ring: #3B82F6;
+  --sidebar-border: #1E293B;
+  --sidebar-ring: #2563EB;
 }
 
 @layer base {
@@ -304,15 +304,40 @@
 
 @media print {
   html,
-  body {
+  body,
+  html.dark,
+  body.dark,
+  .dark {
     width: 210mm;
     height: 297mm;
     margin: 0 !important;
     padding: 0 !important;
     background: white !important;
     color: black !important;
+    --background: #FFFFFF !important;
+    --foreground: #111827 !important;
+    --card: #FFFFFF !important;
+    --card-foreground: #111827 !important;
+    --border: #E5E7EB !important;
+    --input: #E5E7EB !important;
+    --muted: #F8FAFC !important;
+    --muted-foreground: #64748B !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
+  }
+
+  .dark * {
+    color: #111827 !important;
+    border-color: #E5E7EB !important;
+  }
+
+  .dark [data-slot="card"],
+  .dark .bg-white,
+  .dark .bg-card,
+  .dark .invoice-preview,
+  .dark .job-card-print {
+    background-color: #FFFFFF !important;
+    color: #111827 !important;
   }
 
   .job-card-print {

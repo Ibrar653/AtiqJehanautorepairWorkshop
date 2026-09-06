@@ -1287,6 +1287,13 @@ export async function postInvoiceLedger(invoice: {
       { account_id: serviceRevAcc.id, debit: 0, credit: services, notes: "Labor Service Revenue" },
       { account_id: partsRevAcc.id, debit: 0, credit: parts, notes: "Spare Parts Revenue" }
     );
+  } else if (parts > 0 && services === 0) {
+    entries.push({
+      account_id: partsRevAcc.id,
+      debit: 0,
+      credit: netSubtotal,
+      notes: "Spare Parts Sales Revenue",
+    });
   } else {
     // Default credit to service revenue for remainder
     entries.push({

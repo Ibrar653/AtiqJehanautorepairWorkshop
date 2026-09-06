@@ -319,7 +319,19 @@ export async function getJobCardById(id: string, workspaceId?: string): Promise<
   } catch (err: any) {
     console.warn(`Reading job card ${id} from local fallback:`, err.message || err);
     const local = getLocalJobCards(targetWsId);
-    const found = local.find((j) => j.id === id);
+    let found = local.find((j) => j.id === id);
+    if (!found) {
+      if (typeof window !== "undefined") {
+        try {
+          const raw = localStorage.getItem(LOCAL_JOB_CARDS_KEY);
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed)) found = parsed.find((j: any) => j.id === id);
+          }
+        } catch {}
+      }
+      if (!found) found = inMemoryJobCards.find((j) => j.id === id);
+    }
 
     if (found) {
       const allCustomers = getLocalCustomers(targetWsId);

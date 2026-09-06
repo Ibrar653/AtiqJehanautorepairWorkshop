@@ -1,5 +1,6 @@
 "use client";
 
+import React, { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
@@ -25,11 +26,13 @@ import {
   BookOpen,
   ChevronRight,
   X,
+  LogOut,
 } from "lucide-react";
 import type { User } from "@/types/database";
 import { getInitials } from "@/lib/utils";
 import { usePermissions } from "@/lib/context/auth-context";
 import { useWorkspace } from "@/lib/context/workspace-context";
+import { LogoutConfirmationModal } from "@/components/shared/logout-confirmation-modal";
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   LayoutDashboard,
@@ -80,6 +83,7 @@ export function Sidebar({ className, user, onCloseMobile }: SidebarProps) {
   const pathname = usePathname();
   const { hasModuleAccess, isOwner } = usePermissions();
   const { currentWorkspace } = useWorkspace();
+  const [logoutModalOpen, setLogoutModalOpen] = useState(false);
 
   const visibleNavItems = NAV_ITEMS.filter((item) => {
     if (isOwner) return true;
@@ -89,12 +93,12 @@ export function Sidebar({ className, user, onCloseMobile }: SidebarProps) {
   return (
     <aside
       className={cn(
-        "fixed left-0 top-0 z-40 h-screen w-[240px] bg-white text-slate-800 border-r border-[#E5E7EB] shadow-xs flex flex-col select-none",
+        "fixed left-0 top-0 z-40 h-screen w-[240px] bg-white dark:bg-[#0F172A] text-slate-800 dark:text-slate-200 border-r border-[#E5E7EB] dark:border-[#1E293B] shadow-xs flex flex-col select-none transition-colors duration-150",
         className
       )}
     >
-      {/* Brand Header — Crisp white enterprise emblem */}
-      <div className="flex items-center justify-between px-3.5 py-3 min-h-[68px] border-b border-[#E5E7EB] shrink-0 bg-white">
+      {/* Brand Header — Crisp emblem */}
+      <div className="flex items-center justify-between px-3.5 py-3 min-h-[68px] border-b border-[#E5E7EB] dark:border-[#1E293B] shrink-0 bg-white dark:bg-[#0F172A] transition-colors duration-150">
         <Link href="/" prefetch className="flex items-center gap-3 group min-w-0 flex-1" onClick={onCloseMobile}>
           <div className="h-11 w-11 rounded-xl bg-slate-50 border border-slate-200/90 p-1 flex items-center justify-center shrink-0 shadow-2xs">
             <Image
@@ -107,10 +111,10 @@ export function Sidebar({ className, user, onCloseMobile }: SidebarProps) {
             />
           </div>
           <div className="min-w-0 flex-1">
-            <h1 className="text-[14px] font-bold text-slate-900 tracking-tight leading-[17px]">
+            <h1 className="text-[14px] font-bold text-slate-900 dark:text-slate-100 tracking-tight leading-[17px]">
               ATIQ JEHAN AUTO REPAIR
             </h1>
-            <p className="text-[9px] font-semibold text-slate-400 uppercase tracking-wider mt-0.5 leading-none">
+            <p className="text-[9px] font-semibold text-slate-400 dark:text-slate-400 uppercase tracking-wider mt-0.5 leading-none">
               WORKSHOP MANAGEMENT SYSTEM
             </p>
           </div>
@@ -118,7 +122,7 @@ export function Sidebar({ className, user, onCloseMobile }: SidebarProps) {
         {onCloseMobile && (
           <button
             onClick={onCloseMobile}
-            className="lg:hidden p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors ml-1 shrink-0"
+            className="lg:hidden p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors ml-1 shrink-0"
           >
             <X className="h-4 w-4" />
           </button>
@@ -134,7 +138,7 @@ export function Sidebar({ className, user, onCloseMobile }: SidebarProps) {
 
             return (
               <div key={group.title} className="space-y-1">
-                <div className="text-[10.5px] font-bold text-[#6B7280] uppercase tracking-wider px-3 py-1">
+                <div className="text-[10.5px] font-bold text-[#4B5563] dark:text-[#94A3B8] uppercase tracking-wider px-3 py-1">
                   {group.title}
                 </div>
                 <div className="space-y-1">
@@ -155,14 +159,16 @@ export function Sidebar({ className, user, onCloseMobile }: SidebarProps) {
                           "flex items-center gap-3 rounded-xl px-3.5 h-[42px] text-[13.5px] transition-all duration-150 select-none group",
                           isActive
                             ? "bg-[#2563EB] text-white font-semibold shadow-xs"
-                            : "text-[#64748B] hover:text-[#111827] hover:bg-[#F3F4F6] font-medium"
+                            : "text-[#111827] dark:text-slate-200 hover:text-[#111827] dark:hover:text-white hover:bg-[#F3F4F6] dark:hover:bg-slate-800/70 font-semibold"
                         )}
                       >
                         {Icon && (
                           <Icon
                             className={cn(
                               "h-[18px] w-[18px] shrink-0 transition-colors",
-                              isActive ? "text-white" : "text-slate-400 group-hover:text-slate-700"
+                              isActive
+                                ? "text-white"
+                                : "text-[#64748B] dark:text-[#94A3B8] group-hover:text-[#111827] dark:group-hover:text-white"
                             )}
                           />
                         )}
@@ -177,28 +183,48 @@ export function Sidebar({ className, user, onCloseMobile }: SidebarProps) {
         </nav>
       </ScrollArea>
 
-      {/* User Footer Profile — Matching clean white card */}
-      <div className="p-2.5 border-t border-[#E5E7EB] shrink-0 bg-white">
-        <Link
-          href="/settings"
-          prefetch
-          onClick={onCloseMobile}
-          className="flex items-center gap-2.5 px-2.5 py-2 rounded-xl bg-slate-50/80 border border-[#E5E7EB] hover:border-slate-300 hover:bg-slate-100/70 transition-all group"
-        >
-          <div className="h-8.5 w-8.5 rounded-full bg-[#2563EB] text-white flex items-center justify-center text-xs font-bold shrink-0 shadow-2xs">
-            {user ? getInitials(user.full_name) : "IA"}
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="text-[12.5px] font-bold text-[#111827] truncate leading-tight group-hover:text-[#2563EB] transition-colors" title={user?.full_name || "Ibrar Ahmad"}>
-              {user?.full_name || "Ibrar Ahmad"}
-            </p>
-            <p className="text-[11px] text-[#64748B] font-medium capitalize truncate mt-0.5">
-              {user?.role || "Owner"}
-            </p>
-          </div>
-          <ChevronRight className="h-3.5 w-3.5 text-slate-400 group-hover:text-slate-600 transition-colors shrink-0" />
-        </Link>
+      {/* User Footer Profile & Secure Logout */}
+      <div className="p-2.5 border-t border-[#E5E7EB] dark:border-[#1E293B] shrink-0 bg-white dark:bg-[#0F172A] transition-colors duration-150">
+        <div className="flex items-center justify-between gap-1 px-2 py-1.5 rounded-xl bg-slate-50/80 dark:bg-slate-900/80 border border-[#E5E7EB] dark:border-[#1E293B] hover:border-slate-300 dark:hover:border-slate-700 transition-all">
+          <Link
+            href="/settings"
+            prefetch
+            onClick={onCloseMobile}
+            className="flex items-center gap-2.5 min-w-0 flex-1 group"
+            title="Open Workshop Settings & Profile"
+          >
+            <div className="h-8.5 w-8.5 rounded-full bg-[#2563EB] text-white flex items-center justify-center text-xs font-bold shrink-0 shadow-2xs">
+              {user ? getInitials(user.full_name) : "IA"}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-[12.5px] font-bold text-[#111827] dark:text-slate-100 truncate leading-tight group-hover:text-[#2563EB] dark:group-hover:text-blue-400 transition-colors" title={user?.full_name || "Ibrar Ahmad"}>
+                {user?.full_name || "Ibrar Ahmad"}
+              </p>
+              <p className="text-[11px] text-[#64748B] dark:text-slate-400 font-medium capitalize truncate mt-0.5">
+                {user?.role || "Owner"}
+              </p>
+            </div>
+          </Link>
+
+          {/* Quick Logout Button */}
+          <button
+            type="button"
+            onClick={() => setLogoutModalOpen(true)}
+            className="p-1.5 text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/50 rounded-lg transition-colors shrink-0 cursor-pointer"
+            title="Log Out of System"
+            aria-label="Log Out of System"
+          >
+            <LogOut className="h-4 w-4" />
+          </button>
+        </div>
       </div>
+
+      {/* Logout Confirmation Modal */}
+      <LogoutConfirmationModal
+        open={logoutModalOpen}
+        onOpenChange={setLogoutModalOpen}
+        user={user}
+      />
     </aside>
   );
 }

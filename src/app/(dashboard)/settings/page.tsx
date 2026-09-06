@@ -56,6 +56,7 @@ import {
   Layers,
   Crown,
   UserPlus,
+  Palette,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -100,6 +101,7 @@ import { UserActivityModal } from "@/components/settings/user-activity-modal";
 import { UserAccessTab } from "@/components/settings/user-access-tab";
 import { WorkspacesTab } from "@/components/settings/workspaces-tab";
 import { TestDataResetTab } from "@/components/settings/test-data-reset-tab";
+import { AppearanceThemeTab } from "@/components/settings/appearance-theme-tab";
 import { useWorkspace } from "@/lib/context/workspace-context";
 
 
@@ -533,6 +535,12 @@ export default function SettingsPage() {
           >
             <Building2 className="h-4 w-4" /> Workspace Details &amp; VAT
           </TabsTrigger>
+          <TabsTrigger
+            value="appearance"
+            className="data-[state=active]:bg-white dark:data-[state=active]:bg-slate-900 data-[state=active]:text-blue-600 dark:data-[state=active]:text-blue-400 data-[state=active]:shadow-xs px-4 h-10 font-semibold text-xs flex items-center gap-2 rounded-xl transition-all"
+          >
+            <Palette className="h-4 w-4" /> Appearance &amp; Theme
+          </TabsTrigger>
           {isPlatformOwner && (
             <TabsTrigger
               value="workspaces"
@@ -647,6 +655,11 @@ export default function SettingsPage() {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* ─── TAB: APPEARANCE & THEME ─────────────────────────────────────── */}
+        <TabsContent value="appearance">
+          <AppearanceThemeTab />
         </TabsContent>
 
         {/* ─── TAB 4: ROLE MATRIX & POLICIES ──────────────────────────────── */}

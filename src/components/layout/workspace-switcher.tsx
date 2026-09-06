@@ -27,7 +27,7 @@ export function WorkspaceSwitcher() {
     <>
       <DropdownMenu>
         <DropdownMenuTrigger
-          className="flex items-center gap-2.5 px-3 py-1.5 h-10 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-left transition-all outline-none focus-visible:ring-2 focus-visible:ring-blue-500/30 shadow-2xs cursor-pointer max-w-[280px]"
+          className="flex items-center gap-2.5 px-3 py-1.5 h-10 rounded-xl border border-slate-200 dark:border-[#273449] bg-white dark:bg-[#172033] hover:bg-slate-50 dark:hover:bg-slate-800 text-left transition-all outline-none focus-visible:ring-2 focus-visible:ring-blue-500/30 shadow-2xs cursor-pointer max-w-[280px]"
           title="Switch Active Business Workspace"
         >
           <div className="w-7 h-7 rounded-lg bg-[#0F172A] text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-xs">
@@ -35,11 +35,11 @@ export function WorkspaceSwitcher() {
           </div>
 
           <div className="min-w-0 flex-1">
-            <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider leading-none">
+            <p className="text-[10px] font-semibold text-slate-400 dark:text-slate-400 uppercase tracking-wider leading-none">
               Current Workspace
             </p>
             <div className="flex items-center gap-1.5 mt-0.5">
-              <span className="text-[12.5px] font-bold text-slate-900 truncate block leading-tight">
+              <span className="text-[12.5px] font-bold text-slate-900 dark:text-slate-100 truncate block leading-tight">
                 {currentWorkspace.name}
               </span>
               {isDefaultAtiq ? (

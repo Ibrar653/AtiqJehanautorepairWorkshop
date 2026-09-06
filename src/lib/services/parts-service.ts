@@ -446,7 +446,7 @@ export async function getParts(
 /**
  * Fetch single spare part by ID
  */
-export async function getPartById(id: string): Promise<Part | null> {
+export async function getPartById(id: string, workspaceId?: string): Promise<Part | null> {
   const supabase = createClient();
   try {
     const fetchWithTimeout = async () => {
@@ -463,8 +463,14 @@ export async function getPartById(id: string): Promise<Part | null> {
     return await withTimeout(fetchWithTimeout(), 2000);
   } catch (err: any) {
     console.warn(`Reading part ${id} from local fallback:`, err.message || err);
-    const local = getLocalParts();
-    return local.find((p) => p.id === id) || null;
+    let all = inMemoryParts;
+    if (typeof window !== "undefined") {
+      try {
+        const raw = localStorage.getItem(LOCAL_PARTS_KEY);
+        if (raw) all = JSON.parse(raw);
+      } catch {}
+    }
+    return all.find((p) => p.id === id) || null;
   }
 }
 
@@ -627,16 +633,22 @@ export async function updatePart(id: string, payload: PartUpdate): Promise<Part>
     return updated;
   } catch (err: any) {
     console.warn("Updating part in local catalog fallback:", err.message || err);
-    const list = getLocalParts();
-    const idx = list.findIndex((p) => p.id === id);
+    let all = inMemoryParts;
+    if (typeof window !== "undefined") {
+      try {
+        const raw = localStorage.getItem(LOCAL_PARTS_KEY);
+        if (raw) all = JSON.parse(raw);
+      } catch {}
+    }
+    const idx = all.findIndex((p) => p.id === id);
     if (idx !== -1) {
-      list[idx] = {
-        ...list[idx],
+      all[idx] = {
+        ...all[idx],
         ...payload,
         updated_at: now,
       };
-      saveLocalParts(list);
-      return list[idx];
+      saveLocalParts(all, all[idx].workspace_id);
+      return all[idx];
     }
     throw err;
   }

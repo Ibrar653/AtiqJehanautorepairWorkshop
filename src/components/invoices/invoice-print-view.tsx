@@ -253,11 +253,11 @@ export function InvoicePrintView({ invoice }: InvoicePrintViewProps) {
               <tr className="border-b border-gray-300">
                 <td className="bg-gray-100 font-bold px-2 py-0.5 text-gray-800 border-r border-gray-300">Customer:</td>
                 <td className="px-2 py-0.5 font-bold text-black border-r border-black truncate">
-                  {invoice.customer?.name || "Cash Customer"}
+                  {invoice.customer?.name || "Counter Customer"}
                 </td>
                 <td className="bg-gray-100 font-bold px-2 py-0.5 text-gray-800 border-r border-gray-300">Vehicle:</td>
                 <td className="px-2 py-0.5 font-bold text-black truncate">
-                  {invoice.vehicle?.make || "—"}
+                  {invoice.vehicle?.make ? invoice.vehicle.make : "Counter Sale (No Vehicle)"}
                 </td>
               </tr>
 
@@ -311,9 +311,24 @@ export function InvoicePrintView({ invoice }: InvoicePrintViewProps) {
 
               {/* Row 6: Job Card Ref & Registration */}
               <tr className="border-b border-gray-300">
-                <td className="bg-gray-100 font-bold px-2 py-0.5 text-gray-800 border-r border-gray-300">Job Card Ref:</td>
+                <td className="bg-gray-100 font-bold px-2 py-0.5 text-gray-800 border-r border-gray-300">
+                  {invoice.job_card || invoice.job_card_id ? "Job Card Ref:" : "Sale Type:"}
+                </td>
                 <td className="px-2 py-0.5 font-mono text-black border-r border-black truncate">
-                  {invoice.job_card?.job_card_number || (invoice.job_card_id ? `#${invoice.job_card_id.slice(-6)}` : "—")}
+                  {invoice.job_card?.job_card_number ||
+                    (invoice.job_card_id
+                      ? `#${invoice.job_card_id.slice(-6)}`
+                      : invoice.invoice_type === "direct_service"
+                      ? "Direct Service Invoice"
+                      : invoice.invoice_type === "direct_parts" || invoice.invoice_type === "direct_parts_sale"
+                      ? "Direct Spare Parts Sale"
+                      : invoice.invoice_type === "direct_mixed"
+                      ? "Direct Service & Parts Invoice"
+                      : serviceItems.length > 0 && sparePartItems.length === 0
+                      ? "Direct Service Invoice"
+                      : serviceItems.length === 0 && sparePartItems.length > 0
+                      ? "Direct Spare Parts Sale"
+                      : "Direct Invoice")}
                 </td>
                 <td className="bg-gray-100 font-bold px-2 py-0.5 text-gray-800 border-r border-gray-300">Registration:</td>
                 <td className="px-2 py-0.5 font-mono font-bold text-black truncate">
@@ -340,7 +355,7 @@ export function InvoicePrintView({ invoice }: InvoicePrintViewProps) {
         {serviceItems.length > 0 && (
           <div className={`border border-black ${sectionGap} overflow-hidden`}>
             <div className="bg-gray-800 text-white px-2.5 py-1 font-bold uppercase text-[8.5px] tracking-wider flex justify-between">
-              <span>1. Labor &amp; Workshop Services</span>
+              <span>{sparePartItems.length > 0 ? "1. Labor & Workshop Services" : "Labor & Workshop Services"}</span>
               <span className="font-mono font-normal">Subtotal: {formatCurrency(servicesTotal)}</span>
             </div>
             <table className="w-full table-fixed border-collapse text-left" style={{ width: "100%", tableLayout: "fixed" }}>
@@ -376,7 +391,7 @@ export function InvoicePrintView({ invoice }: InvoicePrintViewProps) {
         {sparePartItems.length > 0 && (
           <div className={`border border-black ${sectionGap} overflow-hidden`}>
             <div className="bg-gray-800 text-white px-2.5 py-1 font-bold uppercase text-[8.5px] tracking-wider flex justify-between">
-              <span>2. Spare Parts &amp; Materials Used</span>
+              <span>{serviceItems.length > 0 ? "2. Spare Parts & Materials Used" : "Spare Parts"}</span>
               <span className="font-mono font-normal">Subtotal: {formatCurrency(sparePartsTotal)}</span>
             </div>
             <table className="w-full table-fixed border-collapse text-left" style={{ width: "100%", tableLayout: "fixed" }}>

@@ -80,6 +80,7 @@ import { RecordDeleteDialog } from "@/components/shared/record-delete-dialog";
 import { softDeleteInvoice } from "@/lib/services/recycle-bin-service";
 import { ForceDeleteInvoiceModal } from "./force-delete-invoice-modal";
 import { bulkForceDeleteTestInvoices } from "@/lib/services/force-delete-invoice-service";
+import { DirectInvoiceModal } from "./direct-invoice-modal";
 import { useWorkspace } from "@/lib/context/workspace-context";
 import { DEFAULT_WORKSPACE_ID } from "@/lib/constants";
 import {
@@ -98,12 +99,14 @@ export function InvoicesView() {
   const { currentWorkspace } = useWorkspace();
   const activeWorkspaceId = currentWorkspace?.id || DEFAULT_WORKSPACE_ID;
 
-
   const [invoices, setInvoices] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [totalCount, setTotalCount] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 15;
+
+  // Direct Spare Parts Sale Modal State
+  const [directPartsModalOpen, setDirectPartsModalOpen] = useState(false);
 
   // Owner Force Delete State
   const [forceDeleteModalOpen, setForceDeleteModalOpen] = useState(false);
@@ -537,6 +540,13 @@ export function InvoicesView() {
               </Button>
               <Button
                 size="sm"
+                onClick={() => setDirectPartsModalOpen(true)}
+                className="h-10 px-3.5 text-xs font-semibold border border-blue-600 bg-blue-50 text-blue-700 hover:bg-blue-100 dark:bg-blue-950/40 dark:border-blue-700 dark:text-blue-300 dark:hover:bg-blue-900/60 shadow-2xs rounded-xl gap-2 font-bold"
+              >
+                <Receipt className="h-4 w-4 text-blue-600 dark:text-blue-400" /> + Create Direct Invoice
+              </Button>
+              <Button
+                size="sm"
                 onClick={handleOpenConvertModal}
                 className="h-10 px-4 text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-2xs rounded-xl gap-2"
               >
@@ -835,6 +845,29 @@ export function InvoicesView() {
                           >
                             {inv.invoice_number}
                           </button>
+                          <div>
+                            {inv.job_card_id || inv.job_card ? (
+                              <span className="inline-block mt-0.5 px-1.5 py-0.2 rounded text-[9px] font-semibold tracking-wider bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700 uppercase">
+                                Workshop
+                              </span>
+                            ) : inv.invoice_type === "direct_service" ? (
+                              <span className="inline-block mt-0.5 px-1.5 py-0.2 rounded text-[9px] font-semibold tracking-wider bg-sky-50 text-sky-700 border border-sky-200/80 dark:bg-sky-950/40 dark:text-sky-300 dark:border-sky-800/60 uppercase">
+                                Service
+                              </span>
+                            ) : inv.invoice_type === "direct_parts" || inv.invoice_type === "direct_parts_sale" ? (
+                              <span className="inline-block mt-0.5 px-1.5 py-0.2 rounded text-[9px] font-semibold tracking-wider bg-amber-50 text-amber-700 border border-amber-200/80 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800/60 uppercase">
+                                Parts
+                              </span>
+                            ) : inv.invoice_type === "direct_mixed" ? (
+                              <span className="inline-block mt-0.5 px-1.5 py-0.2 rounded text-[9px] font-semibold tracking-wider bg-indigo-50 text-indigo-700 border border-indigo-200/80 dark:bg-indigo-950/40 dark:text-indigo-300 dark:border-indigo-800/60 uppercase">
+                                Service + Parts
+                              </span>
+                            ) : (
+                              <span className="inline-block mt-0.5 px-1.5 py-0.2 rounded text-[9px] font-semibold tracking-wider bg-blue-50 text-blue-700 border border-blue-200/80 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800/60 uppercase">
+                                Direct
+                              </span>
+                            )}
+                          </div>
                         </TableCell>
 
                         <TableCell className="py-2.5">
@@ -858,6 +891,8 @@ export function InvoicesView() {
                                 {inv.vehicle.registration_number || "—"}
                               </div>
                             </div>
+                          ) : inv.invoice_type === "direct_parts_sale" || !inv.job_card_id ? (
+                            <span className="text-slate-400 text-xs italic">— Counter Sale —</span>
                           ) : (
                             <span className="text-slate-400">—</span>
                           )}
@@ -869,7 +904,7 @@ export function InvoicesView() {
                               {inv.job_card.job_card_number}
                             </span>
                           ) : (
-                            <span className="text-slate-400 text-xs">—</span>
+                            <span className="text-slate-400 text-xs italic">Direct Sale</span>
                           )}
                         </TableCell>
 
@@ -1136,30 +1171,30 @@ export function InvoicesView() {
                       )}
                     </div>
                   ) : (
-                    <div className="text-muted-foreground">— No vehicle linked —</div>
+                    <div className="text-muted-foreground text-xs italic">— Counter Sale (No vehicle linked) —</div>
                   )}
                 </div>
               </div>
 
-              {/* SERVICES */}
-              <div>
-                <h4 className="text-xs font-bold uppercase tracking-wider text-foreground mb-1.5 flex items-center gap-1.5">
-                  <Wrench className="h-3.5 w-3.5 text-blue-600" /> Labor &amp; Workshop Services
-                </h4>
-                <div className="border border-border/80 rounded-xl overflow-hidden shadow-2xs">
-                  <Table className="text-xs">
-                    <TableHeader>
-                      <TableRow className="bg-slate-50/80 dark:bg-slate-800/50 text-[11px] font-semibold text-muted-foreground">
-                        <TableHead className="w-12 text-center">#</TableHead>
-                        <TableHead>Service Description</TableHead>
-                        <TableHead className="text-right w-28">Rate (AED)</TableHead>
-                        <TableHead className="text-right w-28 pr-4">Amount (AED)</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {(selectedInvoice.items || []).filter((it: any) => it.item_type === "service" || !it.item_type).length > 0 ? (
-                        (selectedInvoice.items || [])
-                          .filter((it: any) => it.item_type === "service" || !it.item_type)
+              {/* SERVICES (Only rendered if service lines exist) */}
+              {(selectedInvoice.items || []).filter((it: any) => it.item_type === "service").length > 0 && (
+                <div>
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-foreground mb-1.5 flex items-center gap-1.5">
+                    <Wrench className="h-3.5 w-3.5 text-blue-600" /> Labor &amp; Workshop Services
+                  </h4>
+                  <div className="border border-border/80 rounded-xl overflow-hidden shadow-2xs">
+                    <Table className="text-xs">
+                      <TableHeader>
+                        <TableRow className="bg-slate-50/80 dark:bg-slate-800/50 text-[11px] font-semibold text-muted-foreground">
+                          <TableHead className="w-12 text-center">#</TableHead>
+                          <TableHead>Service Description</TableHead>
+                          <TableHead className="text-right w-28">Rate (AED)</TableHead>
+                          <TableHead className="text-right w-28 pr-4">Amount (AED)</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {(selectedInvoice.items || [])
+                          .filter((it: any) => it.item_type === "service")
                           .map((it: any, i: number) => (
                             <TableRow key={i} className="h-10 border-b border-border/40">
                               <TableCell className="text-center font-mono text-muted-foreground">{i + 1}</TableCell>
@@ -1167,38 +1202,32 @@ export function InvoicesView() {
                               <TableCell className="text-right font-mono text-muted-foreground">{formatCurrency(it.unit_price)}</TableCell>
                               <TableCell className="text-right font-mono font-bold text-foreground pr-4">{formatCurrency(it.total_price)}</TableCell>
                             </TableRow>
-                          ))
-                      ) : (
-                        <TableRow>
-                          <TableCell colSpan={4} className="text-center py-3 text-xs text-muted-foreground">
-                            No service line items recorded
-                          </TableCell>
-                        </TableRow>
-                      )}
-                    </TableBody>
-                  </Table>
+                          ))}
+                      </TableBody>
+                    </Table>
+                  </div>
                 </div>
-              </div>
+              )}
 
-              {/* SPARE PARTS */}
-              <div>
-                <h4 className="text-xs font-bold uppercase tracking-wider text-foreground mb-1.5 flex items-center gap-1.5">
-                  <Package className="h-3.5 w-3.5 text-indigo-600" /> Spare Parts &amp; Materials
-                </h4>
-                <div className="border border-border/80 rounded-xl overflow-hidden shadow-2xs">
-                  <Table className="text-xs">
-                    <TableHeader>
-                      <TableRow className="bg-slate-50/80 dark:bg-slate-800/50 text-[11px] font-semibold text-muted-foreground">
-                        <TableHead className="w-12 text-center">#</TableHead>
-                        <TableHead>Part Description</TableHead>
-                        <TableHead className="text-center w-20">Qty</TableHead>
-                        <TableHead className="text-right w-28">Unit Price</TableHead>
-                        <TableHead className="text-right w-28 pr-4">Total (AED)</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {(selectedInvoice.items || []).filter((it: any) => it.item_type === "part").length > 0 ? (
-                        (selectedInvoice.items || [])
+              {/* SPARE PARTS (Only rendered if spare parts exist) */}
+              {(selectedInvoice.items || []).filter((it: any) => it.item_type === "part").length > 0 && (
+                <div>
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-foreground mb-1.5 flex items-center gap-1.5">
+                    <Package className="h-3.5 w-3.5 text-indigo-600" /> Spare Parts &amp; Materials
+                  </h4>
+                  <div className="border border-border/80 rounded-xl overflow-hidden shadow-2xs">
+                    <Table className="text-xs">
+                      <TableHeader>
+                        <TableRow className="bg-slate-50/80 dark:bg-slate-800/50 text-[11px] font-semibold text-muted-foreground">
+                          <TableHead className="w-12 text-center">#</TableHead>
+                          <TableHead>Part Description</TableHead>
+                          <TableHead className="text-center w-20">Qty</TableHead>
+                          <TableHead className="text-right w-28">Unit Price</TableHead>
+                          <TableHead className="text-right w-28 pr-4">Total (AED)</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {(selectedInvoice.items || [])
                           .filter((it: any) => it.item_type === "part")
                           .map((it: any, i: number) => (
                             <TableRow key={i} className="h-10 border-b border-border/40">
@@ -1208,18 +1237,12 @@ export function InvoicesView() {
                               <TableCell className="text-right font-mono text-muted-foreground">{formatCurrency(it.unit_price)}</TableCell>
                               <TableCell className="text-right font-mono font-bold text-foreground pr-4">{formatCurrency(it.total_price)}</TableCell>
                             </TableRow>
-                          ))
-                      ) : (
-                        <TableRow>
-                          <TableCell colSpan={5} className="text-center py-3 text-xs text-muted-foreground">
-                            No spare part line items recorded
-                          </TableCell>
-                        </TableRow>
-                      )}
-                    </TableBody>
-                  </Table>
+                          ))}
+                      </TableBody>
+                    </Table>
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* PAYMENT SUMMARY - Dominant Total */}
               <div className="bg-slate-50/80 dark:bg-slate-800/40 border border-border/80 rounded-xl p-4">
@@ -1649,6 +1672,20 @@ export function InvoicesView() {
         invoices={invoicesToDelete}
         onConfirmForceDelete={handleConfirmForceDelete}
         isDeleting={forceDeleting}
+      />
+
+      {/* Direct Invoice Modal */}
+      <DirectInvoiceModal
+        open={directPartsModalOpen}
+        onOpenChange={setDirectPartsModalOpen}
+        onSuccess={(created) => {
+          loadInvoicesList();
+          handleOpenDetails(created.id);
+          setToastMessage({
+            type: "success",
+            text: `Direct invoice #${created.invoice_number} created successfully.`,
+          });
+        }}
       />
 
     </div>
