@@ -518,8 +518,8 @@ export function InvoicesView() {
       {/* ─── Screen UI (Hidden during print) ─── */}
       <div className="no-print space-y-6">
         <PageHeader
-          title="Tax Invoices"
-          description="Manage customer billing, VAT calculations, split payment collections, and official A4 tax invoices."
+          title="Invoices"
+          description="Manage workshop billing, customer balances and invoice payment status."
           breadcrumbs={[
             { label: "Dashboard", href: "/" },
             { label: "Invoices" },
@@ -530,7 +530,7 @@ export function InvoicesView() {
                 variant="outline"
                 size="sm"
                 onClick={loadInvoicesList}
-                className="h-9 gap-1.5 text-xs font-semibold"
+                className="h-9 gap-1.5 text-xs font-semibold border-border/80 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-2xs rounded-lg"
                 title="Refresh invoices"
               >
                 <RefreshCw className="h-3.5 w-3.5" /> Refresh
@@ -538,9 +538,9 @@ export function InvoicesView() {
               <Button
                 size="sm"
                 onClick={handleOpenConvertModal}
-                className="h-9 gap-1.5 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm"
+                className="h-9 gap-1.5 text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-xs px-3.5 rounded-lg"
               >
-                <Plus className="h-4 w-4" /> Convert Job Card
+                <Plus className="h-4 w-4" /> + Create Invoice
               </Button>
             </div>
           }
@@ -575,406 +575,438 @@ export function InvoicesView() {
         )}
 
         {/* ─── Top Financial KPI Cards ─── */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-          <Card className="border border-border shadow-xs bg-card rounded-[10px]">
-            <CardHeader className="flex flex-row items-center justify-between pb-2 p-5">
-              <CardTitle className="text-eyebrow text-muted-foreground uppercase">
-                Total Invoiced Sales
-              </CardTitle>
-              <div className="h-8 w-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
-                <FileText className="h-4 w-4" />
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="bg-card border border-border/80 rounded-xl p-4 shadow-xs flex flex-col justify-between h-full hover:border-border transition-colors">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                Total Invoiced
+              </span>
+              <div className="h-7 w-7 rounded-lg bg-blue-50 dark:bg-blue-950/50 flex items-center justify-center text-blue-600">
+                <FileText className="h-3.5 w-3.5" />
               </div>
-            </CardHeader>
-            <CardContent className="p-5 pt-0">
-              <div className="text-metric text-foreground">
+            </div>
+            <div className="mt-3">
+              <div className="text-2xl font-bold font-mono tracking-tight text-foreground">
                 {formatCurrency(kpis.totalSalesValue)}
               </div>
-              <p className="text-caption text-muted-foreground mt-1">
-                From {kpis.totalInvoicesCount} active invoice(s)
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="border border-border shadow-xs bg-card rounded-[10px]">
-            <CardHeader className="flex flex-row items-center justify-between pb-2 p-5">
-              <CardTitle className="text-eyebrow text-muted-foreground uppercase">
-                Total Collected / Paid
-              </CardTitle>
-              <div className="h-8 w-8 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
-                <TrendingUp className="h-4 w-4" />
+              <div className="text-xs text-muted-foreground mt-0.5">
+                From {kpis.totalInvoicesCount} generated invoice(s)
               </div>
-            </CardHeader>
-            <CardContent className="p-5 pt-0">
-              <div className="text-metric text-emerald-600 dark:text-emerald-400">
+            </div>
+          </div>
+
+          <div className="bg-card border border-border/80 rounded-xl p-4 shadow-xs flex flex-col justify-between h-full hover:border-border transition-colors">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                Paid / Collected
+              </span>
+              <div className="h-7 w-7 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 flex items-center justify-center text-emerald-600">
+                <CheckCircle2 className="h-3.5 w-3.5" />
+              </div>
+            </div>
+            <div className="mt-3">
+              <div className="text-2xl font-bold font-mono tracking-tight text-emerald-600 dark:text-emerald-400">
                 {formatCurrency(kpis.totalPaidValue)}
               </div>
-              <p className="text-caption text-muted-foreground mt-1">Cash, Card &amp; Bank Collections</p>
-            </CardContent>
-          </Card>
-
-          <Card className="border border-border shadow-xs bg-card rounded-[10px]">
-            <CardHeader className="flex flex-row items-center justify-between pb-2 p-5">
-              <CardTitle className="text-eyebrow text-muted-foreground uppercase">
-                Customer Outstanding
-              </CardTitle>
-              <div className="h-8 w-8 rounded-lg bg-red-500/10 text-red-600 dark:text-red-400 flex items-center justify-center shrink-0">
-                <TrendingDown className="h-4 w-4" />
+              <div className="text-xs text-muted-foreground mt-0.5">
+                Settled customer payments
               </div>
-            </CardHeader>
-            <CardContent className="p-5 pt-0">
-              <div className="text-metric text-red-600 dark:text-red-400">
+            </div>
+          </div>
+
+          <div className="bg-card border border-border/80 rounded-xl p-4 shadow-xs flex flex-col justify-between h-full hover:border-border transition-colors">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                Outstanding Balance
+              </span>
+              <div className="h-7 w-7 rounded-lg bg-rose-50 dark:bg-rose-950/50 flex items-center justify-center text-rose-600">
+                <AlertTriangle className="h-3.5 w-3.5" />
+              </div>
+            </div>
+            <div className="mt-3">
+              <div className={`text-2xl font-bold font-mono tracking-tight ${kpis.totalOutstandingBalance > 0 ? "text-rose-600 dark:text-rose-400" : "text-foreground"}`}>
                 {formatCurrency(kpis.totalOutstandingBalance)}
               </div>
-              <p className="text-caption text-muted-foreground mt-1">Total pending customer receivables</p>
-            </CardContent>
-          </Card>
-
-          <Card className="border border-border shadow-xs bg-card rounded-[10px]">
-            <CardHeader className="flex flex-row items-center justify-between pb-2 p-5">
-              <CardTitle className="text-eyebrow text-muted-foreground uppercase">
-                Total Invoices
-              </CardTitle>
-              <div className="h-8 w-8 rounded-lg bg-muted text-muted-foreground flex items-center justify-center shrink-0">
-                <Receipt className="h-4 w-4" />
+              <div className="text-xs text-muted-foreground mt-0.5">
+                Pending receivables
               </div>
-            </CardHeader>
-            <CardContent className="p-5 pt-0">
-              <div className="text-metric text-foreground">
+            </div>
+          </div>
+
+          <div className="bg-card border border-border/80 rounded-xl p-4 shadow-xs flex flex-col justify-between h-full hover:border-border transition-colors">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                Total Invoices
+              </span>
+              <div className="h-7 w-7 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-muted-foreground">
+                <Receipt className="h-3.5 w-3.5" />
+              </div>
+            </div>
+            <div className="mt-3">
+              <div className="text-2xl font-bold font-mono tracking-tight text-foreground">
                 {totalCount}
               </div>
-              <p className="text-caption text-muted-foreground mt-1">Tax invoice documents generated</p>
-            </CardContent>
-          </Card>
+              <div className="text-xs text-muted-foreground mt-0.5">
+                Total documents recorded
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* ─── Search & Filter Bar ─── */}
-        <Card className="border border-border shadow-xs bg-card rounded-[10px]">
-          <CardContent className="p-4 space-y-3">
-            <div className="flex flex-col md:flex-row items-center gap-3">
-              {/* Search Box */}
-              <div className="relative flex-1 w-full">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  type="search"
-                  placeholder="Search by Invoice No, Customer, Phone, Vehicle VIN or Plate..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9 text-xs h-9 w-full rounded-lg border-border"
-                />
-              </div>
+        <div className="bg-card border border-border/80 rounded-xl p-3 shadow-xs flex flex-col md:flex-row items-center justify-between gap-3">
+          <div className="relative w-full md:w-80">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+            <Input
+              type="search"
+              placeholder="Search by invoice #, customer, phone, vehicle..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9 h-8.5 text-xs bg-muted/40 border-border/70 focus:bg-background transition-colors"
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery("")}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground hover:text-foreground"
+              >
+                ✕
+              </button>
+            )}
+          </div>
 
-              {/* Status Filter Tabs */}
-              <div className="inline-flex items-center gap-1 bg-muted/60 p-1 rounded-lg border border-border/50 overflow-x-auto w-full md:w-auto">
-                {[
-                  { key: "all", label: "All" },
-                  { key: "paid", label: "Paid" },
-                  { key: "partially_paid", label: "Partially Paid" },
-                  { key: "credit", label: "Pending" },
-                  { key: "void", label: "Void" },
-                ].map((tab) => (
-                  <button
-                    key={tab.key}
-                    type="button"
-                    onClick={() => {
-                      setStatusFilter(tab.key);
-                      setCurrentPage(1);
-                    }}
-                    className={`h-7 px-2.5 text-caption font-medium rounded-md whitespace-nowrap transition-all duration-150 ${
-                      statusFilter === tab.key
-                        ? "bg-card text-foreground shadow-xs font-semibold border border-border/60"
-                        : "text-muted-foreground hover:text-foreground"
-                    }`}
-                  >
-                    {tab.label}
-                  </button>
-                ))}
-              </div>
+          <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
+            {/* Date Filter Dropdown */}
+            <select
+              value={dateFilter}
+              onChange={(e) => {
+                setDateFilter(e.target.value as any);
+                setCurrentPage(1);
+              }}
+              className="h-8.5 rounded-lg border border-border/80 bg-background px-2.5 text-xs font-medium text-foreground focus:outline-none focus:ring-1 focus:ring-primary shadow-2xs"
+            >
+              <option value="all">All Dates</option>
+              <option value="today">Today</option>
+              <option value="this_month">This Month</option>
+              <option value="custom">Custom Range...</option>
+            </select>
 
-              {/* Date Filter Dropdown */}
-              <div className="flex items-center gap-2 w-full md:w-auto">
-                <select
-                  value={dateFilter}
-                  onChange={(e) => {
-                    setDateFilter(e.target.value as any);
+            {/* Status Filter Segmented Control */}
+            <div className="flex items-center gap-1 bg-muted/40 p-1 rounded-lg border border-border/70 overflow-x-auto">
+              {[
+                { key: "all", label: "All Status" },
+                { key: "paid", label: "Paid" },
+                { key: "partially_paid", label: "Partial" },
+                { key: "credit", label: "Unpaid" },
+                { key: "void", label: "Void" },
+              ].map((tab) => (
+                <button
+                  key={tab.key}
+                  type="button"
+                  onClick={() => {
+                    setStatusFilter(tab.key);
                     setCurrentPage(1);
                   }}
-                  className="h-9 px-3 text-xs rounded-md border border-input bg-background font-medium focus:outline-none focus:ring-1 focus:ring-ring"
+                  className={`h-7 px-3 rounded-md text-xs font-semibold whitespace-nowrap transition-all ${
+                    statusFilter === tab.key
+                      ? "bg-background text-foreground shadow-2xs border border-border/60"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
                 >
-                  <option value="all">All Dates</option>
-                  <option value="today">Today</option>
-                  <option value="this_month">This Month</option>
-                  <option value="custom">Custom Range</option>
-                </select>
-              </div>
+                  {tab.label}
+                </button>
+              ))}
             </div>
+          </div>
+        </div>
 
-            {/* Custom Date Range Picker (shown when custom is selected) */}
-            {dateFilter === "custom" && (
-              <div className="flex flex-wrap items-center gap-3 pt-2 border-t text-xs">
-                <div className="flex items-center gap-2">
-                  <Label className="text-xs font-semibold">Start Date:</Label>
-                  <Input
-                    type="date"
-                    value={customStartDate}
-                    onChange={(e) => setCustomStartDate(e.target.value)}
-                    className="h-8 text-xs w-36"
-                  />
-                </div>
-                <div className="flex items-center gap-2">
-                  <Label className="text-xs font-semibold">End Date:</Label>
-                  <Input
-                    type="date"
-                    value={customEndDate}
-                    onChange={(e) => setCustomEndDate(e.target.value)}
-                    className="h-8 text-xs w-36"
-                  />
-                </div>
-                <Button
-                  size="sm"
-                  onClick={loadInvoicesList}
-                  className="h-8 text-xs px-3 font-semibold"
-                >
-                  Apply Date Range
-                </Button>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        {/* Custom Date Range Picker */}
+        {dateFilter === "custom" && (
+          <div className="bg-card border border-border/80 rounded-xl p-3 shadow-xs flex flex-wrap items-center gap-3 text-xs">
+            <div className="flex items-center gap-2">
+              <Label className="text-xs font-semibold text-muted-foreground">Start Date:</Label>
+              <Input
+                type="date"
+                value={customStartDate}
+                onChange={(e) => setCustomStartDate(e.target.value)}
+                className="h-8 text-xs w-36"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <Label className="text-xs font-semibold text-muted-foreground">End Date:</Label>
+              <Input
+                type="date"
+                value={customEndDate}
+                onChange={(e) => setCustomEndDate(e.target.value)}
+                className="h-8 text-xs w-36"
+              />
+            </div>
+            <Button
+              size="sm"
+              onClick={loadInvoicesList}
+              className="h-8 text-xs px-3 font-semibold bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              Apply Filter
+            </Button>
+          </div>
+        )}
 
         {/* ─── Invoices Data Table ─── */}
-        <Card className="border shadow-sm overflow-hidden">
-          <CardContent className="p-0">
-            {loading ? (
-              <div className="py-24 text-center text-muted-foreground">
-                <Loader2 className="h-8 w-8 mx-auto animate-spin mb-3 text-blue-600" />
-                <p className="font-medium text-sm">Loading tax invoices...</p>
-              </div>
-            ) : invoices.length > 0 ? (
-              <div className="overflow-x-auto">
-                {selectedInvoiceIds.length > 0 && (
-                  <div className="bg-slate-50 p-2 border-b flex items-center justify-between">
-                    <span className="text-xs font-semibold text-slate-600">
-                      {selectedInvoiceIds.length} items selected
-                    </span>
+        <div className="bg-card border border-border/80 rounded-xl shadow-xs overflow-hidden">
+          {loading ? (
+            <div className="py-20 text-center text-muted-foreground">
+              <Loader2 className="h-7 w-7 mx-auto animate-spin mb-3 text-primary" />
+              <p className="font-semibold text-xs">Loading invoices...</p>
+            </div>
+          ) : invoices.length > 0 ? (
+            <div className="overflow-x-auto min-w-full">
+              {selectedInvoiceIds.length > 0 && (
+                <div className="bg-blue-50/80 dark:bg-blue-950/40 p-2.5 px-4 border-b border-blue-200 dark:border-blue-900/50 flex items-center justify-between text-xs text-blue-900 dark:text-blue-200">
+                  <span className="font-semibold">
+                    {selectedInvoiceIds.length} invoice{selectedInvoiceIds.length > 1 ? "s" : ""} selected
+                  </span>
+                  <div className="flex items-center gap-2">
                     <Button
                       variant="destructive"
                       size="sm"
-                      className="h-7 text-xs"
+                      className="h-7 text-xs font-semibold"
                       onClick={handleRequestBulkDelete}
                     >
                       <Trash2 className="h-3 w-3 mr-1.5" /> Delete Selected
                     </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 text-xs text-muted-foreground hover:text-foreground"
+                      onClick={() => setSelectedInvoiceIds([])}
+                    >
+                      Clear Selection
+                    </Button>
                   </div>
-                )}
-                <Table>
-                  <TableHeader>
-                    <TableRow className="bg-slate-50/70 dark:bg-slate-800/40 text-xs">
-                      <TableHead className="w-[40px] pl-4">
-                        <Checkbox
-                          checked={
-                            invoices.length > 0 && selectedInvoiceIds.length === invoices.length
-                              ? true
-                              : selectedInvoiceIds.length > 0
-                              ? "indeterminate"
-                              : false
-                          }
-                          onCheckedChange={handleSelectAll}
-                          aria-label="Select all visible invoices"
-                        />
-                      </TableHead>
-                      <TableHead className="font-bold text-foreground">Invoice</TableHead>
-                      <TableHead>Date</TableHead>
-                      <TableHead className="min-w-[180px]">Customer</TableHead>
-                      <TableHead className="min-w-[180px]">Vehicle</TableHead>
-                      <TableHead className="text-right">Total (AED)</TableHead>
-                      <TableHead className="text-right">Paid (AED)</TableHead>
-                      <TableHead className="text-right">Balance</TableHead>
-                      <TableHead className="text-center w-[120px]">Status</TableHead>
-                      <TableHead className="text-right pr-4 w-[160px]">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {invoices.map((inv) => {
-                      const tot = Number(inv.total) || 0;
-                      const paid = Number(inv.paid) || 0;
-                      const bal = Number(inv.balance !== undefined ? inv.balance : Math.max(0, tot - paid));
-                      const isVoid = inv.payment_status === "void" || inv.is_void;
+                </div>
+              )}
+              <Table className="w-full text-xs min-w-[1100px]">
+                <TableHeader>
+                  <TableRow className="h-10 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider bg-slate-50/75 dark:bg-slate-800/40 border-b border-border/70">
+                    <TableHead className="w-[44px] pl-4">
+                      <Checkbox
+                        checked={
+                          invoices.length > 0 && selectedInvoiceIds.length === invoices.length
+                            ? true
+                            : selectedInvoiceIds.length > 0
+                            ? "indeterminate"
+                            : false
+                        }
+                        onCheckedChange={handleSelectAll}
+                        aria-label="Select all visible invoices"
+                      />
+                    </TableHead>
+                    <TableHead className="font-semibold text-foreground">Invoice No</TableHead>
+                    <TableHead className="font-semibold text-foreground min-w-[180px]">Customer</TableHead>
+                    <TableHead className="font-semibold text-foreground min-w-[170px]">Vehicle</TableHead>
+                    <TableHead className="font-semibold text-foreground">Job Card</TableHead>
+                    <TableHead className="font-semibold text-foreground">Date</TableHead>
+                    <TableHead className="text-right font-semibold text-foreground">Total (AED)</TableHead>
+                    <TableHead className="text-right font-semibold text-foreground">Paid (AED)</TableHead>
+                    <TableHead className="text-right font-semibold text-foreground">Balance (AED)</TableHead>
+                    <TableHead className="text-center font-semibold text-foreground">Payment Status</TableHead>
+                    <TableHead className="w-[105px] min-w-[105px] text-right pr-4 font-semibold text-foreground">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {invoices.map((inv) => {
+                    const tot = Number(inv.total) || 0;
+                    const paid = Number(inv.paid) || 0;
+                    const bal = Number(inv.balance !== undefined ? inv.balance : Math.max(0, tot - paid));
+                    const isVoid = inv.payment_status === "void" || inv.is_void;
 
-                      return (
-                        <TableRow
-                          key={inv.id}
-                          className={`text-xs hover:bg-slate-50/70 dark:hover:bg-slate-800/50 transition-colors ${
-                            isVoid ? "opacity-60 bg-slate-50/30" : ""
-                          } ${selectedInvoiceIds.includes(inv.id) ? "bg-blue-50/40 dark:bg-blue-950/20" : ""}`}
-                        >
-                          <TableCell className="pl-4 py-3">
-                            <Checkbox
-                              checked={selectedInvoiceIds.includes(inv.id)}
-                              onCheckedChange={() => handleToggleSelectInvoice(inv.id)}
-                              aria-label={`Select invoice ${inv.invoice_number}`}
-                            />
-                          </TableCell>
-                          <TableCell className="font-mono font-bold py-3 text-foreground">
-                            <span className="cursor-pointer hover:underline text-blue-600" onClick={() => handleOpenDetails(inv.id)}>
-                              {inv.invoice_number}
-                            </span>
-                            {inv.job_card && (
-                              <span className="block text-[10px] font-mono text-muted-foreground font-normal">
-                                JC: {inv.job_card.job_card_number}
-                              </span>
-                            )}
-                          </TableCell>
+                    return (
+                      <TableRow
+                        key={inv.id}
+                        className={`h-13 border-b border-border/40 hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors ${
+                          isVoid ? "opacity-60 bg-slate-50/30" : ""
+                        } ${selectedInvoiceIds.includes(inv.id) ? "bg-blue-50/40 dark:bg-blue-950/20" : ""}`}
+                      >
+                        <TableCell className="pl-4 py-2.5">
+                          <Checkbox
+                            checked={selectedInvoiceIds.includes(inv.id)}
+                            onCheckedChange={() => handleToggleSelectInvoice(inv.id)}
+                            aria-label={`Select invoice ${inv.invoice_number}`}
+                          />
+                        </TableCell>
 
-                          <TableCell className="font-mono text-muted-foreground py-3">
-                            {formatDate(inv.created_at || inv.date)}
-                          </TableCell>
+                        <TableCell className="font-mono font-bold text-xs py-2.5">
+                          <button
+                            type="button"
+                            onClick={() => handleOpenDetails(inv.id)}
+                            className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 hover:underline inline-flex items-center gap-1"
+                          >
+                            {inv.invoice_number}
+                          </button>
+                        </TableCell>
 
-                          <TableCell className="py-3">
-                            <div className="font-semibold text-foreground">{inv.customer?.name || "Cash Customer"}</div>
-                            <div className="text-[11px] text-muted-foreground font-mono">
-                              {inv.customer?.mobile || inv.customer?.company_name || "—"}
+                        <TableCell className="py-2.5">
+                          <div className="font-semibold text-foreground leading-tight">
+                            {inv.customer?.name || "Cash Customer"}
+                          </div>
+                          {(inv.customer?.mobile || inv.customer?.company_name) && (
+                            <div className="text-[11px] text-muted-foreground font-mono leading-tight mt-0.5">
+                              {inv.customer?.mobile || inv.customer?.company_name}
                             </div>
-                          </TableCell>
+                          )}
+                        </TableCell>
 
-                          <TableCell className="py-3">
-                            {inv.vehicle ? (
-                              <div>
-                                <span className="font-semibold text-foreground">
-                                  {inv.vehicle.make} {inv.vehicle.model}
-                                </span>
-                                <span className="block text-[11px] font-mono text-muted-foreground font-bold">
-                                  {inv.vehicle.registration_number || "—"}
-                                </span>
+                        <TableCell className="py-2.5">
+                          {inv.vehicle ? (
+                            <div>
+                              <div className="font-semibold text-foreground leading-tight">
+                                {inv.vehicle.make} {inv.vehicle.model}
                               </div>
-                            ) : (
-                              <span className="text-muted-foreground">—</span>
-                            )}
-                          </TableCell>
-
-                          <TableCell className="text-right font-mono font-bold py-3 text-foreground">
-                            {formatCurrency(tot)}
-                          </TableCell>
-
-                          <TableCell className="text-right font-mono font-bold text-emerald-600 dark:text-emerald-400 py-3">
-                            {formatCurrency(paid)}
-                          </TableCell>
-
-                          <TableCell className="text-right font-mono font-black py-3">
-                            <span className={bal > 0 && !isVoid ? "text-rose-600 dark:text-rose-400" : "text-emerald-600"}>
-                              {formatCurrency(bal)}
-                            </span>
-                          </TableCell>
-
-                          <TableCell className="text-center py-3">
-                            <span
-                              className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${
-                                isVoid
-                                  ? "bg-slate-100 text-slate-600 border-slate-300"
-                                  : bal === 0 || inv.payment_status === "paid"
-                                  ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                                  : paid > 0
-                                  ? "bg-amber-50 text-amber-700 border-amber-200"
-                                  : "bg-rose-50 text-rose-700 border-rose-200"
-                              }`}
-                            >
-                              {isVoid
-                                ? "VOID"
-                                : bal === 0 || inv.payment_status === "paid"
-                                ? "PAID"
-                                : paid > 0
-                                ? "PARTIAL"
-                                : "PENDING"}
-                            </span>
-                          </TableCell>
-
-                          <TableCell className="text-right pr-4 py-3">
-                            <div className="flex items-center justify-end gap-1">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleOpenDetails(inv.id)}
-                                className="h-8 px-2 text-xs text-blue-600 hover:text-blue-800 hover:bg-blue-50"
-                                title="View invoice breakdown"
-                              >
-                                <Eye className="h-3.5 w-3.5 mr-1" /> View
-                              </Button>
-
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleTriggerPrint(inv)}
-                                className="h-8 px-2 text-xs text-slate-700 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
-                                title="Print official A4 invoice"
-                              >
-                                <Printer className="h-3.5 w-3.5 mr-1" /> Print
-                              </Button>
-
-                              <DropdownMenu>
-                                <DropdownMenuTrigger className="h-8 w-8 inline-flex items-center justify-center rounded-md border border-slate-200 dark:border-slate-700 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 focus:outline-none">
-                                  <MoreVertical className="h-3.5 w-3.5" />
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end" className="w-44 text-xs">
-                                  <DropdownMenuLabel>Invoice Actions</DropdownMenuLabel>
-                                  <DropdownMenuItem onClick={() => handleOpenDetails(inv.id)}>
-                                    <Eye className="h-3.5 w-3.5 mr-2 text-blue-600" /> View Details
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem onClick={() => handleTriggerPrint(inv)}>
-                                    <Printer className="h-3.5 w-3.5 mr-2 text-slate-600" /> Print A4
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem onClick={() => handleWhatsAppShare(inv)}>
-                                    <MessageSquare className="h-3.5 w-3.5 mr-2 text-emerald-600" /> WhatsApp
-                                  </DropdownMenuItem>
-
-                                  {bal > 0 && !isVoid && canEdit && (
-                                    <DropdownMenuItem onClick={() => handleOpenRecordPayment(inv)}>
-                                      <CreditCard className="h-3.5 w-3.5 mr-2 text-emerald-600" /> Record Payment
-                                    </DropdownMenuItem>
-                                  )}
-
-                                  {!isVoid && (isOwner || isManager || canDelete) && (
-                                    <DropdownMenuItem
-                                      onClick={() => handleOpenVoidModal(inv)}
-                                      className="text-amber-600"
-                                    >
-                                      <Ban className="h-3.5 w-3.5 mr-2" /> Void Invoice
-                                    </DropdownMenuItem>
-                                  )}
-
-                                  {(isOwner || isManager || canDelete) && (
-                                    <>
-                                      <DropdownMenuSeparator />
-                                      <DropdownMenuItem
-                                        onClick={() => handleRequestSingleDelete(inv)}
-                                        className="text-rose-600 hover:text-rose-700 font-semibold focus:text-rose-600"
-                                      >
-                                        <Trash2 className="h-3.5 w-3.5 mr-2" /> Delete
-                                      </DropdownMenuItem>
-                                    </>
-                                  )}
-                                </DropdownMenuContent>
-                              </DropdownMenu>
+                              <div className="text-[11px] font-mono text-muted-foreground font-bold leading-tight mt-0.5">
+                                {inv.vehicle.registration_number || "—"}
+                              </div>
                             </div>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
+                        </TableCell>
+
+                        <TableCell className="py-2.5">
+                          {inv.job_card ? (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-mono font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                              {inv.job_card.job_card_number}
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground text-xs">—</span>
+                          )}
+                        </TableCell>
+
+                        <TableCell className="font-mono text-muted-foreground text-xs py-2.5 whitespace-nowrap">
+                          {formatDate(inv.created_at || inv.date)}
+                        </TableCell>
+
+                        <TableCell className="text-right font-mono font-bold text-foreground py-2.5 whitespace-nowrap">
+                          {formatCurrency(tot)}
+                        </TableCell>
+
+                        <TableCell className="text-right font-mono font-bold text-emerald-600 dark:text-emerald-400 py-2.5 whitespace-nowrap">
+                          {formatCurrency(paid)}
+                        </TableCell>
+
+                        <TableCell className={`text-right font-mono font-bold py-2.5 whitespace-nowrap ${bal > 0 && !isVoid ? "text-rose-600 dark:text-rose-400" : "text-muted-foreground"}`}>
+                          {formatCurrency(bal)}
+                        </TableCell>
+
+                        <TableCell className="text-center py-2.5">
+                          <span
+                            className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider border ${
+                              isVoid
+                                ? "bg-slate-100 text-slate-600 border-slate-300 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700"
+                                : bal === 0 || inv.payment_status === "paid"
+                                ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-800/40"
+                                : paid > 0
+                                ? "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/30 dark:text-amber-400 dark:border-amber-800/40"
+                                : "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/30 dark:text-rose-400 dark:border-rose-800/40"
+                            }`}
+                          >
+                            {isVoid
+                              ? "VOID"
+                              : bal === 0 || inv.payment_status === "paid"
+                              ? "PAID"
+                              : paid > 0
+                              ? "PARTIAL"
+                              : "UNPAID"}
+                          </span>
+                        </TableCell>
+
+                        <TableCell className="w-[105px] min-w-[105px] text-right pr-4 py-2.5">
+                          <div className="flex items-center justify-end gap-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleOpenDetails(inv.id)}
+                              className="h-8 px-2 text-xs text-blue-600 hover:text-blue-800 hover:bg-blue-50 dark:hover:bg-blue-950/50"
+                              title="View invoice breakdown"
+                            >
+                              <Eye className="h-3.5 w-3.5 mr-1" /> View
+                            </Button>
+
+                            <DropdownMenu>
+                              <DropdownMenuTrigger className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-border/80 text-muted-foreground hover:text-foreground hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors focus:outline-none">
+                                <MoreVertical className="h-3.5 w-3.5" />
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="w-48 text-xs">
+                                <DropdownMenuLabel>Invoice Actions</DropdownMenuLabel>
+                                <DropdownMenuItem onClick={() => handleOpenDetails(inv.id)}>
+                                  <Eye className="h-3.5 w-3.5 mr-2 text-blue-600" /> View Details
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleTriggerPrint(inv)}>
+                                  <Printer className="h-3.5 w-3.5 mr-2 text-slate-600" /> Print A4
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleWhatsAppShare(inv)}>
+                                  <MessageSquare className="h-3.5 w-3.5 mr-2 text-emerald-600" /> WhatsApp
+                                </DropdownMenuItem>
+
+                                {bal > 0 && !isVoid && canEdit && (
+                                  <DropdownMenuItem onClick={() => handleOpenRecordPayment(inv)}>
+                                    <CreditCard className="h-3.5 w-3.5 mr-2 text-emerald-600" /> Record Payment
+                                  </DropdownMenuItem>
+                                )}
+
+                                {!isVoid && (isOwner || isManager || canDelete) && (
+                                  <DropdownMenuItem
+                                    onClick={() => handleOpenVoidModal(inv)}
+                                    className="text-amber-600"
+                                  >
+                                    <Ban className="h-3.5 w-3.5 mr-2" /> Void Invoice
+                                  </DropdownMenuItem>
+                                )}
+
+                                {(isOwner || isManager || canDelete) && (
+                                  <>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem
+                                      onClick={() => handleRequestSingleDelete(inv)}
+                                      className="text-rose-600 hover:text-rose-700 font-semibold focus:text-rose-600"
+                                    >
+                                      <Trash2 className="h-3.5 w-3.5 mr-2" /> Delete
+                                    </DropdownMenuItem>
+                                  </>
+                                )}
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-10 px-4 min-h-[220px] max-h-[280px] text-center">
+              <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-muted-foreground/70 mb-3">
+                <FileText className="h-5 w-5" />
               </div>
-            ) : (
-              <div className="py-20 text-center text-muted-foreground space-y-2">
-                <FileText className="h-10 w-10 mx-auto text-muted-foreground/40" />
-                <p className="text-sm font-semibold text-foreground">No tax invoice records found</p>
-                <p className="text-xs max-w-sm mx-auto">
-                  Invoices are automatically generated when converting completed Job Cards or creating new customer invoices.
-                </p>
+              <p className="text-sm font-bold text-foreground">No tax invoice records found</p>
+              <p className="text-xs text-muted-foreground mt-1 max-w-sm">
+                Invoices are generated when converting completed Job Cards or creating new customer invoices.
+              </p>
+              <div className="flex items-center gap-2 mt-4">
+                <Button
+                  size="sm"
+                  onClick={handleOpenConvertModal}
+                  className="h-8 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-xs"
+                >
+                  <Plus className="h-3.5 w-3.5 mr-1.5" /> + Create Invoice
+                </Button>
               </div>
-            )}
-          </CardContent>
+            </div>
+          )}
 
           {/* Pagination Footer */}
           {totalPages > 1 && (
-            <div className="p-4 border-t border-border flex items-center justify-between text-xs text-muted-foreground">
+            <div className="p-3.5 border-t border-border flex items-center justify-between text-xs text-muted-foreground bg-slate-50/50 dark:bg-slate-800/30">
               <span>
                 Showing {(currentPage - 1) * pageSize + 1} to{" "}
                 {Math.min(currentPage * pageSize, totalCount)} of {totalCount} invoices
@@ -985,7 +1017,7 @@ export function InvoicesView() {
                   size="sm"
                   onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                   disabled={currentPage === 1}
-                  className="h-8 text-xs"
+                  className="h-8 text-xs font-medium border-border/80"
                 >
                   <ChevronLeft className="h-3.5 w-3.5 mr-1" /> Previous
                 </Button>
@@ -997,36 +1029,59 @@ export function InvoicesView() {
                   size="sm"
                   onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                   disabled={currentPage >= totalPages}
-                  className="h-8 text-xs"
+                  className="h-8 text-xs font-medium border-border/80"
                 >
                   Next <ChevronRight className="h-3.5 w-3.5 ml-1" />
                 </Button>
               </div>
             </div>
           )}
-        </Card>
+        </div>
       </div>
 
       {/* ========================================================================= */}
       {/* 1. INVOICE DETAILS MODAL                                                  */}
       {/* ========================================================================= */}
       <Dialog open={detailsModalOpen} onOpenChange={setDetailsModalOpen}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center justify-between text-base font-bold text-foreground">
-              <span className="flex items-center gap-2">
-                <Receipt className="h-5 w-5 text-blue-600" />
-                Tax Invoice {selectedInvoice?.invoice_number ? `#${selectedInvoice.invoice_number}` : ""}
-              </span>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto bg-background text-foreground">
+          <DialogHeader className="border-b pb-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <DialogTitle className="flex items-center gap-2 text-base font-bold text-foreground">
+                  <Receipt className="h-5 w-5 text-blue-600 shrink-0" />
+                  Tax Invoice #{selectedInvoice?.invoice_number || ""}
+                </DialogTitle>
+                <DialogDescription className="text-xs text-muted-foreground mt-0.5">
+                  Itemized services, spare parts catalog, VAT calculations, and split payment ledger.
+                </DialogDescription>
+              </div>
               {selectedInvoice && (
-                <span className="text-xs font-mono font-normal text-muted-foreground">
-                  Date: {formatDate(selectedInvoice.created_at || selectedInvoice.date)}
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-mono text-muted-foreground">
+                    {formatDate(selectedInvoice.created_at || selectedInvoice.date)}
+                  </span>
+                  <span
+                    className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider border ${
+                      selectedInvoice.payment_status === "void" || selectedInvoice.is_void
+                        ? "bg-slate-100 text-slate-600 border-slate-300 dark:bg-slate-800 dark:text-slate-400"
+                        : selectedInvoice.balance === 0 || selectedInvoice.payment_status === "paid"
+                        ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-800/40"
+                        : Number(selectedInvoice.paid) > 0
+                        ? "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/30 dark:text-amber-400 dark:border-amber-800/40"
+                        : "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/30 dark:text-rose-400 dark:border-rose-800/40"
+                    }`}
+                  >
+                    {selectedInvoice.payment_status === "void" || selectedInvoice.is_void
+                      ? "VOID"
+                      : selectedInvoice.balance === 0 || selectedInvoice.payment_status === "paid"
+                      ? "PAID"
+                      : Number(selectedInvoice.paid) > 0
+                      ? "PARTIAL"
+                      : "UNPAID"}
+                  </span>
+                </div>
               )}
-            </DialogTitle>
-            <DialogDescription className="text-xs text-muted-foreground">
-              Itemized services, spare parts catalog breakdown, VAT calculations, and split payment ledger.
-            </DialogDescription>
+            </div>
           </DialogHeader>
 
           {loadingDetails ? (
@@ -1036,56 +1091,77 @@ export function InvoicesView() {
             </div>
           ) : selectedInvoice ? (
             <div className="space-y-4 pt-1">
-              {/* Customer & Vehicle Info Header */}
-              <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border text-xs grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <div>
-                  <span className="text-muted-foreground block text-[10px] uppercase font-bold">Customer</span>
-                  <span className="font-bold text-foreground">{selectedInvoice.customer?.name || "Cash Customer"}</span>
+              {/* Customer & Vehicle Panels */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                {/* CUSTOMER */}
+                <div className="p-3.5 bg-slate-50/70 dark:bg-slate-800/40 rounded-xl border border-border/80">
+                  <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider block mb-1">
+                    Customer Information
+                  </span>
+                  <div className="font-bold text-foreground text-sm">
+                    {selectedInvoice.customer?.name || "Cash Customer"}
+                  </div>
                   {selectedInvoice.customer?.company_name && (
-                    <span className="block text-[11px] text-muted-foreground">{selectedInvoice.customer.company_name}</span>
+                    <div className="text-[11px] text-muted-foreground font-medium mt-0.5">
+                      {selectedInvoice.customer.company_name}
+                    </div>
+                  )}
+                  <div className="text-xs text-muted-foreground font-mono mt-1">
+                    Phone: {selectedInvoice.customer?.mobile || "—"}
+                  </div>
+                  {selectedInvoice.customer?.trn && (
+                    <div className="text-[11px] font-mono text-blue-600 font-bold mt-1">
+                      TRN: {selectedInvoice.customer.trn}
+                    </div>
                   )}
                 </div>
-                <div>
-                  <span className="text-muted-foreground block text-[10px] uppercase font-bold">Vehicle</span>
-                  <span className="font-bold text-foreground">
-                    {selectedInvoice.vehicle ? `${selectedInvoice.vehicle.make} ${selectedInvoice.vehicle.model}` : "—"}
+
+                {/* VEHICLE */}
+                <div className="p-3.5 bg-slate-50/70 dark:bg-slate-800/40 rounded-xl border border-border/80">
+                  <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider block mb-1">
+                    Vehicle Specifications
                   </span>
-                  <span className="block text-[11px] font-mono font-bold text-blue-600">
-                    {selectedInvoice.vehicle?.registration_number || "—"}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-muted-foreground block text-[10px] uppercase font-bold">Total Invoiced</span>
-                  <span className="font-mono font-black text-foreground text-sm">
-                    {formatCurrency(selectedInvoice.total)}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-muted-foreground block text-[10px] uppercase font-bold">Remaining Balance</span>
-                  <span
-                    className={`font-mono font-black text-sm ${
-                      selectedInvoice.balance > 0 ? "text-rose-600" : "text-emerald-600"
-                    }`}
-                  >
-                    {formatCurrency(selectedInvoice.balance || 0)}
-                  </span>
+                  {selectedInvoice.vehicle ? (
+                    <div>
+                      <div className="font-bold text-foreground text-sm">
+                        {selectedInvoice.vehicle.make} {selectedInvoice.vehicle.model}
+                        {selectedInvoice.vehicle.year ? ` (${selectedInvoice.vehicle.year})` : ""}
+                      </div>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="font-mono font-bold text-xs bg-slate-200/80 dark:bg-slate-700 px-2 py-0.5 rounded text-foreground">
+                          {selectedInvoice.vehicle.registration_number || "No Plate"}
+                        </span>
+                        {selectedInvoice.vehicle.color && (
+                          <span className="text-xs text-muted-foreground">
+                            Color: {selectedInvoice.vehicle.color}
+                          </span>
+                        )}
+                      </div>
+                      {selectedInvoice.vehicle.vin && (
+                        <div className="text-[11px] font-mono text-muted-foreground mt-1">
+                          VIN: {selectedInvoice.vehicle.vin}
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="text-muted-foreground">— No vehicle linked —</div>
+                  )}
                 </div>
               </div>
 
-              {/* Separate Services & Parts Item Tables */}
-              {/* 1. Services */}
+              {/* SERVICES */}
               <div>
-                <h4 className="text-xs font-bold uppercase tracking-wider text-foreground mb-1.5 flex items-center gap-1">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-foreground mb-1.5 flex items-center gap-1.5">
                   <Wrench className="h-3.5 w-3.5 text-blue-600" /> Labor &amp; Workshop Services
                 </h4>
-                <div className="border rounded-lg overflow-hidden">
-                  <Table>
+                <div className="border border-border/80 rounded-xl overflow-hidden shadow-2xs">
+                  <Table className="text-xs">
                     <TableHeader>
-                      <TableRow className="bg-slate-50 dark:bg-slate-800/60 text-xs font-bold">
-                        <TableHead className="w-12 text-center">S.No</TableHead>
+                      <TableRow className="bg-slate-50/80 dark:bg-slate-800/50 text-[11px] font-semibold text-muted-foreground">
+                        <TableHead className="w-12 text-center">#</TableHead>
                         <TableHead>Service Description</TableHead>
-                        <TableHead className="text-right w-28">Rate</TableHead>
-                        <TableHead className="text-right w-28 pr-3">Amount</TableHead>
+                        <TableHead className="text-right w-28">Rate (AED)</TableHead>
+                        <TableHead className="text-right w-28 pr-4">Amount (AED)</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -1093,17 +1169,17 @@ export function InvoicesView() {
                         (selectedInvoice.items || [])
                           .filter((it: any) => it.item_type === "service" || !it.item_type)
                           .map((it: any, i: number) => (
-                            <TableRow key={i} className="text-xs border-b">
+                            <TableRow key={i} className="h-10 border-b border-border/40">
                               <TableCell className="text-center font-mono text-muted-foreground">{i + 1}</TableCell>
                               <TableCell className="font-semibold text-foreground">{it.description}</TableCell>
-                              <TableCell className="text-right font-mono">{formatCurrency(it.unit_price)}</TableCell>
-                              <TableCell className="text-right font-mono font-bold pr-3">{formatCurrency(it.total_price)}</TableCell>
+                              <TableCell className="text-right font-mono text-muted-foreground">{formatCurrency(it.unit_price)}</TableCell>
+                              <TableCell className="text-right font-mono font-bold text-foreground pr-4">{formatCurrency(it.total_price)}</TableCell>
                             </TableRow>
                           ))
                       ) : (
                         <TableRow>
                           <TableCell colSpan={4} className="text-center py-3 text-xs text-muted-foreground">
-                            No service line items
+                            No service line items recorded
                           </TableCell>
                         </TableRow>
                       )}
@@ -1112,20 +1188,20 @@ export function InvoicesView() {
                 </div>
               </div>
 
-              {/* 2. Spare Parts */}
+              {/* SPARE PARTS */}
               <div>
-                <h4 className="text-xs font-bold uppercase tracking-wider text-foreground mb-1.5 flex items-center gap-1">
-                  <Package className="h-3.5 w-3.5 text-emerald-600" /> Spare Parts &amp; Materials
+                <h4 className="text-xs font-bold uppercase tracking-wider text-foreground mb-1.5 flex items-center gap-1.5">
+                  <Package className="h-3.5 w-3.5 text-indigo-600" /> Spare Parts &amp; Materials
                 </h4>
-                <div className="border rounded-lg overflow-hidden">
-                  <Table>
+                <div className="border border-border/80 rounded-xl overflow-hidden shadow-2xs">
+                  <Table className="text-xs">
                     <TableHeader>
-                      <TableRow className="bg-slate-50 dark:bg-slate-800/60 text-xs font-bold">
-                        <TableHead className="w-12 text-center">S.No</TableHead>
+                      <TableRow className="bg-slate-50/80 dark:bg-slate-800/50 text-[11px] font-semibold text-muted-foreground">
+                        <TableHead className="w-12 text-center">#</TableHead>
                         <TableHead>Part Description</TableHead>
                         <TableHead className="text-center w-20">Qty</TableHead>
                         <TableHead className="text-right w-28">Unit Price</TableHead>
-                        <TableHead className="text-right w-28 pr-3">Total</TableHead>
+                        <TableHead className="text-right w-28 pr-4">Total (AED)</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -1133,18 +1209,18 @@ export function InvoicesView() {
                         (selectedInvoice.items || [])
                           .filter((it: any) => it.item_type === "part")
                           .map((it: any, i: number) => (
-                            <TableRow key={i} className="text-xs border-b">
+                            <TableRow key={i} className="h-10 border-b border-border/40">
                               <TableCell className="text-center font-mono text-muted-foreground">{i + 1}</TableCell>
                               <TableCell className="font-semibold text-foreground">{it.description}</TableCell>
                               <TableCell className="text-center font-mono font-bold">{it.quantity}</TableCell>
-                              <TableCell className="text-right font-mono">{formatCurrency(it.unit_price)}</TableCell>
-                              <TableCell className="text-right font-mono font-bold pr-3">{formatCurrency(it.total_price)}</TableCell>
+                              <TableCell className="text-right font-mono text-muted-foreground">{formatCurrency(it.unit_price)}</TableCell>
+                              <TableCell className="text-right font-mono font-bold text-foreground pr-4">{formatCurrency(it.total_price)}</TableCell>
                             </TableRow>
                           ))
                       ) : (
                         <TableRow>
                           <TableCell colSpan={5} className="text-center py-3 text-xs text-muted-foreground">
-                            No spare part line items
+                            No spare part line items recorded
                           </TableCell>
                         </TableRow>
                       )}
@@ -1153,55 +1229,74 @@ export function InvoicesView() {
                 </div>
               </div>
 
-              {/* Financial Calculation Summary Table */}
-              <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border text-xs grid grid-cols-2 sm:grid-cols-5 gap-2 text-center">
-                <div className="p-2 bg-white dark:bg-slate-900 rounded-lg border">
-                  <span className="text-muted-foreground block text-[10px] uppercase font-bold">Subtotal</span>
-                  <span className="font-mono font-bold text-foreground text-xs">{formatCurrency(selectedInvoice.subtotal)}</span>
-                </div>
-                <div className="p-2 bg-white dark:bg-slate-900 rounded-lg border">
-                  <span className="text-muted-foreground block text-[10px] uppercase font-bold">VAT ({selectedInvoice.vat_rate || 5}%)</span>
-                  <span className="font-mono font-bold text-foreground text-xs">{formatCurrency(selectedInvoice.vat_amount)}</span>
-                </div>
-                <div className="p-2 bg-white dark:bg-slate-900 rounded-lg border">
-                  <span className="text-muted-foreground block text-[10px] uppercase font-bold">Total Amount</span>
-                  <span className="font-mono font-black text-foreground text-xs">{formatCurrency(selectedInvoice.total)}</span>
-                </div>
-                <div className="p-2 bg-white dark:bg-slate-900 rounded-lg border">
-                  <span className="text-muted-foreground block text-[10px] uppercase font-bold">Paid Amount</span>
-                  <span className="font-mono font-black text-emerald-600 text-xs">{formatCurrency(selectedInvoice.paid || 0)}</span>
-                </div>
-                <div className="p-2 bg-white dark:bg-slate-900 rounded-lg border">
-                  <span className="text-muted-foreground block text-[10px] uppercase font-bold">Balance Due</span>
-                  <span className={`font-mono font-black text-xs ${selectedInvoice.balance > 0 ? "text-rose-600" : "text-emerald-600"}`}>
-                    {formatCurrency(selectedInvoice.balance || 0)}
-                  </span>
+              {/* PAYMENT SUMMARY - Dominant Total */}
+              <div className="bg-slate-50/80 dark:bg-slate-800/40 border border-border/80 rounded-xl p-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center">
+                  <div className="space-y-1.5 text-xs">
+                    <div className="flex justify-between text-muted-foreground">
+                      <span>Subtotal:</span>
+                      <span className="font-mono font-semibold text-foreground">{formatCurrency(selectedInvoice.subtotal)}</span>
+                    </div>
+                    {Number(selectedInvoice.discount_amount) > 0 && (
+                      <div className="flex justify-between text-rose-600">
+                        <span>Discount:</span>
+                        <span className="font-mono font-semibold">-{formatCurrency(selectedInvoice.discount_amount)}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between text-muted-foreground">
+                      <span>VAT ({selectedInvoice.vat_rate || 5}%):</span>
+                      <span className="font-mono font-semibold text-foreground">{formatCurrency(selectedInvoice.vat_amount)}</span>
+                    </div>
+                    <div className="flex justify-between text-muted-foreground pt-1 border-t">
+                      <span>Paid Amount:</span>
+                      <span className="font-mono font-bold text-emerald-600">{formatCurrency(selectedInvoice.paid || 0)}</span>
+                    </div>
+                    <div className="flex justify-between text-muted-foreground">
+                      <span>Balance Due:</span>
+                      <span className={`font-mono font-bold ${selectedInvoice.balance > 0 ? "text-rose-600" : "text-emerald-600"}`}>
+                        {formatCurrency(selectedInvoice.balance || 0)}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Dominant Total Box */}
+                  <div className="bg-blue-600 text-white p-4 rounded-xl flex flex-col justify-between items-center text-center shadow-sm">
+                    <span className="text-[11px] font-semibold uppercase tracking-wider text-blue-100">
+                      Total Invoice Amount
+                    </span>
+                    <div className="text-2xl font-bold font-mono tracking-tight my-1">
+                      {formatCurrency(selectedInvoice.total)}
+                    </div>
+                    <span className="text-[10px] text-blue-200">
+                      Inclusive of 5% UAE VAT
+                    </span>
+                  </div>
                 </div>
               </div>
 
-              {/* Payment History Ledger */}
+              {/* Payment Transactions History */}
               {selectedInvoice.payments && selectedInvoice.payments.length > 0 && (
                 <div>
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-foreground mb-1.5 flex items-center gap-1">
-                    <CreditCard className="h-3.5 w-3.5 text-emerald-600" /> Payment Transactions
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-foreground mb-1.5 flex items-center gap-1.5">
+                    <CreditCard className="h-3.5 w-3.5 text-emerald-600" /> Recorded Payment Ledger
                   </h4>
-                  <div className="border rounded-lg overflow-hidden">
-                    <Table>
+                  <div className="border border-border/80 rounded-xl overflow-hidden shadow-2xs">
+                    <Table className="text-xs">
                       <TableHeader>
-                        <TableRow className="bg-slate-50 dark:bg-slate-800/60 text-xs font-bold">
+                        <TableRow className="bg-slate-50/80 dark:bg-slate-800/50 text-[11px] font-semibold text-muted-foreground">
                           <TableHead>Payment Date</TableHead>
                           <TableHead>Method</TableHead>
                           <TableHead>Reference</TableHead>
-                          <TableHead className="text-right pr-3">Amount</TableHead>
+                          <TableHead className="text-right pr-4">Amount</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {selectedInvoice.payments.map((pm: any, idx: number) => (
-                          <TableRow key={idx} className="text-xs border-b">
-                            <TableCell className="font-mono">{formatDate(pm.payment_date || pm.created_at)}</TableCell>
-                            <TableCell className="uppercase font-semibold">{pm.payment_method}</TableCell>
+                          <TableRow key={idx} className="h-10 border-b border-border/40">
+                            <TableCell className="font-mono text-muted-foreground">{formatDate(pm.payment_date || pm.created_at)}</TableCell>
+                            <TableCell className="uppercase font-semibold text-xs">{pm.payment_method}</TableCell>
                             <TableCell className="font-mono text-muted-foreground">{pm.reference_number || "Direct"}</TableCell>
-                            <TableCell className="text-right font-mono font-bold text-emerald-600 pr-3">
+                            <TableCell className="text-right font-mono font-bold text-emerald-600 pr-4">
                               {formatCurrency(pm.amount)}
                             </TableCell>
                           </TableRow>
@@ -1211,70 +1306,40 @@ export function InvoicesView() {
                   </div>
                 </div>
               )}
-
-              {/* Signatures Section on Screen */}
-              <div className="pt-3 border-t">
-                <div className="flex items-center justify-between mb-2">
-                  <h4 className="font-bold text-xs uppercase tracking-wider text-foreground">Signatures</h4>
-                  <span className="text-[11px] text-muted-foreground">Authorized Workshop &amp; Customer Manual Signature Area</span>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-                  {/* LEFT: ATIQ JEHAN AUTO REPAIR */}
-                  <div className="p-3 rounded-xl border bg-slate-50 dark:bg-slate-800/40 flex flex-col justify-between min-h-[90px]">
-                    <div>
-                      <p className="font-bold text-xs uppercase tracking-wider text-foreground">
-                        ATIQ JEHAN AUTO REPAIR
-                      </p>
-                      <p className="text-[11px] text-muted-foreground font-medium mt-0.5">
-                        Authorized Signature
-                      </p>
-                    </div>
-                    <div className="pt-6">
-                      <div className="border-b-2 border-dashed border-muted-foreground/40 w-full"></div>
-                    </div>
-                  </div>
-
-                  {/* RIGHT: CUSTOMER */}
-                  <div className="p-3 rounded-xl border bg-slate-50 dark:bg-slate-800/40 flex flex-col justify-between min-h-[90px]">
-                    <div>
-                      <p className="font-bold text-xs uppercase tracking-wider text-foreground">
-                        CUSTOMER
-                      </p>
-                      <p className="text-[11px] text-muted-foreground font-medium mt-0.5">
-                        Customer Signature
-                      </p>
-                    </div>
-                    <div className="pt-6">
-                      <div className="border-b-2 border-dashed border-muted-foreground/40 w-full"></div>
-                    </div>
-                  </div>
-                </div>
-              </div>
             </div>
           ) : null}
 
-          <DialogFooter className="pt-3 flex items-center justify-between">
-            <div className="flex items-center gap-2">
+          <DialogFooter className="pt-3 border-t flex flex-wrap items-center justify-between gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Button
-                variant="default"
+                variant="outline"
                 size="sm"
                 onClick={() => handleTriggerPrint(selectedInvoice)}
-                className="text-xs font-bold bg-slate-800 hover:bg-slate-900 text-white gap-1.5"
+                className="h-8.5 text-xs font-semibold border-border/80 hover:bg-slate-50 gap-1.5"
               >
-                <Printer className="h-3.5 w-3.5" /> Print A4 Invoice
+                <Printer className="h-3.5 w-3.5 text-slate-600" /> Print A4
+              </Button>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleWhatsAppShare(selectedInvoice)}
+                className="h-8.5 text-xs font-semibold border-border/80 hover:bg-emerald-50 text-emerald-700 dark:text-emerald-400 gap-1.5"
+              >
+                <MessageSquare className="h-3.5 w-3.5" /> WhatsApp
               </Button>
 
               {selectedInvoice && selectedInvoice.balance > 0 && !selectedInvoice.is_void && canEdit && (
                 <Button
                   size="sm"
                   onClick={() => handleOpenRecordPayment(selectedInvoice)}
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs gap-1"
+                  className="h-8.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs gap-1.5 shadow-xs"
                 >
-                  <CreditCard className="h-3.5 w-3.5" /> Record Payment
+                  <CreditCard className="h-3.5 w-3.5" /> Receive Payment
                 </Button>
               )}
             </div>
-            <Button variant="outline" size="sm" onClick={() => setDetailsModalOpen(false)} className="text-xs">
+            <Button variant="outline" size="sm" onClick={() => setDetailsModalOpen(false)} className="h-8.5 text-xs font-medium border-border/80">
               Close
             </Button>
           </DialogFooter>

@@ -52,6 +52,7 @@ import {
   PROTECTED_ACCOUNT_CODES,
 } from "@/lib/services/ledger-service";
 import { Checkbox } from "@/components/ui/checkbox";
+import { PageHeader } from "@/components/shared/page-header";
 import { getCustomers } from "@/lib/services/customer-service";
 import { getSuppliers } from "@/lib/services/supplier-service";
 import {
@@ -1500,6 +1501,23 @@ export function AccountsView() {
     return true;
   });
 
+  // Calculate Debits and Credits per account for high-density accounting view
+  const accountDebitsAndCredits = React.useMemo(() => {
+    const map: Record<string, { debit: number; credit: number }> = {};
+    for (const t of transactions) {
+      if (t.entries && Array.isArray(t.entries)) {
+        for (const e of t.entries) {
+          if (e.account_id) {
+            if (!map[e.account_id]) map[e.account_id] = { debit: 0, credit: 0 };
+            map[e.account_id].debit += Number(e.debit || 0);
+            map[e.account_id].credit += Number(e.credit || 0);
+          }
+        }
+      }
+    }
+    return map;
+  }, [transactions]);
+
   return (
     <div className="space-y-6">
       {/* Toast Notification */}
@@ -1522,20 +1540,14 @@ export function AccountsView() {
 
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
-            <span>Finance & Accounts</span>
-            <span>/</span>
-            <span className="text-foreground font-medium">Accounts / Ledger</span>
-          </div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-2">
-            <BookOpen className="w-6 h-6 text-blue-600" />
-            Accounts / Ledger
-          </h1>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            Professional double-entry general ledger, chart of accounts, and financial registers
-          </p>
-        </div>
+        <PageHeader
+          title="Accounts / Ledger"
+          description="Professional double-entry general ledger, chart of accounts, and financial registers."
+          breadcrumbs={[
+            { label: "Dashboard", href: "/" },
+            { label: "Accounts / Ledger" },
+          ]}
+        />
 
         {/* Global Quick Action Buttons */}
         <div className="flex items-center gap-2 flex-wrap">
@@ -1787,21 +1799,24 @@ export function AccountsView() {
 
         {/* ─── TAB 1: DASHBOARD ───────────────────────────────────────────── */}
         <TabsContent value="dashboard" className="space-y-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {/* 5 Compact Account Summary Cards */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5">
             {/* Cash on Hand */}
-            <Card className="border-l-4 border-l-emerald-500 shadow-sm">
-              <CardHeader className="pb-2">
-                <CardDescription className="text-xs flex items-center justify-between">
-                  <span>Cash on Hand</span>
-                  <Wallet className="w-4 h-4 text-emerald-600" />
-                </CardDescription>
-                <CardTitle className="text-2xl font-bold font-mono text-emerald-700 dark:text-emerald-400">
-                  AED {metrics.cashBalance.toLocaleString("en-US", { minimumFractionDigits: 2 })}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-0 text-[11px] text-muted-foreground space-y-2">
-                <div>Workshop cash drawer and counter float</div>
-                <div className="flex items-center gap-1.5 pt-1 border-t">
+            <Card className="border border-slate-200/80 dark:border-slate-800 shadow-xs bg-white dark:bg-slate-900 rounded-xl">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Cash on Hand</span>
+                  <div className="h-7 w-7 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 flex items-center justify-center">
+                    <Wallet className="h-3.5 w-3.5 text-emerald-600" />
+                  </div>
+                </div>
+                <div className="mt-2 flex items-baseline gap-2">
+                  <span className="text-lg font-bold font-mono tracking-tight text-slate-900 dark:text-white tabular-nums">
+                    AED {metrics.cashBalance.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-400 mt-1 truncate">Drawer & counter float</p>
+                <div className="flex items-center gap-1.5 pt-2 mt-2 border-t border-slate-100 dark:border-slate-800">
                   <Button
                     size="sm"
                     variant="outline"
@@ -1809,10 +1824,9 @@ export function AccountsView() {
                       const cashAcc = accounts.find((a) => a.account_code === "1001") || accounts[0];
                       if (cashAcc) handleOpenAddEntryModal(cashAcc);
                     }}
-                    className="flex-1 text-xs h-7 gap-1 text-emerald-700 border-emerald-200 hover:bg-emerald-50"
+                    className="flex-1 text-[11px] h-6 px-1 gap-1 text-slate-700 hover:bg-slate-50"
                   >
-                    <Plus className="w-3 h-3" />
-                    + Entry
+                    <Plus className="w-2.5 h-2.5" /> Entry
                   </Button>
                   <Button
                     size="sm"
@@ -1820,29 +1834,30 @@ export function AccountsView() {
                       const cashAcc = accounts.find((a) => a.account_code === "1001") || accounts[0];
                       if (cashAcc) handleOpenAccountLedger(cashAcc);
                     }}
-                    className="flex-1 text-xs h-7 gap-1 bg-emerald-600 hover:bg-emerald-700 text-white"
+                    className="flex-1 text-[11px] h-6 px-1 gap-1 bg-blue-600 hover:bg-blue-700 text-white"
                   >
-                    <BookOpen className="w-3 h-3" />
-                    View Ledger
+                    <BookOpen className="w-2.5 h-2.5" /> Ledger
                   </Button>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Total Bank Balance */}
-            <Card className="border-l-4 border-l-blue-500 shadow-sm">
-              <CardHeader className="pb-2">
-                <CardDescription className="text-xs flex items-center justify-between">
-                  <span>Total Bank Balance</span>
-                  <Landmark className="w-4 h-4 text-blue-600" />
-                </CardDescription>
-                <CardTitle className="text-2xl font-bold font-mono text-blue-700 dark:text-blue-400">
-                  AED {metrics.totalBankBalance.toLocaleString("en-US", { minimumFractionDigits: 2 })}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-0 text-[11px] text-muted-foreground space-y-2">
-                <div>ADCB + FAB + all active bank accounts</div>
-                <div className="flex items-center gap-1.5 pt-1 border-t">
+            {/* Bank Balance */}
+            <Card className="border border-slate-200/80 dark:border-slate-800 shadow-xs bg-white dark:bg-slate-900 rounded-xl">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Bank Balance</span>
+                  <div className="h-7 w-7 rounded-lg bg-blue-50 dark:bg-blue-950/50 flex items-center justify-center">
+                    <Landmark className="h-3.5 w-3.5 text-blue-600" />
+                  </div>
+                </div>
+                <div className="mt-2 flex items-baseline gap-2">
+                  <span className="text-lg font-bold font-mono tracking-tight text-blue-600 dark:text-blue-400 tabular-nums">
+                    AED {metrics.totalBankBalance.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-400 mt-1 truncate">ADCB + FAB accounts</p>
+                <div className="flex items-center gap-1.5 pt-2 mt-2 border-t border-slate-100 dark:border-slate-800">
                   <Button
                     size="sm"
                     variant="outline"
@@ -1850,116 +1865,104 @@ export function AccountsView() {
                       const bankAcc = accounts.find((a) => a.account_code === "1002") || accounts[1];
                       if (bankAcc) handleOpenAddEntryModal(bankAcc);
                     }}
-                    className="flex-1 text-xs h-7 gap-1 text-blue-700 border-blue-200 hover:bg-blue-50"
+                    className="flex-1 text-[11px] h-6 px-1 gap-1 text-slate-700 hover:bg-slate-50"
                   >
-                    <Plus className="w-3 h-3" />
-                    + Entry
+                    <Plus className="w-2.5 h-2.5" /> Entry
                   </Button>
                   <Button
                     size="sm"
                     onClick={() => setActiveTab("banks")}
-                    className="flex-1 text-xs h-7 gap-1 bg-blue-600 hover:bg-blue-700 text-white"
+                    className="flex-1 text-[11px] h-6 px-1 gap-1 bg-blue-600 hover:bg-blue-700 text-white"
                   >
-                    <Landmark className="w-3 h-3" />
-                    Bank Accounts
+                    <Landmark className="w-2.5 h-2.5" /> Banks
                   </Button>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Customer Receivables */}
-            <Card className="border-l-4 border-l-amber-500 shadow-sm">
-              <CardHeader className="pb-2">
-                <CardDescription className="text-xs flex items-center justify-between">
-                  <span>Customer Receivables</span>
-                  <Users className="w-4 h-4 text-amber-600" />
-                </CardDescription>
-                <CardTitle className="text-2xl font-bold font-mono text-amber-700 dark:text-amber-400">
-                  AED {metrics.customerReceivables.toLocaleString("en-US", { minimumFractionDigits: 2 })}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-0 text-[11px] text-muted-foreground">
-                Uncollected customer invoice balances
+            {/* Receivables */}
+            <Card className="border border-slate-200/80 dark:border-slate-800 shadow-xs bg-white dark:bg-slate-900 rounded-xl">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Receivables</span>
+                  <div className="h-7 w-7 rounded-lg bg-amber-50 dark:bg-amber-950/50 flex items-center justify-center">
+                    <Users className="h-3.5 w-3.5 text-amber-600" />
+                  </div>
+                </div>
+                <div className="mt-2 flex items-baseline gap-2">
+                  <span className="text-lg font-bold font-mono tracking-tight text-amber-700 dark:text-amber-400 tabular-nums">
+                    AED {metrics.customerReceivables.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-400 mt-1 truncate">Customer unpaid invoices</p>
+                <div className="pt-2 mt-2 border-t border-slate-100 dark:border-slate-800">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setActiveTab("customers")}
+                    className="w-full text-[11px] h-6 px-1 gap-1 text-slate-700 hover:bg-slate-50"
+                  >
+                    <Users className="w-2.5 h-2.5" /> View Debtors
+                  </Button>
+                </div>
               </CardContent>
             </Card>
 
-            {/* Supplier Payables */}
-            <Card className="border-l-4 border-l-red-500 shadow-sm">
-              <CardHeader className="pb-2">
-                <CardDescription className="text-xs flex items-center justify-between">
-                  <span>Supplier Payables</span>
-                  <Truck className="w-4 h-4 text-red-600" />
-                </CardDescription>
-                <CardTitle className="text-2xl font-bold font-mono text-red-700 dark:text-red-400">
-                  AED {metrics.supplierPayables.toLocaleString("en-US", { minimumFractionDigits: 2 })}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-0 text-[11px] text-muted-foreground">
-                Unpaid supplier spare parts credit
-              </CardContent>
-            </Card>
-
-            {/* Worker Payables */}
-            <Card className="border-l-4 border-l-purple-500 shadow-sm">
-              <CardHeader className="pb-2">
-                <CardDescription className="text-xs flex items-center justify-between">
-                  <span>Worker Payables</span>
-                  <HardHat className="w-4 h-4 text-purple-600" />
-                </CardDescription>
-                <CardTitle className="text-2xl font-bold font-mono text-purple-700 dark:text-purple-400">
-                  AED {metrics.workerPayables.toLocaleString("en-US", { minimumFractionDigits: 2 })}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-0 text-[11px] text-muted-foreground">
-                Accrued unpaid wages and technician dues
-              </CardContent>
-            </Card>
-
-            {/* Total Expenses This Month */}
-            <Card className="border-l-4 border-l-rose-500 shadow-sm">
-              <CardHeader className="pb-2">
-                <CardDescription className="text-xs flex items-center justify-between">
-                  <span>Total Expenses (This Month)</span>
-                  <ArrowDownLeft className="w-4 h-4 text-rose-600" />
-                </CardDescription>
-                <CardTitle className="text-2xl font-bold font-mono text-rose-700 dark:text-rose-400">
-                  AED {metrics.totalExpensesThisMonth.toLocaleString("en-US", { minimumFractionDigits: 2 })}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-0 text-[11px] text-muted-foreground">
-                From Expenses module & ledger debit entries
-              </CardContent>
-            </Card>
-
-            {/* Total Income This Month */}
-            <Card className="border-l-4 border-l-teal-500 shadow-sm">
-              <CardHeader className="pb-2">
-                <CardDescription className="text-xs flex items-center justify-between">
-                  <span>Total Income (This Month)</span>
-                  <ArrowUpRight className="w-4 h-4 text-teal-600" />
-                </CardDescription>
-                <CardTitle className="text-2xl font-bold font-mono text-teal-700 dark:text-teal-400">
-                  AED {metrics.totalIncomeThisMonth.toLocaleString("en-US", { minimumFractionDigits: 2 })}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-0 text-[11px] text-muted-foreground">
-                Labor & spare parts sales credited
+            {/* Payables */}
+            <Card className="border border-slate-200/80 dark:border-slate-800 shadow-xs bg-white dark:bg-slate-900 rounded-xl">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Payables</span>
+                  <div className="h-7 w-7 rounded-lg bg-rose-50 dark:bg-rose-950/50 flex items-center justify-center">
+                    <Truck className="h-3.5 w-3.5 text-rose-600" />
+                  </div>
+                </div>
+                <div className="mt-2 flex items-baseline gap-2">
+                  <span className="text-lg font-bold font-mono tracking-tight text-rose-700 dark:text-rose-400 tabular-nums">
+                    AED {(metrics.supplierPayables + metrics.workerPayables).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-400 mt-1 truncate">
+                  Suppliers AED {metrics.supplierPayables.toLocaleString("en-US", { maximumFractionDigits: 0 })} &bull; Workers AED {metrics.workerPayables.toLocaleString("en-US", { maximumFractionDigits: 0 })}
+                </p>
+                <div className="pt-2 mt-2 border-t border-slate-100 dark:border-slate-800">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setActiveTab("suppliers")}
+                    className="w-full text-[11px] h-6 px-1 gap-1 text-slate-700 hover:bg-slate-50"
+                  >
+                    <Truck className="w-2.5 h-2.5" /> View Payables
+                  </Button>
+                </div>
               </CardContent>
             </Card>
 
             {/* Owner Capital */}
-            <Card className="border-l-4 border-l-indigo-500 shadow-sm">
-              <CardHeader className="pb-2">
-                <CardDescription className="text-xs flex items-center justify-between">
-                  <span>Owner Capital</span>
-                  <UserCheck className="w-4 h-4 text-indigo-600" />
-                </CardDescription>
-                <CardTitle className="text-2xl font-bold font-mono text-indigo-700 dark:text-indigo-400">
-                  AED {metrics.ownerCapital.toLocaleString("en-US", { minimumFractionDigits: 2 })}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-0 text-[11px] text-muted-foreground">
-                Net equity capital introduced
+            <Card className="border border-slate-200/80 dark:border-slate-800 shadow-xs bg-white dark:bg-slate-900 rounded-xl">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Owner Capital</span>
+                  <div className="h-7 w-7 rounded-lg bg-indigo-50 dark:bg-indigo-950/50 flex items-center justify-center">
+                    <UserCheck className="h-3.5 w-3.5 text-indigo-600" />
+                  </div>
+                </div>
+                <div className="mt-2 flex items-baseline gap-2">
+                  <span className="text-lg font-bold font-mono tracking-tight text-indigo-700 dark:text-indigo-400 tabular-nums">
+                    AED {metrics.ownerCapital.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-400 mt-1 truncate">Equity capital introduced</p>
+                <div className="pt-2 mt-2 border-t border-slate-100 dark:border-slate-800">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setActiveTab("owner")}
+                    className="w-full text-[11px] h-6 px-1 gap-1 text-slate-700 hover:bg-slate-50"
+                  >
+                    <UserCheck className="w-2.5 h-2.5" /> Equity Register
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           </div>
@@ -2157,25 +2160,26 @@ export function AccountsView() {
             </div>
           </div>
 
-          <Card className="overflow-hidden">
+          <Card className="overflow-hidden border border-slate-200/80 dark:border-slate-800 shadow-xs bg-white dark:bg-slate-900 rounded-xl">
             <div className="overflow-x-auto">
               <Table>
-                <TableHeader className="bg-slate-50 dark:bg-slate-900/50">
+                <TableHeader className="bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200/80">
                   <TableRow>
-                    <TableHead className="w-[90px] text-xs font-semibold">Code</TableHead>
-                    <TableHead className="text-xs font-semibold">Account Name</TableHead>
-                    <TableHead className="w-[110px] text-xs font-semibold">Type</TableHead>
-                    <TableHead className="text-xs font-semibold">Sub Type</TableHead>
-                    <TableHead className="text-right text-xs font-semibold">Opening (AED)</TableHead>
-                    <TableHead className="text-right text-xs font-semibold">Current Balance (AED)</TableHead>
-                    <TableHead className="w-[80px] text-center text-xs font-semibold">Status</TableHead>
-                    <TableHead className="w-[190px] text-right text-xs font-semibold">Actions</TableHead>
+                    <TableHead className="w-[100px] text-xs font-semibold text-slate-700 dark:text-slate-200">Account Code</TableHead>
+                    <TableHead className="min-w-[180px] text-xs font-semibold text-slate-700 dark:text-slate-200">Account Name</TableHead>
+                    <TableHead className="w-[100px] text-xs font-semibold text-slate-700 dark:text-slate-200">Type</TableHead>
+                    <TableHead className="text-right w-[120px] text-xs font-semibold text-slate-700 dark:text-slate-200">Opening Balance</TableHead>
+                    <TableHead className="text-right w-[110px] text-xs font-semibold text-slate-700 dark:text-slate-200">Debit</TableHead>
+                    <TableHead className="text-right w-[110px] text-xs font-semibold text-slate-700 dark:text-slate-200">Credit</TableHead>
+                    <TableHead className="text-right w-[120px] text-xs font-semibold text-slate-700 dark:text-slate-200">Closing Balance</TableHead>
+                    <TableHead className="w-[80px] text-center text-xs font-semibold text-slate-700 dark:text-slate-200">Status</TableHead>
+                    <TableHead className="w-[150px] min-w-[150px] text-right pr-4 text-xs font-semibold text-slate-700 dark:text-slate-200">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredAccounts.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={8} className="text-center py-8 text-xs text-muted-foreground">
+                      <TableCell colSpan={9} className="text-center py-12 text-xs text-muted-foreground">
                         No accounts match the current filter.
                       </TableCell>
                     </TableRow>
@@ -2190,14 +2194,14 @@ export function AccountsView() {
                       };
 
                       return (
-                        <TableRow key={acc.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/20">
-                          <TableCell className="font-mono font-semibold text-xs text-blue-600 dark:text-blue-400">
+                        <TableRow key={acc.id} className="h-12 border-b border-slate-100 dark:border-slate-800/60 hover:bg-slate-50/70 dark:hover:bg-slate-800/50 transition-colors text-[13px]">
+                          <TableCell className="font-mono font-bold text-xs text-blue-600 dark:text-blue-400 whitespace-nowrap">
                             {acc.account_code}
                           </TableCell>
-                          <TableCell className="font-medium text-xs">
+                          <TableCell className="font-medium text-slate-900 dark:text-white">
                             <div>{acc.account_name}</div>
-                            {acc.notes && (
-                              <div className="text-[11px] text-muted-foreground truncate max-w-xs">{acc.notes}</div>
+                            {acc.account_sub_type && (
+                              <div className="text-[11px] text-slate-400 font-normal">{acc.account_sub_type}</div>
                             )}
                           </TableCell>
                           <TableCell>
@@ -2205,46 +2209,45 @@ export function AccountsView() {
                               {acc.account_type}
                             </Badge>
                           </TableCell>
-                          <TableCell className="text-xs text-slate-600 dark:text-slate-300">
-                            {acc.account_sub_type}
+                          <TableCell className="text-right font-mono text-xs text-slate-500 tabular-nums whitespace-nowrap">
+                            AED {Number(acc.opening_balance || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </TableCell>
-                          <TableCell className="text-right font-mono text-xs text-muted-foreground">
-                            {Number(acc.opening_balance).toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                          <TableCell className="text-right font-mono text-xs text-emerald-600 dark:text-emerald-400 tabular-nums whitespace-nowrap">
+                            {accountDebitsAndCredits[acc.id]?.debit ? `AED ${Number(accountDebitsAndCredits[acc.id].debit).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "—"}
                           </TableCell>
-                          <TableCell className="text-right font-mono text-xs font-semibold">
-                            {Number(acc.current_balance || 0).toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                          <TableCell className="text-right font-mono text-xs text-rose-600 dark:text-rose-400 tabular-nums whitespace-nowrap">
+                            {accountDebitsAndCredits[acc.id]?.credit ? `AED ${Number(accountDebitsAndCredits[acc.id].credit).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "—"}
+                          </TableCell>
+                          <TableCell className="text-right font-mono font-bold text-xs text-slate-900 dark:text-white tabular-nums whitespace-nowrap">
+                            AED {Number(acc.current_balance || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </TableCell>
                           <TableCell className="text-center">
                             {acc.is_active ? (
-                              <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
-                                Active
-                              </span>
+                              <Badge variant="outline" className="text-[10px] bg-emerald-50 text-emerald-700 border-emerald-200">Active</Badge>
                             ) : (
-                              <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-400">
-                                Archived
-                              </span>
+                              <Badge variant="outline" className="text-[10px] bg-slate-50 text-slate-600 border-slate-200">Archived</Badge>
                             )}
                           </TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex items-center justify-end gap-1.5">
+                          <TableCell className="text-right pr-4 whitespace-nowrap">
+                            <div className="flex items-center justify-end gap-1">
                               <Button
                                 size="sm"
                                 variant="outline"
                                 onClick={() => handleOpenAddEntryModal(acc)}
-                                className="text-xs h-7 px-2 gap-1 text-blue-700 border-blue-200 hover:bg-blue-50 dark:border-blue-800 dark:text-blue-300"
+                                className="text-xs h-7 px-2 gap-1 text-blue-700 border-blue-200 hover:bg-blue-50"
                                 title="+ Add Entry"
                               >
                                 <Plus className="w-3 h-3" />
-                                + Entry
+                                Entry
                               </Button>
                               <Button
                                 size="sm"
                                 onClick={() => handleOpenAccountLedger(acc)}
                                 className="text-xs h-7 px-2 gap-1 bg-blue-600 hover:bg-blue-700 text-white"
-                                title="View Ledger & Transaction History"
+                                title="View Ledger & Statement"
                               >
                                 <BookOpen className="w-3 h-3" />
-                                View Ledger
+                                Ledger
                               </Button>
 
                               {canManageAccounts && acc.is_active && (
@@ -2253,7 +2256,7 @@ export function AccountsView() {
                                   size="sm"
                                   onClick={() => handleArchiveAccount(acc)}
                                   title="Deactivate / Archive Account"
-                                  className="h-7 w-7 p-0 text-slate-400 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950"
+                                  className="h-7 w-7 p-0 text-slate-400 hover:text-amber-600 hover:bg-amber-50"
                                 >
                                   <Archive className="h-3.5 w-3.5" />
                                 </Button>
@@ -2264,8 +2267,8 @@ export function AccountsView() {
                                   variant="ghost"
                                   size="sm"
                                   onClick={() => handleDeleteCustomAccount(acc)}
-                                  title="Delete Custom Account (Must have 0 balance & no history)"
-                                  className="h-7 w-7 p-0 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950"
+                                  title="Delete Custom Account"
+                                  className="h-7 w-7 p-0 text-slate-400 hover:text-red-600 hover:bg-red-50"
                                 >
                                   <Trash2 className="h-3.5 w-3.5" />
                                 </Button>
@@ -3115,16 +3118,30 @@ export function AccountsView() {
                     <Button
                       size="sm"
                       onClick={() => handleOpenAddEntryModal(activeStatement.account)}
-                      className="text-xs h-8 gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm"
+                      className="text-xs h-8 gap-1.5 bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
                     >
                       <Plus className="w-3.5 h-3.5" />
                       + Add Entry
                     </Button>
+                    {canTransfer && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          setTransferFromId(activeStatement.account.id);
+                          setTransferOpen(true);
+                        }}
+                        className="text-xs h-8 gap-1.5 text-indigo-700 border-indigo-200 hover:bg-indigo-50 dark:border-indigo-800 dark:text-indigo-300"
+                      >
+                        <ArrowRightLeft className="w-3.5 h-3.5" />
+                        Transfer
+                      </Button>
+                    )}
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => setPrintLedgerOpen(true)}
-                      className="text-xs h-8 gap-1.5 text-blue-700 border-blue-200 hover:bg-blue-50 dark:border-blue-800 dark:text-blue-300"
+                      className="text-xs h-8 gap-1.5 text-slate-700 border-slate-300 hover:bg-slate-100 dark:text-slate-300"
                     >
                       <Printer className="w-3.5 h-3.5" />
                       Print Ledger
