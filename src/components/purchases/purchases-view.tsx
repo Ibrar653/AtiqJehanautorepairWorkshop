@@ -586,7 +586,7 @@ export function PurchasesView() {
             {canEdit && (
               <Button
                 onClick={() => handleOpenCreateModal()}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm gap-1.5"
+                className="h-9 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs shadow-xs gap-1.5 px-3.5 rounded-lg"
               >
                 <ShoppingCart className="h-4 w-4" /> + Create Purchase
               </Button>
@@ -594,7 +594,7 @@ export function PurchasesView() {
             <Button
               variant="outline"
               render={<Link href="/suppliers" />}
-              className="font-semibold text-xs gap-1.5"
+              className="h-9 border-border/80 hover:bg-slate-50 dark:hover:bg-slate-800 font-semibold text-xs gap-1.5 px-3 rounded-lg shadow-2xs"
             >
               <Building2 className="h-4 w-4 text-blue-600" /> Suppliers Directory
             </Button>
@@ -605,7 +605,7 @@ export function PurchasesView() {
               }}
               variant="outline"
               size="icon"
-              className="h-9 w-9"
+              className="h-9 w-9 border-border/80 hover:bg-slate-50 dark:hover:bg-slate-800 text-muted-foreground hover:text-foreground rounded-lg shadow-2xs"
               title="Refresh Purchases"
             >
               <RefreshCw className="h-4 w-4" />
@@ -615,318 +615,354 @@ export function PurchasesView() {
       />
 
       {/* ─── KPI Dashboard ─── */}
-      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3">
-        <Card className="shadow-sm border bg-card">
-          <CardContent className="p-4 flex flex-col justify-between h-full">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                Total Invoices
-              </span>
-              <Receipt className="h-4 w-4 text-blue-600" />
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="bg-card border border-border/80 rounded-xl p-4 shadow-xs flex flex-col justify-between h-full hover:border-border transition-colors">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+              Total Invoices
+            </span>
+            <div className="h-7 w-7 rounded-lg bg-blue-50 dark:bg-blue-950/50 flex items-center justify-center text-blue-600">
+              <Receipt className="h-3.5 w-3.5" />
             </div>
-            <div className="mt-2">
-              <h3 className="text-2xl font-black text-foreground font-mono">{kpis.totalPurchasesCount}</h3>
-              <p className="text-[11px] text-muted-foreground">Recorded POs</p>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-sm border bg-card">
-          <CardContent className="p-4 flex flex-col justify-between h-full">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                Total Procurement
-              </span>
-              <DollarSign className="h-4 w-4 text-indigo-600" />
-            </div>
-            <div className="mt-2">
-              <h3 className="text-xl font-black text-foreground font-mono">
-                {formatCurrency(kpis.totalValue)}
-              </h3>
-              <p className="text-[11px] text-muted-foreground">Total Stock Invoiced</p>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-sm border border-emerald-200 dark:border-emerald-900/50 bg-emerald-50/20 dark:bg-emerald-950/10">
-          <CardContent className="p-4 flex flex-col justify-between h-full">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-800 dark:text-emerald-300">
-                Total Paid
-              </span>
-              <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-            </div>
-            <div className="mt-2">
-              <h3 className="text-xl font-black text-emerald-700 dark:text-emerald-400 font-mono">
-                {formatCurrency(kpis.totalPaid)}
-              </h3>
-              <p className="text-[11px] text-emerald-700/80 dark:text-emerald-400/80">Settled Invoices</p>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-sm border border-rose-200 dark:border-rose-900/50 bg-rose-50/20 dark:bg-rose-950/10">
-          <CardContent className="p-4 flex flex-col justify-between h-full">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-rose-800 dark:text-rose-300">
-                Outstanding Balance
-              </span>
-              <AlertTriangle className="h-4 w-4 text-rose-600 dark:text-rose-400" />
-            </div>
-            <div className="mt-2">
-              <h3 className="text-xl font-black text-rose-700 dark:text-rose-400 font-mono">
-                {formatCurrency(kpis.totalOutstanding)}
-              </h3>
-              <p className="text-[11px] text-rose-700/80 dark:text-rose-400/80">Pending Payables</p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* ─── Search & Filters Bar ─── */}
-      <Card className="shadow-sm border bg-card">
-        <div className="p-4 border-b flex flex-col md:flex-row items-center justify-between gap-3">
-          <div className="relative w-full md:w-80">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search by supplier, invoice #, part code..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 h-9 text-xs"
-            />
-            {searchQuery && (
-              <button
-                type="button"
-                onClick={() => setSearchQuery("")}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground hover:text-foreground"
-              >
-                ✕
-              </button>
-            )}
           </div>
-
-          <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
-            {/* Supplier Filter */}
-            <select
-              value={supplierFilter}
-              onChange={(e) => {
-                setSupplierFilter(e.target.value);
-                setCurrentPage(1);
-              }}
-              className="h-8 rounded-md border border-input bg-background px-2 text-xs font-medium"
-            >
-              <option value="all">All Suppliers</option>
-              {suppliers.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name}
-                </option>
-              ))}
-            </select>
-
-            {/* Status Filter */}
-            <div className="flex items-center gap-1">
-              {[
-                { id: "all", label: "All Status" },
-                { id: "paid", label: "Paid" },
-                { id: "partially_paid", label: "Partial" },
-                { id: "credit", label: "Credit" },
-              ].map((tab) => (
-                <button
-                  key={tab.id}
-                  type="button"
-                  onClick={() => {
-                    setStatusFilter(tab.id);
-                    setCurrentPage(1);
-                  }}
-                  className={`px-2.5 py-1 rounded-md text-xs font-bold transition-all ${
-                    statusFilter === tab.id
-                      ? "bg-primary text-primary-foreground shadow-sm"
-                      : "bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground"
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              ))}
+          <div className="mt-3">
+            <div className="text-2xl font-bold font-mono tracking-tight text-foreground">
+              {kpis.totalPurchasesCount}
             </div>
+            <div className="text-xs text-muted-foreground mt-0.5">Recorded purchase orders</div>
           </div>
         </div>
 
-        {/* ─── Purchases Table ─── */}
-        <CardContent className="p-0">
-          {loading ? (
-            <div className="py-20 text-center text-muted-foreground">
-              <Loader2 className="h-8 w-8 mx-auto animate-spin mb-3 text-primary" />
-              <p className="font-medium text-sm">Loading purchase records...</p>
+        <div className="bg-card border border-border/80 rounded-xl p-4 shadow-xs flex flex-col justify-between h-full hover:border-border transition-colors">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+              Total Procurement
+            </span>
+            <div className="h-7 w-7 rounded-lg bg-indigo-50 dark:bg-indigo-950/50 flex items-center justify-center text-indigo-600">
+              <DollarSign className="h-3.5 w-3.5" />
             </div>
-          ) : purchases.length > 0 ? (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow className="bg-slate-50/80 dark:bg-slate-800/50 text-xs font-bold border-b">
-                    <TableHead className="w-[40px] pl-4">
-                      <Checkbox
-                        checked={
-                          purchases.length > 0 && selectedPurchaseIds.length === purchases.length
-                            ? true
-                            : selectedPurchaseIds.length > 0
-                            ? "indeterminate"
-                            : false
-                        }
-                        onCheckedChange={handleSelectAll}
-                        aria-label="Select all visible purchases"
-                      />
-                    </TableHead>
-                    <TableHead className="w-[12%] font-bold text-foreground">Date</TableHead>
-                    <TableHead className="w-[18%] font-bold text-foreground">Invoice / Reference</TableHead>
-                    <TableHead className="w-[20%] font-bold text-foreground">Supplier</TableHead>
-                    <TableHead className="w-[12%] text-right font-bold text-foreground">Total (AED)</TableHead>
-                    <TableHead className="w-[12%] text-right font-bold text-foreground">Paid (AED)</TableHead>
-                    <TableHead className="w-[12%] text-right font-bold text-foreground">Balance (AED)</TableHead>
-                    <TableHead className="w-[10%] text-center font-bold text-foreground">Payment Status</TableHead>
-                    <TableHead className="w-[10%] text-right pr-4 font-bold text-foreground">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {purchases.map((p) => {
-                    const tot = Number(p.total) || 0;
-                    const paid = Number(
-                      p.paid_amount !== undefined
-                        ? p.paid_amount
-                        : p.payment_status === "paid"
-                        ? tot
-                        : 0
-                    );
-                    const bal =
-                      p.balance !== undefined ? Number(p.balance) : Math.max(0, tot - paid);
-
-                    return (
-                      <TableRow
-                        key={p.id}
-                        className={`hover:bg-slate-50/50 dark:hover:bg-slate-800/50 border-b text-xs transition-colors ${
-                          selectedPurchaseIds.includes(p.id) ? "bg-blue-50/40 dark:bg-blue-950/20" : ""
-                        }`}
-                      >
-                        <TableCell className="pl-4">
-                          <Checkbox
-                            checked={selectedPurchaseIds.includes(p.id)}
-                            onCheckedChange={() => handleToggleSelectPurchase(p.id)}
-                            aria-label={`Select purchase ${p.purchase_invoice_number || p.id}`}
-                          />
-                        </TableCell>
-                        <TableCell className="font-mono text-muted-foreground py-3">
-                          {formatDate(p.date || p.created_at)}
-                        </TableCell>
-
-                        <TableCell className="font-mono font-bold text-foreground py-3">
-                          <button
-                            type="button"
-                            onClick={() => handleViewDetails(p.id)}
-                            className="text-blue-600 hover:text-blue-800 hover:underline"
-                          >
-                            {p.purchase_invoice_number || `#${p.id.slice(-6)}`}
-                          </button>
-                        </TableCell>
-
-                        <TableCell className="font-semibold text-foreground py-3">
-                          {p.supplier?.name || "Direct Supplier"}
-                        </TableCell>
-
-                        <TableCell className="text-right font-mono font-bold text-foreground py-3">
-                          {formatCurrency(tot)}
-                        </TableCell>
-
-                        <TableCell className="text-right font-mono font-bold text-emerald-600 py-3">
-                          {formatCurrency(paid)}
-                        </TableCell>
-
-                        <TableCell className="text-right font-mono font-bold text-rose-600 py-3">
-                          {formatCurrency(bal)}
-                        </TableCell>
-
-                        <TableCell className="text-center py-3">
-                          <span
-                            className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
-                              bal === 0 || p.payment_status === "paid"
-                                ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                                : paid > 0
-                                ? "bg-amber-50 text-amber-700 border border-amber-200"
-                                : "bg-rose-50 text-rose-700 border border-rose-200"
-                            }`}
-                          >
-                            {bal === 0 || p.payment_status === "paid"
-                              ? "PAID"
-                              : paid > 0
-                              ? "PARTIAL"
-                              : "CREDIT"}
-                          </span>
-                        </TableCell>
-
-                        <TableCell className="text-right pr-4 py-3">
-                          <div className="flex items-center justify-end gap-1">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleViewDetails(p.id)}
-                              className="h-8 px-2 text-xs text-blue-600 hover:text-blue-800 hover:bg-blue-50"
-                              title="View purchase line items"
-                            >
-                              <Eye className="h-3.5 w-3.5 mr-1" /> View
-                            </Button>
-
-                            <DropdownMenu>
-                              <DropdownMenuTrigger className="h-8 w-8 inline-flex items-center justify-center rounded-md border border-slate-200 dark:border-slate-700 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 focus:outline-none">
-                                <MoreVertical className="h-3.5 w-3.5" />
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end" className="w-48 text-xs">
-                                <DropdownMenuLabel>Purchase Actions</DropdownMenuLabel>
-                                <DropdownMenuItem onClick={() => handleViewDetails(p.id)}>
-                                  <Eye className="h-3.5 w-3.5 mr-2 text-blue-600" /> View Details
-                                </DropdownMenuItem>
-                                {canEdit && (
-                                  <DropdownMenuItem onClick={() => handleOpenEditModal(p)}>
-                                    <Pencil className="h-3.5 w-3.5 mr-2 text-slate-600" /> Edit Purchase
-                                  </DropdownMenuItem>
-                                )}
-                                {bal > 0 && canEdit && (
-                                  <DropdownMenuItem onClick={() => handleOpenRecordPayment(p)}>
-                                    <CreditCard className="h-3.5 w-3.5 mr-2 text-emerald-600" /> Record Payment
-                                  </DropdownMenuItem>
-                                )}
-                                {Boolean(isOwner || canDelete) && (
-                                  <>
-                                    <DropdownMenuSeparator />
-                                    <DropdownMenuItem
-                                      onClick={() => openDeleteDialog(p)}
-                                      className="text-rose-600 hover:text-rose-700 font-semibold focus:text-rose-600"
-                                    >
-                                      <Trash2 className="h-3.5 w-3.5 mr-2" /> Delete
-                                    </DropdownMenuItem>
-                                  </>
-                                )}
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
+          </div>
+          <div className="mt-3">
+            <div className="text-2xl font-bold font-mono tracking-tight text-foreground">
+              {formatCurrency(kpis.totalValue)}
             </div>
-          ) : (
-            <div className="py-20 text-center text-muted-foreground space-y-2">
-              <ShoppingCart className="h-10 w-10 mx-auto text-muted-foreground/40" />
-              <p className="text-sm font-semibold text-foreground">No purchase records found</p>
-              <p className="text-xs max-w-sm mx-auto">
-                Create a purchase order to record incoming spare parts and automatically increase stock.
-              </p>
+            <div className="text-xs text-muted-foreground mt-0.5">Stock invoiced value</div>
+          </div>
+        </div>
+
+        <div className="bg-card border border-border/80 rounded-xl p-4 shadow-xs flex flex-col justify-between h-full hover:border-border transition-colors">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+              Total Paid
+            </span>
+            <div className="h-7 w-7 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 flex items-center justify-center text-emerald-600">
+              <CheckCircle2 className="h-3.5 w-3.5" />
             </div>
+          </div>
+          <div className="mt-3">
+            <div className="text-2xl font-bold font-mono tracking-tight text-emerald-600 dark:text-emerald-400">
+              {formatCurrency(kpis.totalPaid)}
+            </div>
+            <div className="text-xs text-muted-foreground mt-0.5">Settled supplier invoices</div>
+          </div>
+        </div>
+
+        <div className="bg-card border border-border/80 rounded-xl p-4 shadow-xs flex flex-col justify-between h-full hover:border-border transition-colors">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+              Outstanding Balance
+            </span>
+            <div className="h-7 w-7 rounded-lg bg-rose-50 dark:bg-rose-950/50 flex items-center justify-center text-rose-600">
+              <AlertTriangle className="h-3.5 w-3.5" />
+            </div>
+          </div>
+          <div className="mt-3">
+            <div className={`text-2xl font-bold font-mono tracking-tight ${kpis.totalOutstanding > 0 ? "text-rose-600 dark:text-rose-400" : "text-foreground"}`}>
+              {formatCurrency(kpis.totalOutstanding)}
+            </div>
+            <div className="text-xs text-muted-foreground mt-0.5">Pending payables</div>
+          </div>
+        </div>
+      </div>
+
+      {/* ─── Search & Filters Bar ─── */}
+      <div className="bg-card border border-border/80 rounded-xl p-3 shadow-xs flex flex-col md:flex-row items-center justify-between gap-3">
+        <div className="relative w-full md:w-80">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+          <Input
+            placeholder="Search by supplier, invoice #, part code..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9 h-8.5 text-xs bg-muted/40 border-border/70 focus:bg-background transition-colors"
+          />
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => setSearchQuery("")}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground hover:text-foreground"
+            >
+              ✕
+            </button>
           )}
-        </CardContent>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
+          {/* Supplier Filter */}
+          <select
+            value={supplierFilter}
+            onChange={(e) => {
+              setSupplierFilter(e.target.value);
+              setCurrentPage(1);
+            }}
+            className="h-8.5 rounded-lg border border-border/80 bg-background px-2.5 text-xs font-medium text-foreground focus:outline-none focus:ring-1 focus:ring-primary shadow-2xs"
+          >
+            <option value="all">All Suppliers</option>
+            {suppliers.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name}
+              </option>
+            ))}
+          </select>
+
+          {/* Status Filter Segmented Control */}
+          <div className="flex items-center gap-1 bg-muted/40 p-1 rounded-lg border border-border/70">
+            {[
+              { id: "all", label: "All Status" },
+              { id: "paid", label: "Paid" },
+              { id: "partially_paid", label: "Partial" },
+              { id: "credit", label: "Credit" },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => {
+                  setStatusFilter(tab.id);
+                  setCurrentPage(1);
+                }}
+                className={`h-7 px-3 rounded-md text-xs font-semibold transition-all ${
+                  statusFilter === tab.id
+                    ? "bg-background text-foreground shadow-2xs border border-border/60"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* ─── Purchases Table Card ─── */}
+      <div className="bg-card border border-border/80 rounded-xl shadow-xs overflow-hidden">
+        {loading ? (
+          <div className="py-16 text-center text-muted-foreground">
+            <Loader2 className="h-7 w-7 mx-auto animate-spin mb-3 text-primary" />
+            <p className="font-semibold text-xs">Loading purchase records...</p>
+          </div>
+        ) : purchases.length > 0 ? (
+          <div className="overflow-x-auto min-w-full">
+            <Table className="w-full text-xs min-w-[1050px]">
+              <TableHeader>
+                <TableRow className="h-10 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider bg-slate-50/75 dark:bg-slate-800/40 border-b border-border/70">
+                  <TableHead className="w-[44px] pl-4">
+                    <Checkbox
+                      checked={
+                        purchases.length > 0 && selectedPurchaseIds.length === purchases.length
+                          ? true
+                          : selectedPurchaseIds.length > 0
+                          ? "indeterminate"
+                          : false
+                      }
+                      onCheckedChange={handleSelectAll}
+                      aria-label="Select all visible purchases"
+                    />
+                  </TableHead>
+                  <TableHead className="font-semibold text-foreground">Purchase No</TableHead>
+                  <TableHead className="font-semibold text-foreground">Supplier</TableHead>
+                  <TableHead className="font-semibold text-foreground">Date</TableHead>
+                  <TableHead className="font-semibold text-foreground text-center">Items</TableHead>
+                  <TableHead className="text-right font-semibold text-foreground">Total (AED)</TableHead>
+                  <TableHead className="text-right font-semibold text-foreground">Paid (AED)</TableHead>
+                  <TableHead className="text-right font-semibold text-foreground">Balance (AED)</TableHead>
+                  <TableHead className="text-center font-semibold text-foreground">Status</TableHead>
+                  <TableHead className="w-[105px] min-w-[105px] text-right pr-4 font-semibold text-foreground">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {purchases.map((p) => {
+                  const tot = Number(p.total) || 0;
+                  const paid = Number(
+                    p.paid_amount !== undefined
+                      ? p.paid_amount
+                      : p.payment_status === "paid"
+                      ? tot
+                      : 0
+                  );
+                  const bal =
+                    p.balance !== undefined ? Number(p.balance) : Math.max(0, tot - paid);
+
+                  return (
+                    <TableRow
+                      key={p.id}
+                      className={`h-13 border-b border-border/40 hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors ${
+                        selectedPurchaseIds.includes(p.id) ? "bg-blue-50/40 dark:bg-blue-950/20" : ""
+                      }`}
+                    >
+                      <TableCell className="pl-4">
+                        <Checkbox
+                          checked={selectedPurchaseIds.includes(p.id)}
+                          onCheckedChange={() => handleToggleSelectPurchase(p.id)}
+                          aria-label={`Select purchase ${p.purchase_invoice_number || p.id}`}
+                        />
+                      </TableCell>
+
+                      <TableCell className="font-mono font-bold text-xs py-2.5">
+                        <button
+                          type="button"
+                          onClick={() => handleViewDetails(p.id)}
+                          className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 hover:underline inline-flex items-center gap-1"
+                        >
+                          {p.purchase_invoice_number || `#${p.id.slice(-6)}`}
+                        </button>
+                      </TableCell>
+
+                      <TableCell className="py-2.5">
+                        <div className="font-semibold text-foreground text-xs leading-tight">
+                          {p.supplier?.name || "Direct Supplier"}
+                        </div>
+                        {(p.supplier?.company_name || p.supplier?.phone) && (
+                          <div className="text-[11px] text-muted-foreground leading-tight mt-0.5">
+                            {p.supplier?.company_name || p.supplier?.phone}
+                          </div>
+                        )}
+                      </TableCell>
+
+                      <TableCell className="font-mono text-muted-foreground text-xs py-2.5 whitespace-nowrap">
+                        {formatDate(p.date || p.created_at)}
+                      </TableCell>
+
+                      <TableCell className="text-center py-2.5">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-mono">
+                          {p.items?.length || 0} item{(p.items?.length || 0) !== 1 ? "s" : ""}
+                        </span>
+                      </TableCell>
+
+                      <TableCell className="text-right font-mono font-bold text-foreground py-2.5 whitespace-nowrap">
+                        {formatCurrency(tot)}
+                      </TableCell>
+
+                      <TableCell className="text-right font-mono font-bold text-emerald-600 dark:text-emerald-400 py-2.5 whitespace-nowrap">
+                        {formatCurrency(paid)}
+                      </TableCell>
+
+                      <TableCell className={`text-right font-mono font-bold py-2.5 whitespace-nowrap ${bal > 0 ? "text-rose-600 dark:text-rose-400" : "text-muted-foreground"}`}>
+                        {formatCurrency(bal)}
+                      </TableCell>
+
+                      <TableCell className="text-center py-2.5">
+                        <span
+                          className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider border ${
+                            bal === 0 || p.payment_status === "paid"
+                              ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-800/40"
+                              : paid > 0
+                              ? "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/30 dark:text-amber-400 dark:border-amber-800/40"
+                              : "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/30 dark:text-rose-400 dark:border-rose-800/40"
+                          }`}
+                        >
+                          {bal === 0 || p.payment_status === "paid"
+                            ? "PAID"
+                            : paid > 0
+                            ? "PARTIAL"
+                            : "CREDIT"}
+                        </span>
+                      </TableCell>
+
+                      <TableCell className="w-[105px] min-w-[105px] text-right pr-4 py-2.5">
+                        <div className="flex items-center justify-end gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleViewDetails(p.id)}
+                            className="h-8 px-2 text-xs text-blue-600 hover:text-blue-800 hover:bg-blue-50 dark:hover:bg-blue-950/50"
+                            title="View purchase line items"
+                          >
+                            <Eye className="h-3.5 w-3.5 mr-1" /> View
+                          </Button>
+
+                          <DropdownMenu>
+                            <DropdownMenuTrigger className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-border/80 text-muted-foreground hover:text-foreground hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors focus:outline-none">
+                              <MoreVertical className="h-3.5 w-3.5" />
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-48 text-xs">
+                              <DropdownMenuLabel>Purchase Actions</DropdownMenuLabel>
+                              <DropdownMenuItem onClick={() => handleViewDetails(p.id)}>
+                                <Eye className="h-3.5 w-3.5 mr-2 text-blue-600" /> View Details
+                              </DropdownMenuItem>
+                              {canEdit && (
+                                <DropdownMenuItem onClick={() => handleOpenEditModal(p)}>
+                                  <Pencil className="h-3.5 w-3.5 mr-2 text-slate-600" /> Edit Purchase
+                                </DropdownMenuItem>
+                              )}
+                              {bal > 0 && canEdit && (
+                                <DropdownMenuItem onClick={() => handleOpenRecordPayment(p)}>
+                                  <CreditCard className="h-3.5 w-3.5 mr-2 text-emerald-600" /> Record Payment
+                                </DropdownMenuItem>
+                              )}
+                              {Boolean(isOwner || canDelete) && (
+                                <>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem
+                                    onClick={() => openDeleteDialog(p)}
+                                    className="text-rose-600 hover:text-rose-700 font-semibold focus:text-rose-600"
+                                  >
+                                    <Trash2 className="h-3.5 w-3.5 mr-2" /> Delete
+                                  </DropdownMenuItem>
+                                </>
+                              )}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center py-10 px-4 min-h-[220px] max-h-[280px] text-center">
+            <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-muted-foreground/70 mb-3">
+              <ShoppingCart className="h-5 w-5" />
+            </div>
+            <p className="text-sm font-bold text-foreground">No purchase records found</p>
+            <p className="text-xs text-muted-foreground mt-1 max-w-sm">
+              Create a purchase order to record incoming spare parts and automatically increase stock.
+            </p>
+            <div className="flex items-center gap-2 mt-4">
+              {canEdit && (
+                <Button
+                  size="sm"
+                  onClick={() => handleOpenCreateModal()}
+                  className="h-8 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-xs"
+                >
+                  <ShoppingCart className="h-3.5 w-3.5 mr-1.5" /> + Create Purchase
+                </Button>
+              )}
+              <Button
+                size="sm"
+                variant="outline"
+                render={<Link href="/suppliers" />}
+                className="h-8 text-xs font-semibold border-border/80"
+              >
+                <Building2 className="h-3.5 w-3.5 mr-1.5 text-blue-600" /> View Suppliers
+              </Button>
+            </div>
+          </div>
+        )}
 
         {/* Pagination Footer */}
         {totalPages > 1 && (
-          <div className="p-4 border-t border-border flex items-center justify-between text-xs text-muted-foreground">
+          <div className="p-3.5 border-t border-border flex items-center justify-between text-xs text-muted-foreground bg-slate-50/50 dark:bg-slate-800/30">
             <span>
               Showing {(currentPage - 1) * pageSize + 1} to{" "}
               {Math.min(currentPage * pageSize, totalCount)} of {totalCount} purchases
@@ -937,7 +973,7 @@ export function PurchasesView() {
                 size="sm"
                 onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                 disabled={currentPage === 1}
-                className="h-8 text-xs"
+                className="h-8 text-xs font-medium border-border/80"
               >
                 <ChevronLeft className="h-3.5 w-3.5 mr-1" /> Previous
               </Button>
@@ -949,14 +985,14 @@ export function PurchasesView() {
                 size="sm"
                 onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                 disabled={currentPage >= totalPages}
-                className="h-8 text-xs"
+                className="h-8 text-xs font-medium border-border/80"
               >
                 Next <ChevronRight className="h-3.5 w-3.5 ml-1" />
               </Button>
             </div>
           </div>
         )}
-      </Card>
+      </div>
 
       {/* ========================================================================= */}
       {/* 1. CREATE / EDIT PURCHASE MODAL DIALOG                                     */}

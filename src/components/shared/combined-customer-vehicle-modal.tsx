@@ -206,11 +206,11 @@ export function CombinedCustomerVehicleModal({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto p-0 gap-0 rounded-2xl">
+      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto p-0 gap-0 rounded-xl border border-border bg-card shadow-xl">
         {/* Modal Header */}
-        <div className="p-6 pb-4 border-b bg-muted/20">
-          <DialogTitle className="text-xl font-bold flex items-center gap-2.5 text-foreground">
-            <div className="h-9 w-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+        <div className="p-6 pb-4 border-b border-border bg-muted/20">
+          <DialogTitle className="text-lg font-bold flex items-center gap-2.5 text-foreground">
+            <div className="h-8 w-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
               <UserPlus className="h-5 w-5" />
             </div>
             <span>+ Add Customer &amp; Vehicle</span>
@@ -478,16 +478,21 @@ export function CombinedCustomerVehicleModal({
           </div>
 
           {/* Action Buttons */}
-          <div className="flex items-center justify-end gap-3 pt-2 border-t">
+          <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-border">
             <Button
               type="button"
               variant="outline"
               onClick={() => handleOpenChange(false)}
               disabled={saving}
+              className="h-10 px-4 text-xs font-semibold rounded-lg"
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={saving} size="lg" className="min-w-[180px] gap-2 font-bold">
+            <Button
+              type="submit"
+              disabled={saving}
+              className="h-10 px-5 text-xs font-semibold rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs gap-2"
+            >
               {saving ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" /> Saving Both Records...

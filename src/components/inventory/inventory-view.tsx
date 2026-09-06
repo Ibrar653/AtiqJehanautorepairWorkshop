@@ -552,201 +552,190 @@ export function InventoryView() {
         title="Inventory & Stock Control"
         description="Comprehensive stock tracking, cost valuation, low-stock warnings, and transaction audit ledger"
         breadcrumbs={[{ label: "Dashboard", href: "/" }, { label: "Inventory" }]}
-        actions={
-          <div className="flex flex-wrap items-center gap-2">
-            {canEdit && (
-              <>
-                <Button
-                  onClick={() => handleOpenAdjustModal()}
-                  className="bg-primary text-primary-foreground hover:bg-primary/90 font-bold text-xs shadow-sm gap-1.5"
-                >
-                  <ArrowUpDown className="h-4 w-4" /> + Adjust Stock
-                </Button>
-                <Button
-                  variant="outline"
-                  render={<Link href="/purchases" />}
-                  className="bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-950/30 dark:text-emerald-300 dark:border-emerald-800 font-bold text-xs shadow-sm gap-1.5"
-                >
-                  <Building2 className="h-4 w-4 text-emerald-600" /> + Purchase Intake
-                </Button>
-              </>
-            )}
-            <Button
-              variant="outline"
-              render={<Link href="/parts" />}
-              className="font-semibold text-xs gap-1.5 bg-background hover:bg-slate-100 dark:hover:bg-slate-800"
-            >
-              <Package className="h-4 w-4 text-blue-600" /> Parts Master Catalog
-            </Button>
-            <Button
-              onClick={() => {
-                loadInventory();
-                if (activeTab === "ledger") loadLedger();
-              }}
-              variant="outline"
-              size="icon"
-              className="h-9 w-9"
-              title="Refresh Inventory Data"
-            >
-              <RefreshCw className="h-4 w-4" />
-            </Button>
-          </div>
-        }
-      />
+      >
+        <div className="flex flex-wrap items-center gap-2.5">
+          {canEdit && (
+            <>
+              <Button
+                onClick={() => handleOpenAdjustModal()}
+                className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs h-9 shadow-xs rounded-lg gap-1.5"
+              >
+                <ArrowUpDown className="h-3.5 w-3.5" /> Adjust Stock
+              </Button>
+              <Button
+                variant="outline"
+                render={<Link href="/purchases" />}
+                className="bg-emerald-50 hover:bg-emerald-100/80 text-emerald-800 border-emerald-300 dark:bg-emerald-950/30 dark:text-emerald-300 dark:border-emerald-800 font-semibold text-xs h-9 shadow-xs rounded-lg gap-1.5"
+              >
+                <Building2 className="h-3.5 w-3.5 text-emerald-600" /> Purchase Intake
+              </Button>
+            </>
+          )}
+          <Button
+            variant="outline"
+            render={<Link href="/parts" />}
+            className="font-semibold text-xs h-9 gap-1.5 rounded-lg border-border/80 hover:bg-muted/50"
+          >
+            <Package className="h-3.5 w-3.5 text-blue-600" /> Parts Master Catalog
+          </Button>
+          <Button
+            onClick={() => {
+              loadInventory();
+              if (activeTab === "ledger") loadLedger();
+            }}
+            variant="outline"
+            size="sm"
+            className="h-9 px-2.5 text-xs font-medium rounded-lg border-border/80 hover:bg-muted/50"
+            title="Refresh Inventory Data"
+          >
+            <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin text-primary" : ""}`} />
+          </Button>
+        </div>
+      </PageHeader>
 
-      {/* 1. INVENTORY DASHBOARD - 7 KPI CARDS */}
-      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
-        {/* Total Parts */}
-        <Card className="shadow-sm border border-slate-200 dark:border-slate-800 bg-card">
-          <CardContent className="p-3.5 flex flex-col justify-between h-full">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                Total Parts
-              </span>
-              <Package className="h-4 w-4 text-blue-600" />
-            </div>
-            <div className="mt-2">
-              <h3 className="text-xl font-black text-foreground font-mono">{kpis.totalParts}</h3>
-              <p className="text-[10px] text-muted-foreground">Active Catalog SKUs</p>
-            </div>
-          </CardContent>
-        </Card>
+      {/* Balanced Enterprise KPI Layout (4 + 3 Grid) */}
+      <div className="space-y-4">
+        {/* Row 1: 4 Core Catalog & Valuation Metrics */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Total Parts */}
+          <Card className="border border-border/80 shadow-xs bg-card rounded-xl">
+            <CardContent className="p-4 flex items-center justify-between">
+              <div>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Total Parts</p>
+                <p className="text-2xl font-bold tracking-tight text-foreground font-mono mt-1">{kpis.totalParts}</p>
+                <p className="text-[11px] text-muted-foreground mt-0.5">Active catalog SKUs</p>
+              </div>
+              <div className="h-10 w-10 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+                <Package className="h-5 w-5" />
+              </div>
+            </CardContent>
+          </Card>
 
-        {/* Total Units */}
-        <Card className="shadow-sm border border-slate-200 dark:border-slate-800 bg-card">
-          <CardContent className="p-3.5 flex flex-col justify-between h-full">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                Total Units
-              </span>
-              <Boxes className="h-4 w-4 text-indigo-600" />
-            </div>
-            <div className="mt-2">
-              <h3 className="text-xl font-black text-foreground font-mono">{kpis.totalUnits.toLocaleString()}</h3>
-              <p className="text-[10px] text-muted-foreground">Physical items in stock</p>
-            </div>
-          </CardContent>
-        </Card>
+          {/* Total Units */}
+          <Card className="border border-border/80 shadow-xs bg-card rounded-xl">
+            <CardContent className="p-4 flex items-center justify-between">
+              <div>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Total Units</p>
+                <p className="text-2xl font-bold tracking-tight text-foreground font-mono mt-1">{kpis.totalUnits.toLocaleString()}</p>
+                <p className="text-[11px] text-muted-foreground mt-0.5">Physical items in stock</p>
+              </div>
+              <div className="h-10 w-10 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
+                <Boxes className="h-5 w-5" />
+              </div>
+            </CardContent>
+          </Card>
 
-        {/* Inventory Cost Value */}
-        <Card className="shadow-sm border border-emerald-200 dark:border-emerald-900/50 bg-emerald-50/20 dark:bg-emerald-950/10 col-span-2 sm:col-span-1 lg:col-span-1">
-          <CardContent className="p-3.5 flex flex-col justify-between h-full">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-800 dark:text-emerald-300">
-                Inventory Cost Value
-              </span>
-              <DollarSign className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-            </div>
-            <div className="mt-2">
-              <h3 className="text-lg font-black text-emerald-700 dark:text-emerald-400 font-mono">
-                {formatCurrency(kpis.inventoryCostValue)}
-              </h3>
-              <p className="text-[10px] text-emerald-700/80 dark:text-emerald-400/80">
-                Stock × Cost Price
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+          {/* Inventory Cost Value */}
+          <Card className="border border-border/80 shadow-xs bg-card rounded-xl">
+            <CardContent className="p-4 flex items-center justify-between">
+              <div>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Inventory Cost Value</p>
+                <p className="text-2xl font-bold tracking-tight text-emerald-600 dark:text-emerald-400 font-mono mt-1">
+                  {formatCurrency(kpis.inventoryCostValue)}
+                </p>
+                <p className="text-[11px] text-muted-foreground mt-0.5">Stock × Purchase Price</p>
+              </div>
+              <div className="h-10 w-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                <DollarSign className="h-5 w-5" />
+              </div>
+            </CardContent>
+          </Card>
 
-        {/* Low Stock Parts */}
-        <Card
-          onClick={() => {
-            setActiveTab("inventory");
-            setStatusFilter("low_stock");
-          }}
-          className={`shadow-sm border transition-all cursor-pointer ${
-            statusFilter === "low_stock"
-              ? "ring-2 ring-amber-500 border-amber-400"
-              : "border-amber-200 dark:border-amber-900/50 bg-amber-50/20 dark:bg-amber-950/10 hover:border-amber-400"
-          }`}
-        >
-          <CardContent className="p-3.5 flex flex-col justify-between h-full">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-amber-800 dark:text-amber-300">
-                Low Stock Parts
-              </span>
-              <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-            </div>
-            <div className="mt-2">
-              <h3 className="text-xl font-black text-amber-700 dark:text-amber-400 font-mono">
-                {kpis.lowStockParts}
-              </h3>
-              <p className="text-[10px] text-amber-700/80 dark:text-amber-400/80">≤ Minimum stock</p>
-            </div>
-          </CardContent>
-        </Card>
+          {/* Low Stock */}
+          <Card
+            onClick={() => {
+              setActiveTab("inventory");
+              setStatusFilter("low_stock");
+            }}
+            className={`border shadow-xs rounded-xl cursor-pointer transition-all ${
+              statusFilter === "low_stock" && activeTab === "inventory"
+                ? "border-amber-400 ring-2 ring-amber-500/20 bg-amber-50/20 dark:bg-amber-950/10"
+                : "border-border/80 bg-card hover:border-border"
+            }`}
+          >
+            <CardContent className="p-4 flex items-center justify-between">
+              <div>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Low Stock</p>
+                <p className="text-2xl font-bold tracking-tight text-amber-600 dark:text-amber-400 font-mono mt-1">
+                  {kpis.lowStockParts}
+                </p>
+                <p className="text-[11px] text-muted-foreground mt-0.5">≤ Minimum alert level</p>
+              </div>
+              <div className="h-10 w-10 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+                <AlertTriangle className="h-5 w-5" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
-        {/* Out of Stock Parts */}
-        <Card
-          onClick={() => {
-            setActiveTab("inventory");
-            setStatusFilter("out_of_stock");
-          }}
-          className={`shadow-sm border transition-all cursor-pointer ${
-            statusFilter === "out_of_stock"
-              ? "ring-2 ring-rose-500 border-rose-400"
-              : "border-rose-200 dark:border-rose-900/50 bg-rose-50/20 dark:bg-rose-950/10 hover:border-rose-400"
-          }`}
-        >
-          <CardContent className="p-3.5 flex flex-col justify-between h-full">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-rose-800 dark:text-rose-300">
-                Out of Stock
-              </span>
-              <TrendingDown className="h-4 w-4 text-rose-600 dark:text-rose-400" />
-            </div>
-            <div className="mt-2">
-              <h3 className="text-xl font-black text-rose-700 dark:text-rose-400 font-mono">
-                {kpis.outOfStockParts}
-              </h3>
-              <p className="text-[10px] text-rose-700/80 dark:text-rose-400/80">0 units remaining</p>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Row 2: 3 Operational Stock Flow Metrics */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {/* Out of Stock */}
+          <Card
+            onClick={() => {
+              setActiveTab("inventory");
+              setStatusFilter("out_of_stock");
+            }}
+            className={`border shadow-xs rounded-xl cursor-pointer transition-all ${
+              statusFilter === "out_of_stock" && activeTab === "inventory"
+                ? "border-rose-400 ring-2 ring-rose-500/20 bg-rose-50/20 dark:bg-rose-950/10"
+                : "border-border/80 bg-card hover:border-border"
+            }`}
+          >
+            <CardContent className="p-4 flex items-center justify-between">
+              <div>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Out of Stock</p>
+                <p className="text-2xl font-bold tracking-tight text-rose-600 dark:text-rose-400 font-mono mt-1">
+                  {kpis.outOfStockParts}
+                </p>
+                <p className="text-[11px] text-muted-foreground mt-0.5">Zero units remaining</p>
+              </div>
+              <div className="h-10 w-10 rounded-xl bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0">
+                <TrendingDown className="h-5 w-5" />
+              </div>
+            </CardContent>
+          </Card>
 
-        {/* Stock In Today */}
-        <Card className="shadow-sm border border-slate-200 dark:border-slate-800 bg-card">
-          <CardContent className="p-3.5 flex flex-col justify-between h-full">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                Stock In Today
-              </span>
-              <ArrowUpRight className="h-4 w-4 text-emerald-600" />
-            </div>
-            <div className="mt-2">
-              <h3 className="text-xl font-black text-emerald-600 dark:text-emerald-400 font-mono">
-                +{kpis.stockInToday}
-              </h3>
-              <p className="text-[10px] text-muted-foreground">Purchases & returns</p>
-            </div>
-          </CardContent>
-        </Card>
+          {/* Stock In Today */}
+          <Card className="border border-border/80 shadow-xs bg-card rounded-xl">
+            <CardContent className="p-4 flex items-center justify-between">
+              <div>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Stock In Today</p>
+                <p className="text-2xl font-bold tracking-tight text-emerald-600 dark:text-emerald-400 font-mono mt-1">
+                  +{kpis.stockInToday}
+                </p>
+                <p className="text-[11px] text-muted-foreground mt-0.5">Purchases & stock intake</p>
+              </div>
+              <div className="h-10 w-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                <ArrowUpRight className="h-5 w-5" />
+              </div>
+            </CardContent>
+          </Card>
 
-        {/* Stock Out Today */}
-        <Card className="shadow-sm border border-slate-200 dark:border-slate-800 bg-card">
-          <CardContent className="p-3.5 flex flex-col justify-between h-full">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                Stock Out Today
-              </span>
-              <ArrowDownRight className="h-4 w-4 text-rose-600" />
-            </div>
-            <div className="mt-2">
-              <h3 className="text-xl font-black text-rose-600 dark:text-rose-400 font-mono">
-                -{kpis.stockOutToday}
-              </h3>
-              <p className="text-[10px] text-muted-foreground">Job Card usages</p>
-            </div>
-          </CardContent>
-        </Card>
+          {/* Stock Out Today */}
+          <Card className="border border-border/80 shadow-xs bg-card rounded-xl">
+            <CardContent className="p-4 flex items-center justify-between">
+              <div>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Stock Out Today</p>
+                <p className="text-2xl font-bold tracking-tight text-rose-600 dark:text-rose-400 font-mono mt-1">
+                  -{kpis.stockOutToday}
+                </p>
+                <p className="text-[11px] text-muted-foreground mt-0.5">Job Card part usages</p>
+              </div>
+              <div className="h-10 w-10 rounded-xl bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0">
+                <ArrowDownRight className="h-5 w-5" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
 
-      {/* Navigation Tabs */}
-      <div className="flex border-b border-border">
+      {/* Navigation Tabs (Compact enterprise tab bar) */}
+      <div className="flex items-center gap-2 border-b border-border/80">
         <button
           type="button"
           onClick={() => setActiveTab("inventory")}
-          className={`pb-3 px-4 text-sm font-bold border-b-2 transition-all flex items-center gap-2 ${
+          className={`pb-3 px-4 text-xs font-semibold border-b-2 transition-all flex items-center gap-2 ${
             activeTab === "inventory"
               ? "border-primary text-primary"
               : "border-transparent text-muted-foreground hover:text-foreground"
@@ -757,7 +746,7 @@ export function InventoryView() {
         <button
           type="button"
           onClick={() => setActiveTab("ledger")}
-          className={`pb-3 px-4 text-sm font-bold border-b-2 transition-all flex items-center gap-2 ${
+          className={`pb-3 px-4 text-xs font-semibold border-b-2 transition-all flex items-center gap-2 ${
             activeTab === "ledger"
               ? "border-primary text-primary"
               : "border-transparent text-muted-foreground hover:text-foreground"
@@ -771,17 +760,17 @@ export function InventoryView() {
       {/* TAB 1: STOCK INVENTORY LIST & SEARCH                                      */}
       {/* ========================================================================= */}
       {activeTab === "inventory" && (
-        <Card className="shadow-sm border border-slate-200 dark:border-slate-800 bg-card">
-          {/* Filter Bar */}
-          <div className="p-4 border-b border-border flex flex-col md:flex-row items-center justify-between gap-3">
+        <Card className="border border-border/80 shadow-xs bg-card rounded-xl overflow-hidden">
+          {/* Unified Filter Bar Header */}
+          <div className="p-3 border-b border-border/80 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 bg-muted/20">
             {/* Search Input */}
-            <div className="relative w-full md:w-80">
+            <div className="relative flex-1 max-w-md">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search by name, part #, brand, supplier..."
+                placeholder="Search by part name, part #, brand, supplier..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 h-9 text-xs"
+                className="pl-9 h-9 text-xs rounded-lg"
               />
               {searchQuery && (
                 <button
@@ -795,10 +784,7 @@ export function InventoryView() {
             </div>
 
             {/* Status Filter Buttons */}
-            <div className="flex flex-wrap items-center gap-1.5 w-full md:w-auto">
-              <span className="text-xs font-semibold text-muted-foreground mr-1 flex items-center gap-1">
-                <SlidersHorizontal className="h-3.5 w-3.5" /> Filter:
-              </span>
+            <div className="flex flex-wrap items-center gap-1">
               {[
                 { id: "all", label: "All Parts" },
                 { id: "in_stock", label: "In Stock" },
@@ -812,10 +798,10 @@ export function InventoryView() {
                     setStatusFilter(tab.id as PartsFilterType);
                     setCurrentPage(1);
                   }}
-                  className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                     statusFilter === tab.id
-                      ? "bg-primary text-primary-foreground shadow-sm"
-                      : "bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground"
+                      ? "bg-primary text-primary-foreground shadow-xs"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
                   }`}
                 >
                   {tab.label}
@@ -829,24 +815,24 @@ export function InventoryView() {
             {loading ? (
               <div className="py-20 text-center text-muted-foreground">
                 <Loader2 className="h-8 w-8 mx-auto animate-spin mb-3 text-primary" />
-                <p className="font-medium text-sm">Loading stock inventory...</p>
+                <p className="font-medium text-xs">Loading stock inventory...</p>
               </div>
             ) : parts.length > 0 ? (
-              <div className="overflow-x-auto">
-                <Table>
+              <div className="overflow-x-auto min-w-full">
+                <Table className="min-w-[1100px]">
                   <TableHeader>
-                    <TableRow className="bg-slate-50/80 dark:bg-slate-800/50 text-xs font-bold border-b">
-                      <TableHead className="w-[22%] font-bold text-foreground">Spare Part Name</TableHead>
-                      <TableHead className="w-[12%] font-bold text-foreground">Part Number</TableHead>
-                      <TableHead className="w-[10%] font-bold text-foreground">Brand</TableHead>
-                      <TableHead className="w-[14%] font-bold text-foreground">Purchased From</TableHead>
-                      <TableHead className="w-[8%] text-center font-bold text-foreground">Stock</TableHead>
-                      <TableHead className="w-[7%] text-center font-bold text-foreground">Min</TableHead>
-                      <TableHead className="w-[9%] text-right font-bold text-foreground">Cost (AED)</TableHead>
-                      <TableHead className="w-[9%] text-right font-bold text-foreground">Sell (AED)</TableHead>
-                      <TableHead className="w-[8%] font-bold text-foreground">Rack</TableHead>
-                      <TableHead className="w-[10%] text-center font-bold text-foreground">Status</TableHead>
-                      <TableHead className="w-[9%] text-right pr-4 font-bold text-foreground">Actions</TableHead>
+                    <TableRow className="border-b border-border/80 bg-muted/40 hover:bg-muted/40 text-xs text-muted-foreground font-semibold">
+                      <TableHead className="w-[22%] min-w-[200px] text-foreground font-semibold">Part</TableHead>
+                      <TableHead className="w-[12%] min-w-[110px] text-foreground font-semibold">Part Number</TableHead>
+                      <TableHead className="w-[10%] min-w-[90px] text-foreground font-semibold">Brand</TableHead>
+                      <TableHead className="w-[13%] min-w-[120px] text-foreground font-semibold">Purchased From</TableHead>
+                      <TableHead className="w-[9%] min-w-[90px] text-center text-foreground font-semibold">Stock</TableHead>
+                      <TableHead className="w-[7%] min-w-[70px] text-center text-foreground font-semibold">Min</TableHead>
+                      <TableHead className="w-[9%] min-w-[85px] text-right text-foreground font-semibold">Cost (AED)</TableHead>
+                      <TableHead className="w-[9%] min-w-[85px] text-right text-foreground font-semibold">Sell (AED)</TableHead>
+                      <TableHead className="w-[8%] min-w-[80px] text-foreground font-semibold">Rack</TableHead>
+                      <TableHead className="w-[9%] min-w-[90px] text-center text-foreground font-semibold">Status</TableHead>
+                      <TableHead className="w-[115px] min-w-[115px] text-right pr-4 text-foreground font-semibold">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -868,7 +854,7 @@ export function InventoryView() {
                         );
                       } else if (stock <= minStock) {
                         statusBadge = (
-                          <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800 inline-flex items-center gap-1 animate-pulse">
+                          <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800 inline-flex items-center gap-1">
                             <AlertTriangle className="h-3 w-3" /> Low Stock
                           </span>
                         );
@@ -877,46 +863,52 @@ export function InventoryView() {
                       return (
                         <TableRow
                           key={p.id}
-                          className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50 border-b text-xs transition-colors"
+                          className="h-13 hover:bg-muted/40 border-b border-border/60 text-xs transition-colors"
                         >
                           {/* Part Name */}
-                          <TableCell className="font-semibold text-foreground py-3">
-                            <span className="font-bold text-sm block">{p.name}</span>
+                          <TableCell className="font-semibold text-foreground py-2.5">
+                            <span className="font-bold text-sm block hover:text-primary transition-colors">{p.name}</span>
                             {p.description && (
-                              <span className="text-[11px] text-muted-foreground line-clamp-1">
+                              <span className="text-[11px] text-muted-foreground line-clamp-1 mt-0.5">
                                 {p.description}
                               </span>
                             )}
                           </TableCell>
 
                           {/* Part Number */}
-                          <TableCell className="font-mono font-bold text-blue-600 dark:text-blue-400 py-3">
-                            {p.part_number ? `#${p.part_number}` : "—"}
+                          <TableCell className="py-2.5">
+                            {p.part_number ? (
+                              <span className="font-mono text-xs font-semibold text-foreground bg-muted/60 px-2 py-0.5 rounded inline-block">
+                                {p.part_number}
+                              </span>
+                            ) : (
+                              <span className="text-muted-foreground italic font-normal">—</span>
+                            )}
                           </TableCell>
 
                           {/* Brand */}
-                          <TableCell className="text-muted-foreground py-3 font-medium">
-                            {p.brand || "Generic"}
+                          <TableCell className="text-foreground py-2.5 font-medium">
+                            {p.brand || <span className="text-muted-foreground italic font-normal">—</span>}
                           </TableCell>
 
                           {/* Supplier */}
-                          <TableCell className="py-3">
+                          <TableCell className="py-2.5">
                             {p.supplier ? (
-                              <span className="font-medium text-foreground">{p.supplier.name}</span>
+                              <span className="font-medium text-foreground truncate block max-w-[140px]">{p.supplier.name}</span>
                             ) : (
                               <span className="text-muted-foreground italic text-[11px]">Direct / Local</span>
                             )}
                           </TableCell>
 
                           {/* Current Stock */}
-                          <TableCell className="text-center py-3">
+                          <TableCell className="text-center py-2.5">
                             <span
-                              className={`font-mono font-black text-sm px-2 py-0.5 rounded ${
+                              className={`font-mono font-bold text-xs px-2.5 py-1 rounded-full border inline-flex items-center gap-1 ${
                                 stock <= 0
-                                  ? "bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300"
+                                  ? "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300"
                                   : stock <= minStock
-                                  ? "bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300"
-                                  : "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300"
+                                  ? "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300"
+                                  : "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300"
                               }`}
                             >
                               {stock} {p.unit || "pcs"}
@@ -924,37 +916,45 @@ export function InventoryView() {
                           </TableCell>
 
                           {/* Minimum Stock */}
-                          <TableCell className="text-center font-mono text-muted-foreground py-3 font-semibold">
+                          <TableCell className="text-center font-mono text-muted-foreground py-2.5 font-medium">
                             {minStock}
                           </TableCell>
 
                           {/* Purchase Price */}
-                          <TableCell className="text-right font-mono text-muted-foreground py-3">
+                          <TableCell className="text-right font-mono text-xs text-muted-foreground py-2.5 tabular-nums">
                             {formatCurrency(p.purchase_price)}
                           </TableCell>
 
                           {/* Selling Price */}
-                          <TableCell className="text-right font-mono font-bold text-foreground py-3">
-                            {formatCurrency(p.selling_price)}
+                          <TableCell className="text-right font-mono text-xs font-bold text-blue-600 dark:text-blue-400 py-2.5 tabular-nums">
+                            <span className="bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-800 px-2 py-0.5 rounded inline-block">
+                              {formatCurrency(p.selling_price)}
+                            </span>
                           </TableCell>
 
                           {/* Rack / Location */}
-                          <TableCell className="font-mono text-muted-foreground text-[11px] py-3">
-                            {p.location || "—"}
+                          <TableCell className="py-2.5">
+                            {p.location ? (
+                              <span className="font-mono text-[11px] bg-muted/60 px-2 py-0.5 rounded text-foreground inline-block">
+                                {p.location}
+                              </span>
+                            ) : (
+                              <span className="text-muted-foreground italic font-normal">—</span>
+                            )}
                           </TableCell>
 
                           {/* Status Badge */}
-                          <TableCell className="text-center py-3">{statusBadge}</TableCell>
+                          <TableCell className="text-center py-2.5">{statusBadge}</TableCell>
 
-                          {/* Actions */}
-                          <TableCell className="text-right pr-4 py-3">
+                          {/* Actions (Guaranteed unclipped fixed width column) */}
+                          <TableCell className="text-right pr-4 py-2.5">
                             <div className="flex items-center justify-end gap-1">
                               {canEdit && (
                                 <Button
                                   variant="ghost"
                                   size="sm"
                                   onClick={() => handleOpenAdjustModal(p)}
-                                  className="h-8 px-2 text-xs font-bold text-blue-600 hover:text-blue-800 hover:bg-blue-50 dark:hover:bg-blue-950/50"
+                                  className="h-8 px-2 text-xs font-semibold text-primary hover:bg-primary/10"
                                   title="Adjust stock quantity"
                                 >
                                   <ArrowUpDown className="h-3.5 w-3.5 mr-1" /> Adjust
@@ -962,9 +962,9 @@ export function InventoryView() {
                               )}
                               <Button
                                 variant="ghost"
-                                size="sm"
+                                size="icon"
                                 onClick={() => handleOpenHistoryModal(p)}
-                                className="h-8 px-2 text-xs text-muted-foreground hover:text-foreground"
+                                className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-muted/60"
                                 title="View stock history ledger"
                               >
                                 <History className="h-3.5 w-3.5" />
@@ -990,7 +990,7 @@ export function InventoryView() {
 
           {/* Pagination Footer */}
           {totalPages > 1 && (
-            <div className="p-4 border-t border-border flex items-center justify-between text-xs text-muted-foreground">
+            <div className="p-3 border-t border-border/80 bg-muted/20 flex items-center justify-between text-xs text-muted-foreground">
               <span>
                 Showing {(currentPage - 1) * pageSize + 1} to{" "}
                 {Math.min(currentPage * pageSize, totalPartsCount)} of {totalPartsCount} parts
@@ -1001,11 +1001,11 @@ export function InventoryView() {
                   size="sm"
                   onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                   disabled={currentPage === 1}
-                  className="h-8 text-xs"
+                  className="h-8 text-xs font-medium"
                 >
                   <ChevronLeft className="h-3.5 w-3.5 mr-1" /> Previous
                 </Button>
-                <span className="font-semibold px-2 font-mono">
+                <span className="font-semibold px-2 font-mono text-foreground">
                   {currentPage} / {totalPages}
                 </span>
                 <Button
@@ -1013,7 +1013,7 @@ export function InventoryView() {
                   size="sm"
                   onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                   disabled={currentPage >= totalPages}
-                  className="h-8 text-xs"
+                  className="h-8 text-xs font-medium"
                 >
                   Next <ChevronRight className="h-3.5 w-3.5 ml-1" />
                 </Button>
@@ -1027,11 +1027,11 @@ export function InventoryView() {
       {/* TAB 2: GLOBAL TRANSACTION AUDIT LEDGER                                    */}
       {/* ========================================================================= */}
       {activeTab === "ledger" && (
-        <Card className="shadow-sm border border-slate-200 dark:border-slate-800 bg-card">
-          <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b">
+        <Card className="border border-border/80 shadow-xs bg-card rounded-xl overflow-hidden">
+          <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 bg-muted/20 border-b border-border/80">
             <div>
-              <CardTitle className="text-base font-bold flex items-center gap-2 text-foreground">
-                <History className="h-4 w-4 text-blue-600" /> Full Stock Movement Audit Trail
+              <CardTitle className="text-sm font-bold flex items-center gap-2 text-foreground">
+                <History className="h-4 w-4 text-primary" /> Full Stock Movement Audit Trail
               </CardTitle>
               <p className="text-xs text-muted-foreground mt-0.5">
                 Chronological stock ledger logging all additions, job card allocations, returns, and adjustments
@@ -1039,7 +1039,7 @@ export function InventoryView() {
             </div>
 
             {/* Transaction Type Filter */}
-            <div className="flex flex-wrap items-center gap-1 text-xs">
+            <div className="flex flex-wrap items-center gap-1">
               {[
                 { id: "all", label: "All Types" },
                 { id: "purchase", label: "Purchases" },
@@ -1055,10 +1055,10 @@ export function InventoryView() {
                     setLedgerTypeFilter(f.id);
                     setLedgerPage(1);
                   }}
-                  className={`px-3 py-1 rounded-md font-bold transition-all ${
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                     ledgerTypeFilter === f.id
-                      ? "bg-primary text-primary-foreground shadow-sm"
-                      : "bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground"
+                      ? "bg-primary text-primary-foreground shadow-xs"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
                   }`}
                 >
                   {f.label}
@@ -1071,22 +1071,22 @@ export function InventoryView() {
             {loadingLedger ? (
               <div className="py-20 text-center text-muted-foreground">
                 <Loader2 className="h-8 w-8 mx-auto animate-spin mb-3 text-primary" />
-                <p className="font-medium text-sm">Loading transaction ledger records...</p>
+                <p className="font-medium text-xs">Loading transaction ledger records...</p>
               </div>
             ) : transactions.length > 0 ? (
-              <div className="overflow-x-auto">
-                <Table>
+              <div className="overflow-x-auto min-w-full">
+                <Table className="min-w-[1000px]">
                   <TableHeader>
-                    <TableRow className="bg-slate-50/80 dark:bg-slate-800/50 text-xs font-bold border-b">
-                      <TableHead className="w-[14%] font-bold text-foreground">Date & Time</TableHead>
-                      <TableHead className="w-[24%] font-bold text-foreground">Spare Part</TableHead>
-                      <TableHead className="w-[14%] font-bold text-foreground">Transaction Type</TableHead>
-                      <TableHead className="w-[14%] font-bold text-foreground">Reference</TableHead>
-                      <TableHead className="w-[8%] text-right font-bold text-foreground">Qty In</TableHead>
-                      <TableHead className="w-[8%] text-right font-bold text-foreground">Qty Out</TableHead>
-                      <TableHead className="w-[8%] text-right font-bold text-foreground">Stock Before</TableHead>
-                      <TableHead className="w-[8%] text-right font-bold text-foreground">Stock After</TableHead>
-                      <TableHead className="w-[10%] text-right pr-4 font-bold text-foreground">User</TableHead>
+                    <TableRow className="border-b border-border/80 bg-muted/40 hover:bg-muted/40 text-xs text-muted-foreground font-semibold">
+                      <TableHead className="w-[14%] text-foreground font-semibold">Date & Time</TableHead>
+                      <TableHead className="w-[24%] text-foreground font-semibold">Spare Part</TableHead>
+                      <TableHead className="w-[14%] text-foreground font-semibold">Transaction Type</TableHead>
+                      <TableHead className="w-[14%] text-foreground font-semibold">Reference</TableHead>
+                      <TableHead className="w-[8%] text-right text-foreground font-semibold">Qty In</TableHead>
+                      <TableHead className="w-[8%] text-right text-foreground font-semibold">Qty Out</TableHead>
+                      <TableHead className="w-[8%] text-right text-foreground font-semibold">Stock Before</TableHead>
+                      <TableHead className="w-[8%] text-right text-foreground font-semibold">Stock After</TableHead>
+                      <TableHead className="w-[10%] text-right pr-4 text-foreground font-semibold">User</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -1097,24 +1097,24 @@ export function InventoryView() {
                       return (
                         <TableRow
                           key={tx.id}
-                          className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50 border-b text-xs"
+                          className="h-12 hover:bg-muted/40 border-b border-border/60 text-xs transition-colors"
                         >
-                          <TableCell className="font-mono text-muted-foreground text-[11px] py-3">
+                          <TableCell className="font-mono text-muted-foreground text-[11px] py-2.5">
                             {formatDate(tx.created_at)}
                           </TableCell>
 
-                          <TableCell className="font-semibold text-foreground py-3">
-                            <span className="font-bold text-sm block">{tx.part?.name || "Spare Part"}</span>
+                          <TableCell className="font-semibold text-foreground py-2.5">
+                            <span className="font-bold text-xs block">{tx.part?.name || "Spare Part"}</span>
                             {tx.part?.part_number && (
-                              <span className="text-[11px] font-mono text-blue-600 dark:text-blue-400">
+                              <span className="text-[10px] font-mono text-muted-foreground">
                                 Part #{tx.part.part_number}
                               </span>
                             )}
                           </TableCell>
 
-                          <TableCell className="py-3">
+                          <TableCell className="py-2.5">
                             <span
-                              className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase border inline-block ${
+                              className={`px-2.5 py-0.5 rounded-full text-[10px] font-semibold border inline-block ${
                                 tx.transaction_type.includes("purchase") || tx.transaction_type.includes("in") || tx.transaction_type.includes("opening")
                                   ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800"
                                   : tx.transaction_type.includes("job_card")
@@ -1131,11 +1131,11 @@ export function InventoryView() {
                             )}
                           </TableCell>
 
-                          <TableCell className="py-3 font-mono text-xs font-semibold text-foreground">
+                          <TableCell className="py-2.5 font-mono text-xs font-semibold text-foreground">
                             {tx.reference_type === "job_card" && tx.reference_id ? (
                               <a
                                 href={`/job-cards/${tx.reference_id}`}
-                                className="text-blue-600 hover:text-blue-800 hover:underline inline-flex items-center gap-1 font-bold"
+                                className="text-primary hover:underline inline-flex items-center gap-1 font-bold"
                                 title="Open Job Card"
                               >
                                 {tx.notes?.includes("Job Card #")
@@ -1147,23 +1147,23 @@ export function InventoryView() {
                             )}
                           </TableCell>
 
-                          <TableCell className="text-right font-mono font-bold text-emerald-600 py-3">
+                          <TableCell className="text-right font-mono font-bold text-emerald-600 py-2.5 tabular-nums">
                             {isPositive ? `+${tx.quantity}` : "—"}
                           </TableCell>
 
-                          <TableCell className="text-right font-mono font-bold text-rose-600 py-3">
+                          <TableCell className="text-right font-mono font-bold text-rose-600 py-2.5 tabular-nums">
                             {isNegative ? Math.abs(tx.quantity) : "—"}
                           </TableCell>
 
-                          <TableCell className="text-right font-mono text-muted-foreground py-3">
+                          <TableCell className="text-right font-mono text-muted-foreground py-2.5 tabular-nums">
                             {tx.quantity_before !== undefined ? tx.quantity_before : "—"}
                           </TableCell>
 
-                          <TableCell className="text-right font-mono font-black text-foreground py-3">
+                          <TableCell className="text-right font-mono font-bold text-foreground py-2.5 tabular-nums">
                             {tx.quantity_after !== undefined ? tx.quantity_after : "—"}
                           </TableCell>
 
-                          <TableCell className="text-right pr-4 font-medium text-muted-foreground py-3">
+                          <TableCell className="text-right pr-4 font-medium text-muted-foreground py-2.5">
                             {tx.created_by || "System"}
                           </TableCell>
                         </TableRow>
@@ -1185,7 +1185,7 @@ export function InventoryView() {
 
           {/* Ledger Pagination */}
           {totalLedgerPages > 1 && (
-            <div className="p-4 border-t border-border flex items-center justify-between text-xs text-muted-foreground">
+            <div className="p-3 border-t border-border/80 bg-muted/20 flex items-center justify-between text-xs text-muted-foreground">
               <span>
                 Showing {(ledgerPage - 1) * ledgerPageSize + 1} to{" "}
                 {Math.min(ledgerPage * ledgerPageSize, totalLedgerCount)} of {totalLedgerCount} records
@@ -1196,11 +1196,11 @@ export function InventoryView() {
                   size="sm"
                   onClick={() => setLedgerPage((p) => Math.max(1, p - 1))}
                   disabled={ledgerPage === 1}
-                  className="h-8 text-xs"
+                  className="h-8 text-xs font-medium"
                 >
                   <ChevronLeft className="h-3.5 w-3.5 mr-1" /> Previous
                 </Button>
-                <span className="font-semibold px-2 font-mono">
+                <span className="font-semibold px-2 font-mono text-foreground">
                   {ledgerPage} / {totalLedgerPages}
                 </span>
                 <Button
@@ -1208,7 +1208,7 @@ export function InventoryView() {
                   size="sm"
                   onClick={() => setLedgerPage((p) => Math.min(totalLedgerPages, p + 1))}
                   disabled={ledgerPage >= totalLedgerPages}
-                  className="h-8 text-xs"
+                  className="h-8 text-xs font-medium"
                 >
                   Next <ChevronRight className="h-3.5 w-3.5 ml-1" />
                 </Button>

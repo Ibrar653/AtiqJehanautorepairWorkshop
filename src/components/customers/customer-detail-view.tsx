@@ -26,14 +26,16 @@ import {
   CheckCircle2,
   Phone,
   Mail,
-  MapPin,
   Calendar,
   FileText,
   Upload,
   Download,
   Trash2,
   Paperclip,
-  ShieldAlert,
+  Building2,
+  DollarSign,
+  ArrowLeft,
+  Wrench,
 } from "lucide-react";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import type { Vehicle, UploadedJobCardWithRelations } from "@/types/database";
@@ -168,22 +170,22 @@ export function CustomerDetailView({ id }: CustomerDetailViewProps) {
     setVehicleModalOpen(true);
   };
 
-  const openEditVehicle = (veh: Vehicle) => {
-    setEditingVehicle(veh);
-    setMake(veh.make || "");
-    setModel(veh.model || "");
-    setYear(veh.year ? String(veh.year) : "");
-    setColor(veh.color || "");
-    setChassisVin(veh.chassis_vin || "");
-    setMileage(veh.mileage ? String(veh.mileage) : "");
-    setRegistrationNumber(veh.registration_number || "");
-    setVNotes(veh.notes || "");
+  const openEditVehicle = (v: Vehicle) => {
+    setEditingVehicle(v);
+    setMake(v.make || "");
+    setModel(v.model || "");
+    setYear(v.year ? v.year.toString() : "");
+    setColor(v.color || "");
+    setChassisVin(v.chassis_vin || "");
+    setMileage(v.mileage ? v.mileage.toString() : "");
+    setRegistrationNumber(v.registration_number || "");
+    setVNotes(v.notes || "");
     setVError(null);
     setVehicleModalOpen(true);
   };
 
-  const openDeleteVehicle = (veh: Vehicle) => {
-    setVehicleToDelete(veh);
+  const openDeleteVehicle = (v: Vehicle) => {
+    setVehicleToDelete(v);
     setDeleteVehicleOpen(true);
   };
 
@@ -246,21 +248,21 @@ export function CustomerDetailView({ id }: CustomerDetailViewProps) {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-24 text-slate-400">
-        <Loader2 className="h-8 w-8 animate-spin mr-2 text-blue-600" />
-        <span className="text-sm font-medium">Loading customer profile...</span>
+      <div className="flex items-center justify-center py-24 text-muted-foreground">
+        <Loader2 className="h-8 w-8 animate-spin mr-2.5 text-primary" />
+        <span className="text-xs font-medium">Loading customer profile...</span>
       </div>
     );
   }
 
   if (!customer) {
     return (
-      <div className="py-16 text-center text-slate-500">
-        <AlertCircle className="h-12 w-12 mx-auto text-red-400 mb-3" />
-        <h3 className="text-lg font-bold text-slate-900">Customer Not Found</h3>
-        <p className="text-sm text-slate-500 mt-1">This record may have been moved to the Recycle Bin.</p>
-        <Button render={<Link href="/customers" />} className="mt-4 bg-blue-600 hover:bg-blue-700 text-white">
-          Return to Customers
+      <div className="py-16 text-center text-muted-foreground">
+        <AlertCircle className="h-10 w-10 mx-auto text-rose-500 mb-3" />
+        <h3 className="text-base font-bold text-foreground">Customer Not Found</h3>
+        <p className="text-xs text-muted-foreground mt-1">This record may have been removed or moved to the Recycle Bin.</p>
+        <Button render={<Link href="/customers" />} className="mt-4 bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold rounded-lg">
+          <ArrowLeft className="mr-1.5 h-3.5 w-3.5" /> Return to Customers
         </Button>
       </div>
     );
@@ -271,19 +273,19 @@ export function CustomerDetailView({ id }: CustomerDetailViewProps) {
       {/* Toast Alert */}
       {toastMessage && (
         <div
-          className={`p-3.5 rounded-lg border text-sm flex items-center justify-between ${
+          className={`p-3.5 rounded-xl border text-sm flex items-center justify-between transition-all ${
             toastMessage.type === "success"
-              ? "bg-emerald-50 text-emerald-800 border-emerald-200"
-              : "bg-red-50 text-red-800 border-red-200"
+              ? "bg-emerald-50 text-emerald-800 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-300 dark:border-emerald-800"
+              : "bg-rose-50 text-rose-800 border-rose-200 dark:bg-rose-950/30 dark:text-rose-300 dark:border-rose-800"
           }`}
         >
           <div className="flex items-center gap-2">
             {toastMessage.type === "success" ? (
               <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
             ) : (
-              <AlertCircle className="h-4 w-4 shrink-0 text-red-600" />
+              <AlertCircle className="h-4 w-4 shrink-0 text-rose-600" />
             )}
-            <span>{toastMessage.text}</span>
+            <span className="font-medium">{toastMessage.text}</span>
           </div>
           <Button
             variant="ghost"
@@ -299,16 +301,35 @@ export function CustomerDetailView({ id }: CustomerDetailViewProps) {
       {/* Page Header */}
       <PageHeader
         title={customer.name}
-        description="Customer profile, registered vehicle fleet, and job cards"
+        description="Customer profile, registered vehicle fleet, and service history"
+        breadcrumbs={[
+          { label: "Dashboard", href: "/" },
+          { label: "Customers", href: "/customers" },
+          { label: customer.name },
+        ]}
       >
         <div className="flex items-center gap-2">
           {!isViewer && (
             <>
-              <Button variant="outline" onClick={openEditCustomer} className="border-slate-300">
-                <Pencil className="mr-1.5 h-4 w-4" /> Edit Profile
+              <Button
+                variant="outline"
+                onClick={openEditCustomer}
+                className="h-9 px-3.5 text-xs font-semibold rounded-lg border-border hover:bg-muted/50"
+              >
+                <Pencil className="mr-1.5 h-3.5 w-3.5 text-muted-foreground" /> Edit Profile
               </Button>
-              <Button onClick={openAddVehicle} className="bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-600/20">
-                <Plus className="mr-1.5 h-4 w-4" /> Add Vehicle
+              <Button
+                onClick={openAddVehicle}
+                variant="outline"
+                className="h-9 px-3.5 text-xs font-semibold rounded-lg border-border hover:bg-muted/50"
+              >
+                <Plus className="mr-1.5 h-3.5 w-3.5 text-muted-foreground" /> Add Vehicle
+              </Button>
+              <Button
+                render={<Link href={`/job-cards/new?customer_id=${id}`} />}
+                className="h-9 px-4 text-xs font-semibold rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs"
+              >
+                <Wrench className="mr-1.5 h-3.5 w-3.5" /> Create Job Card
               </Button>
             </>
           )}
@@ -317,194 +338,219 @@ export function CustomerDetailView({ id }: CustomerDetailViewProps) {
 
       {/* Customer KPI / Contact Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="border border-slate-200 shadow-sm bg-white">
-          <CardContent className="pt-5 flex items-center gap-3">
-            <div className="p-3 rounded-xl bg-blue-50 text-blue-600">
+        {/* Phone */}
+        <Card className="border border-border/80 shadow-xs bg-card rounded-xl">
+          <CardContent className="p-4 flex items-center justify-between">
+            <div>
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Phone Number</p>
+              <p className="text-base font-bold text-foreground font-mono mt-1">{customer.mobile || "—"}</p>
+              <p className="text-[11px] text-muted-foreground mt-0.5">Primary customer contact</p>
+            </div>
+            <div className="h-10 w-10 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
               <Phone className="h-5 w-5" />
             </div>
-            <div>
-              <p className="text-xs font-semibold text-slate-500 uppercase">Phone Number</p>
-              <p className="text-sm font-bold text-slate-900 font-mono">{customer.mobile || "Not provided"}</p>
-            </div>
           </CardContent>
         </Card>
 
-        <Card className="border border-slate-200 shadow-sm bg-white">
-          <CardContent className="pt-5 flex items-center gap-3">
-            <div className="p-3 rounded-xl bg-blue-50 text-blue-600">
+        {/* Email */}
+        <Card className="border border-border/80 shadow-xs bg-card rounded-xl">
+          <CardContent className="p-4 flex items-center justify-between">
+            <div>
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Email Address</p>
+              <p className="text-sm font-semibold text-foreground truncate max-w-[160px] mt-1">{customer.email || "—"}</p>
+              <p className="text-[11px] text-muted-foreground mt-0.5">Electronic communications</p>
+            </div>
+            <div className="h-10 w-10 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
               <Mail className="h-5 w-5" />
             </div>
-            <div>
-              <p className="text-xs font-semibold text-slate-500 uppercase">Email Address</p>
-              <p className="text-sm font-bold text-slate-900 truncate max-w-[150px]">{customer.email || "Not provided"}</p>
-            </div>
           </CardContent>
         </Card>
 
-        <Card className="border border-slate-200 shadow-sm bg-white">
-          <CardContent className="pt-5 flex items-center gap-3">
-            <div className="p-3 rounded-xl bg-blue-50 text-blue-600">
+        {/* Customer Since */}
+        <Card className="border border-border/80 shadow-xs bg-card rounded-xl">
+          <CardContent className="p-4 flex items-center justify-between">
+            <div>
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Customer Since</p>
+              <p className="text-sm font-bold text-foreground mt-1">{formatDate(customer.created_at)}</p>
+              <p className="text-[11px] text-muted-foreground mt-0.5">Registration date</p>
+            </div>
+            <div className="h-10 w-10 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 flex items-center justify-center shrink-0">
               <Calendar className="h-5 w-5" />
             </div>
-            <div>
-              <p className="text-xs font-semibold text-slate-500 uppercase">Customer Since</p>
-              <p className="text-sm font-bold text-slate-900">{formatDate(customer.created_at)}</p>
-            </div>
           </CardContent>
         </Card>
 
-        <Card className="border border-slate-200 shadow-sm bg-white">
-          <CardContent className="pt-5 flex items-center gap-3">
-            <div className={`p-3 rounded-xl ${customer.outstanding_balance > 0 ? "bg-amber-50 text-amber-600" : "bg-emerald-50 text-emerald-600"}`}>
-              <ClipboardList className="h-5 w-5" />
-            </div>
+        {/* Outstanding Balance */}
+        <Card className="border border-border/80 shadow-xs bg-card rounded-xl">
+          <CardContent className="p-4 flex items-center justify-between">
             <div>
-              <p className="text-xs font-semibold text-slate-500 uppercase">Outstanding Balance</p>
-              <p className={`text-sm font-bold ${customer.outstanding_balance > 0 ? "text-amber-600" : "text-emerald-600"}`}>
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Outstanding Balance</p>
+              <p className={`text-base font-bold font-mono mt-1 ${customer.outstanding_balance > 0 ? "text-amber-600 dark:text-amber-400" : "text-foreground"}`}>
                 {formatCurrency(customer.outstanding_balance || 0)}
               </p>
+              <p className="text-[11px] text-muted-foreground mt-0.5">Unsettled invoices</p>
+            </div>
+            <div className={`h-10 w-10 rounded-xl flex items-center justify-center shrink-0 ${
+              customer.outstanding_balance > 0
+                ? "bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400"
+                : "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400"
+            }`}>
+              <DollarSign className="h-5 w-5" />
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Customer Address & Notes */}
-      <Card className="border border-slate-200 shadow-sm bg-white">
-        <CardContent className="pt-5 grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+      {/* Customer Address & Company Card */}
+      <Card className="border border-border/80 shadow-xs bg-card rounded-xl">
+        <CardContent className="p-5 grid grid-cols-1 md:grid-cols-3 gap-6 text-xs">
           <div>
-            <span className="text-xs font-semibold text-slate-500 uppercase">Address / Location</span>
-            <p className="font-medium text-slate-800 mt-1">{customer.address || "No address provided"}</p>
+            <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Address / Emirate</span>
+            <p className="font-medium text-foreground text-xs mt-1.5 leading-relaxed">{customer.address || "No address recorded on profile"}</p>
           </div>
           <div>
-            <span className="text-xs font-semibold text-slate-500 uppercase">Company &amp; TRN Number</span>
-            <div className="mt-1 space-y-1">
-              {customer.company_name && (
-                <p className="font-bold text-slate-900 text-xs">{customer.company_name}</p>
+            <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Company &amp; Tax Info</span>
+            <div className="mt-1.5 space-y-1">
+              {customer.company_name ? (
+                <p className="font-semibold text-foreground text-xs">{customer.company_name}</p>
+              ) : (
+                <p className="text-muted-foreground text-xs">Individual Account (No Company)</p>
               )}
               {customer.trn_number ? (
-                <p className="font-mono text-xs font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200 inline-block">
+                <p className="font-mono text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded border border-primary/20 inline-block">
                   TRN: {customer.trn_number}
                 </p>
               ) : (
-                <p className="text-slate-400 text-xs">No TRN registered</p>
+                <p className="text-muted-foreground text-[11px]">No TRN registered</p>
               )}
             </div>
           </div>
           <div>
-            <span className="text-xs font-semibold text-slate-500 uppercase">Customer Notes</span>
-            <p className="font-medium text-slate-800 mt-1">{customer.notes || "No special notes recorded."}</p>
+            <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Customer Notes</span>
+            <p className="font-medium text-foreground text-xs mt-1.5 leading-relaxed">{customer.notes || "No special account notes recorded."}</p>
           </div>
         </CardContent>
       </Card>
 
-      {/* PROFESSIONAL VEHICLES SECTION */}
-      <Card className="border border-slate-200 shadow-sm bg-white overflow-hidden">
-        <CardHeader className="flex flex-row items-center justify-between border-b border-slate-100 bg-slate-50/60 px-6 py-4">
+      {/* VEHICLES SECTION */}
+      <Card className="border border-border/80 shadow-xs bg-card overflow-hidden rounded-xl">
+        <CardHeader className="flex flex-row items-center justify-between border-b border-border bg-muted/40 px-6 py-3.5">
           <div>
-            <CardTitle className="text-base font-bold text-slate-900 flex items-center gap-2">
-              <Car className="h-5 w-5 text-blue-600" />
-              VEHICLES ({vehicles.length})
+            <CardTitle className="text-sm font-bold text-foreground flex items-center gap-2">
+              <Car className="h-4 w-4 text-primary" />
+              Registered Vehicles ({vehicles.length})
             </CardTitle>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Registered vehicle fleet belonging to {customer.name}
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Active vehicle fleet associated with {customer.name}
             </p>
           </div>
           {!isViewer && (
-            <Button onClick={openAddVehicle} size="sm" className="bg-blue-600 hover:bg-blue-700 text-white font-semibold">
-              <Plus className="mr-1.5 h-4 w-4" /> Add Another Vehicle
+            <Button
+              onClick={openAddVehicle}
+              size="sm"
+              className="h-8 px-3 text-xs font-semibold rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs"
+            >
+              <Plus className="mr-1.5 h-3.5 w-3.5" /> Add Vehicle
             </Button>
           )}
         </CardHeader>
         <CardContent className="p-0">
           {vehicles.length > 0 ? (
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-slate-50/40 hover:bg-slate-50/40">
-                  <TableHead className="font-semibold text-slate-700">Vehicle / Car Name</TableHead>
-                  <TableHead className="font-semibold text-slate-700">Make</TableHead>
-                  <TableHead className="font-semibold text-slate-700">Model</TableHead>
-                  <TableHead className="font-semibold text-slate-700">Year</TableHead>
-                  <TableHead className="font-semibold text-slate-700">Reg Plate</TableHead>
-                  <TableHead className="font-semibold text-slate-700">Chassis / VIN</TableHead>
-                  <TableHead className="font-semibold text-slate-700">Mileage</TableHead>
-                  <TableHead className="font-semibold text-slate-700">Color</TableHead>
-                  <TableHead className="font-semibold text-slate-700">Added Date</TableHead>
-                  <TableHead className="text-right font-semibold text-slate-700">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {vehicles.map((v) => (
-                  <TableRow key={v.id} className="hover:bg-slate-50/60 transition-colors">
-                    <TableCell className="font-bold text-slate-900">
-                      <Link href={`/vehicles/${v.id}`} className="hover:text-blue-600 hover:underline">
-                        {v.make} {v.model}
-                      </Link>
-                    </TableCell>
-                    <TableCell className="text-slate-700 text-xs">{v.make}</TableCell>
-                    <TableCell className="text-slate-700 text-xs">{v.model}</TableCell>
-                    <TableCell className="text-slate-700 text-xs">{v.year || "—"}</TableCell>
-                    <TableCell className="font-bold text-blue-700 text-xs font-mono">{v.registration_number || "—"}</TableCell>
-                    <TableCell className="font-mono text-xs text-slate-700">{v.chassis_vin || "—"}</TableCell>
-                    <TableCell className="text-xs text-slate-700">{v.mileage ? `${v.mileage.toLocaleString()} KM` : "—"}</TableCell>
-                    <TableCell className="text-xs text-slate-700">{v.color || "—"}</TableCell>
-                    <TableCell className="text-xs text-slate-500">{formatDate(v.created_at)}</TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          render={<Link href={`/vehicles/${v.id}`} />}
-                          title="View Full Vehicle Details"
-                          className="h-8 w-8 p-0 text-slate-600 hover:text-blue-600"
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        {canEdit && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => openEditVehicle(v)}
-                            title="Edit Vehicle"
-                            className="h-8 w-8 p-0 text-slate-600 hover:text-blue-600"
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                        )}
-                        {!isViewer && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => openDeleteVehicle(v)}
-                            title="Move to Recycle Bin"
-                            className="h-8 w-8 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        )}
-                        {!isViewer && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            render={<Link href={`/job-cards/new?customer_id=${id}&vehicle_id=${v.id}`} />}
-                            className="h-8 text-xs font-semibold border-slate-300 ml-1"
-                          >
-                            <ClipboardList className="mr-1 h-3.5 w-3.5 text-blue-600" /> Job Card
-                          </Button>
-                        )}
-                      </div>
-                    </TableCell>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-muted/50 hover:bg-muted/50 border-b border-border h-11">
+                    <TableHead className="font-semibold text-foreground text-xs uppercase tracking-wider">Vehicle</TableHead>
+                    <TableHead className="font-semibold text-foreground text-xs uppercase tracking-wider">Year</TableHead>
+                    <TableHead className="font-semibold text-foreground text-xs uppercase tracking-wider">Plate Number</TableHead>
+                    <TableHead className="font-semibold text-foreground text-xs uppercase tracking-wider">Chassis / VIN</TableHead>
+                    <TableHead className="font-semibold text-foreground text-xs uppercase tracking-wider">Mileage</TableHead>
+                    <TableHead className="font-semibold text-foreground text-xs uppercase tracking-wider">Color</TableHead>
+                    <TableHead className="font-semibold text-foreground text-xs uppercase tracking-wider">Added Date</TableHead>
+                    <TableHead className="text-right font-semibold text-foreground text-xs uppercase tracking-wider pr-4">Actions</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody className="divide-y divide-border/60">
+                  {vehicles.map((v) => (
+                    <TableRow key={v.id} className="h-12 hover:bg-muted/40 transition-colors border-b border-border/50">
+                      <TableCell className="font-bold text-foreground text-xs">
+                        <Link href={`/vehicles/${v.id}`} className="hover:text-primary hover:underline transition-colors flex items-center gap-1.5">
+                          <Car className="h-3.5 w-3.5 text-primary shrink-0" />
+                          <span>{v.make} {v.model}</span>
+                        </Link>
+                      </TableCell>
+                      <TableCell className="text-xs text-muted-foreground font-mono">{v.year || "—"}</TableCell>
+                      <TableCell className="font-bold text-primary text-xs font-mono">
+                        {v.registration_number || "—"}
+                      </TableCell>
+                      <TableCell className="font-mono text-xs text-muted-foreground">{v.chassis_vin || "—"}</TableCell>
+                      <TableCell className="text-xs text-foreground font-mono">
+                        {v.mileage ? `${v.mileage.toLocaleString()} KM` : "—"}
+                      </TableCell>
+                      <TableCell className="text-xs text-muted-foreground">{v.color || "—"}</TableCell>
+                      <TableCell className="text-xs text-muted-foreground">{formatDate(v.created_at)}</TableCell>
+                      <TableCell className="text-right pr-4">
+                        <div className="flex items-center justify-end gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            render={<Link href={`/vehicles/${v.id}`} />}
+                            title="View Vehicle"
+                            className="h-8 w-8 p-0 text-muted-foreground hover:text-primary rounded-lg"
+                          >
+                            <Eye className="h-3.5 w-3.5" />
+                          </Button>
+                          {canEdit && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => openEditVehicle(v)}
+                              title="Edit Vehicle"
+                              className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground rounded-lg"
+                            >
+                              <Pencil className="h-3.5 w-3.5" />
+                            </Button>
+                          )}
+                          {!isViewer && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => openDeleteVehicle(v)}
+                              title="Move to Recycle Bin"
+                              className="h-8 w-8 p-0 text-muted-foreground hover:text-rose-600 rounded-lg"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          )}
+                          {!isViewer && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              render={<Link href={`/job-cards/new?customer_id=${id}&vehicle_id=${v.id}`} />}
+                              className="h-8 px-2.5 text-xs font-semibold rounded-lg border-border ml-1"
+                            >
+                              <ClipboardList className="mr-1 h-3.5 w-3.5 text-primary" /> Job Card
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           ) : (
-            <div className="py-12 text-center text-slate-500">
-              <Car className="h-12 w-12 mx-auto text-slate-300 mb-3" />
-              <h4 className="text-base font-semibold text-slate-800">No vehicles registered for {customer.name}</h4>
-              <p className="text-xs text-slate-500 mt-1 mb-4">Add a vehicle with chassis/VIN to create repair job cards</p>
+            <div className="py-12 text-center text-muted-foreground flex flex-col items-center justify-center px-4">
+              <Car className="h-10 w-10 mx-auto text-muted-foreground/30 stroke-1 mb-2" />
+              <h4 className="text-sm font-semibold text-foreground">No vehicles registered for {customer.name}</h4>
+              <p className="text-xs text-muted-foreground mt-1 mb-4">Add a vehicle with plate number and chassis/VIN to create repair orders</p>
               {!isViewer && (
-                <Button size="sm" onClick={openAddVehicle} className="bg-blue-600 hover:bg-blue-700 text-white font-semibold">
-                  <Plus className="mr-1.5 h-4 w-4" /> Add Vehicle Now
+                <Button
+                  size="sm"
+                  onClick={openAddVehicle}
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs rounded-lg h-9"
+                >
+                  <Plus className="mr-1.5 h-3.5 w-3.5" /> Add Vehicle Now
                 </Button>
               )}
             </div>
@@ -512,87 +558,97 @@ export function CustomerDetailView({ id }: CustomerDetailViewProps) {
         </CardContent>
       </Card>
 
-      {/* Uploaded Physical Job Cards / Paper Worksheets */}
-      <Card className="border border-slate-200 shadow-sm bg-white overflow-hidden">
-        <CardHeader className="flex flex-row items-center justify-between border-b border-slate-100 bg-slate-50/60 px-6 py-4">
+      {/* Uploaded Physical Job Cards / Scanned Worksheets */}
+      <Card className="border border-border/80 shadow-xs bg-card overflow-hidden rounded-xl">
+        <CardHeader className="flex flex-row items-center justify-between border-b border-border bg-muted/40 px-6 py-3.5">
           <div>
-            <CardTitle className="text-base font-bold text-slate-900 flex items-center gap-2">
-              <Paperclip className="h-5 w-5 text-blue-600" />
+            <CardTitle className="text-sm font-bold text-foreground flex items-center gap-2">
+              <Paperclip className="h-4 w-4 text-primary" />
               Scanned / Paper Job Cards ({documents.length})
             </CardTitle>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Historical physical repair worksheets and scanned job card PDFs
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Archived physical repair worksheets and scanned job card PDFs
             </p>
           </div>
           {!isViewer && (
-            <Button size="sm" variant="outline" onClick={() => setUploadDocOpen(true)} className="border-slate-300">
-              <Upload className="mr-1.5 h-4 w-4" /> Upload Document
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setUploadDocOpen(true)}
+              className="h-8 px-3 text-xs font-semibold rounded-lg border-border"
+            >
+              <Upload className="mr-1.5 h-3.5 w-3.5 text-muted-foreground" /> Upload Document
             </Button>
           )}
         </CardHeader>
         <CardContent className="p-0">
           {documents.length > 0 ? (
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-slate-50/40 hover:bg-slate-50/40">
-                  <TableHead className="font-semibold text-slate-700">Document Type</TableHead>
-                  <TableHead className="font-semibold text-slate-700">File Name</TableHead>
-                  <TableHead className="font-semibold text-slate-700">Vehicle</TableHead>
-                  <TableHead className="font-semibold text-slate-700">Job Card #</TableHead>
-                  <TableHead className="font-semibold text-slate-700">Upload Date</TableHead>
-                  <TableHead className="text-right font-semibold text-slate-700">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {documents.map((doc) => (
-                  <TableRow key={doc.id} className="hover:bg-slate-50/60 transition-colors">
-                    <TableCell className="font-semibold text-xs text-slate-800">
-                      {doc.document_type === "paper_job_card" ? "Paper Worksheet" : doc.document_type}
-                    </TableCell>
-                    <TableCell className="text-xs text-slate-700 font-mono">{doc.file_name}</TableCell>
-                    <TableCell className="text-xs text-slate-700">
-                      {doc.vehicle ? `${doc.vehicle.make} ${doc.vehicle.model}` : "—"}
-                    </TableCell>
-                    <TableCell className="text-xs text-blue-700 font-semibold">{doc.job_card_number || "—"}</TableCell>
-                    <TableCell className="text-xs text-slate-500">{formatDate(doc.created_at)}</TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setPreviewDoc(doc)}
-                          className="h-8 w-8 p-0 text-slate-600 hover:text-blue-600"
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          render={<a href={doc.file_url} target="_blank" rel="noopener noreferrer" download />}
-                          className="h-8 w-8 p-0 text-slate-600 hover:text-blue-600"
-                        >
-                          <Download className="h-4 w-4" />
-                        </Button>
-                        {!isViewer && (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-muted/50 hover:bg-muted/50 border-b border-border h-11">
+                    <TableHead className="font-semibold text-foreground text-xs uppercase tracking-wider">Document Type</TableHead>
+                    <TableHead className="font-semibold text-foreground text-xs uppercase tracking-wider">File Name</TableHead>
+                    <TableHead className="font-semibold text-foreground text-xs uppercase tracking-wider">Vehicle</TableHead>
+                    <TableHead className="font-semibold text-foreground text-xs uppercase tracking-wider">Job Card #</TableHead>
+                    <TableHead className="font-semibold text-foreground text-xs uppercase tracking-wider">Upload Date</TableHead>
+                    <TableHead className="text-right font-semibold text-foreground text-xs uppercase tracking-wider pr-4">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody className="divide-y divide-border/60">
+                  {documents.map((doc) => (
+                    <TableRow key={doc.id} className="h-12 hover:bg-muted/40 transition-colors border-b border-border/50">
+                      <TableCell className="font-semibold text-xs text-foreground">
+                        {doc.document_type === "paper_job_card" ? "Paper Worksheet" : doc.document_type}
+                      </TableCell>
+                      <TableCell className="text-xs text-foreground font-mono">{doc.file_name}</TableCell>
+                      <TableCell className="text-xs text-muted-foreground">
+                        {doc.vehicle ? `${doc.vehicle.make} ${doc.vehicle.model}` : "—"}
+                      </TableCell>
+                      <TableCell className="text-xs text-primary font-mono font-semibold">{doc.job_card_number || "—"}</TableCell>
+                      <TableCell className="text-xs text-muted-foreground">{formatDate(doc.created_at)}</TableCell>
+                      <TableCell className="text-right pr-4">
+                        <div className="flex items-center justify-end gap-1">
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => handleDeleteDoc(doc.id)}
-                            className="h-8 w-8 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
+                            onClick={() => setPreviewDoc(doc)}
+                            className="h-8 w-8 p-0 text-muted-foreground hover:text-primary rounded-lg"
+                            title="Preview Document"
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <Eye className="h-3.5 w-3.5" />
                           </Button>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            render={<a href={doc.file_url} target="_blank" rel="noopener noreferrer" download />}
+                            className="h-8 w-8 p-0 text-muted-foreground hover:text-primary rounded-lg"
+                            title="Download File"
+                          >
+                            <Download className="h-3.5 w-3.5" />
+                          </Button>
+                          {!isViewer && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDeleteDoc(doc.id)}
+                              className="h-8 w-8 p-0 text-muted-foreground hover:text-rose-600 rounded-lg"
+                              title="Delete Record"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           ) : (
-            <div className="py-10 text-center text-slate-500">
-              <FileText className="h-10 w-10 mx-auto text-slate-300 mb-2" />
-              <p className="text-xs text-slate-500">No scanned worksheets uploaded yet.</p>
+            <div className="py-10 text-center text-muted-foreground flex flex-col items-center justify-center">
+              <FileText className="h-8 w-8 mx-auto text-muted-foreground/30 stroke-1 mb-2" />
+              <p className="text-xs text-muted-foreground">No scanned worksheets or paper job cards uploaded yet.</p>
             </div>
           )}
         </CardContent>
@@ -600,46 +656,92 @@ export function CustomerDetailView({ id }: CustomerDetailViewProps) {
 
       {/* Edit Customer Profile Modal */}
       <Dialog open={editCustomerOpen} onOpenChange={setEditCustomerOpen}>
-        <DialogContent className="max-w-md">
-          <DialogTitle>Edit Customer Details</DialogTitle>
-          <DialogDescription>Update contact information and preferences for {customer.name}</DialogDescription>
+        <DialogContent className="max-w-md bg-card border border-border shadow-lg rounded-xl p-6">
+          <DialogTitle className="text-base font-bold text-foreground">Edit Customer Details</DialogTitle>
+          <DialogDescription className="text-xs text-muted-foreground">
+            Update contact information and preferences for {customer.name}
+          </DialogDescription>
           <form onSubmit={handleSaveCustomer} className="space-y-4 mt-2">
             <div className="space-y-1.5">
-              <Label className="text-xs font-semibold text-slate-700">Full Name *</Label>
-              <Input value={custName} onChange={(e) => setCustName(e.target.value)} required />
+              <Label className="text-xs font-semibold text-foreground">Full Name <span className="text-destructive">*</span></Label>
+              <Input
+                value={custName}
+                onChange={(e) => setCustName(e.target.value)}
+                required
+                className="h-10 text-sm rounded-lg"
+              />
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label className="text-xs font-semibold text-slate-700">Mobile Number</Label>
-                <Input value={custMobile} onChange={(e) => setCustMobile(e.target.value)} />
+                <Label className="text-xs font-semibold text-foreground">Mobile Number</Label>
+                <Input
+                  value={custMobile}
+                  onChange={(e) => setCustMobile(e.target.value)}
+                  className="h-10 text-sm rounded-lg font-mono"
+                />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs font-semibold text-slate-700">Email Address</Label>
-                <Input type="email" value={custEmail} onChange={(e) => setCustEmail(e.target.value)} />
+                <Label className="text-xs font-semibold text-foreground">Email Address</Label>
+                <Input
+                  type="email"
+                  value={custEmail}
+                  onChange={(e) => setCustEmail(e.target.value)}
+                  className="h-10 text-sm rounded-lg"
+                />
               </div>
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs font-semibold text-slate-700">Address / Location</Label>
-              <Input value={custAddress} onChange={(e) => setCustAddress(e.target.value)} />
+              <Label className="text-xs font-semibold text-foreground">Address / Location</Label>
+              <Input
+                value={custAddress}
+                onChange={(e) => setCustAddress(e.target.value)}
+                className="h-10 text-sm rounded-lg"
+              />
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label className="text-xs font-semibold text-slate-700">Company Name (Optional)</Label>
-                <Input value={custCompany} onChange={(e) => setCustCompany(e.target.value)} placeholder="e.g. Al Dhafra Transport" />
+                <Label className="text-xs font-semibold text-foreground">Company Name (Optional)</Label>
+                <Input
+                  value={custCompany}
+                  onChange={(e) => setCustCompany(e.target.value)}
+                  placeholder="e.g. Al Dhafra Transport"
+                  className="h-10 text-sm rounded-lg"
+                />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs font-semibold text-blue-700">Company / Customer TRN No. (Optional)</Label>
-                <Input value={custTrn} onChange={(e) => setCustTrn(e.target.value)} placeholder="e.g. 100123456789003" className="font-mono" />
+                <Label className="text-xs font-semibold text-primary">TRN Number (Optional)</Label>
+                <Input
+                  value={custTrn}
+                  onChange={(e) => setCustTrn(e.target.value)}
+                  placeholder="e.g. 100123456789003"
+                  className="h-10 text-sm rounded-lg font-mono"
+                />
               </div>
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs font-semibold text-slate-700">Notes</Label>
-              <Textarea rows={2} value={custNotes} onChange={(e) => setCustNotes(e.target.value)} />
+              <Label className="text-xs font-semibold text-foreground">Customer Notes</Label>
+              <Textarea
+                rows={2}
+                value={custNotes}
+                onChange={(e) => setCustNotes(e.target.value)}
+                className="text-xs rounded-lg"
+              />
             </div>
-            <div className="flex items-center justify-end gap-2 pt-2">
-              <Button type="button" variant="outline" onClick={() => setEditCustomerOpen(false)}>Cancel</Button>
-              <Button type="submit" disabled={savingCust} className="bg-blue-600 hover:bg-blue-700 text-white">
-                {savingCust ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save Changes"}
+            <div className="flex items-center justify-end gap-2 pt-2 border-t">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setEditCustomerOpen(false)}
+                className="h-9 px-4 text-xs font-medium rounded-lg"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={savingCust}
+                className="h-9 px-4 text-xs font-semibold rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground"
+              >
+                {savingCust ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : "Save Changes"}
               </Button>
             </div>
           </form>
@@ -648,65 +750,129 @@ export function CustomerDetailView({ id }: CustomerDetailViewProps) {
 
       {/* Add / Edit Vehicle Modal */}
       <Dialog open={vehicleModalOpen} onOpenChange={setVehicleModalOpen}>
-        <DialogContent className="max-w-md">
-          <DialogTitle>{editingVehicle ? "Edit Vehicle Details" : `Add Vehicle for ${customer.name}`}</DialogTitle>
-          <DialogDescription>
+        <DialogContent className="max-w-md bg-card border border-border shadow-lg rounded-xl p-6">
+          <DialogTitle className="text-base font-bold text-foreground">
+            {editingVehicle ? "Edit Vehicle Details" : `Add Vehicle for ${customer.name}`}
+          </DialogTitle>
+          <DialogDescription className="text-xs text-muted-foreground">
             {editingVehicle ? "Update vehicle specifications and chassis/VIN" : "Register another vehicle to this customer profile"}
           </DialogDescription>
           <form onSubmit={handleSaveVehicle} className="space-y-3 mt-2">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label className="text-xs font-semibold text-slate-700">Make *</Label>
-                <Input placeholder="e.g. Toyota" value={make} onChange={(e) => setMake(e.target.value)} required />
+                <Label className="text-xs font-semibold text-foreground">Make <span className="text-destructive">*</span></Label>
+                <Input
+                  placeholder="e.g. Toyota"
+                  value={make}
+                  onChange={(e) => setMake(e.target.value)}
+                  required
+                  className="h-10 text-sm rounded-lg"
+                />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs font-semibold text-slate-700">Model *</Label>
-                <Input placeholder="e.g. Land Cruiser" value={model} onChange={(e) => setModel(e.target.value)} required />
+                <Label className="text-xs font-semibold text-foreground">Model <span className="text-destructive">*</span></Label>
+                <Input
+                  placeholder="e.g. Land Cruiser"
+                  value={model}
+                  onChange={(e) => setModel(e.target.value)}
+                  required
+                  className="h-10 text-sm rounded-lg"
+                />
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label className="text-xs font-semibold text-slate-700">Year</Label>
-                <Input type="number" placeholder="2023" value={year} onChange={(e) => setYear(e.target.value)} />
+                <Label className="text-xs font-semibold text-foreground">Year</Label>
+                <Input
+                  type="number"
+                  placeholder="2024"
+                  value={year}
+                  onChange={(e) => setYear(e.target.value)}
+                  className="h-10 text-sm rounded-lg font-mono"
+                />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs font-semibold text-slate-700">Color</Label>
-                <Input placeholder="White Pearl" value={color} onChange={(e) => setColor(e.target.value)} />
+                <Label className="text-xs font-semibold text-foreground">Color</Label>
+                <Input
+                  placeholder="White Pearl"
+                  value={color}
+                  onChange={(e) => setColor(e.target.value)}
+                  className="h-10 text-sm rounded-lg"
+                />
               </div>
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-xs font-semibold text-slate-700">Registration Plate</Label>
-              <Input placeholder="AD-12345" value={registrationNumber} onChange={(e) => setRegistrationNumber(e.target.value)} />
+              <Label className="text-xs font-semibold text-foreground">Registration Plate</Label>
+              <Input
+                placeholder="AD-12345"
+                value={registrationNumber}
+                onChange={(e) => setRegistrationNumber(e.target.value)}
+                className="h-10 text-sm rounded-lg font-mono"
+              />
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-xs font-semibold text-slate-700">Chassis / VIN Number</Label>
-              <Input placeholder="17-character VIN" value={chassisVin} onChange={(e) => setChassisVin(e.target.value)} />
+              <Label className="text-xs font-semibold text-foreground">Chassis / VIN Number</Label>
+              <Input
+                placeholder="17-character VIN"
+                value={chassisVin}
+                onChange={(e) => setChassisVin(e.target.value)}
+                className="h-10 text-sm rounded-lg font-mono"
+              />
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-xs font-semibold text-slate-700">Current Mileage (KM)</Label>
-              <Input type="number" placeholder="45000" value={mileage} onChange={(e) => setMileage(e.target.value)} />
+              <Label className="text-xs font-semibold text-foreground">Current Mileage (KM)</Label>
+              <Input
+                type="number"
+                placeholder="45000"
+                value={mileage}
+                onChange={(e) => setMileage(e.target.value)}
+                className="h-10 text-sm rounded-lg font-mono"
+              />
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-xs font-semibold text-slate-700">Vehicle Notes</Label>
-              <Textarea rows={2} placeholder="Engine size, trim, special modifications..." value={vNotes} onChange={(e) => setVNotes(e.target.value)} />
+              <Label className="text-xs font-semibold text-foreground">Vehicle Notes</Label>
+              <Textarea
+                rows={2}
+                placeholder="Engine size, trim, special modifications..."
+                value={vNotes}
+                onChange={(e) => setVNotes(e.target.value)}
+                className="text-xs rounded-lg"
+              />
             </div>
 
             {vError && (
-              <div className="p-2.5 rounded-lg bg-red-50 border border-red-200 text-xs text-red-700 flex items-center gap-2">
-                <AlertCircle className="h-4 w-4 shrink-0 text-red-600" />
+              <div className="p-2.5 rounded-lg bg-rose-50 border border-rose-200 text-xs text-rose-700 flex items-center gap-2">
+                <AlertCircle className="h-4 w-4 shrink-0 text-rose-600" />
                 <span>{vError}</span>
               </div>
             )}
 
-            <div className="flex items-center justify-end gap-2 pt-2">
-              <Button type="button" variant="outline" onClick={() => setVehicleModalOpen(false)}>Cancel</Button>
-              <Button type="submit" disabled={savingVehicle} className="bg-blue-600 hover:bg-blue-700 text-white">
-                {savingVehicle ? <Loader2 className="h-4 w-4 animate-spin" /> : editingVehicle ? "Update Vehicle" : "Add Vehicle"}
+            <div className="flex items-center justify-end gap-2 pt-2 border-t">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setVehicleModalOpen(false)}
+                className="h-9 px-4 text-xs font-medium rounded-lg"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={savingVehicle}
+                className="h-9 px-4 text-xs font-semibold rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground"
+              >
+                {savingVehicle ? (
+                  <><Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> Saving...</>
+                ) : editingVehicle ? (
+                  "Update Vehicle"
+                ) : (
+                  "Add Vehicle"
+                )}
               </Button>
             </div>
           </form>
@@ -715,30 +881,35 @@ export function CustomerDetailView({ id }: CustomerDetailViewProps) {
 
       {/* Delete Vehicle Confirmation Dialog */}
       <Dialog open={deleteVehicleOpen} onOpenChange={setDeleteVehicleOpen}>
-        <DialogContent className="max-w-md">
-          <DialogTitle className="flex items-center gap-2 text-slate-900">
-            <Trash2 className="h-5 w-5 text-red-600" />
+        <DialogContent className="max-w-md bg-card border border-border shadow-lg rounded-xl p-6">
+          <DialogTitle className="flex items-center gap-2 text-base font-bold text-foreground">
+            <Trash2 className="h-4 w-4 text-rose-600" />
             Move vehicle to Recycle Bin?
           </DialogTitle>
-          <DialogDescription className="text-slate-600 space-y-2 pt-1">
+          <DialogDescription className="text-xs text-muted-foreground space-y-2 pt-1">
             <p>
-              Are you sure you want to move <strong>{vehicleToDelete?.make} {vehicleToDelete?.model} ({vehicleToDelete?.registration_number || "No Plate"})</strong> to the Recycle Bin?
+              Are you sure you want to move <strong className="text-foreground">{vehicleToDelete?.make} {vehicleToDelete?.model} ({vehicleToDelete?.registration_number || "No Plate"})</strong> to the Recycle Bin?
             </p>
-            <p className="text-xs text-slate-500 bg-slate-50 p-2.5 rounded-lg border border-slate-200">
-              ✓ Job cards, billing history, and customer relations remain safely preserved. The vehicle can be restored anytime from the Recycle Bin.
+            <p className="text-[11px] text-muted-foreground bg-muted/40 p-2.5 rounded-lg border border-border/60">
+              ✓ Existing job cards and billing history remain preserved. The vehicle can be restored anytime from the Recycle Bin.
             </p>
           </DialogDescription>
-          <DialogFooter className="gap-2 sm:gap-0 mt-4">
-            <Button variant="outline" onClick={() => setDeleteVehicleOpen(false)} disabled={deletingVehicle}>
+          <DialogFooter className="gap-2 sm:gap-0 mt-4 border-t pt-3">
+            <Button
+              variant="outline"
+              onClick={() => setDeleteVehicleOpen(false)}
+              disabled={deletingVehicle}
+              className="h-9 px-4 text-xs font-medium rounded-lg"
+            >
               Cancel
             </Button>
             <Button
               onClick={handleConfirmDeleteVehicle}
               disabled={deletingVehicle}
-              className="bg-red-600 hover:bg-red-700 text-white font-semibold"
+              className="h-9 px-4 text-xs font-semibold rounded-lg bg-rose-600 hover:bg-rose-700 text-white"
             >
               {deletingVehicle ? (
-                <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Moving...</>
+                <><Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> Moving...</>
               ) : (
                 "Move to Recycle Bin"
               )}
@@ -761,21 +932,32 @@ export function CustomerDetailView({ id }: CustomerDetailViewProps) {
       {/* Document Preview Modal */}
       {previewDoc && (
         <Dialog open={!!previewDoc} onOpenChange={() => setPreviewDoc(null)}>
-          <DialogContent className="max-w-3xl">
-            <DialogTitle>Scanned Document Preview</DialogTitle>
-            <DialogDescription>{previewDoc.file_name} • Uploaded {formatDate(previewDoc.created_at)}</DialogDescription>
-            <div className="mt-4 flex flex-col items-center justify-center border border-slate-200 rounded-lg p-2 bg-slate-50 max-h-[70vh] overflow-auto">
+          <DialogContent className="max-w-3xl bg-card border border-border shadow-xl rounded-xl p-6">
+            <DialogTitle className="text-base font-bold text-foreground">Scanned Document Preview</DialogTitle>
+            <DialogDescription className="text-xs text-muted-foreground">
+              {previewDoc.file_name} • Uploaded {formatDate(previewDoc.created_at)}
+            </DialogDescription>
+            <div className="mt-4 flex flex-col items-center justify-center border border-border rounded-xl p-2 bg-muted/20 max-h-[70vh] overflow-auto">
               {previewDoc.file_type.includes("pdf") ? (
-                <iframe src={previewDoc.file_url} className="w-full h-[550px] rounded border" />
+                <iframe src={previewDoc.file_url} className="w-full h-[550px] rounded-lg border" />
               ) : (
-                <img src={previewDoc.file_url} alt="Uploaded worksheet preview" className="max-w-full max-h-[500px] object-contain rounded" />
+                <img src={previewDoc.file_url} alt="Uploaded worksheet preview" className="max-w-full max-h-[500px] object-contain rounded-lg" />
               )}
             </div>
-            <div className="flex justify-between items-center mt-4">
-              <Button variant="outline" render={<a href={previewDoc.file_url} target="_blank" rel="noopener noreferrer" download />}>
-                <Download className="mr-2 h-4 w-4" /> Download File
+            <div className="flex justify-between items-center mt-4 pt-3 border-t">
+              <Button
+                variant="outline"
+                render={<a href={previewDoc.file_url} target="_blank" rel="noopener noreferrer" download />}
+                className="h-9 px-4 text-xs font-medium rounded-lg"
+              >
+                <Download className="mr-1.5 h-3.5 w-3.5" /> Download File
               </Button>
-              <Button onClick={() => setPreviewDoc(null)}>Close Preview</Button>
+              <Button
+                onClick={() => setPreviewDoc(null)}
+                className="h-9 px-4 text-xs font-semibold rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground"
+              >
+                Close Preview
+              </Button>
             </div>
           </DialogContent>
         </Dialog>

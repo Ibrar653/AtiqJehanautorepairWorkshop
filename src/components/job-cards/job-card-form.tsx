@@ -929,9 +929,9 @@ export function JobCardForm({ jobCardId }: JobCardFormProps) {
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Step 1: Customer & Vehicle Selection */}
-        <Card className="shadow-sm overflow-visible relative z-20">
-          <CardHeader className="pb-3 border-b">
-            <CardTitle className="text-base font-bold flex items-center gap-2">
+        <Card className="rounded-xl border border-border/80 shadow-xs bg-card overflow-visible relative z-20">
+          <CardHeader className="py-3.5 px-6 border-b border-border bg-muted/30">
+            <CardTitle className="text-sm font-bold flex items-center gap-2 text-foreground">
               <User className="h-4 w-4 text-primary" /> 1. Customer &amp; Vehicle Selection
             </CardTitle>
           </CardHeader>
@@ -1107,9 +1107,9 @@ export function JobCardForm({ jobCardId }: JobCardFormProps) {
         </Card>
 
         {/* Step 2: Job Card Details & Assignment */}
-        <Card className="shadow-sm">
-          <CardHeader className="pb-3 border-b">
-            <CardTitle className="text-base font-bold flex items-center gap-2">
+        <Card className="rounded-xl border border-border/80 shadow-xs bg-card">
+          <CardHeader className="py-3.5 px-6 border-b border-border bg-muted/30">
+            <CardTitle className="text-sm font-bold flex items-center gap-2 text-foreground">
               <Wrench className="h-4 w-4 text-primary" /> 2. Job Card Details &amp; Mechanic Assignment
             </CardTitle>
           </CardHeader>
@@ -1298,10 +1298,10 @@ export function JobCardForm({ jobCardId }: JobCardFormProps) {
         </Card>
 
         {/* Step 3: Job / Services Table */}
-        <Card className="shadow-sm">
-          <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b">
+        <Card className="rounded-xl border border-border/80 shadow-xs bg-card overflow-hidden">
+          <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 py-3.5 px-6 border-b border-border bg-muted/30">
             <div>
-              <CardTitle className="text-base font-bold flex items-center gap-2">
+              <CardTitle className="text-sm font-bold flex items-center gap-2 text-foreground">
                 <Wrench className="h-4 w-4 text-primary" /> 3. Job / Service Table ({serviceItems.length})
               </CardTitle>
               <p className="text-xs text-muted-foreground mt-0.5">
@@ -1439,10 +1439,10 @@ export function JobCardForm({ jobCardId }: JobCardFormProps) {
         </Card>
 
         {/* Step 4: Spare Parts Section */}
-        <Card className="shadow-sm">
-          <CardHeader className="flex flex-row items-center justify-between pb-3 border-b">
+        <Card className="rounded-xl border border-border/80 shadow-xs bg-card overflow-hidden">
+          <CardHeader className="flex flex-row items-center justify-between py-3.5 px-6 border-b border-border bg-muted/30">
             <div>
-              <CardTitle className="text-base font-bold flex items-center gap-2">
+              <CardTitle className="text-sm font-bold flex items-center gap-2 text-foreground">
                 <Package className="h-4 w-4 text-primary" /> 4. Spare Parts ({partItems.length})
               </CardTitle>
               <p className="text-xs text-muted-foreground mt-0.5">
@@ -1564,10 +1564,10 @@ export function JobCardForm({ jobCardId }: JobCardFormProps) {
         </Card>
 
         {/* Step 5: Attachments & Documents Section */}
-        <Card className="shadow-sm">
-          <CardHeader className="pb-3 border-b">
-            <CardTitle className="text-base font-bold flex items-center gap-2">
-              <Paperclip className="h-4 w-4 text-primary" /> 5. Attachments & Documentation ({attachmentsList.length + existingAttachments.length})
+        <Card className="rounded-xl border border-border/80 shadow-xs bg-card">
+          <CardHeader className="py-3.5 px-6 border-b border-border bg-muted/30">
+            <CardTitle className="text-sm font-bold flex items-center gap-2 text-foreground">
+              <Paperclip className="h-4 w-4 text-primary" /> 5. Attachments &amp; Documentation ({attachmentsList.length + existingAttachments.length})
             </CardTitle>
             <p className="text-xs text-muted-foreground mt-0.5">
               Attach vehicle damage photos, paper inspection reports, supplier part invoices, or old paper scan files.
@@ -1662,9 +1662,9 @@ export function JobCardForm({ jobCardId }: JobCardFormProps) {
         </Card>
 
         {/* Step 6: Financial Summary & Actions */}
-        <Card className="shadow-sm border-primary/20 bg-card">
-          <CardHeader className="pb-3 border-b">
-            <CardTitle className="text-base font-bold flex items-center justify-between">
+        <Card className="rounded-xl border border-border/80 shadow-xs bg-card">
+          <CardHeader className="py-3.5 px-6 border-b border-border bg-muted/30">
+            <CardTitle className="text-sm font-bold flex items-center justify-between text-foreground">
               <span className="flex items-center gap-2">
                 <Hash className="h-4 w-4 text-primary" /> 6. Financial Summary &amp; Payment Status
               </span>
@@ -1783,9 +1783,9 @@ export function JobCardForm({ jobCardId }: JobCardFormProps) {
         </Card>
 
         {/* Signatures Section */}
-        <Card className="border-border">
-          <CardHeader className="py-3 px-4 border-b bg-muted/20">
-            <CardTitle className="text-sm font-bold flex items-center justify-between">
+        <Card className="rounded-xl border border-border/80 shadow-xs bg-card">
+          <CardHeader className="py-3.5 px-6 border-b border-border bg-muted/30">
+            <CardTitle className="text-xs font-bold uppercase tracking-wider flex items-center justify-between text-foreground">
               <span>SIGNATURES</span>
               <span className="text-[11px] font-normal text-muted-foreground">Authorized Workshop &amp; Customer Manual Signature Area</span>
             </CardTitle>
@@ -1832,33 +1832,34 @@ export function JobCardForm({ jobCardId }: JobCardFormProps) {
             variant="outline"
             render={<Link href={jobCardId ? `/job-cards/${jobCardId}` : "/job-cards"} />}
             disabled={saving}
+            className="h-10 px-4 text-xs font-semibold rounded-lg border-border"
           >
-            <ArrowLeft className="mr-1.5 h-4 w-4" /> Cancel
+            <ArrowLeft className="mr-1.5 h-3.5 w-3.5 text-muted-foreground" /> Cancel
           </Button>
           <Button
             type="button"
-            variant="secondary"
+            variant="outline"
             disabled={saving}
             size="lg"
             onClick={(e) => handleSubmit(e, true)}
-            className="gap-2"
+            className="h-10 px-4 text-xs font-semibold rounded-lg border-border gap-1.5"
           >
-            <Printer className="h-4 w-4" /> Save &amp; Print
+            <Printer className="h-3.5 w-3.5 text-muted-foreground" /> Save &amp; Print
           </Button>
           <Button
             type="submit"
             disabled={saving}
             size="lg"
             onClick={(e) => handleSubmit(e, false)}
-            className="min-w-[160px] gap-2 font-bold"
+            className="h-10 px-6 text-xs font-semibold rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs min-w-[160px] gap-2"
           >
             {saving ? (
               <>
-                <Loader2 className="h-4 w-4 animate-spin" /> Saving Job Card...
+                <Loader2 className="h-3.5 w-3.5 animate-spin" /> Saving Job Card...
               </>
             ) : (
               <>
-                <Save className="h-4 w-4" /> {jobCardId ? "Update Job Card" : "Save Job Card"}
+                <Save className="h-3.5 w-3.5" /> {jobCardId ? "Update Job Card" : "Save Job Card"}
               </>
             )}
           </Button>
@@ -1867,11 +1868,11 @@ export function JobCardForm({ jobCardId }: JobCardFormProps) {
 
       {/* Inline Quick Add Vehicle Modal */}
       <Dialog open={addVehicleOpen} onOpenChange={setAddVehicleOpen}>
-        <DialogContent className="sm:max-w-xl">
-          <DialogTitle className="flex items-center gap-2">
-            <Car className="h-5 w-5 text-primary" /> Register New Vehicle
+        <DialogContent className="sm:max-w-xl bg-card border border-border shadow-xl rounded-xl p-6">
+          <DialogTitle className="flex items-center gap-2 text-base font-bold text-foreground">
+            <Car className="h-4 w-4 text-primary" /> Register New Vehicle
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="text-xs text-muted-foreground">
             Add a vehicle for <span className="font-semibold text-foreground">{selectedCustomer?.name}</span>. It will be saved into the Vehicles database and selected for this Job Card.
           </DialogDescription>
           
@@ -2050,9 +2051,9 @@ export function JobCardForm({ jobCardId }: JobCardFormProps) {
 
       {/* Inline Add New Service Modal */}
       <Dialog open={newServiceModalOpen} onOpenChange={setNewServiceModalOpen}>
-        <DialogContent>
-          <DialogTitle>Add New Service to Catalog</DialogTitle>
-          <DialogDescription>Create a service and add it directly to this job card</DialogDescription>
+        <DialogContent className="sm:max-w-md bg-card border border-border shadow-xl rounded-xl p-6">
+          <DialogTitle className="text-base font-bold text-foreground">Add New Service to Catalog</DialogTitle>
+          <DialogDescription className="text-xs text-muted-foreground">Create a service and add it directly to this job card</DialogDescription>
           <form onSubmit={handleSaveInlineService} className="space-y-4 mt-4">
             <div className="space-y-2">
               <Label htmlFor="ns-name">Service Name <span className="text-destructive">*</span></Label>

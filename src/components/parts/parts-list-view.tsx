@@ -532,85 +532,89 @@ export function PartsListView() {
       <PageHeader
         title="Spare Parts Master & Inventory"
         description="Comprehensive auto spare parts catalog, cost & selling pricing, stock alert levels, and supplier links"
-        actions={
-          <div className="flex items-center gap-2">
+        breadcrumbs={[{ label: "Dashboard", href: "/" }, { label: "Spare Parts" }]}
+      >
+        <div className="flex items-center gap-2.5">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={loadParts}
+            disabled={loading}
+            className="text-xs h-9 font-medium border-border/80 hover:bg-muted/50 rounded-lg"
+          >
+            <RefreshCw className={`h-3.5 w-3.5 mr-1.5 ${loading ? "animate-spin text-primary" : ""}`} />
+            Refresh
+          </Button>
+          {canEdit && (
             <Button
-              variant="outline"
               size="sm"
-              onClick={loadParts}
-              disabled={loading}
-              className="text-xs h-9 font-medium"
+              onClick={openCreateDialog}
+              className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs h-9 font-semibold shadow-xs rounded-lg"
             >
-              <RefreshCw className={`h-3.5 w-3.5 mr-1.5 ${loading ? "animate-spin text-blue-600" : ""}`} />
-              Refresh
+              <Plus className="h-4 w-4 mr-1.5" />
+              Add Spare Part
             </Button>
-            {canEdit && (
-              <Button
-                size="sm"
-                onClick={openCreateDialog}
-                className="bg-blue-600 hover:bg-blue-700 text-white text-xs h-9 font-semibold shadow-sm"
-              >
-                <Plus className="h-4 w-4 mr-1.5" />
-                Add Spare Part
-              </Button>
-            )}
-          </div>
-        }
-      />
+          )}
+        </div>
+      </PageHeader>
 
-      {/* Summary KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-        <Card className="shadow-sm border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+      {/* Summary KPI Cards (4 equal height cards with subtle semantic accents) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card className="border border-border/80 shadow-xs bg-card rounded-xl">
           <CardContent className="p-4 flex items-center justify-between">
             <div>
-              <p className="text-xs font-semibold text-muted-foreground">Total Registered Parts</p>
-              <p className="text-2xl font-black text-foreground mt-0.5">{totalCount}</p>
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Total Registered Parts</p>
+              <p className="text-2xl font-bold tracking-tight text-foreground font-mono mt-1">{totalCount}</p>
+              <p className="text-[11px] text-muted-foreground mt-0.5">Catalog master items</p>
             </div>
-            <div className="p-2.5 rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-950/50 dark:text-blue-400 border border-blue-100 dark:border-blue-900">
+            <div className="h-10 w-10 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
               <Boxes className="h-5 w-5" />
             </div>
           </CardContent>
         </Card>
 
-        <Card className="shadow-sm border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+        <Card className="border border-border/80 shadow-xs bg-card rounded-xl">
           <CardContent className="p-4 flex items-center justify-between">
             <div>
-              <p className="text-xs font-semibold text-muted-foreground">Units in Stock</p>
-              <p className="text-2xl font-black text-foreground mt-0.5">{totalStockCount}</p>
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Units in Stock</p>
+              <p className="text-2xl font-bold tracking-tight text-foreground font-mono mt-1">{totalStockCount}</p>
+              <p className="text-[11px] text-muted-foreground mt-0.5">Physical items available</p>
             </div>
-            <div className="p-2.5 rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900">
+            <div className="h-10 w-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
               <Package className="h-5 w-5" />
             </div>
           </CardContent>
         </Card>
 
-        <Card className="shadow-sm border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+        <Card className="border border-border/80 shadow-xs bg-card rounded-xl">
           <CardContent className="p-4 flex items-center justify-between">
             <div>
-              <p className="text-xs font-semibold text-amber-600 dark:text-amber-400">Low Stock Warnings</p>
-              <p className="text-2xl font-black text-amber-600 dark:text-amber-400 mt-0.5">{lowStockCount}</p>
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Low Stock</p>
+              <p className="text-2xl font-bold tracking-tight text-amber-600 dark:text-amber-400 font-mono mt-1">{lowStockCount}</p>
+              <p className="text-[11px] text-muted-foreground mt-0.5">Below minimum alert</p>
             </div>
-            <div className="p-2.5 rounded-xl bg-amber-50 text-amber-600 dark:bg-amber-950/50 dark:text-amber-400 border border-amber-100 dark:border-amber-900">
+            <div className="h-10 w-10 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
               <AlertTriangle className="h-5 w-5" />
             </div>
           </CardContent>
         </Card>
 
-        <Card className="shadow-sm border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+        <Card className="border border-border/80 shadow-xs bg-card rounded-xl">
           <CardContent className="p-4 flex items-center justify-between">
             <div>
-              <p className="text-xs font-semibold text-rose-600 dark:text-rose-400">Out of Stock</p>
-              <p className="text-2xl font-black text-rose-600 dark:text-rose-400 mt-0.5">{outOfStockCount}</p>
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Out of Stock</p>
+              <p className="text-2xl font-bold tracking-tight text-rose-600 dark:text-rose-400 font-mono mt-1">{outOfStockCount}</p>
+              <p className="text-[11px] text-muted-foreground mt-0.5">Zero stock remaining</p>
             </div>
-            <div className="p-2.5 rounded-xl bg-rose-50 text-rose-600 dark:bg-rose-950/50 dark:text-rose-400 border border-rose-100 dark:border-rose-900">
+            <div className="h-10 w-10 rounded-xl bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0">
               <PowerOff className="h-5 w-5" />
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Filter and Search Bar */}
-      <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+      {/* Unified Toolbar Container */}
+      <div className="bg-card border border-border/80 rounded-xl p-3 shadow-xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
         <div className="flex-1 max-w-md">
           <SearchInput
             placeholder="Search by Part Name, Part #, Brand, or Supplier..."
@@ -624,10 +628,7 @@ export function PartsListView() {
           />
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 text-xs">
-          <span className="font-semibold text-muted-foreground flex items-center gap-1">
-            <Filter className="h-3.5 w-3.5" /> Stock Filter:
-          </span>
+        <div className="flex flex-wrap items-center gap-1">
           {(
             [
               { key: "all", label: "All Items" },
@@ -645,10 +646,10 @@ export function PartsListView() {
                 setStatusFilter(st.key);
                 setPage(1);
               }}
-              className={`px-3 py-1.5 rounded-lg font-bold transition-colors ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                 statusFilter === st.key
-                  ? "bg-blue-600 text-white shadow-sm"
-                  : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200"
+                  ? "bg-primary text-primary-foreground shadow-xs"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
               }`}
             >
               {st.label}
@@ -658,7 +659,7 @@ export function PartsListView() {
       </div>
 
       {/* Main Spare Parts Table */}
-      <Card className="shadow-sm border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden">
+      <Card className="border border-border/80 shadow-xs bg-card rounded-xl overflow-hidden">
         <CardContent className="p-0">
           {error ? (
             <div className="py-16 text-center space-y-3">
@@ -672,15 +673,15 @@ export function PartsListView() {
             </div>
           ) : loading ? (
             <div className="py-20 text-center text-muted-foreground">
-              <Loader2 className="h-8 w-8 mx-auto animate-spin mb-3 text-blue-600" />
+              <Loader2 className="h-8 w-8 mx-auto animate-spin mb-3 text-primary" />
               <p className="text-xs font-semibold">Loading spare parts catalog...</p>
             </div>
           ) : parts.length > 0 ? (
-            <div className="overflow-x-auto">
-              <Table>
+            <div className="overflow-x-auto min-w-full">
+              <Table className="min-w-[1050px]">
                 <TableHeader>
-                  <TableRow className="bg-slate-50/80 dark:bg-slate-800/50 hover:bg-slate-50/80 border-b border-slate-200 dark:border-slate-800 text-xs">
-                    <TableHead className="w-[40px] pl-4">
+                  <TableRow className="border-b border-border/80 bg-muted/40 hover:bg-muted/40 text-xs text-muted-foreground font-semibold">
+                    <TableHead className="w-[44px] pl-4">
                       <Checkbox
                         checked={
                           parts.length > 0 && selectedPartIds.length === parts.length
@@ -693,16 +694,16 @@ export function PartsListView() {
                         aria-label="Select all parts"
                       />
                     </TableHead>
-                    <TableHead className="w-[20%] text-slate-700 dark:text-slate-300 font-bold">Spare Part Name</TableHead>
-                    <TableHead className="w-[12%] text-slate-700 dark:text-slate-300 font-bold">Part # / OEM</TableHead>
-                    <TableHead className="w-[10%] text-slate-700 dark:text-slate-300 font-bold">Brand</TableHead>
-                    <TableHead className="w-[9%] text-right text-slate-700 dark:text-slate-300 font-bold">Cost</TableHead>
-                    <TableHead className="w-[9%] text-right text-slate-700 dark:text-slate-300 font-bold">Selling Price</TableHead>
-                    <TableHead className="w-[11%] text-center text-slate-700 dark:text-slate-300 font-bold">Stock Status</TableHead>
-                    <TableHead className="w-[11%] text-slate-700 dark:text-slate-300 font-bold">Supplier</TableHead>
-                    <TableHead className="w-[7%] text-slate-700 dark:text-slate-300 font-bold">Location</TableHead>
-                    <TableHead className="w-[4%] text-center text-slate-700 dark:text-slate-300 font-bold">Status</TableHead>
-                    <TableHead className="w-[9%] text-right pr-4 text-slate-700 dark:text-slate-300 font-bold">Actions</TableHead>
+                    <TableHead className="w-[24%] min-w-[200px] text-foreground font-semibold">Part</TableHead>
+                    <TableHead className="w-[14%] min-w-[130px] text-foreground font-semibold">Part No / OEM</TableHead>
+                    <TableHead className="w-[10%] min-w-[90px] text-foreground font-semibold">Brand</TableHead>
+                    <TableHead className="w-[9%] min-w-[85px] text-right text-foreground font-semibold">Cost</TableHead>
+                    <TableHead className="w-[10%] min-w-[95px] text-right text-foreground font-semibold">Selling Price</TableHead>
+                    <TableHead className="w-[12%] min-w-[110px] text-center text-foreground font-semibold">Stock</TableHead>
+                    <TableHead className="w-[11%] min-w-[110px] text-foreground font-semibold">Supplier</TableHead>
+                    <TableHead className="w-[8%] min-w-[80px] text-foreground font-semibold">Location</TableHead>
+                    <TableHead className="w-[7%] min-w-[70px] text-center text-foreground font-semibold">Status</TableHead>
+                    <TableHead className="w-[105px] min-w-[105px] text-right pr-4 text-foreground font-semibold">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -719,28 +720,29 @@ export function PartsListView() {
                     return (
                       <TableRow
                         key={part.id}
-                        className={`hover:bg-blue-50/30 dark:hover:bg-slate-800/50 transition-colors border-b border-slate-100 dark:border-slate-800 text-xs ${
-                          selectedPartIds.includes(part.id) ? "bg-blue-50/40 dark:bg-blue-950/20" : ""
-                        } ${!part.is_active ? "opacity-60 bg-slate-50/40" : ""}`}
+                        className={`h-13 hover:bg-muted/40 transition-colors border-b border-border/60 text-xs ${
+                          selectedPartIds.includes(part.id) ? "bg-primary/5" : ""
+                        } ${!part.is_active ? "opacity-60 bg-muted/20" : ""}`}
                       >
-                        <TableCell className="pl-4">
+                        <TableCell className="pl-4 py-2.5">
                           <Checkbox
                             checked={selectedPartIds.includes(part.id)}
                             onCheckedChange={() => handleToggleSelectPart(part.id)}
                             aria-label={`Select ${part.name}`}
                           />
                         </TableCell>
-                        {/* Part Name */}
-                        <TableCell className="font-semibold text-foreground py-3">
-                          <div className="flex items-start gap-2">
-                            <div className="p-1.5 rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400 border border-blue-100 dark:border-blue-900 mt-0.5 shrink-0">
+
+                        {/* Part */}
+                        <TableCell className="py-2.5">
+                          <div className="flex items-start gap-2.5">
+                            <div className="p-1.5 rounded-lg bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 mt-0.5 shrink-0">
                               <Package className="h-3.5 w-3.5" />
                             </div>
-                            <div>
+                            <div className="min-w-0">
                               <button
                                 type="button"
                                 onClick={() => openViewDialog(part)}
-                                className="font-bold text-foreground text-sm leading-tight text-left hover:text-blue-600 hover:underline"
+                                className="font-semibold text-foreground text-sm text-left hover:text-primary transition-colors block truncate"
                               >
                                 {part.name}
                               </button>
@@ -756,33 +758,39 @@ export function PartsListView() {
                           </div>
                         </TableCell>
 
-                        {/* Part Number */}
-                        <TableCell className="py-3 font-mono font-bold text-blue-600 dark:text-blue-400">
-                          {part.part_number ? part.part_number : <span className="text-muted-foreground italic font-normal">—</span>}
+                        {/* Part Number / OEM */}
+                        <TableCell className="py-2.5">
+                          {part.part_number ? (
+                            <span className="font-mono text-xs font-semibold text-foreground bg-muted/60 px-2 py-0.5 rounded inline-block">
+                              {part.part_number}
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground italic font-normal">—</span>
+                          )}
                         </TableCell>
 
                         {/* Brand */}
-                        <TableCell className="py-3 font-medium text-foreground">
+                        <TableCell className="py-2.5 text-foreground font-medium">
                           {part.brand || <span className="text-muted-foreground italic font-normal">—</span>}
                         </TableCell>
 
                         {/* Cost Price */}
-                        <TableCell className="text-right py-3 font-mono text-muted-foreground">
+                        <TableCell className="text-right py-2.5 font-mono text-xs text-muted-foreground tabular-nums">
                           {formatCurrency(part.purchase_price)}
                         </TableCell>
 
                         {/* Selling Price */}
-                        <TableCell className="text-right py-3">
-                          <span className="font-bold font-mono text-sm text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-800 px-2 py-0.5 rounded inline-block">
+                        <TableCell className="text-right py-2.5 font-mono text-xs tabular-nums">
+                          <span className="font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-800 px-2 py-0.5 rounded inline-block">
                             {formatCurrency(part.selling_price)}
                           </span>
                         </TableCell>
 
-                        {/* Stock Status */}
-                        <TableCell className="text-center py-3">
+                        {/* Stock */}
+                        <TableCell className="text-center py-2.5">
                           <div className="inline-flex flex-col items-center gap-0.5">
                             <span
-                              className={`px-2 py-0.5 rounded-full font-bold text-[11px] border inline-flex items-center gap-1 ${
+                              className={`px-2.5 py-0.5 rounded-full font-bold text-[11px] border inline-flex items-center gap-1 ${
                                 isOutOfStock
                                   ? "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-900"
                                   : isLowStock
@@ -794,10 +802,10 @@ export function PartsListView() {
                                 <>0 Out of Stock</>
                               ) : isLowStock ? (
                                 <>
-                                  <AlertTriangle className="h-3 w-3" /> Low Stock ({part.current_stock})
+                                  <AlertTriangle className="h-3 w-3" /> {part.current_stock} {part.unit || "pcs"}
                                 </>
                               ) : (
-                                <>{part.current_stock} In Stock</>
+                                <>{part.current_stock} {part.unit || "pcs"}</>
                               )}
                             </span>
                             <span className="text-[10px] text-muted-foreground">
@@ -807,7 +815,7 @@ export function PartsListView() {
                         </TableCell>
 
                         {/* Supplier */}
-                        <TableCell className="py-3">
+                        <TableCell className="py-2.5">
                           {supplierName ? (
                             <span className="font-medium text-foreground truncate block max-w-[130px]" title={supplierName}>
                               {supplierName}
@@ -817,11 +825,11 @@ export function PartsListView() {
                           )}
                         </TableCell>
 
-                        {/* Storage Location */}
-                        <TableCell className="py-3">
+                        {/* Location */}
+                        <TableCell className="py-2.5">
                           {part.location ? (
-                            <span className="inline-flex items-center gap-1 font-mono text-[11px] bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded text-foreground">
-                              <MapPin className="h-3 w-3 text-slate-500" />
+                            <span className="inline-flex items-center gap-1 font-mono text-[11px] bg-muted/60 px-2 py-0.5 rounded text-foreground">
+                              <MapPin className="h-3 w-3 text-muted-foreground" />
                               {part.location}
                             </span>
                           ) : (
@@ -829,26 +837,26 @@ export function PartsListView() {
                           )}
                         </TableCell>
 
-                        {/* Active Status */}
-                        <TableCell className="text-center py-3">
+                        {/* Status */}
+                        <TableCell className="text-center py-2.5">
                           {part.is_active ? (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800">
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800">
                               <Check className="h-2.5 w-2.5" /> Active
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700">
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-muted text-muted-foreground border border-border">
                               <PowerOff className="h-2.5 w-2.5" /> Inactive
                             </span>
                           )}
                         </TableCell>
 
-                        {/* Actions */}
-                        <TableCell className="text-right pr-4 py-3">
+                        {/* Actions (fixed right-side column, never clipped) */}
+                        <TableCell className="text-right pr-4 py-2.5">
                           <div className="flex items-center justify-end gap-1">
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-7 w-7 text-slate-600 hover:text-blue-600 hover:bg-blue-50"
+                              className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-muted/60"
                               onClick={() => openViewDialog(part)}
                               title="View Spare Part Details"
                             >
@@ -859,7 +867,7 @@ export function PartsListView() {
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                className="h-7 w-7 text-slate-600 hover:text-blue-600 hover:bg-blue-50"
+                                className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-muted/60"
                                 onClick={() => openEditDialog(part)}
                                 title="Edit Part Master"
                               >
@@ -868,21 +876,21 @@ export function PartsListView() {
                             )}
 
                             <DropdownMenu>
-                              <DropdownMenuTrigger className="h-7 w-7 inline-flex items-center justify-center rounded-md border border-slate-200 dark:border-slate-700 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 focus:outline-none">
+                              <DropdownMenuTrigger className="h-8 w-8 inline-flex items-center justify-center rounded-md border border-border/80 text-muted-foreground hover:bg-muted/60 hover:text-foreground focus:outline-none">
                                 <MoreVertical className="h-3.5 w-3.5" />
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end" className="w-48 text-xs">
                                 <DropdownMenuLabel>Part Actions</DropdownMenuLabel>
                                 <DropdownMenuItem onClick={() => openViewDialog(part)}>
-                                  <Eye className="h-3.5 w-3.5 mr-2 text-blue-600" /> View Details
+                                  <Eye className="h-3.5 w-3.5 mr-2 text-primary" /> View Details
                                 </DropdownMenuItem>
                                 {canEdit && (
                                   <DropdownMenuItem onClick={() => openEditDialog(part)}>
-                                    <Pencil className="h-3.5 w-3.5 mr-2 text-slate-600" /> Edit Part
+                                    <Pencil className="h-3.5 w-3.5 mr-2 text-muted-foreground" /> Edit Part
                                   </DropdownMenuItem>
                                 )}
                                 <DropdownMenuItem onClick={() => openStockHistory(part)}>
-                                  <History className="h-3.5 w-3.5 mr-2 text-blue-600" /> Stock Movement History
+                                  <History className="h-3.5 w-3.5 mr-2 text-primary" /> Stock History
                                 </DropdownMenuItem>
                                 {canEdit && (
                                   <DropdownMenuItem onClick={() => openAdjustModal(part)}>
@@ -925,29 +933,29 @@ export function PartsListView() {
 
               {/* Pagination Bar */}
               {totalPages > 1 && (
-                <div className="flex items-center justify-between px-4 py-3 border-t bg-slate-50/50 dark:bg-slate-800/40 text-xs">
+                <div className="flex items-center justify-between px-4 py-3 border-t border-border/80 bg-muted/20 text-xs">
                   <span className="text-muted-foreground">
                     Showing {(page - 1) * pageSize + 1}–{Math.min(page * pageSize, totalCount)} of {totalCount} parts
                   </span>
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1.5">
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => setPage((p) => Math.max(1, p - 1))}
                       disabled={page <= 1}
-                      className="h-7 px-2 text-xs"
+                      className="h-8 px-2.5 text-xs font-medium"
                     >
                       Previous
                     </Button>
-                    <span className="px-2 font-bold text-foreground">
-                      Page {page} of {totalPages}
+                    <span className="px-2 font-bold font-mono text-foreground">
+                      {page} / {totalPages}
                     </span>
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                       disabled={page >= totalPages}
-                      className="h-7 px-2 text-xs"
+                      className="h-8 px-2.5 text-xs font-medium"
                     >
                       Next
                     </Button>
@@ -958,14 +966,14 @@ export function PartsListView() {
           ) : (
             <div className="py-20 text-center text-muted-foreground">
               <Package className="h-12 w-12 mx-auto text-muted-foreground/30 mb-3" />
-              <h3 className="text-lg font-semibold text-foreground">No spare parts found</h3>
+              <h3 className="text-base font-bold text-foreground">No spare parts found</h3>
               <p className="text-xs text-muted-foreground mt-1 max-w-sm mx-auto">
                 {searchQuery
                   ? "No spare parts match your query. Try searching by OEM number or brand."
                   : "Start populating your workshop spare parts inventory catalog."}
               </p>
               {canEdit && (
-                <Button onClick={openCreateDialog} size="sm" className="mt-4 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold">
+                <Button onClick={openCreateDialog} size="sm" className="mt-4 bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold rounded-lg shadow-xs">
                   <Plus className="mr-1.5 h-4 w-4" /> Add First Spare Part
                 </Button>
               )}

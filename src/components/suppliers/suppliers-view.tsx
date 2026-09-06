@@ -695,181 +695,173 @@ export function SuppliersView() {
         title="Supplier Management & Procurement"
         description="Comprehensive supplier directory, purchases, stock intake, and outstanding accounts"
         breadcrumbs={[{ label: "Dashboard", href: "/" }, { label: "Suppliers" }]}
-        actions={
-          <div className="flex flex-wrap items-center gap-2">
-            {canEdit && (
-              <>
-                <Button
-                  onClick={() => handleOpenSupplierModal()}
-                  className="bg-primary text-primary-foreground hover:bg-primary/90 font-bold text-xs shadow-sm gap-1.5"
-                >
-                  <Plus className="h-4 w-4" /> + Add Supplier
-                </Button>
-                <Button
-                  onClick={() => handleOpenCreatePurchase()}
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm gap-1.5"
-                >
-                  <ShoppingCart className="h-4 w-4" /> + Create Purchase
-                </Button>
-              </>
-            )}
-            <Button
-              onClick={() => {
-                loadSuppliersData();
-                loadPartsList();
-              }}
-              variant="outline"
-              size="icon"
-              className="h-9 w-9"
-              title="Refresh Supplier Data"
-            >
-              <RefreshCw className="h-4 w-4" />
-            </Button>
-          </div>
-        }
-      />
+      >
+        <div className="flex flex-wrap items-center gap-2.5">
+          {canEdit && (
+            <>
+              <Button
+                onClick={() => handleOpenSupplierModal()}
+                className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs h-9 shadow-xs rounded-lg gap-1.5"
+              >
+                <Plus className="h-4 w-4" /> Add Supplier
+              </Button>
+              <Button
+                onClick={() => handleOpenCreatePurchase()}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs h-9 shadow-xs rounded-lg gap-1.5"
+              >
+                <ShoppingCart className="h-4 w-4" /> Create Purchase
+              </Button>
+            </>
+          )}
+          <Button
+            onClick={() => {
+              loadSuppliersData();
+              loadPartsList();
+            }}
+            variant="outline"
+            size="sm"
+            className="h-9 px-2.5 rounded-lg border-border/80 hover:bg-muted/50"
+            title="Refresh Supplier Data"
+          >
+            <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin text-primary" : ""}`} />
+          </Button>
+        </div>
+      </PageHeader>
 
-      {/* ─── KPI Dashboard ─── */}
-      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3">
-        <Card className="shadow-sm border bg-card">
-          <CardContent className="p-4 flex flex-col justify-between h-full">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                Active Suppliers
-              </span>
-              <Building2 className="h-4 w-4 text-blue-600" />
+      {/* ─── Summary KPI Cards ─── */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Active Suppliers */}
+        <Card className="border border-border/80 shadow-xs bg-card rounded-xl">
+          <CardContent className="p-4 flex items-center justify-between">
+            <div>
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Active Suppliers</p>
+              <p className="text-2xl font-bold tracking-tight text-foreground font-mono mt-1">{kpis.totalActive}</p>
+              <p className="text-[11px] text-muted-foreground mt-0.5">Registered vendors</p>
             </div>
-            <div className="mt-2">
-              <h3 className="text-2xl font-black text-foreground font-mono">{kpis.totalActive}</h3>
-              <p className="text-[11px] text-muted-foreground">Registered Partners</p>
+            <div className="h-10 w-10 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+              <Building2 className="h-5 w-5" />
             </div>
           </CardContent>
         </Card>
 
-        <Card className="shadow-sm border bg-card">
-          <CardContent className="p-4 flex flex-col justify-between h-full">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                Total Purchases
-              </span>
-              <ShoppingCart className="h-4 w-4 text-indigo-600" />
-            </div>
-            <div className="mt-2">
-              <h3 className="text-xl font-black text-foreground font-mono">
+        {/* Total Purchases */}
+        <Card className="border border-border/80 shadow-xs bg-card rounded-xl">
+          <CardContent className="p-4 flex items-center justify-between">
+            <div>
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Total Purchases</p>
+              <p className="text-2xl font-bold tracking-tight text-foreground font-mono mt-1">
                 {formatCurrency(kpis.totalPurchases)}
-              </h3>
-              <p className="text-[11px] text-muted-foreground">Cumulative Procurement</p>
+              </p>
+              <p className="text-[11px] text-muted-foreground mt-0.5">Cumulative procurement</p>
+            </div>
+            <div className="h-10 w-10 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
+              <ShoppingCart className="h-5 w-5" />
             </div>
           </CardContent>
         </Card>
 
-        <Card className="shadow-sm border border-emerald-200 dark:border-emerald-900/50 bg-emerald-50/20 dark:bg-emerald-950/10">
-          <CardContent className="p-4 flex flex-col justify-between h-full">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-800 dark:text-emerald-300">
-                Total Paid
-              </span>
-              <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-            </div>
-            <div className="mt-2">
-              <h3 className="text-xl font-black text-emerald-700 dark:text-emerald-400 font-mono">
+        {/* Total Paid */}
+        <Card className="border border-border/80 shadow-xs bg-card rounded-xl">
+          <CardContent className="p-4 flex items-center justify-between">
+            <div>
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Total Paid</p>
+              <p className="text-2xl font-bold tracking-tight text-emerald-600 dark:text-emerald-400 font-mono mt-1">
                 {formatCurrency(kpis.totalPaid)}
-              </h3>
-              <p className="text-[11px] text-emerald-700/80 dark:text-emerald-400/80">Settled Invoices</p>
+              </p>
+              <p className="text-[11px] text-muted-foreground mt-0.5">Settled invoices</p>
+            </div>
+            <div className="h-10 w-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+              <CheckCircle2 className="h-5 w-5" />
             </div>
           </CardContent>
         </Card>
 
+        {/* Outstanding Balance */}
         <Card
           onClick={() => setBalanceFilter((prev) => !prev)}
-          className={`shadow-sm border transition-all cursor-pointer ${
+          className={`border shadow-xs rounded-xl cursor-pointer transition-all ${
             balanceFilter
-              ? "ring-2 ring-rose-500 border-rose-400 bg-rose-50/30 dark:bg-rose-950/20"
-              : "border-rose-200 dark:border-rose-900/50 bg-rose-50/20 dark:bg-rose-950/10 hover:border-rose-400"
+              ? "border-rose-400 ring-2 ring-rose-500/20 bg-rose-50/20 dark:bg-rose-950/10"
+              : "border-border/80 bg-card hover:border-border"
           }`}
         >
-          <CardContent className="p-4 flex flex-col justify-between h-full">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-rose-800 dark:text-rose-300">
-                Outstanding Balance
-              </span>
-              <AlertTriangle className="h-4 w-4 text-rose-600 dark:text-rose-400" />
-            </div>
-            <div className="mt-2">
-              <h3 className="text-xl font-black text-rose-700 dark:text-rose-400 font-mono">
+          <CardContent className="p-4 flex items-center justify-between">
+            <div>
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Outstanding Balance</p>
+              <p className="text-2xl font-bold tracking-tight text-rose-600 dark:text-rose-400 font-mono mt-1">
                 {formatCurrency(kpis.totalOutstanding)}
-              </h3>
-              <p className="text-[11px] text-rose-700/80 dark:text-rose-400/80">
-                {balanceFilter ? "Filtering by balance (Click to reset)" : "Pending Supplier Payables"}
               </p>
+              <p className="text-[11px] text-rose-600/80 dark:text-rose-400/80 mt-0.5">
+                {balanceFilter ? "Filtering by balance (click to reset)" : "Pending payables"}
+              </p>
+            </div>
+            <div className="h-10 w-10 rounded-xl bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0">
+              <AlertTriangle className="h-5 w-5" />
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* ─── Search & Filters Bar ─── */}
-      <Card className="shadow-sm border bg-card">
-        <div className="p-4 border-b flex flex-col md:flex-row items-center justify-between gap-3">
-          <div className="relative w-full md:w-80">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search by supplier, company, phone, TRN..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 h-9 text-xs"
-            />
-            {searchQuery && (
-              <button
-                type="button"
-                onClick={() => setSearchQuery("")}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground hover:text-foreground"
-              >
-                ✕
-              </button>
-            )}
-          </div>
-
-          <div className="flex flex-wrap items-center gap-1.5 w-full md:w-auto">
-            <span className="text-xs font-semibold text-muted-foreground mr-1 flex items-center gap-1">
-              <SlidersHorizontal className="h-3.5 w-3.5" /> Status:
-            </span>
-            {[
-              { id: "all", label: "All Suppliers" },
-              { id: "active", label: "Active" },
-              { id: "inactive", label: "Inactive" },
-            ].map((tab) => (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => {
-                  setStatusFilter(tab.id as any);
-                  setCurrentPage(1);
-                }}
-                className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${
-                  statusFilter === tab.id
-                    ? "bg-primary text-primary-foreground shadow-sm"
-                    : "bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground"
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
+      {/* ─── Unified Search & Filters Bar ─── */}
+      <div className="bg-card border border-border/80 rounded-xl p-3 shadow-xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search by supplier, company, phone, TRN..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9 h-9 text-xs rounded-lg"
+          />
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => setSearchQuery("")}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground hover:text-foreground"
+            >
+              ✕
+            </button>
+          )}
         </div>
 
-        {/* ─── Suppliers Table ─── */}
+        <div className="flex flex-wrap items-center gap-1">
+          {[
+            { id: "all", label: "All Suppliers" },
+            { id: "active", label: "Active" },
+            { id: "inactive", label: "Inactive" },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => {
+                setStatusFilter(tab.id as any);
+                setCurrentPage(1);
+              }}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                statusFilter === tab.id
+                  ? "bg-primary text-primary-foreground shadow-xs"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* ─── Suppliers Table (Natural height, no artificial stretching) ─── */}
+      <Card className="border border-border/80 shadow-xs bg-card rounded-xl overflow-hidden">
         <CardContent className="p-0">
           {loading ? (
             <div className="py-20 text-center text-muted-foreground">
               <Loader2 className="h-8 w-8 mx-auto animate-spin mb-3 text-primary" />
-              <p className="font-medium text-sm">Loading suppliers...</p>
+              <p className="font-medium text-xs">Loading suppliers...</p>
             </div>
           ) : suppliers.length > 0 ? (
-            <div className="overflow-x-auto">
-              <Table>
+            <div className="overflow-x-auto min-w-full">
+              <Table className="min-w-[1050px]">
                 <TableHeader>
-                  <TableRow className="bg-slate-50/80 dark:bg-slate-800/50 text-xs font-bold border-b">
-                    <TableHead className="w-[40px] pl-4">
+                  <TableRow className="border-b border-border/80 bg-muted/40 hover:bg-muted/40 text-xs text-muted-foreground font-semibold">
+                    <TableHead className="w-[44px] pl-4">
                       <Checkbox
                         checked={
                           suppliers.length > 0 && selectedSupplierIds.length === suppliers.length
@@ -882,15 +874,15 @@ export function SuppliersView() {
                         aria-label="Select all visible suppliers"
                       />
                     </TableHead>
-                    <TableHead className="w-[20%] font-bold text-foreground">Supplier Name</TableHead>
-                    <TableHead className="w-[14%] font-bold text-foreground">Contact Person</TableHead>
-                    <TableHead className="w-[14%] font-bold text-foreground">Phone / Mobile</TableHead>
-                    <TableHead className="w-[14%] font-bold text-foreground">Company</TableHead>
-                    <TableHead className="w-[10%] font-bold text-foreground">TRN Number</TableHead>
-                    <TableHead className="w-[10%] text-right font-bold text-foreground">Total Purchases</TableHead>
-                    <TableHead className="w-[10%] text-right font-bold text-foreground">Outstanding</TableHead>
-                    <TableHead className="w-[8%] text-center font-bold text-foreground">Status</TableHead>
-                    <TableHead className="w-[10%] text-right pr-4 font-bold text-foreground">Actions</TableHead>
+                    <TableHead className="w-[22%] min-w-[200px] text-foreground font-semibold">Supplier</TableHead>
+                    <TableHead className="w-[14%] min-w-[120px] text-foreground font-semibold">Contact Person</TableHead>
+                    <TableHead className="w-[15%] min-w-[130px] text-foreground font-semibold">Phone / Mobile</TableHead>
+                    <TableHead className="w-[13%] min-w-[110px] text-foreground font-semibold">Company</TableHead>
+                    <TableHead className="w-[10%] min-w-[95px] text-foreground font-semibold">TRN</TableHead>
+                    <TableHead className="w-[11%] min-w-[95px] text-right text-foreground font-semibold">Total Purchases</TableHead>
+                    <TableHead className="w-[11%] min-w-[95px] text-right text-foreground font-semibold">Outstanding</TableHead>
+                    <TableHead className="w-[8%] min-w-[75px] text-center text-foreground font-semibold">Status</TableHead>
+                    <TableHead className="w-[105px] min-w-[105px] text-right pr-4 text-foreground font-semibold">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -899,70 +891,77 @@ export function SuppliersView() {
                     return (
                       <TableRow
                         key={s.id}
-                        className={`hover:bg-slate-50/50 dark:hover:bg-slate-800/50 border-b text-xs transition-colors ${
-                          selectedSupplierIds.includes(s.id) ? "bg-blue-50/40 dark:bg-blue-950/20" : ""
+                        className={`h-13 hover:bg-muted/40 border-b border-border/60 text-xs transition-colors ${
+                          selectedSupplierIds.includes(s.id) ? "bg-primary/5" : ""
                         }`}
                       >
-                        <TableCell className="pl-4">
+                        <TableCell className="pl-4 py-2.5">
                           <Checkbox
                             checked={selectedSupplierIds.includes(s.id)}
                             onCheckedChange={() => handleToggleSelectSupplier(s.id)}
                             aria-label={`Select ${s.name}`}
                           />
                         </TableCell>
-                        {/* Supplier Name */}
-                        <TableCell className="font-semibold text-foreground py-3">
+
+                        {/* Supplier Name & Location */}
+                        <TableCell className="font-semibold text-foreground py-2.5">
                           <button
                             type="button"
                             onClick={() => handleViewSupplierDetails(s.id)}
-                            className="font-bold text-sm text-left text-blue-600 hover:text-blue-800 hover:underline block"
+                            className="font-bold text-sm text-left text-foreground hover:text-primary transition-colors block"
                           >
                             {s.name}
                           </button>
                           {s.city && (
                             <span className="text-[11px] text-muted-foreground flex items-center gap-1 mt-0.5">
-                              <MapPin className="h-3 w-3 text-muted-foreground/60" /> {s.city}
+                              <MapPin className="h-3 w-3 text-muted-foreground" /> {s.city}
                             </span>
                           )}
                         </TableCell>
 
                         {/* Contact Person */}
-                        <TableCell className="text-muted-foreground py-3 font-medium">
-                          {s.contact_person || "—"}
+                        <TableCell className="text-foreground py-2.5 font-medium">
+                          {s.contact_person || <span className="text-muted-foreground italic font-normal">—</span>}
                         </TableCell>
 
-                        {/* Phone */}
-                        <TableCell className="py-3 font-mono">
-                          <span className="font-semibold text-foreground block">{s.phone || "—"}</span>
+                        {/* Phone & Email */}
+                        <TableCell className="py-2.5">
+                          <span className="font-mono text-xs font-semibold text-foreground block">{s.phone || "—"}</span>
                           {s.email && (
-                            <span className="text-[10px] text-muted-foreground block truncate max-w-[140px]">
+                            <span className="text-[11px] text-muted-foreground block truncate max-w-[140px]">
                               {s.email}
                             </span>
                           )}
                         </TableCell>
 
                         {/* Company */}
-                        <TableCell className="py-3 text-muted-foreground">
-                          {s.company_name || "—"}
+                        <TableCell className="py-2.5 text-foreground">
+                          {s.company_name || <span className="text-muted-foreground italic font-normal">—</span>}
                         </TableCell>
 
                         {/* TRN */}
-                        <TableCell className="py-3 font-mono text-[11px] text-muted-foreground">
-                          {s.trn_number ? `#${s.trn_number}` : "—"}
+                        <TableCell className="py-2.5">
+                          {s.trn_number ? (
+                            <span className="font-mono text-[11px] text-muted-foreground bg-muted/60 px-1.5 py-0.5 rounded">
+                              {s.trn_number}
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground italic font-normal">—</span>
+                          )}
                         </TableCell>
 
                         {/* Total Purchases */}
-                        <TableCell className="text-right font-mono font-bold text-foreground py-3">
+                        <TableCell className="text-right font-mono font-bold text-foreground py-2.5 tabular-nums">
                           {formatCurrency(s.total_purchases)}
                         </TableCell>
 
                         {/* Outstanding Balance */}
-                        <TableCell className="text-right font-mono py-3">
+                        <TableCell className="text-right font-mono py-2.5 tabular-nums">
                           <span
-                            className={`font-bold px-1.5 py-0.5 rounded text-xs ${
+                            className={`font-bold px-2 py-0.5 rounded text-xs inline-block ${
                               hasBalance
-                                ? "bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300"
-                                : "text-emerald-700 dark:text-emerald-400 font-semibold"
+                                ? "bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-900"
+                                : "text-emerald-600 dark:text-emerald-400 font-semibold"
                             }`}
                           >
                             {formatCurrency(s.outstanding_balance)}
@@ -970,39 +969,39 @@ export function SuppliersView() {
                         </TableCell>
 
                         {/* Status */}
-                        <TableCell className="text-center py-3">
+                        <TableCell className="text-center py-2.5">
                           {s.is_active !== false ? (
-                            <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800 inline-flex items-center gap-1">
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800">
                               <CheckCircle2 className="h-3 w-3" /> Active
                             </span>
                           ) : (
-                            <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700 inline-flex items-center gap-1">
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-muted text-muted-foreground border border-border">
                               <XCircle className="h-3 w-3" /> Inactive
                             </span>
                           )}
                         </TableCell>
 
-                        {/* Actions */}
-                        <TableCell className="text-right pr-4 py-3">
+                        {/* Actions (Never clipped) */}
+                        <TableCell className="text-right pr-4 py-2.5">
                           <div className="flex items-center justify-end gap-1">
                             <Button
                               variant="ghost"
                               size="sm"
                               onClick={() => handleViewSupplierDetails(s.id)}
-                              className="h-8 px-2 text-xs text-blue-600 hover:text-blue-800 hover:bg-blue-50"
+                              className="h-8 px-2 text-xs text-muted-foreground hover:text-primary hover:bg-muted/60"
                               title="View supplier details & purchase history"
                             >
                               <Eye className="h-3.5 w-3.5 mr-1" /> View
                             </Button>
 
                             <DropdownMenu>
-                              <DropdownMenuTrigger className="h-8 w-8 inline-flex items-center justify-center rounded-md border border-slate-200 dark:border-slate-700 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 focus:outline-none">
+                              <DropdownMenuTrigger className="h-8 w-8 inline-flex items-center justify-center rounded-md border border-border/80 text-muted-foreground hover:bg-muted/60 hover:text-foreground focus:outline-none">
                                 <MoreVertical className="h-3.5 w-3.5" />
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end" className="w-48 text-xs">
                                 <DropdownMenuLabel>Supplier Actions</DropdownMenuLabel>
                                 <DropdownMenuItem onClick={() => handleViewSupplierDetails(s.id)}>
-                                  <Eye className="h-3.5 w-3.5 mr-2 text-blue-600" /> View Details
+                                  <Eye className="h-3.5 w-3.5 mr-2 text-primary" /> View Details
                                 </DropdownMenuItem>
                                 {canEdit && (
                                   <>
@@ -1010,7 +1009,7 @@ export function SuppliersView() {
                                       <ShoppingCart className="h-3.5 w-3.5 mr-2 text-emerald-600" /> Create PO
                                     </DropdownMenuItem>
                                     <DropdownMenuItem onClick={() => handleOpenSupplierModal(s)}>
-                                      <Edit2 className="h-3.5 w-3.5 mr-2 text-slate-600" /> Edit Details
+                                      <Edit2 className="h-3.5 w-3.5 mr-2 text-muted-foreground" /> Edit Details
                                     </DropdownMenuItem>
                                     <DropdownMenuItem onClick={() => handleToggleStatus(s)}>
                                       {s.is_active !== false ? (
@@ -1059,7 +1058,7 @@ export function SuppliersView() {
 
         {/* Pagination Footer */}
         {totalPages > 1 && (
-          <div className="p-4 border-t border-border flex items-center justify-between text-xs text-muted-foreground">
+          <div className="p-3 border-t border-border/80 bg-muted/20 flex items-center justify-between text-xs text-muted-foreground">
             <span>
               Showing {(currentPage - 1) * pageSize + 1} to{" "}
               {Math.min(currentPage * pageSize, totalCount)} of {totalCount} suppliers
@@ -1070,11 +1069,11 @@ export function SuppliersView() {
                 size="sm"
                 onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                 disabled={currentPage === 1}
-                className="h-8 text-xs"
+                className="h-8 text-xs font-medium"
               >
                 <ChevronLeft className="h-3.5 w-3.5 mr-1" /> Previous
               </Button>
-              <span className="font-semibold px-2 font-mono">
+              <span className="font-semibold px-2 font-mono text-foreground">
                 {currentPage} / {totalPages}
               </span>
               <Button
@@ -1082,7 +1081,7 @@ export function SuppliersView() {
                 size="sm"
                 onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                 disabled={currentPage >= totalPages}
-                className="h-8 text-xs"
+                className="h-8 text-xs font-medium"
               >
                 Next <ChevronRight className="h-3.5 w-3.5 ml-1" />
               </Button>

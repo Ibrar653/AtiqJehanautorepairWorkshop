@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import Link from "next/link";
 import { getCustomers, createCustomer, updateCustomer, type CustomerWithMetrics } from "@/lib/services/customer-service";
 import { softDeleteCustomer } from "@/lib/services/recycle-bin-service";
@@ -9,12 +9,26 @@ import { SearchInput } from "@/components/shared/search-input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Pencil, Eye, Trash2, Users, Loader2, Save, AlertCircle, CheckCircle2, Car, ShieldAlert, MoreVertical, X } from "lucide-react";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import {
+  Plus,
+  Pencil,
+  Eye,
+  Trash2,
+  Users,
+  Loader2,
+  Save,
+  AlertCircle,
+  CheckCircle2,
+  Car,
+  MoreVertical,
+  Building2,
+  DollarSign,
+} from "lucide-react";
+import { formatCurrency } from "@/lib/utils";
 import { CombinedCustomerVehicleModal } from "@/components/shared/combined-customer-vehicle-modal";
 import { usePermissions } from "@/lib/context/auth-context";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -76,6 +90,22 @@ export function CustomerListView() {
   useEffect(() => {
     loadCustomers();
   }, [loadCustomers]);
+
+  // Real Metric Summaries
+  const metrics = useMemo(() => {
+    const totalBalance = customers.reduce((acc, c) => acc + (Number(c.outstanding_balance) || 0), 0);
+    const totalVehicles = customers.reduce(
+      (acc, c) => acc + (c.vehicles_count ?? (c.vehicles_summary ? c.vehicles_summary.split(",").length : 0)),
+      0
+    );
+    const corporateCount = customers.filter((c) => !!c.company_name).length;
+    return {
+      totalCustomers: total,
+      totalVehicles,
+      totalBalance,
+      corporateCount,
+    };
+  }, [customers, total]);
 
   const openCreateDialog = () => {
     setEditingCustomer(null);
@@ -194,19 +224,19 @@ export function CustomerListView() {
       {/* Toast Notification */}
       {toastMessage && (
         <div
-          className={`p-3.5 rounded-lg border text-sm flex items-center justify-between ${
+          className={`p-3.5 rounded-xl border text-sm flex items-center justify-between transition-all ${
             toastMessage.type === "success"
-              ? "bg-emerald-50 text-emerald-800 border-emerald-200"
-              : "bg-red-50 text-red-800 border-red-200"
+              ? "bg-emerald-50 text-emerald-800 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-300 dark:border-emerald-800"
+              : "bg-rose-50 text-rose-800 border-rose-200 dark:bg-rose-950/30 dark:text-rose-300 dark:border-rose-800"
           }`}
         >
           <div className="flex items-center gap-2">
             {toastMessage.type === "success" ? (
               <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
             ) : (
-              <AlertCircle className="h-4 w-4 shrink-0 text-red-600" />
+              <AlertCircle className="h-4 w-4 shrink-0 text-rose-600" />
             )}
-            <span>{toastMessage.text}</span>
+            <span className="font-medium">{toastMessage.text}</span>
           </div>
           <Button
             variant="ghost"
@@ -221,18 +251,25 @@ export function CustomerListView() {
 
       {/* Page Header */}
       <PageHeader
-        title="Customers & Vehicles"
-        description="Comprehensive customer profiles, vehicle fleet, and service history"
+        title="Customers"
+        description="Manage workshop customers, vehicles and service relationships."
       >
         <div className="flex items-center gap-2.5">
           {!isViewer && (
             <>
-              <Button onClick={openCreateDialog} variant="outline" className="border-slate-300 font-semibold">
-                <Plus className="mr-1.5 h-4 w-4 text-slate-700" />
+              <Button
+                onClick={openCreateDialog}
+                variant="outline"
+                className="h-9 px-3.5 text-xs font-semibold rounded-lg border-border hover:bg-muted/50"
+              >
+                <Plus className="mr-1.5 h-3.5 w-3.5 text-muted-foreground" />
                 Add Customer Only
               </Button>
-              <Button onClick={() => setCombinedModalOpen(true)} className="bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-600/20 font-semibold">
-                <Plus className="mr-1.5 h-4 w-4" />
+              <Button
+                onClick={() => setCombinedModalOpen(true)}
+                className="h-9 px-4 text-xs font-semibold rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs"
+              >
+                <Plus className="mr-1.5 h-3.5 w-3.5" />
                 Add Customer &amp; Vehicle
               </Button>
             </>
@@ -240,152 +277,257 @@ export function CustomerListView() {
         </div>
       </PageHeader>
 
+      {/* Summary Metrics Strip */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Total Customers */}
+        <Card className="border border-border/80 shadow-xs bg-card rounded-xl">
+          <CardContent className="p-4 flex items-center justify-between">
+            <div>
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Total Customers</p>
+              <p className="text-2xl font-bold tracking-tight text-foreground font-mono mt-1">{total}</p>
+              <p className="text-[11px] text-muted-foreground mt-0.5">Active workshop accounts</p>
+            </div>
+            <div className="h-10 w-10 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+              <Users className="h-5 w-5" />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Registered Fleet */}
+        <Card className="border border-border/80 shadow-xs bg-card rounded-xl">
+          <CardContent className="p-4 flex items-center justify-between">
+            <div>
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Active Vehicles</p>
+              <p className="text-2xl font-bold tracking-tight text-foreground font-mono mt-1">{metrics.totalVehicles}</p>
+              <p className="text-[11px] text-muted-foreground mt-0.5">Linked customer vehicles</p>
+            </div>
+            <div className="h-10 w-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+              <Car className="h-5 w-5" />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Corporate Accounts */}
+        <Card className="border border-border/80 shadow-xs bg-card rounded-xl">
+          <CardContent className="p-4 flex items-center justify-between">
+            <div>
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Corporate Accounts</p>
+              <p className="text-2xl font-bold tracking-tight text-foreground font-mono mt-1">{metrics.corporateCount}</p>
+              <p className="text-[11px] text-muted-foreground mt-0.5">Companies with TRN</p>
+            </div>
+            <div className="h-10 w-10 rounded-xl bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0">
+              <Building2 className="h-5 w-5" />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Outstanding Receivables */}
+        <Card className="border border-border/80 shadow-xs bg-card rounded-xl">
+          <CardContent className="p-4 flex items-center justify-between">
+            <div>
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Outstanding Balance</p>
+              <p className={`text-2xl font-bold tracking-tight font-mono mt-1 ${metrics.totalBalance > 0 ? "text-amber-600 dark:text-amber-400" : "text-foreground"}`}>
+                {formatCurrency(metrics.totalBalance)}
+              </p>
+              <p className="text-[11px] text-muted-foreground mt-0.5">Total unpaid customer balance</p>
+            </div>
+            <div className="h-10 w-10 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+              <DollarSign className="h-5 w-5" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
       {/* Controls Bar */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
         <div className="w-full sm:w-96">
           <SearchInput
-            placeholder="Search by customer, phone, plate, VIN, make..."
+            placeholder="Search by customer name, phone, plate, VIN..."
             value={query}
             onChange={setQuery}
           />
         </div>
-        <div className="text-xs text-muted-foreground self-end sm:self-center font-medium">
-          Showing {customers.length} of {total} active customers
+        <div className="text-xs text-muted-foreground self-end sm:self-center font-medium bg-muted/40 px-3 py-1.5 rounded-lg border border-border/50">
+          Showing <span className="font-semibold text-foreground font-mono">{customers.length}</span> of <span className="font-semibold text-foreground font-mono">{total}</span> customers
         </div>
       </div>
 
-      {/* Main Customers & Vehicles Table */}
-      <Card className="border border-border shadow-xs bg-card overflow-hidden rounded-[10px]">
+      {/* Main Customers Table */}
+      <Card className="border border-border/80 shadow-xs bg-card overflow-hidden rounded-xl">
         <CardContent className="p-0">
           {loading ? (
             <div className="flex items-center justify-center py-20 text-muted-foreground">
-              <Loader2 className="h-8 w-8 animate-spin mr-2 text-primary" />
-              <span className="text-sm font-medium">Loading customer records...</span>
+              <Loader2 className="h-7 w-7 animate-spin mr-2.5 text-primary" />
+              <span className="text-xs font-medium">Loading customer records...</span>
             </div>
           ) : customers.length > 0 ? (
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-muted/70 hover:bg-muted/70 border-b border-border h-11">
-                  <TableHead className="w-[40px] pl-4">
-                    <Checkbox
-                      checked={
-                        customers.length > 0 && selectedCustomerIds.length === customers.length
-                          ? true
-                          : selectedCustomerIds.length > 0
-                          ? "indeterminate"
-                          : false
-                      }
-                      onCheckedChange={handleSelectAll}
-                      aria-label="Select all visible customers"
-                    />
-                  </TableHead>
-                  <TableHead className="font-semibold text-foreground text-table-head">Customer Name</TableHead>
-                  <TableHead className="font-semibold text-foreground text-table-head">Mobile / Phone</TableHead>
-                  <TableHead className="font-semibold text-foreground text-table-head">Email Address</TableHead>
-                  <TableHead className="font-semibold text-foreground text-table-head">Vehicles</TableHead>
-                  <TableHead className="text-right font-semibold text-foreground text-table-head">Outstanding</TableHead>
-                  <TableHead className="text-right font-semibold text-foreground text-table-head pr-4">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody className="divide-y divide-border/60">
-                {customers.map((c) => {
-                  const balance = c.outstanding_balance || 0;
-                  const vehicleSummary = c.vehicles_summary || "No Vehicles";
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-muted/50 hover:bg-muted/50 border-b border-border h-11">
+                    <TableHead className="w-[44px] pl-4">
+                      <Checkbox
+                        checked={
+                          customers.length > 0 && selectedCustomerIds.length === customers.length
+                            ? true
+                            : selectedCustomerIds.length > 0
+                            ? "indeterminate"
+                            : false
+                        }
+                        onCheckedChange={handleSelectAll}
+                        aria-label="Select all visible customers"
+                      />
+                    </TableHead>
+                    <TableHead className="font-semibold text-foreground text-xs uppercase tracking-wider">Customer</TableHead>
+                    <TableHead className="font-semibold text-foreground text-xs uppercase tracking-wider">Phone / Mobile</TableHead>
+                    <TableHead className="font-semibold text-foreground text-xs uppercase tracking-wider">Company / TRN</TableHead>
+                    <TableHead className="font-semibold text-foreground text-xs uppercase tracking-wider">Vehicles</TableHead>
+                    <TableHead className="text-right font-semibold text-foreground text-xs uppercase tracking-wider">Outstanding</TableHead>
+                    <TableHead className="text-center font-semibold text-foreground text-xs uppercase tracking-wider">Status</TableHead>
+                    <TableHead className="text-right font-semibold text-foreground text-xs uppercase tracking-wider pr-4">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody className="divide-y divide-border/60">
+                  {customers.map((c) => {
+                    const balance = Number(c.outstanding_balance) || 0;
+                    const vehicleSummary = c.vehicles_summary || "No Vehicles";
 
-                  return (
-                    <TableRow
-                      key={c.id}
-                      className={`h-11 hover:bg-muted/30 transition-colors border-b border-border/50 ${
-                        selectedCustomerIds.includes(c.id) ? "bg-primary/5" : ""
-                      }`}
-                    >
-                      <TableCell className="pl-4">
-                        <Checkbox
-                          checked={selectedCustomerIds.includes(c.id)}
-                          onCheckedChange={() => handleToggleSelectCustomer(c.id)}
-                          aria-label={`Select customer ${c.name}`}
-                        />
-                      </TableCell>
-                      <TableCell className="font-medium text-foreground text-table">
-                        <Link href={`/customers/${c.id}`} className="hover:text-primary hover:underline">
-                          {c.name}
-                        </Link>
-                      </TableCell>
-                      <TableCell className="text-muted-foreground font-mono text-table">{c.mobile || "—"}</TableCell>
-                      <TableCell className="text-muted-foreground text-table">{c.email || "—"}</TableCell>
-                      <TableCell>
-                        <Link
-                          href={`/customers/${c.id}`}
-                          className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-[6px] text-caption font-medium bg-primary/10 text-primary hover:bg-primary/15 transition-colors border border-primary/20 max-w-[220px] truncate"
-                          title="Click to view customer vehicles"
-                        >
-                          <Car className="h-3.5 w-3.5 text-primary shrink-0" />
-                          <span className="truncate">{vehicleSummary}</span>
-                        </Link>
-                      </TableCell>
-                      <TableCell className="text-right font-medium text-table tabular-nums">
-                        {balance > 0 ? (
-                          <span className="text-amber-600 dark:text-amber-400 font-semibold">{formatCurrency(balance)}</span>
-                        ) : (
-                          <span className="text-emerald-600 dark:text-emerald-400 font-normal">0.00 AED</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-right pr-4">
-                        <div className="flex items-center justify-end gap-1">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            render={<Link href={`/customers/${c.id}`} />}
-                            title="View Customer & Vehicles"
-                            className="h-8 px-2 text-xs text-primary hover:text-primary hover:bg-primary/10 rounded-lg"
+                    return (
+                      <TableRow
+                        key={c.id}
+                        className={`h-12 hover:bg-muted/40 transition-colors border-b border-border/50 ${
+                          selectedCustomerIds.includes(c.id) ? "bg-primary/5" : ""
+                        }`}
+                      >
+                        <TableCell className="pl-4">
+                          <Checkbox
+                            checked={selectedCustomerIds.includes(c.id)}
+                            onCheckedChange={() => handleToggleSelectCustomer(c.id)}
+                            aria-label={`Select customer ${c.name}`}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <div>
+                            <Link
+                              href={`/customers/${c.id}`}
+                              className="font-semibold text-foreground text-xs hover:text-primary hover:underline transition-colors block"
+                            >
+                              {c.name}
+                            </Link>
+                            {c.email && (
+                              <span className="text-[11px] text-muted-foreground truncate block max-w-[200px]">
+                                {c.email}
+                              </span>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <span className="text-xs font-mono font-medium text-foreground">
+                            {c.mobile || "—"}
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          {c.company_name ? (
+                            <div>
+                              <span className="text-xs font-medium text-foreground block truncate max-w-[160px]">
+                                {c.company_name}
+                              </span>
+                              {c.trn_number && (
+                                <span className="text-[10px] font-mono text-primary font-semibold">
+                                  TRN: {c.trn_number}
+                                </span>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">—</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <Link
+                            href={`/customers/${c.id}`}
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-muted/60 text-foreground hover:bg-muted hover:text-primary transition-colors border border-border/60 max-w-[200px] truncate"
+                            title="Click to view registered customer vehicles"
                           >
-                            <Eye className="h-3.5 w-3.5 mr-1" /> View
-                          </Button>
+                            <Car className="h-3.5 w-3.5 text-primary shrink-0" />
+                            <span className="truncate">{vehicleSummary}</span>
+                          </Link>
+                        </TableCell>
+                        <TableCell className="text-right font-mono text-xs tabular-nums">
+                          {balance > 0 ? (
+                            <span className="text-amber-600 dark:text-amber-400 font-bold">
+                              {formatCurrency(balance)}
+                            </span>
+                          ) : (
+                            <span className="text-emerald-600 dark:text-emerald-400 font-medium">
+                              0.00 AED
+                            </span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800">
+                            Active
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-right pr-4">
+                          <div className="flex items-center justify-end gap-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              render={<Link href={`/customers/${c.id}`} />}
+                              title="View Customer Profile"
+                              className="h-8 px-2 text-xs font-semibold text-primary hover:text-primary hover:bg-primary/10 rounded-lg"
+                            >
+                              <Eye className="h-3.5 w-3.5 mr-1" /> View
+                            </Button>
 
-                          <DropdownMenu>
-                            <DropdownMenuTrigger className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-border text-muted-foreground hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-1">
-                              <MoreVertical className="h-3.5 w-3.5" />
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-40 text-xs shadow-md border-border">
-                              <DropdownMenuLabel>Customer Actions</DropdownMenuLabel>
-                              <DropdownMenuItem render={<Link href={`/customers/${c.id}`} />}>
-                                <Eye className="h-3.5 w-3.5 mr-2 text-primary" /> View Profile
-                              </DropdownMenuItem>
-                              {canEdit && (
-                                <DropdownMenuItem onClick={() => openEditDialog(c)}>
-                                  <Pencil className="h-3.5 w-3.5 mr-2 text-muted-foreground" /> Edit Details
+                            <DropdownMenu>
+                              <DropdownMenuTrigger className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-border text-muted-foreground hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/40">
+                                <MoreVertical className="h-3.5 w-3.5" />
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="w-40 text-xs shadow-md border-border rounded-lg">
+                                <DropdownMenuLabel>Customer Actions</DropdownMenuLabel>
+                                <DropdownMenuItem render={<Link href={`/customers/${c.id}`} />}>
+                                  <Eye className="h-3.5 w-3.5 mr-2 text-primary" /> View Profile
                                 </DropdownMenuItem>
-                              )}
-                              {!isViewer && (
-                                <>
-                                  <DropdownMenuSeparator />
-                                  <DropdownMenuItem
-                                    onClick={() => openDeleteDialog(c)}
-                                    className="text-destructive hover:text-destructive font-semibold focus:text-destructive"
-                                  >
-                                    <Trash2 className="h-3.5 w-3.5 mr-2" /> Delete
+                                {canEdit && (
+                                  <DropdownMenuItem onClick={() => openEditDialog(c)}>
+                                    <Pencil className="h-3.5 w-3.5 mr-2 text-muted-foreground" /> Edit Details
                                   </DropdownMenuItem>
-                                </>
-                              )}
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
+                                )}
+                                {!isViewer && (
+                                  <>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem
+                                      onClick={() => openDeleteDialog(c)}
+                                      className="text-destructive hover:text-destructive font-semibold focus:text-destructive"
+                                    >
+                                      <Trash2 className="h-3.5 w-3.5 mr-2" /> Delete
+                                    </DropdownMenuItem>
+                                  </>
+                                )}
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
           ) : (
-            <div className="py-16 text-center text-muted-foreground flex flex-col items-center justify-center">
+            <div className="py-16 text-center text-muted-foreground flex flex-col items-center justify-center px-4">
               <Users className="h-10 w-10 mx-auto text-muted-foreground/30 stroke-1 mb-2" />
-              <h3 className="text-section font-semibold text-foreground">No active customers found</h3>
-              <p className="text-caption text-muted-foreground mt-1">
-                {query ? "No active records match your search criteria" : "Get started by adding your first customer"}
+              <h3 className="text-sm font-semibold text-foreground">No customers found</h3>
+              <p className="text-xs text-muted-foreground mt-1 max-w-sm">
+                {query ? "No customer records match your current search query." : "Get started by adding your first workshop customer."}
               </p>
               {!query && !isViewer && (
-                <Button onClick={openCreateDialog} className="mt-4 bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs h-9 text-xs rounded-lg font-medium">
-                  <Plus className="mr-1.5 h-4 w-4" /> Add Customer
+                <Button
+                  onClick={openCreateDialog}
+                  className="mt-4 bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs h-9 text-xs rounded-lg font-semibold"
+                >
+                  <Plus className="mr-1.5 h-3.5 w-3.5" /> Add Customer
                 </Button>
               )}
             </div>
@@ -395,102 +537,124 @@ export function CustomerListView() {
 
       {/* Add / Edit Customer Modal */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-md bg-card border border-border shadow-md rounded-[10px] p-6">
-          <DialogTitle className="text-section font-semibold text-foreground">{editingCustomer ? "Edit Customer Profile" : "New Customer Registration"}</DialogTitle>
-          <DialogDescription className="text-caption text-muted-foreground">
-            {editingCustomer ? "Update customer details and contact info" : "Add a new customer to the workshop system"}
+        <DialogContent className="max-w-md bg-card border border-border shadow-lg rounded-xl p-6">
+          <DialogTitle className="text-base font-bold text-foreground">
+            {editingCustomer ? "Edit Customer Details" : "New Customer Registration"}
+          </DialogTitle>
+          <DialogDescription className="text-xs text-muted-foreground">
+            {editingCustomer ? "Update contact information and preferences" : "Register a customer to open service orders and job cards"}
           </DialogDescription>
           <form onSubmit={handleSave} className="space-y-4 mt-2">
             <div className="space-y-1.5">
-              <Label htmlFor="cust-name" className="text-xs font-semibold text-slate-700">Full Name <span className="text-destructive">*</span></Label>
+              <Label htmlFor="cust-name" className="text-xs font-semibold text-foreground">
+                Customer / Owner Name <span className="text-destructive">*</span>
+              </Label>
               <Input
                 id="cust-name"
                 placeholder="e.g. Mohammed Al Mansoori"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
+                className="h-10 text-sm rounded-lg"
               />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label htmlFor="cust-mobile" className="text-xs font-semibold text-slate-700">Mobile Number</Label>
+                <Label htmlFor="cust-mobile" className="text-xs font-semibold text-foreground">Mobile Number</Label>
                 <Input
                   id="cust-mobile"
                   placeholder="+971 50 123 4567"
                   value={mobile}
                   onChange={(e) => setMobile(e.target.value)}
+                  className="h-10 text-sm rounded-lg font-mono"
                 />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="cust-email" className="text-xs font-semibold text-slate-700">Email Address</Label>
+                <Label htmlFor="cust-email" className="text-xs font-semibold text-foreground">Email Address</Label>
                 <Input
                   id="cust-email"
                   type="email"
                   placeholder="customer@example.ae"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  className="h-10 text-sm rounded-lg"
                 />
               </div>
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="cust-address" className="text-xs font-semibold text-slate-700">Address / Location</Label>
+              <Label htmlFor="cust-address" className="text-xs font-semibold text-foreground">Address / Emirate</Label>
               <Input
                 id="cust-address"
-                placeholder="e.g. Industrial Area, Abu Dhabi"
+                placeholder="e.g. Mussafah M-14, Abu Dhabi, UAE"
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
+                className="h-10 text-sm rounded-lg"
               />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label htmlFor="cust-company" className="text-xs font-semibold text-slate-700">Company Name (Optional)</Label>
+                <Label htmlFor="cust-company" className="text-xs font-semibold text-foreground">Company Name (Optional)</Label>
                 <Input
                   id="cust-company"
                   placeholder="e.g. Al Dhafra Transport LLC"
                   value={companyName}
                   onChange={(e) => setCompanyName(e.target.value)}
+                  className="h-10 text-sm rounded-lg"
                 />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="cust-trn" className="text-xs font-semibold text-blue-700">Company / Customer TRN No. (Optional)</Label>
+                <Label htmlFor="cust-trn" className="text-xs font-semibold text-primary">TRN Number (Optional)</Label>
                 <Input
                   id="cust-trn"
                   placeholder="e.g. 100123456789003"
                   value={trnNumber}
                   onChange={(e) => setTrnNumber(e.target.value)}
-                  className="font-mono"
+                  className="h-10 text-sm rounded-lg font-mono"
                 />
               </div>
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="cust-notes" className="text-xs font-semibold text-slate-700">Customer Notes</Label>
+              <Label htmlFor="cust-notes" className="text-xs font-semibold text-foreground">Customer Notes</Label>
               <Textarea
                 id="cust-notes"
-                placeholder="Special preferences, corporate account details, VIP notes..."
+                placeholder="Special preferences, corporate terms, fleet notes..."
                 rows={2}
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
+                className="text-xs rounded-lg"
               />
             </div>
 
             {formError && (
-              <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-xs text-red-700 flex items-center gap-2">
-                <AlertCircle className="h-4 w-4 shrink-0 text-red-600" />
+              <div className="p-3 rounded-lg bg-rose-50 border border-rose-200 text-xs text-rose-700 flex items-center gap-2">
+                <AlertCircle className="h-4 w-4 shrink-0 text-rose-600" />
                 <span>{formError}</span>
               </div>
             )}
 
-            <div className="flex items-center justify-end gap-2 pt-2">
-              <Button type="button" variant="outline" onClick={() => setDialogOpen(false)} disabled={saving}>Cancel</Button>
-              <Button type="submit" disabled={saving} className="bg-blue-600 hover:bg-blue-700 text-white">
+            <div className="flex items-center justify-end gap-2 pt-2 border-t">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setDialogOpen(false)}
+                disabled={saving}
+                className="h-9 px-4 text-xs font-medium rounded-lg"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={saving}
+                className="h-9 px-4 text-xs font-semibold rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground"
+              >
                 {saving ? (
-                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...</>
+                  <><Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> Saving...</>
                 ) : (
-                  <><Save className="mr-2 h-4 w-4" /> {editingCustomer ? "Update Customer" : "Save Customer"}</>
+                  <><Save className="mr-1.5 h-3.5 w-3.5" /> {editingCustomer ? "Update Customer" : "Save Customer"}</>
                 )}
               </Button>
             </div>
