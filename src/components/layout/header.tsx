@@ -59,9 +59,9 @@ export function Header({ user, onOpenMobileMenu }: HeaderProps) {
 
   return (
     <>
-      <header className="sticky top-0 z-30 h-14 bg-card border-b border-border flex items-center justify-between px-6 gap-4">
+      <header className="sticky top-0 z-30 h-14 bg-card border-b border-border flex items-center justify-between px-4 sm:px-6 gap-2 sm:gap-4">
         {/* Mobile Hamburger, Workspace Switcher, and Section Title */}
-        <div className="flex items-center gap-3 shrink-0">
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
           {onOpenMobileMenu && (
             <Button
               variant="ghost"
@@ -87,7 +87,7 @@ export function Header({ user, onOpenMobileMenu }: HeaderProps) {
         </div>
 
         {/* Global Search Bar — Wide Centered Professional Field */}
-        <div className="flex-1 max-w-xl mx-auto px-2">
+        <div className="hidden md:block flex-1 max-w-xl mx-auto px-2">
           <GlobalSearchBar />
         </div>
 

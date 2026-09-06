@@ -38,14 +38,14 @@ export function PageHeader({ title, description, breadcrumbs, actions, children 
       )}
 
       {/* Title + Actions */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-page-title text-foreground">{title}</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">{title}</h1>
           {description && (
-            <p className="text-page-sub text-muted-foreground mt-1">{description}</p>
+            <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">{description}</p>
           )}
         </div>
-        {headerActions && <div className="flex items-center gap-2">{headerActions}</div>}
+        {headerActions && <div className="flex flex-wrap items-center gap-2 shrink-0">{headerActions}</div>}
       </div>
     </div>
   );

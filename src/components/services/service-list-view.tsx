@@ -419,297 +419,342 @@ export function ServiceListView() {
         </div>
       )}
 
+      {/* Top 4 KPI Summary Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
+        <div className="bg-white border border-slate-200/80 rounded-xl p-3.5 shadow-xs flex items-center justify-between">
+          <div>
+            <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Total Services</p>
+            <p className="text-2xl font-bold font-mono tabular-nums text-slate-900 mt-0.5">{services.length}</p>
+          </div>
+          <div className="w-9 h-9 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
+            <Wrench className="w-4 h-4" />
+          </div>
+        </div>
+
+        <div className="bg-white border border-slate-200/80 rounded-xl p-3.5 shadow-xs flex items-center justify-between">
+          <div>
+            <p className="text-[11px] font-semibold text-emerald-700 uppercase tracking-wider">Active Services</p>
+            <p className="text-2xl font-bold font-mono tabular-nums text-emerald-700 mt-0.5">
+              {services.filter((s) => s.is_active).length}
+            </p>
+          </div>
+          <div className="w-9 h-9 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
+            <CheckCircle2 className="w-4 h-4" />
+          </div>
+        </div>
+
+        <div className="bg-white border border-slate-200/80 rounded-xl p-3.5 shadow-xs flex items-center justify-between">
+          <div>
+            <p className="text-[11px] font-semibold text-purple-700 uppercase tracking-wider">Categories</p>
+            <p className="text-2xl font-bold font-mono tabular-nums text-purple-700 mt-0.5">
+              {availableCategories.length}
+            </p>
+          </div>
+          <div className="w-9 h-9 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center">
+            <Layers className="w-4 h-4" />
+          </div>
+        </div>
+
+        <div className="bg-white border border-slate-200/80 rounded-xl p-3.5 shadow-xs flex items-center justify-between">
+          <div>
+            <p className="text-[11px] font-semibold text-amber-700 uppercase tracking-wider">Total Job Usage</p>
+            <p className="text-2xl font-bold font-mono tabular-nums text-amber-700 mt-0.5">
+              {services.reduce((acc, s) => acc + (s.usage_count || 0), 0)}
+            </p>
+          </div>
+          <div className="w-9 h-9 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
+            <History className="w-4 h-4" />
+          </div>
+        </div>
+      </div>
+
       {/* Search & Category Filter Card */}
-      <Card className="shadow-sm border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
-        <CardContent className="pt-6 space-y-4">
-          <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-            {/* Search Input (Debounced) */}
-            <div className="w-full md:max-w-md">
-              <SearchInput
-                placeholder="Search services by name or category..."
-                onSearch={setSearchQuery}
-                defaultValue={searchQuery}
-                className="w-full"
-              />
-            </div>
-
-            {/* Status Filter Tabs */}
-            <div className="flex items-center gap-2 self-start md:self-auto shrink-0">
-              <span className="text-xs font-semibold text-muted-foreground flex items-center gap-1">
-                <Filter className="h-3.5 w-3.5 text-blue-600" /> Status:
-              </span>
-              <div className="inline-flex rounded-lg border bg-slate-100 dark:bg-slate-800 p-0.5 text-xs">
-                <button
-                  type="button"
-                  onClick={() => setStatusFilter("all")}
-                  className={`px-3 py-1 rounded-md font-semibold transition-all ${
-                    statusFilter === "all"
-                      ? "bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  All ({services.length})
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setStatusFilter("active")}
-                  className={`px-3 py-1 rounded-md font-semibold transition-all ${
-                    statusFilter === "active"
-                      ? "bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  Active ({services.filter((s) => s.is_active).length})
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setStatusFilter("inactive")}
-                  className={`px-3 py-1 rounded-md font-semibold transition-all ${
-                    statusFilter === "inactive"
-                      ? "bg-white dark:bg-slate-900 text-muted-foreground shadow-sm"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  Inactive ({services.filter((s) => !s.is_active).length})
-                </button>
-              </div>
-            </div>
+      <div className="bg-white border border-slate-200/80 rounded-xl p-3 shadow-xs space-y-3">
+        <div className="flex flex-col md:flex-row gap-3 items-center justify-between">
+          {/* Search Input */}
+          <div className="w-full md:max-w-md">
+            <SearchInput
+              placeholder="Search services by name or category..."
+              onSearch={setSearchQuery}
+              defaultValue={searchQuery}
+              className="w-full"
+            />
           </div>
 
-          {/* Category Filter Pills */}
-          <div className="flex items-center gap-1.5 flex-wrap pt-2 border-t border-slate-100 dark:border-slate-800">
-            <span className="text-xs font-semibold text-muted-foreground mr-1.5 flex items-center gap-1">
-              <Layers className="h-3.5 w-3.5 text-blue-600" /> Category:
+          {/* Status Filter Tabs */}
+          <div className="flex items-center gap-1.5 self-start md:self-auto shrink-0">
+            <span className="text-xs font-semibold text-muted-foreground mr-1 flex items-center gap-1">
+              <Filter className="h-3.5 w-3.5 text-blue-600" /> Status:
             </span>
-            <button
-              type="button"
-              onClick={() => setSelectedCategory("all")}
-              className={`px-3 py-1 rounded-full text-xs font-semibold border transition-all ${
-                selectedCategory === "all"
-                  ? "bg-blue-600 text-white border-blue-600 shadow-sm"
-                  : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-800 hover:bg-slate-50"
-              }`}
-            >
-              All Categories
-            </button>
-            {availableCategories.map((cat) => {
-              const count = services.filter((s) => s.category?.toLowerCase() === cat.toLowerCase()).length;
-              const isSelected = selectedCategory.toLowerCase() === cat.toLowerCase();
-              return (
-                <button
-                  key={cat}
-                  type="button"
-                  onClick={() => setSelectedCategory(isSelected ? "all" : cat)}
-                  className={`px-3 py-1 rounded-full text-xs font-semibold border transition-all flex items-center gap-1.5 ${
+            <div className="inline-flex rounded-lg border border-slate-200 bg-slate-50 p-0.5 text-xs">
+              <button
+                type="button"
+                onClick={() => setStatusFilter("all")}
+                className={`px-3 py-1 rounded-md font-semibold transition-all ${
+                  statusFilter === "all"
+                    ? "bg-white text-blue-600 shadow-xs"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                All ({services.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setStatusFilter("active")}
+                className={`px-3 py-1 rounded-md font-semibold transition-all ${
+                  statusFilter === "active"
+                    ? "bg-white text-blue-600 shadow-xs"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                Active ({services.filter((s) => s.is_active).length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setStatusFilter("inactive")}
+                className={`px-3 py-1 rounded-md font-semibold transition-all ${
+                  statusFilter === "inactive"
+                    ? "bg-white text-slate-700 shadow-xs"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                Inactive ({services.filter((s) => !s.is_active).length})
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Category Filter Pills */}
+        <div className="flex items-center gap-1.5 flex-wrap pt-2.5 border-t border-slate-100">
+          <span className="text-xs font-semibold text-muted-foreground mr-1 flex items-center gap-1">
+            <Layers className="h-3.5 w-3.5 text-blue-600" /> Category:
+          </span>
+          <button
+            type="button"
+            onClick={() => setSelectedCategory("all")}
+            className={`px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all ${
+              selectedCategory === "all"
+                ? "bg-slate-900 text-white border-slate-900 shadow-xs"
+                : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"
+            }`}
+          >
+            All Categories
+          </button>
+          {availableCategories.map((cat) => {
+            const count = services.filter((s) => s.category?.toLowerCase() === cat.toLowerCase()).length;
+            const isSelected = selectedCategory.toLowerCase() === cat.toLowerCase();
+            return (
+              <button
+                key={cat}
+                type="button"
+                onClick={() => setSelectedCategory(isSelected ? "all" : cat)}
+                className={`px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all flex items-center gap-1.5 ${
+                  isSelected
+                    ? "bg-slate-900 text-white border-slate-900 shadow-xs"
+                    : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"
+                }`}
+              >
+                <span>{cat}</span>
+                <span
+                  className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold font-mono ${
                     isSelected
-                      ? "bg-blue-600 text-white border-blue-600 shadow-sm"
-                      : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-800 hover:bg-slate-50"
+                      ? "bg-white/20 text-white"
+                      : "bg-slate-200 text-slate-700"
                   }`}
                 >
-                  <span>{cat}</span>
-                  <span
-                    className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
-                      isSelected
-                        ? "bg-blue-700 text-white"
-                        : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
-                    }`}
-                  >
-                    {count}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        </CardContent>
-      </Card>
+                  {count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
 
       {/* Services Table */}
-      <Card className="shadow-sm border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden">
-        <CardContent className="p-0">
-          {loading ? (
-            <div className="py-20 text-center text-muted-foreground">
-              <Loader2 className="h-8 w-8 mx-auto animate-spin mb-3 text-blue-600" />
-              <p className="font-medium text-sm">Loading services catalog...</p>
-            </div>
-          ) : filteredServices.length > 0 ? (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow className="bg-slate-50/80 dark:bg-slate-800/50 hover:bg-slate-50/80 border-b border-slate-200 dark:border-slate-800">
-                    <TableHead className="w-[40px] pl-4">
+      <div className="border border-slate-200/80 rounded-xl bg-white shadow-xs overflow-hidden">
+        {loading ? (
+          <div className="py-20 text-center text-muted-foreground">
+            <Loader2 className="h-8 w-8 mx-auto animate-spin mb-3 text-blue-600" />
+            <p className="font-medium text-sm">Loading services catalog...</p>
+          </div>
+        ) : filteredServices.length > 0 ? (
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow className="h-10 bg-slate-50/80 hover:bg-slate-50/80 border-b border-slate-200/80">
+                  <TableHead className="w-[40px] pl-4">
+                    <Checkbox
+                      checked={
+                        filteredServices.length > 0 && selectedServiceIds.length === filteredServices.length
+                          ? true
+                          : selectedServiceIds.length > 0
+                          ? "indeterminate"
+                          : false
+                      }
+                      onCheckedChange={handleSelectAll}
+                      aria-label="Select all visible services"
+                    />
+                  </TableHead>
+                  <TableHead className="text-[11px] font-semibold uppercase tracking-wider text-slate-600">Service Name</TableHead>
+                  <TableHead className="text-[11px] font-semibold uppercase tracking-wider text-slate-600">Category</TableHead>
+                  <TableHead className="text-[11px] font-semibold uppercase tracking-wider text-slate-600 text-right">Default Price</TableHead>
+                  <TableHead className="text-[11px] font-semibold uppercase tracking-wider text-slate-600">Estimated Time</TableHead>
+                  <TableHead className="text-[11px] font-semibold uppercase tracking-wider text-slate-600 text-center">Times Used</TableHead>
+                  <TableHead className="text-[11px] font-semibold uppercase tracking-wider text-slate-600 text-center">Status</TableHead>
+                  <TableHead className="text-[11px] font-semibold uppercase tracking-wider text-slate-600 text-right pr-4 w-[140px] whitespace-nowrap">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody className="divide-y divide-slate-100">
+                {filteredServices.map((service) => (
+                  <TableRow
+                    key={service.id}
+                    className={`h-12 hover:bg-slate-50/70 transition-colors ${
+                      selectedServiceIds.includes(service.id) ? "bg-blue-50/40 dark:bg-blue-950/20" : ""
+                    } ${!service.is_active ? "opacity-60 bg-slate-50/40" : ""}`}
+                  >
+                    <TableCell className="pl-4 py-2">
                       <Checkbox
-                        checked={
-                          filteredServices.length > 0 && selectedServiceIds.length === filteredServices.length
-                            ? true
-                            : selectedServiceIds.length > 0
-                            ? "indeterminate"
-                            : false
-                        }
-                        onCheckedChange={handleSelectAll}
-                        aria-label="Select all visible services"
+                        checked={selectedServiceIds.includes(service.id)}
+                        onCheckedChange={() => handleToggleSelectService(service.id)}
+                        aria-label={`Select ${service.name}`}
                       />
-                    </TableHead>
-                    <TableHead className="w-[28%] text-slate-700 dark:text-slate-300 font-bold">Service Name</TableHead>
-                    <TableHead className="w-[16%] text-slate-700 dark:text-slate-300 font-bold">Category</TableHead>
-                    <TableHead className="w-[13%] text-right text-slate-700 dark:text-slate-300 font-bold">Default Price</TableHead>
-                    <TableHead className="w-[13%] text-slate-700 dark:text-slate-300 font-bold">Estimated Time</TableHead>
-                    <TableHead className="w-[12%] text-center text-slate-700 dark:text-slate-300 font-bold">Times Used</TableHead>
-                    <TableHead className="w-[8%] text-center text-slate-700 dark:text-slate-300 font-bold">Status</TableHead>
-                    <TableHead className="w-[8%] text-right pr-4 text-slate-700 dark:text-slate-300 font-bold">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredServices.map((service) => (
-                    <TableRow
-                      key={service.id}
-                      className={`hover:bg-blue-50/30 dark:hover:bg-slate-800/50 transition-colors border-b border-slate-100 dark:border-slate-800 ${
-                        selectedServiceIds.includes(service.id) ? "bg-blue-50/40 dark:bg-blue-950/20" : ""
-                      } ${!service.is_active ? "opacity-60 bg-slate-50/40" : ""}`}
-                    >
-                      <TableCell className="pl-4">
-                        <Checkbox
-                          checked={selectedServiceIds.includes(service.id)}
-                          onCheckedChange={() => handleToggleSelectService(service.id)}
-                          aria-label={`Select ${service.name}`}
-                        />
-                      </TableCell>
-                      {/* Service Name & Short Description */}
-                      <TableCell className="font-semibold text-foreground py-3">
-                        <div className="flex items-start gap-2.5">
-                          <div className="p-2 rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400 border border-blue-100 dark:border-blue-900 mt-0.5 shrink-0">
-                            <Wrench className="h-4 w-4" />
-                          </div>
-                          <div>
-                            <p className="font-bold text-foreground text-sm leading-tight">
-                              {service.name}
-                            </p>
-                            {service.description ? (
-                              <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1 font-normal">
-                                {service.description}
-                              </p>
-                            ) : null}
-                          </div>
+                    </TableCell>
+                    {/* Service Name & Short Description */}
+                    <TableCell className="font-semibold text-foreground py-2">
+                      <div className="flex items-center gap-2.5">
+                        <div className="p-1.5 rounded-lg bg-blue-50 text-blue-600 border border-blue-100 shrink-0">
+                          <Wrench className="h-3.5 w-3.5" />
                         </div>
-                      </TableCell>
+                        <div>
+                          <p className="font-bold text-slate-900 text-sm leading-tight">
+                            {service.name}
+                          </p>
+                          {service.description ? (
+                            <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1 font-normal">
+                              {service.description}
+                            </p>
+                          ) : null}
+                        </div>
+                      </div>
+                    </TableCell>
 
-                      {/* Category */}
-                      <TableCell className="py-3">
-                        {getCategoryBadge(service.category)}
-                      </TableCell>
+                    {/* Category */}
+                    <TableCell className="py-2">
+                      {getCategoryBadge(service.category)}
+                    </TableCell>
 
-                      {/* Default Price */}
-                      <TableCell className="text-right py-3">
-                        <span className="font-bold font-mono text-sm text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-800 px-2.5 py-0.5 rounded-md inline-block">
-                          {formatCurrency(service.default_price)}
+                    {/* Default Price */}
+                    <TableCell className="text-right py-2">
+                      <span className="font-bold font-mono text-sm text-slate-900 tabular-nums">
+                        {formatCurrency(service.default_price)}
+                      </span>
+                    </TableCell>
+
+                    {/* Estimated Time */}
+                    <TableCell className="py-2">
+                      <span className="inline-flex items-center gap-1.5 text-xs text-slate-700 font-medium">
+                        <Clock className="h-3.5 w-3.5 text-slate-400" />
+                        {service.estimated_time || "45 mins"}
+                      </span>
+                    </TableCell>
+
+                    {/* Times Used in Job Cards */}
+                    <TableCell className="text-center py-2">
+                      <button
+                        type="button"
+                        onClick={() => openUsageDialog(service)}
+                        className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold font-mono tabular-nums bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 transition-colors"
+                        title="Click to view Job Cards using this service"
+                      >
+                        <History className="h-3 w-3 text-blue-600" />
+                        <span>{service.usage_count || 0} Jobs</span>
+                      </button>
+                    </TableCell>
+
+                    {/* Status */}
+                    <TableCell className="text-center py-2">
+                      {service.is_active ? (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-[6px] text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                          <Check className="h-3 w-3" /> Active
                         </span>
-                      </TableCell>
-
-                      {/* Estimated Time */}
-                      <TableCell className="py-3">
-                        <span className="inline-flex items-center gap-1.5 text-xs text-slate-700 dark:text-slate-300 font-medium">
-                          <Clock className="h-3.5 w-3.5 text-slate-400" />
-                          {service.estimated_time || "45 mins"}
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-[6px] text-[11px] font-semibold bg-slate-100 text-slate-600 border border-slate-200">
+                          <PowerOff className="h-3 w-3" /> Inactive
                         </span>
-                      </TableCell>
+                      )}
+                    </TableCell>
 
-                      {/* Times Used in Job Cards */}
-                      <TableCell className="text-center py-3">
-                        <button
-                          type="button"
-                          onClick={() => openUsageDialog(service)}
-                          className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-50 text-blue-700 hover:bg-blue-100 dark:bg-blue-950/40 dark:text-blue-300 border border-blue-200 dark:border-blue-800 transition-colors"
-                          title="Click to view Job Cards using this service"
+                    {/* Actions */}
+                    <TableCell className="text-right pr-4 py-2 w-[140px] whitespace-nowrap">
+                      <div className="flex items-center justify-end gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-slate-600 hover:text-blue-600 hover:bg-blue-50"
+                          onClick={() => openEditDialog(service)}
+                          title="Edit Service"
                         >
-                          <History className="h-3 w-3 text-blue-600" />
-                          <span>{service.usage_count || 0} Job Cards</span>
-                        </button>
-                      </TableCell>
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Button>
 
-                      {/* Status */}
-                      <TableCell className="text-center py-3">
-                        {service.is_active ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-[6px] text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800">
-                            <Check className="h-3 w-3" /> Active
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-[6px] text-[11px] font-semibold bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700">
-                            <PowerOff className="h-3 w-3" /> Inactive
-                          </span>
-                        )}
-                      </TableCell>
-
-                      {/* Actions */}
-                      <TableCell className="text-right pr-4 py-3">
-                        <div className="flex items-center justify-end gap-1">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-slate-600 hover:text-blue-600 hover:bg-blue-50"
-                            onClick={() => openEditDialog(service)}
-                            title="Edit Service"
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-
-                          <DropdownMenu>
-                            <DropdownMenuTrigger className="h-8 w-8 inline-flex items-center justify-center rounded-md border border-slate-200 dark:border-slate-700 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 focus:outline-none">
-                              <MoreVertical className="h-3.5 w-3.5" />
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-48 text-xs">
-                              <DropdownMenuLabel>Service Actions</DropdownMenuLabel>
-                              <DropdownMenuItem onClick={() => openEditDialog(service)}>
-                                <Pencil className="h-3.5 w-3.5 mr-2 text-slate-600" /> Edit Service
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => openUsageDialog(service)}>
-                                <History className="h-3.5 w-3.5 mr-2 text-blue-600" /> View Job Card History
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleToggleStatus(service)}>
-                                {service.is_active ? (
-                                  <>
-                                    <PowerOff className="h-3.5 w-3.5 mr-2 text-amber-600" /> Deactivate
-                                  </>
-                                ) : (
-                                  <>
-                                    <Check className="h-3.5 w-3.5 mr-2 text-emerald-600" /> Activate
-                                  </>
-                                )}
-                              </DropdownMenuItem>
-                              {isOwnerOrAdmin && (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-100 focus:outline-none">
+                            <MoreVertical className="h-3.5 w-3.5" />
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-48 text-xs">
+                            <DropdownMenuLabel>Service Actions</DropdownMenuLabel>
+                            <DropdownMenuItem onClick={() => openEditDialog(service)}>
+                              <Pencil className="h-3.5 w-3.5 mr-2 text-slate-600" /> Edit Service
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => openUsageDialog(service)}>
+                              <History className="h-3.5 w-3.5 mr-2 text-blue-600" /> View Job Card History
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleToggleStatus(service)}>
+                              {service.is_active ? (
                                 <>
-                                  <DropdownMenuSeparator />
-                                  <DropdownMenuItem
-                                    onClick={() => openDeleteDialog(service)}
-                                    className="text-rose-600 hover:text-rose-700 font-semibold focus:text-rose-600"
-                                  >
-                                    <Trash2 className="h-3.5 w-3.5 mr-2" /> Delete
-                                  </DropdownMenuItem>
+                                  <PowerOff className="h-3.5 w-3.5 mr-2 text-amber-600" /> Deactivate
+                                </>
+                              ) : (
+                                <>
+                                  <Check className="h-3.5 w-3.5 mr-2 text-emerald-600" /> Activate
                                 </>
                               )}
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          ) : (
-            <div className="py-16 text-center text-muted-foreground space-y-3">
-              <Wrench className="h-10 w-10 mx-auto text-blue-600/40" />
-              <p className="text-base font-semibold text-foreground">No services found</p>
-              <p className="text-xs max-w-sm mx-auto">
-                {searchQuery || selectedCategory !== "all" || statusFilter !== "all"
-                  ? "No services match your active search or filter criteria."
-                  : "Start by adding workshop labour, routine maintenance, and repair jobs."}
-              </p>
-              <Button onClick={openCreateDialog} size="sm" className="mt-2 bg-blue-600 hover:bg-blue-700 text-white">
-                <Plus className="mr-1.5 h-4 w-4" /> Add First Service
-              </Button>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                            </DropdownMenuItem>
+                            {isOwnerOrAdmin && (
+                              <>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  onClick={() => openDeleteDialog(service)}
+                                  className="text-rose-600 hover:text-rose-700 font-semibold focus:text-rose-600"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5 mr-2" /> Delete
+                                </DropdownMenuItem>
+                              </>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        ) : (
+          <div className="py-12 px-4 text-center text-muted-foreground space-y-2.5">
+            <Wrench className="h-10 w-10 mx-auto text-slate-300 mb-1" />
+            <p className="text-sm font-bold text-slate-900">No services found</p>
+            <p className="text-xs text-slate-500 max-w-sm mx-auto">
+              {searchQuery || selectedCategory !== "all" || statusFilter !== "all"
+                ? "No services match your active search or filter criteria."
+                : "Start by adding workshop labour, routine maintenance, and repair jobs."}
+            </p>
+            <Button onClick={openCreateDialog} size="sm" className="mt-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold">
+              <Plus className="mr-1.5 h-3.5 w-3.5" /> Add First Service
+            </Button>
+          </div>
+        )}
+      </div>
 
       {/* Unified Record Delete Confirmation Dialog */}
       <RecordDeleteDialog

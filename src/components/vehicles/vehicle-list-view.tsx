@@ -241,33 +241,85 @@ export function VehicleListView() {
         </div>
       )}
 
-      {/* Search */}
-      <Card>
-        <CardContent className="pt-6">
+      {/* Top 4 KPI Metric Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
+        <div className="bg-white border border-slate-200/80 rounded-xl p-3.5 shadow-xs flex items-center justify-between">
+          <div>
+            <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Total Vehicles</p>
+            <p className="text-2xl font-bold font-mono tabular-nums text-slate-900 mt-0.5">{total}</p>
+          </div>
+          <div className="w-9 h-9 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
+            <Car className="w-4 h-4" />
+          </div>
+        </div>
+
+        <div className="bg-white border border-slate-200/80 rounded-xl p-3.5 shadow-xs flex items-center justify-between">
+          <div>
+            <p className="text-[11px] font-semibold text-emerald-700 uppercase tracking-wider">Linked Customers</p>
+            <p className="text-2xl font-bold font-mono tabular-nums text-emerald-700 mt-0.5">
+              {vehicles.filter((v) => v.customer_id).length}
+            </p>
+          </div>
+          <div className="w-9 h-9 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
+            <User className="w-4 h-4" />
+          </div>
+        </div>
+
+        <div className="bg-white border border-slate-200/80 rounded-xl p-3.5 shadow-xs flex items-center justify-between">
+          <div>
+            <p className="text-[11px] font-semibold text-purple-700 uppercase tracking-wider">Unique Makes</p>
+            <p className="text-2xl font-bold font-mono tabular-nums text-purple-700 mt-0.5">
+              {new Set(vehicles.map((v) => v.make).filter(Boolean)).size}
+            </p>
+          </div>
+          <div className="w-9 h-9 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center">
+            <Hash className="w-4 h-4" />
+          </div>
+        </div>
+
+        <div className="bg-white border border-slate-200/80 rounded-xl p-3.5 shadow-xs flex items-center justify-between">
+          <div>
+            <p className="text-[11px] font-semibold text-amber-700 uppercase tracking-wider">Active Fleet</p>
+            <p className="text-2xl font-bold font-mono tabular-nums text-amber-700 mt-0.5">
+              {vehicles.length}
+            </p>
+          </div>
+          <div className="w-9 h-9 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
+            <ClipboardList className="w-4 h-4" />
+          </div>
+        </div>
+      </div>
+
+      {/* Unified Search & Count Toolbar */}
+      <div className="bg-white border border-slate-200/80 rounded-xl p-3 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex-1 max-w-md">
           <SearchInput
-            placeholder="Search by make, model, registration plate, or VIN..."
+            placeholder="Search by make, model, plate, or VIN..."
             onSearch={(q) => {
               setQuery(q);
               setPage(1);
             }}
             defaultValue={query}
-            className="max-w-md"
+            className="w-full"
           />
-        </CardContent>
-      </Card>
+        </div>
+        <div className="text-xs text-muted-foreground font-medium">
+          Showing <span className="font-semibold font-mono text-foreground">{vehicles.length}</span> of <span className="font-semibold font-mono text-foreground">{total}</span> vehicles
+        </div>
+      </div>
 
       {/* Vehicles Table */}
-      <Card>
-        <CardContent className="p-0">
-          {loading ? (
-            <div className="py-16 text-center text-muted-foreground">
-              <Loader2 className="h-8 w-8 mx-auto animate-spin mb-3 text-primary" />
-              <p>Loading vehicles...</p>
-            </div>
-          ) : vehicles.length > 0 ? (
+      <div className="border border-slate-200/80 rounded-xl bg-white shadow-xs overflow-hidden">
+        {loading ? (
+          <div className="py-16 text-center text-muted-foreground">
+            <Loader2 className="h-8 w-8 mx-auto animate-spin mb-3 text-primary" />
+            <p className="text-sm font-medium">Loading vehicles...</p>
+          </div>
+        ) : vehicles.length > 0 ? (
+          <div className="overflow-x-auto">
             <Table>
               <TableHeader>
-                <TableRow>
+                <TableRow className="h-10 bg-slate-50/80 hover:bg-slate-50/80 border-b border-slate-200/80">
                   <TableHead className="w-[40px] pl-4">
                     <Checkbox
                       checked={
@@ -281,63 +333,63 @@ export function VehicleListView() {
                       aria-label="Select all visible vehicles"
                     />
                   </TableHead>
-                  <TableHead>Make / Model</TableHead>
-                  <TableHead>Year</TableHead>
-                  <TableHead>Registration Plate</TableHead>
-                  <TableHead>Customer Owner</TableHead>
-                  <TableHead>Chassis / VIN</TableHead>
-                  <TableHead>Mileage (KM)</TableHead>
-                  <TableHead>Vehicle Added Date</TableHead>
-                  <TableHead className="text-right pr-4">Actions</TableHead>
+                  <TableHead className="text-[11px] font-semibold uppercase tracking-wider text-slate-600">Make / Model</TableHead>
+                  <TableHead className="text-[11px] font-semibold uppercase tracking-wider text-slate-600">Year</TableHead>
+                  <TableHead className="text-[11px] font-semibold uppercase tracking-wider text-slate-600">Registration Plate</TableHead>
+                  <TableHead className="text-[11px] font-semibold uppercase tracking-wider text-slate-600">Customer Owner</TableHead>
+                  <TableHead className="text-[11px] font-semibold uppercase tracking-wider text-slate-600">Chassis / VIN</TableHead>
+                  <TableHead className="text-[11px] font-semibold uppercase tracking-wider text-slate-600">Mileage (KM)</TableHead>
+                  <TableHead className="text-[11px] font-semibold uppercase tracking-wider text-slate-600">Vehicle Added Date</TableHead>
+                  <TableHead className="text-[11px] font-semibold uppercase tracking-wider text-slate-600 text-right pr-4 w-[140px] whitespace-nowrap">Actions</TableHead>
                 </TableRow>
               </TableHeader>
-              <TableBody>
+              <TableBody className="divide-y divide-slate-100">
                 {vehicles.map((v) => (
                   <TableRow
                     key={v.id}
-                    className={`hover:bg-muted/50 transition-colors ${
+                    className={`h-12 hover:bg-slate-50/70 transition-colors ${
                       selectedVehicleIds.includes(v.id) ? "bg-blue-50/40 dark:bg-blue-950/20" : ""
                     }`}
                   >
-                    <TableCell className="pl-4">
+                    <TableCell className="pl-4 py-2">
                       <Checkbox
                         checked={selectedVehicleIds.includes(v.id)}
                         onCheckedChange={() => handleToggleSelectVehicle(v.id)}
                         aria-label={`Select vehicle ${v.make} ${v.model}`}
                       />
                     </TableCell>
-                    <TableCell className="font-semibold text-foreground">
+                    <TableCell className="font-semibold text-slate-900 py-2">
                       <Link href={`/vehicles/${v.id}`} className="hover:text-primary transition-colors">
                         {v.make} {v.model}
                       </Link>
                     </TableCell>
-                    <TableCell>{v.year || "—"}</TableCell>
-                    <TableCell className="font-bold text-primary">{v.registration_number || "—"}</TableCell>
-                    <TableCell>
+                    <TableCell className="py-2 font-mono tabular-nums">{v.year || "—"}</TableCell>
+                    <TableCell className="font-bold text-primary py-2 font-mono tabular-nums">{v.registration_number || "—"}</TableCell>
+                    <TableCell className="py-2">
                       {v.customer ? (
-                        <Link href={`/customers/${v.customer_id}`} className="inline-flex items-center gap-1 hover:underline font-medium text-foreground">
+                        <Link href={`/customers/${v.customer_id}`} className="inline-flex items-center gap-1 hover:underline font-medium text-slate-800">
                           <User className="h-3.5 w-3.5 text-muted-foreground" />
                           {v.customer.name}
                         </Link>
                       ) : "—"}
                     </TableCell>
-                    <TableCell className="font-mono text-xs text-muted-foreground font-semibold">{v.chassis_vin || "—"}</TableCell>
-                    <TableCell>{v.mileage ? `${v.mileage.toLocaleString()} km` : "—"}</TableCell>
-                    <TableCell className="text-xs text-muted-foreground">{formatDate(v.created_at)}</TableCell>
-                    <TableCell className="text-right pr-4">
+                    <TableCell className="font-mono text-xs text-muted-foreground font-semibold py-2">{v.chassis_vin || "—"}</TableCell>
+                    <TableCell className="py-2 font-mono tabular-nums">{v.mileage ? `${v.mileage.toLocaleString()} km` : "—"}</TableCell>
+                    <TableCell className="text-xs text-muted-foreground py-2">{formatDate(v.created_at)}</TableCell>
+                    <TableCell className="text-right pr-4 py-2 w-[140px] whitespace-nowrap">
                       <div className="flex items-center justify-end gap-1">
                         <Button
                           variant="ghost"
                           size="sm"
                           render={<Link href={`/vehicles/${v.id}`} />}
                           title="View Details & History"
-                          className="h-8 px-2 text-xs text-blue-600 hover:text-blue-800 hover:bg-blue-50"
+                          className="h-8 px-2 text-xs text-blue-600 hover:text-blue-800 hover:bg-blue-50 font-medium"
                         >
                           <Eye className="h-3.5 w-3.5 mr-1" /> View
                         </Button>
 
                         <DropdownMenu>
-                          <DropdownMenuTrigger className="h-8 w-8 inline-flex items-center justify-center rounded-md border border-slate-200 dark:border-slate-700 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 focus:outline-none">
+                          <DropdownMenuTrigger className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 focus:outline-none">
                             <MoreVertical className="h-3.5 w-3.5" />
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="w-44 text-xs">
@@ -374,22 +426,22 @@ export function VehicleListView() {
                 ))}
               </TableBody>
             </Table>
-          ) : (
-            <div className="py-16 text-center text-muted-foreground">
-              <Car className="h-12 w-12 mx-auto text-muted-foreground/30 mb-3" />
-              <h3 className="text-lg font-medium">No vehicles registered</h3>
-              <p className="text-sm mt-1">
-                {query ? "Try adjusting your search terms" : "Register a vehicle to start creating job cards"}
-              </p>
-              {!query && (
-                <Button onClick={openCreateDialog} className="mt-4">
-                  <Plus className="mr-2 h-4 w-4" /> Add Vehicle
-                </Button>
-              )}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+          </div>
+        ) : (
+          <div className="py-12 px-4 text-center text-muted-foreground">
+            <Car className="h-10 w-10 mx-auto text-slate-300 mb-2.5" />
+            <h3 className="text-sm font-bold text-slate-900">No vehicles registered</h3>
+            <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
+              {query ? "No vehicle records match your search terms." : "Register workshop customer vehicles to link repair job cards."}
+            </p>
+            {!query && (
+              <Button onClick={openCreateDialog} size="sm" className="mt-3.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold">
+                <Plus className="mr-1.5 h-3.5 w-3.5" /> Add Vehicle
+              </Button>
+            )}
+          </div>
+        )}
+      </div>
 
       {/* Add / Edit Vehicle Modal */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
