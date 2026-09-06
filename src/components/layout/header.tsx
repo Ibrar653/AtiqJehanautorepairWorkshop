@@ -60,14 +60,14 @@ export function Header({ user, onOpenMobileMenu }: HeaderProps) {
   return (
     <>
       <header className="sticky top-0 z-30 h-14 bg-card border-b border-border flex items-center justify-between px-6 gap-4">
-        {/* Mobile Hamburger, Page Title, and Workspace Switcher */}
+        {/* Mobile Hamburger, Workspace Switcher, and Section Title */}
         <div className="flex items-center gap-3 shrink-0">
           {onOpenMobileMenu && (
             <Button
               variant="ghost"
               size="sm"
               onClick={onOpenMobileMenu}
-              className="lg:hidden p-1.5 h-8 w-8 text-foreground hover:bg-muted"
+              className="lg:hidden p-1.5 h-9 w-9 rounded-lg text-foreground hover:bg-muted"
             >
               <Menu className="h-4 w-4" />
             </Button>
@@ -76,18 +76,18 @@ export function Header({ user, onOpenMobileMenu }: HeaderProps) {
           {/* Dedicated Multi-Workspace Switcher */}
           <WorkspaceSwitcher />
 
-          <div className="hidden xl:block border-l border-border pl-3">
-            <h1 className="text-xs font-semibold text-foreground leading-tight">
+          <div className="hidden xl:block border-l border-border/80 pl-3">
+            <h1 className="text-[12.5px] font-bold text-foreground leading-tight">
               {getSectionTitle()}
             </h1>
-            <p className="text-[10px] text-muted-foreground font-normal truncate max-w-[200px]">
+            <p className="text-[11px] text-muted-foreground font-medium truncate max-w-[220px]">
               {currentWorkspace.business_name || currentWorkspace.name}
             </p>
           </div>
         </div>
 
-        {/* Global Search Bar */}
-        <div className="flex-1 max-w-md mx-auto">
+        {/* Global Search Bar — Wide Centered Professional Field */}
+        <div className="flex-1 max-w-xl mx-auto px-2">
           <GlobalSearchBar />
         </div>
 
@@ -97,18 +97,18 @@ export function Header({ user, onOpenMobileMenu }: HeaderProps) {
           <Button
             variant="ghost"
             size="sm"
-            className="relative h-8 w-8 p-0 text-muted-foreground hover:text-foreground hover:bg-muted rounded-full"
+            className="relative h-9 w-9 p-0 text-muted-foreground hover:text-foreground hover:bg-muted/80 rounded-lg border border-border/60 bg-card shadow-xs"
             title="Notifications"
           >
             <Bell className="h-4 w-4" />
-            <span className="absolute top-1.5 right-1.5 h-1.5 w-1.5 rounded-full bg-primary" />
+            <span className="absolute top-2 right-2 h-1.5 w-1.5 rounded-full bg-primary" />
           </Button>
 
           {/* User Profile Menu */}
           <DropdownMenu>
-            <DropdownMenuTrigger className="relative h-8 w-8 rounded-full cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 transition-all">
-              <Avatar className="h-8 w-8 border border-border">
-                <AvatarFallback className="bg-primary text-primary-foreground text-xs font-semibold">
+            <DropdownMenuTrigger className="relative h-9 w-9 rounded-full cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-1 transition-all">
+              <Avatar className="h-9 w-9 border border-border/80 shadow-xs">
+                <AvatarFallback className="bg-primary text-primary-foreground text-xs font-bold">
                   {user ? getInitials(user.full_name) : "AJ"}
                 </AvatarFallback>
               </Avatar>

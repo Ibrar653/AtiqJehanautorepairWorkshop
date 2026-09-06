@@ -54,29 +54,29 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-/* ─── Light Theme — Enterprise SaaS Palette ─────────────────────────────── */
+/* ─── Light Theme — Enterprise Automotive ERP Palette ────────────────────── */
 :root {
-  --background: #F6F7F9;
-  --foreground: #0E1420;
+  --background: #F6F8FB;
+  --foreground: #111827;
   --card: #FFFFFF;
-  --card-foreground: #0E1420;
+  --card-foreground: #111827;
   --popover: #FFFFFF;
-  --popover-foreground: #0E1420;
+  --popover-foreground: #111827;
   --primary: #2563EB;
   --primary-foreground: #FFFFFF;
-  --secondary: #F1F3F6;
-  --secondary-foreground: #0E1420;
-  --muted: #F1F3F6;
-  --muted-foreground: #5B6675;
+  --secondary: #F1F5F9;
+  --secondary-foreground: #111827;
+  --muted: #F8FAFC;
+  --muted-foreground: #64748B;
   --accent: #F1F5F9;
-  --accent-foreground: #0E1420;
+  --accent-foreground: #111827;
   --destructive: #DC2626;
   --destructive-foreground: #FFFFFF;
-  --border: #E6E8EC;
-  --input: #E6E8EC;
+  --border: #E5E7EB;
+  --input: #E5E7EB;
   --ring: #2563EB;
-  --success: #047857;
-  --warning: #B45309;
+  --success: #059669;
+  --warning: #D97706;
   --danger: #DC2626;
   --info: #2563EB;
   --chart-1: #2563EB;
@@ -85,11 +85,11 @@
   --chart-4: #7C3AED;
   --chart-5: #059669;
   --radius: 0.625rem; /* 10px cards */
-  --sidebar: #0E1728;
+  --sidebar: #0F172A;
   --sidebar-foreground: #E2E8F0;
   --sidebar-primary: #2563EB;
   --sidebar-primary-foreground: #FFFFFF;
-  --sidebar-accent: rgba(255, 255, 255, 0.06);
+  --sidebar-accent: rgba(255, 255, 255, 0.08);
   --sidebar-accent-foreground: #FFFFFF;
   --sidebar-border: #1E293B;
   --sidebar-ring: #2563EB;
@@ -197,14 +197,15 @@
 
 /* ─── Strict Typography Scale ──────────────────────────────────────────── */
 .text-page-title {
-  font-size: 24px;
+  font-size: 25px; /* 24-26px */
   line-height: 32px;
-  font-weight: 600;
-  letter-spacing: -0.02em;
+  font-weight: 700; /* 700 */
+  letter-spacing: -0.025em;
+  color: var(--foreground);
 }
 
 .text-page-sub {
-  font-size: 14px;
+  font-size: 13.5px;
   line-height: 20px;
   font-weight: 400;
   letter-spacing: 0;
@@ -212,37 +213,41 @@
 }
 
 .text-section {
-  font-size: 15px;
-  line-height: 22px;
-  font-weight: 600;
-  letter-spacing: -0.01em;
+  font-size: 17px; /* 16-18px */
+  line-height: 24px;
+  font-weight: 650; /* 650-700 */
+  letter-spacing: -0.015em;
+  color: var(--foreground);
 }
 
 .text-metric {
-  font-size: 30px;
-  line-height: 36px;
-  font-weight: 650;
+  font-size: 28px; /* 26-30px */
+  line-height: 34px;
+  font-weight: 700; /* 700 */
   letter-spacing: -0.02em;
   font-variant-numeric: tabular-nums;
+  color: var(--foreground);
 }
 
 .text-eyebrow {
-  font-size: 11px;
+  font-size: 11.5px; /* 11-12px */
   line-height: 16px;
-  font-weight: 600;
-  letter-spacing: 0.06em;
+  font-weight: 600; /* 600 */
+  letter-spacing: 0.05em;
   text-transform: uppercase;
+  color: var(--muted-foreground);
 }
 
 .text-body {
-  font-size: 14px;
+  font-size: 13.5px; /* 13-14px */
   line-height: 20px;
-  font-weight: 400;
+  font-weight: 400; /* 400-500 */
   letter-spacing: 0;
+  color: var(--foreground);
 }
 
 .text-table {
-  font-size: 13px;
+  font-size: 13px; /* 13px */
   line-height: 18px;
   font-weight: 400;
   letter-spacing: 0;
@@ -253,14 +258,24 @@
   font-size: 12px;
   line-height: 16px;
   font-weight: 600;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+}
+
+.text-button {
+  font-size: 13px; /* 13px / 600 */
+  line-height: 18px;
+  font-weight: 600;
+  letter-spacing: 0;
 }
 
 .text-caption {
-  font-size: 12px;
+  font-size: 12px; /* 12px helper text */
   line-height: 16px;
   font-weight: 400;
   letter-spacing: 0;
+  color: var(--muted-foreground);
 }
 
 /* ─── Custom Scrollbar ─────────────────────────────────────────────────── */

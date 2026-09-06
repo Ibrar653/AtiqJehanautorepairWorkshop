@@ -19,7 +19,7 @@ const DashboardSalesChart = dynamic(
   () => import("@/components/dashboard/dashboard-sales-chart").then((mod) => mod.DashboardSalesChart),
   {
     loading: () => (
-      <div className="h-[320px] rounded-[10px] bg-card border border-border p-5 shadow-xs animate-pulse" />
+      <div className="h-[320px] rounded-xl bg-card border border-border p-5 shadow-xs animate-pulse" />
     ),
     ssr: false,
   }
@@ -31,22 +31,19 @@ import {
   Receipt,
   TrendingUp,
   AlertTriangle,
-  ClipboardList,
   CheckCircle2,
   Clock,
   Plus,
   RefreshCw,
-  Loader2,
   UserPlus,
   ArrowRight,
-  ShieldAlert,
 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import { usePermissions } from "@/lib/context/auth-context";
 import { useWorkspace } from "@/lib/context/workspace-context";
 
 export function DashboardView() {
-  const { isViewer, canEdit } = usePermissions();
+  const { canEdit } = usePermissions();
   const { currentWorkspace } = useWorkspace();
   const [period, setPeriod] = useState<DashboardPeriod>("this_month");
   const [customRange, setCustomRange] = useState<{ startDate?: string; endDate?: string }>({});
@@ -80,39 +77,42 @@ export function DashboardView() {
 
   return (
     <div className="space-y-6">
-      {/* Top Header Controls */}
+      {/* Top Header Controls with exact specified hierarchy */}
       <PageHeader
         title="Workshop Executive Dashboard"
         description="Live operational metrics, repair sales breakdown, receivables, and real profit analytics"
         actions={
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2.5">
+            {/* Live Revalidate — Ghost / Outline */}
             <Button
               variant="outline"
               size="sm"
               onClick={() => fetchMetrics(true)}
               disabled={refreshing}
-              className="text-xs h-9 font-medium border-border bg-card hover:bg-muted/50 text-foreground shadow-xs rounded-lg"
+              className="text-[13px] h-[38px] font-semibold border-border bg-card hover:bg-muted text-foreground shadow-xs rounded-lg gap-1.5"
             >
-              <RefreshCw className={`h-3.5 w-3.5 mr-1.5 ${refreshing ? "animate-spin text-primary" : "text-muted-foreground"}`} />
+              <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? "animate-spin text-primary" : "text-muted-foreground"}`} />
               {refreshing ? "Refreshing..." : "Live Revalidate"}
             </Button>
             {canEdit && (
               <>
+                {/* Add Customer & Vehicle — Secondary */}
                 <Button
-                  variant="outline"
+                  variant="secondary"
                   size="sm"
                   onClick={() => setCombinedModalOpen(true)}
-                  className="text-xs h-9 font-medium border-border bg-card hover:bg-muted/50 text-foreground shadow-xs rounded-lg"
+                  className="text-[13px] h-[38px] font-semibold text-foreground shadow-xs rounded-lg gap-1.5"
                 >
-                  <UserPlus className="h-4 w-4 mr-1.5 text-primary" />
+                  <UserPlus className="h-4 w-4 text-primary" />
                   + Add Customer &amp; Vehicle
                 </Button>
+                {/* Create Job Card — Primary Blue */}
                 <Link href="/job-cards/new">
                   <Button
                     size="sm"
-                    className="bg-primary hover:bg-primary/90 text-primary-foreground font-medium text-xs h-9 shadow-xs rounded-lg"
+                    className="bg-primary hover:bg-[#1D4ED8] text-primary-foreground font-semibold text-[13px] h-[38px] shadow-xs rounded-lg gap-1.5"
                   >
-                    <Plus className="h-4 w-4 mr-1" />
+                    <Plus className="h-4 w-4" />
                     + Create Job Card
                   </Button>
                 </Link>
@@ -128,7 +128,7 @@ export function DashboardView() {
           className={`flex items-center justify-between p-3 rounded-lg border text-caption font-medium shadow-xs ${
             toast.type === "success"
               ? "bg-emerald-500/[0.08] border-emerald-500/20 text-emerald-700 dark:text-emerald-300"
-              : "bg-red-500/[0.08] border-red-500/20 text-red-700 dark:text-red-300"
+              : "bg-rose-500/[0.08] border-rose-500/20 text-rose-700 dark:text-rose-300"
           }`}
         >
           <span>{toast.text}</span>
@@ -154,9 +154,9 @@ export function DashboardView() {
 
       {loading && !metrics ? (
         <div className="space-y-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="h-[104px] rounded-[10px] bg-card border border-border p-5 flex flex-col justify-between shadow-xs animate-pulse">
+              <div key={i} className="h-[110px] rounded-xl bg-card border border-border p-5 flex flex-col justify-between shadow-xs animate-pulse">
                 <div className="flex justify-between items-start">
                   <div className="space-y-2">
                     <div className="h-3 w-20 bg-muted rounded" />
@@ -168,13 +168,13 @@ export function DashboardView() {
               </div>
             ))}
           </div>
-          <div className="h-[320px] rounded-[10px] bg-card border border-border p-5 shadow-xs animate-pulse" />
+          <div className="h-[320px] rounded-xl bg-card border border-border p-5 shadow-xs animate-pulse" />
         </div>
       ) : metrics ? (
         <div className="space-y-6 animate-in fade-in-50 duration-150">
           {/* Low Stock Warning Banner */}
           {metrics.lowStockPartsCount > 0 && (
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 bg-amber-500/[0.06] border border-amber-500/20 rounded-[10px] text-caption shadow-xs">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 bg-amber-500/[0.06] border border-amber-500/20 rounded-xl text-caption shadow-xs">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-amber-500/10 rounded-lg text-amber-600 dark:text-amber-400 shrink-0">
                   <AlertTriangle className="h-4 w-4" />
@@ -200,8 +200,8 @@ export function DashboardView() {
             </div>
           )}
 
-          {/* TOP 8 METRICS GRID */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+          {/* TOP 8 METRICS GRID — 4 Cards per row on Desktop, 2 rows */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* 1. Total Sales */}
             <StatCard
               title="Total Sales"
@@ -217,7 +217,7 @@ export function DashboardView() {
               title="Service Sales"
               value={metrics.serviceSales}
               icon={<Wrench className="h-5 w-5" />}
-              variant="default"
+              variant="primary"
               isCurrency
               description="Labour & mechanic charges"
             />
@@ -227,7 +227,7 @@ export function DashboardView() {
               title="Spare Parts Sales"
               value={metrics.partsSales}
               icon={<Cog className="h-5 w-5" />}
-              variant="default"
+              variant="primary"
               isCurrency
               description="Installed replacement parts"
             />
@@ -237,7 +237,7 @@ export function DashboardView() {
               title="Outstanding"
               value={metrics.outstandingCredit}
               icon={<AlertTriangle className="h-5 w-5" />}
-              variant={metrics.outstandingCredit > 0 ? "warning" : "default"}
+              variant="warning"
               isCurrency
               description="Unpaid customer balance"
             />
@@ -289,7 +289,7 @@ export function DashboardView() {
             />
           </div>
 
-          {/* SALES OVERVIEW & PROFIT CHARTS */}
+          {/* FINANCIAL OVERVIEW & PERFORMANCE */}
           <DashboardSalesChart
             chartData={metrics.chartData}
             totalSales={metrics.totalSales}

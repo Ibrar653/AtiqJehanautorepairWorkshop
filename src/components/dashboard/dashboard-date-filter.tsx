@@ -55,8 +55,8 @@ export function DashboardDateFilter({
 
   return (
     <div className="space-y-3">
-      <div className="inline-flex flex-wrap items-center gap-1 p-1 bg-muted/60 rounded-lg border border-border">
-        <div className="flex items-center gap-1.5 px-2.5 text-caption font-semibold text-muted-foreground">
+      <div className="inline-flex flex-wrap items-center gap-1 p-1 bg-slate-100/90 dark:bg-muted/70 rounded-lg border border-border/80 shadow-xs">
+        <div className="flex items-center gap-1.5 px-2.5 text-[11.5px] font-bold text-muted-foreground uppercase tracking-wider">
           <Calendar className="h-3.5 w-3.5 text-primary" />
           <span className="hidden sm:inline">Period:</span>
         </div>
@@ -68,10 +68,10 @@ export function DashboardDateFilter({
               key={opt.value}
               type="button"
               onClick={() => handleSelectPeriod(opt.value)}
-              className={`h-7 px-2.5 text-caption font-medium rounded-md transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-1 ${
+              className={`h-[30px] px-3 text-[12px] font-medium rounded-md transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 select-none ${
                 isActive
-                  ? "bg-card text-foreground shadow-xs font-semibold border border-border/60"
-                  : "text-muted-foreground hover:text-foreground hover:bg-card/40"
+                  ? "bg-card text-primary font-semibold shadow-xs border border-border/80"
+                  : "text-slate-600 dark:text-muted-foreground hover:text-foreground hover:bg-card/50"
               }`}
             >
               {opt.label}

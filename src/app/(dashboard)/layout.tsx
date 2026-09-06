@@ -20,8 +20,8 @@ export default function DashboardLayout({
     <WorkspaceProvider>
       <div className="min-h-screen bg-background flex">
         {/* Desktop Sidebar */}
-        <div className="hidden lg:block w-[248px] shrink-0">
-          <Sidebar user={user} />
+        <div className="hidden lg:block w-[232px] shrink-0">
+          <Sidebar user={user} className="w-[232px]" />
         </div>
 
       {/* Mobile Drawer Sidebar */}
@@ -34,7 +34,7 @@ export default function DashboardLayout({
           <Sidebar
             user={user}
             onCloseMobile={() => setMobileMenuOpen(false)}
-            className="w-[248px]"
+            className="w-[232px]"
           />
         </div>
       )}
@@ -45,7 +45,7 @@ export default function DashboardLayout({
           user={user}
           onOpenMobileMenu={() => setMobileMenuOpen(true)}
         />
-        <main className="w-full max-w-[1600px] mx-auto px-6 lg:px-8 py-6 flex-1">
+        <main className="w-full max-w-[1520px] mx-auto px-6 lg:px-8 py-6 flex-1">
           <div className="w-full space-y-6">
             <RouteGuard>
               {children}
