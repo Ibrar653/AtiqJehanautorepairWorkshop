@@ -22,8 +22,16 @@ export function isServerAdminConfigured(): boolean {
  * - NEVER expose SUPABASE_SECRET_KEY via NEXT_PUBLIC_*, API responses, logs, or error messages.
  */
 export function getAdminClient(): SupabaseClient {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || DEFAULT_SUPABASE_URL;
-  const secretKey = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (typeof window !== "undefined") {
+    throw new Error("CRITICAL SECURITY VIOLATION: Supabase admin client must never be executed on the client side.");
+  }
+
+  const supabaseUrl =
+    process.env.SUPABASE_URL ||
+    process.env.NEXT_PUBLIC_SUPABASE_URL ||
+    DEFAULT_SUPABASE_URL;
+  const secretKey =
+    process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   if (!secretKey || !secretKey.trim()) {
     throw new Error(ADMIN_AUTH_CONFIG_ERROR);

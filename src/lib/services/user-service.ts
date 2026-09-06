@@ -513,7 +513,10 @@ export async function getPermissionChangeLogs(userId?: string): Promise<Permissi
 
 // ─── Granular User Permissions Functions ────────────────────────────────────
 
-export async function getUserPermissions(userId: string): Promise<Record<AppModule, UserModulePermission>> {
+export async function getUserPermissions(
+  userId: string,
+  workspaceId?: string
+): Promise<Record<AppModule, UserModulePermission>> {
   const localUsers = getLocalUsers();
   const targetUser = localUsers.find((u) => u.id === userId);
 
@@ -538,10 +541,11 @@ export async function getUserPermissions(userId: string): Promise<Record<AppModu
   // 1. Try Supabase
   const supabase = createClient();
   try {
-    const { data, error } = await withTimeout<any>(
-      supabase.from("user_permissions").select("*").eq("user_id", userId),
-      3000
-    );
+    let query = supabase.from("user_permissions").select("*").eq("user_id", userId);
+    if (workspaceId) {
+      query = query.eq("workspace_id", workspaceId);
+    }
+    const { data, error } = await withTimeout<any>(query, 3000);
 
     if (!error && data && data.length > 0) {
       const permsMap = getEmptyPermissions();
@@ -979,19 +983,31 @@ export async function getCurrentUser(): Promise<User | null> {
     }
 
     const email = (authUser.email || "").trim().toLowerCase();
-    const isOwner = email === PRIMARY_OWNER_EMAIL.toLowerCase();
+    const isPrimaryEmail = email === PRIMARY_OWNER_EMAIL.toLowerCase();
 
-    // If Owner: Always grant full access
-    if (isOwner) {
+    // 3. Platform Admin Check
+    let isPlatformAdmin = isPrimaryEmail;
+    if (!isPlatformAdmin) {
+      try {
+        const { data: adminRow } = await withTimeout<any>(
+          supabase.from("platform_admins").select("id, status").eq("user_id", authUser.id).eq("status", "active").maybeSingle(),
+          3000
+        );
+        if (adminRow) isPlatformAdmin = true;
+      } catch {}
+    }
+
+    // If Primary Platform Owner: Always grant full unrestricted access
+    if (isPlatformAdmin) {
       return {
         id: authUser.id || "usr-owner-001",
-        email: PRIMARY_OWNER_EMAIL,
+        email: email || PRIMARY_OWNER_EMAIL,
         full_name: authUser.user_metadata?.full_name || "Atiq Jehan (Owner)",
         role: "owner",
         is_active: true,
         status: "active",
         phone: "+971 50 123 4567",
-        job_title: "Managing Director / Owner",
+        job_title: "Managing Director / Platform Owner",
         permissions: getAllPermissionsEnabled(),
         last_login_at: new Date().toISOString(),
         created_at: authUser.created_at || new Date().toISOString(),
@@ -999,7 +1015,25 @@ export async function getCurrentUser(): Promise<User | null> {
       };
     }
 
-    // If Staff User: Look up staff profile
+    // 4. Secondary User: Check workspace membership in Supabase
+    let memberRecord: any = null;
+    try {
+      const { data: memData } = await withTimeout<any>(
+        supabase
+          .from("workspace_members")
+          .select("id, workspace_id, user_id, role, status, is_workspace_owner")
+          .eq("user_id", authUser.id)
+          .eq("status", "active")
+          .limit(1)
+          .maybeSingle(),
+        3000
+      );
+      if (memData) {
+        memberRecord = memData;
+      }
+    } catch {}
+
+    // Fallback: check staff profile table if legacy
     let staffUser: User | null = null;
     try {
       const { data: profile } = await withTimeout<any>(
@@ -1009,45 +1043,59 @@ export async function getCurrentUser(): Promise<User | null> {
       if (profile) {
         staffUser = profile as User;
       }
-    } catch {
-      // ignore
-    }
+    } catch {}
 
     if (!staffUser) {
       const localUsers = getLocalUsers();
       staffUser = localUsers.find((u) => u.email.toLowerCase() === email || u.id === authUser.id) || null;
     }
 
-    // If staff user is not found in registered users
-    if (!staffUser) {
-      console.warn(`Unregistered user login attempt for email: ${email}`);
-      await supabase.auth.signOut();
-      return null;
+    // If user has active workspace membership in Supabase
+    if (memberRecord) {
+      const activeWsId = memberRecord.workspace_id;
+      const permissions = await getUserPermissions(authUser.id, activeWsId);
+
+      return {
+        id: authUser.id,
+        email,
+        full_name: authUser.user_metadata?.full_name || staffUser?.full_name || email.split("@")[0],
+        role: memberRecord.role || staffUser?.role || "owner",
+        is_active: true,
+        status: "active",
+        workspace_id: activeWsId,
+        permissions,
+        last_login_at: new Date().toISOString(),
+        created_at: authUser.created_at || new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
     }
 
-    // Check expiry
-    const evaluatedUser = checkAndEnforceExpiry(staffUser);
+    // If staff user is registered in local list / legacy
+    if (staffUser) {
+      const evaluatedUser = checkAndEnforceExpiry(staffUser);
+      if (
+        evaluatedUser.status === "suspended" ||
+        evaluatedUser.status === "disabled" ||
+        evaluatedUser.status === "expired" ||
+        evaluatedUser.is_active === false
+      ) {
+        console.warn(`Blocked login for ${evaluatedUser.status} user: ${email}`);
+        await supabase.auth.signOut();
+        return null;
+      }
 
-    // CHECK USER STATUS: If suspended, disabled, or expired, block login immediately!
-    if (
-      evaluatedUser.status === "suspended" ||
-      evaluatedUser.status === "disabled" ||
-      evaluatedUser.status === "expired" ||
-      evaluatedUser.is_active === false
-    ) {
-      console.warn(`Blocked login for ${evaluatedUser.status} user: ${email}`);
-      await supabase.auth.signOut();
-      return null;
+      const permissions = await getUserPermissions(evaluatedUser.id);
+      return {
+        ...evaluatedUser,
+        permissions,
+        last_login_at: new Date().toISOString(),
+      };
     }
 
-    // Load granular permissions for this staff member
-    const permissions = await getUserPermissions(evaluatedUser.id);
-
-    return {
-      ...evaluatedUser,
-      permissions,
-      last_login_at: new Date().toISOString(),
-    };
+    // Unregistered / Pending approval user
+    console.warn(`No active workspace membership found for: ${email}`);
+    await supabase.auth.signOut();
+    return null;
   } catch (err: any) {
     console.warn("getCurrentUser fallback notice:", err?.message || err);
     return null;

@@ -30,7 +30,7 @@ import {
   ArrowRight,
   Sparkles,
 } from "lucide-react";
-import { APP_NAME, COMPANY_FULL_NAME, PRIMARY_OWNER_EMAIL } from "@/lib/constants";
+import { APP_NAME, COMPANY_FULL_NAME, PRIMARY_OWNER_EMAIL, DEFAULT_WORKSPACE_ID } from "@/lib/constants";
 import { getLocalUsers, saveLocalUsers, logUserActivity } from "@/lib/services/user-service";
 import {
   getLocalMembers,
@@ -49,6 +49,11 @@ function LoginForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [infoMessage, setInfoMessage] = useState<string | null>(null);
+  const [pendingNotice, setPendingNotice] = useState<{
+    workspaceName: string;
+    workspaceCode: string;
+    status: string;
+  } | null>(null);
 
   // Manual Activation Code Modal State
   const [codeModalOpen, setCodeModalOpen] = useState(false);
@@ -120,6 +125,7 @@ function LoginForm() {
     setLoading(true);
     setError(null);
     setInfoMessage(null);
+    setPendingNotice(null);
 
     try {
       const supabase = createClient();
@@ -146,18 +152,36 @@ function LoginForm() {
 
       if (data?.user) {
         const authenticatedEmail = (data.user.email || "").trim().toLowerCase();
-        const isPrimaryOwner = authenticatedEmail === PRIMARY_OWNER_EMAIL.toLowerCase();
+        const isPrimaryEmail = authenticatedEmail === PRIMARY_OWNER_EMAIL.toLowerCase();
 
-        if (isPrimaryOwner) {
+        // Check platform_admins table for auth UUID
+        let isPlatformAdmin = isPrimaryEmail;
+        if (!isPlatformAdmin) {
+          try {
+            const { data: adminRow } = await supabase
+              .from("platform_admins")
+              .select("id, status")
+              .eq("user_id", data.user.id)
+              .eq("status", "active")
+              .maybeSingle();
+
+            if (adminRow) {
+              isPlatformAdmin = true;
+            }
+          } catch {}
+        }
+
+        if (isPlatformAdmin) {
           await logUserActivity({
             user_id: data.user.id || "usr-owner-001",
             user_email: authenticatedEmail,
-            user_name: "Atiq Jehan (Owner)",
+            user_name: data.user.user_metadata?.full_name || "Atiq Jehan (Owner)",
             action: "LOGIN",
             module: "auth",
-            description: "Owner logged in with full administrative privileges",
+            description: "Platform Owner logged in with full administrative privileges",
           });
 
+          setActiveWorkspaceId(DEFAULT_WORKSPACE_ID);
           router.push("/dashboard");
           router.refresh();
           return;
@@ -198,28 +222,70 @@ function LoginForm() {
       // 1. Fetch user's active workspace memberships directly from Supabase
       const { data: dbMembers, error: dbError } = await supabase
         .from("workspace_members")
-        .select("id, workspace_id, user_id, role, status, is_workspace_owner, permissions")
-        .or(`user_id.eq.${userId},user_id.eq.${userEmail}`)
-        .eq("status", "active");
+        .select("id, workspace_id, user_id, role, status, is_workspace_owner")
+        .eq("user_id", userId);
 
       if (!dbError && dbMembers && dbMembers.length > 0) {
-        const wsIds = dbMembers.map((m) => m.workspace_id).filter(Boolean);
-        if (wsIds.length > 0) {
-          const { data: wsRows, error: wsErr } = await supabase
-            .from("workspaces")
-            .select("*")
-            .in("id", wsIds);
+        // Check active memberships first
+        const activeMembers = dbMembers.filter((m) => m.status === "active");
+        if (activeMembers.length > 0) {
+          const wsIds = activeMembers.map((m) => m.workspace_id).filter(Boolean);
+          if (wsIds.length > 0) {
+            const { data: wsRows, error: wsErr } = await supabase
+              .from("workspaces")
+              .select("*")
+              .in("id", wsIds)
+              .eq("status", "active");
 
-          if (!wsErr && wsRows) {
-            for (const ws of wsRows) {
-              if (ws.status === "active" || !ws.status) {
-                memberWorkspaces.push(ws as Workspace);
-              }
+            if (!wsErr && wsRows && wsRows.length > 0) {
+              memberWorkspaces = wsRows as Workspace[];
             }
           }
+          if (activeMembers[0]?.role) {
+            memberRole = activeMembers[0].role;
+          }
         }
-        if (dbMembers[0]?.role) {
-          memberRole = dbMembers[0].role;
+
+        // If no active workspaces found, check if membership or workspace is pending
+        if (memberWorkspaces.length === 0) {
+          const pendingMember = dbMembers.find((m) => m.status === "pending");
+          const anyWsId = (pendingMember || dbMembers[0])?.workspace_id;
+
+          if (anyWsId) {
+            const { data: wsData } = await supabase
+              .from("workspaces")
+              .select("id, name, workspace_code, status, rejection_reason")
+              .eq("id", anyWsId)
+              .single();
+
+            await supabase.auth.signOut();
+
+            if (wsData?.status === "pending" || pendingMember?.status === "pending") {
+              setPendingNotice({
+                workspaceName: wsData?.name || "Your Workspace",
+                workspaceCode: wsData?.workspace_code || "PENDING",
+                status: "Pending Platform Approval",
+              });
+              setLoading(false);
+              return;
+            }
+
+            if (wsData?.status === "rejected" || dbMembers[0]?.status === "rejected") {
+              setError(
+                `Access Denied: Your workspace account was rejected.${
+                  wsData?.rejection_reason ? ` Reason: ${wsData.rejection_reason}` : ""
+                }`
+              );
+              setLoading(false);
+              return;
+            }
+
+            if (wsData?.status === "suspended" || dbMembers[0]?.status === "suspended" || dbMembers[0]?.status === "removed") {
+              setError("Access Denied: Your workspace account has been suspended or removed. Please contact the workshop administrator.");
+              setLoading(false);
+              return;
+            }
+          }
         }
       }
 
@@ -231,32 +297,31 @@ function LoginForm() {
           .eq("id", assignedWorkspaceId)
           .single();
 
-        if (!wsError && wsData && (wsData.status === "active" || !wsData.status)) {
-          memberWorkspaces.push(wsData as Workspace);
-        }
-      }
-
-      // 3. Fallback to local storage memberships if database is offline or local dev
-      if (memberWorkspaces.length === 0) {
-        const allMembers = getLocalMembers();
-        const activeMembers = allMembers.filter(
-          (m) =>
-            (m.user_id === userId || m.user_id.toLowerCase() === userEmail.toLowerCase()) &&
-            m.status === "active"
-        );
-        const allWorkspaces = await getWorkspaces(userEmail);
-        const localMatched = allWorkspaces.filter((w) =>
-          activeMembers.some((m) => m.workspace_id === w.id) && (w.status === "active" || !w.status)
-        );
-        if (localMatched.length > 0) {
-          memberWorkspaces = localMatched;
+        if (!wsError && wsData) {
+          if (wsData.status === "active") {
+            memberWorkspaces.push(wsData as Workspace);
+          } else if (wsData.status === "pending") {
+            await supabase.auth.signOut();
+            setPendingNotice({
+              workspaceName: wsData.name,
+              workspaceCode: wsData.workspace_code || "PENDING",
+              status: "Pending Platform Approval",
+            });
+            setLoading(false);
+            return;
+          } else if (wsData.status === "rejected") {
+            await supabase.auth.signOut();
+            setError(`Access Denied: Your workspace access request was rejected.${wsData.rejection_reason ? ` Reason: ${wsData.rejection_reason}` : ""}`);
+            setLoading(false);
+            return;
+          }
         }
       }
     } catch (queryErr) {
       console.warn("Could not query workspace memberships from database:", queryErr);
     }
 
-    // STRICT ACCESS ENFORCEMENT: Never fall back to DEFAULT_WORKSPACE_ID for non-primary owners!
+    // STRICT ACCESS ENFORCEMENT: If no active workspace is found, block and sign out
     if (memberWorkspaces.length === 0) {
       try {
         await supabase.auth.signOut();
@@ -444,6 +509,35 @@ function LoginForm() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleLogin} className="space-y-4">
+            {/* Pending Platform Approval Notice */}
+            {pendingNotice && (
+              <div className="p-4 bg-amber-50/90 border border-amber-300/80 rounded-xl space-y-2 text-xs text-amber-950 animate-in fade-in-50 shadow-sm">
+                <div className="flex items-center gap-2 font-bold text-amber-900 text-sm">
+                  <AlertCircle className="h-4 w-4 text-amber-600 shrink-0" />
+                  <span>Access Waiting For Platform Approval</span>
+                </div>
+                <p className="text-amber-800 leading-relaxed">
+                  Your credentials are valid, but your workspace access is currently pending approval by the Platform Owner.
+                </p>
+                <div className="bg-white/80 rounded-lg p-2.5 border border-amber-200/80 space-y-1.5 text-slate-800 font-medium">
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-500">Workspace:</span>
+                    <span className="font-bold text-slate-900">{pendingNotice.workspaceName}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-500">Workspace Code:</span>
+                    <span className="font-mono font-semibold text-blue-700">{pendingNotice.workspaceCode}</span>
+                  </div>
+                  <div className="flex justify-between items-center pt-1 border-t border-amber-100">
+                    <span className="text-slate-500">Status:</span>
+                    <Badge variant="outline" className="bg-amber-100/80 text-amber-900 border-amber-300 text-[10px] font-semibold">
+                      {pendingNotice.status}
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Informational Message */}
             {infoMessage && (
               <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center gap-2.5 text-xs text-emerald-800 font-semibold animate-in fade-in-50">

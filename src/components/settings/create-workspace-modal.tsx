@@ -255,6 +255,10 @@ export function CreateWorkspaceModal({ isOpen, onClose, onCreated }: CreateWorks
         setError("Please enter a Workspace / Business Name.");
         return;
       }
+      if (!code.trim()) {
+        setError("Please enter a Workspace Code (e.g. SU9089).");
+        return;
+      }
       setCurrentStep(2);
     } else if (currentStep === 2) {
       if (!assignedFullName.trim()) {
@@ -332,7 +336,7 @@ export function CreateWorkspaceModal({ isOpen, onClose, onCreated }: CreateWorks
     setError(null);
 
     try {
-      const cleanCode = code.trim() ? code.trim().toUpperCase() : undefined;
+      const cleanCode = code.trim().toUpperCase();
       const res = await createDirectWorkspace({
         mode,
         name: name.trim(),
@@ -361,11 +365,11 @@ export function CreateWorkspaceModal({ isOpen, onClose, onCreated }: CreateWorks
 
       setCreatedSuccess({
         workspace: res.workspace,
-        code: res.workspace.code || cleanCode || null,
+        code: res.workspace.workspace_code || res.workspace.code || cleanCode || null,
         ownerName: assignedFullName.trim(),
         ownerEmail: assignedEmail.trim().toLowerCase(),
         role: "Workspace Owner",
-        status: "ACTIVE",
+        status: res.workspace.status === "pending" ? "PENDING APPROVAL" : "ACTIVE",
         loginUrl: res.login_url || `${window.location.origin}/login`,
         mode,
         alreadyExists: res.already_exists,
@@ -594,12 +598,12 @@ export function CreateWorkspaceModal({ isOpen, onClose, onCreated }: CreateWorks
                     <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center justify-between">
                       <span className="flex items-center gap-1.5">
                         <Shield className="w-3.5 h-3.5 text-blue-600" />
-                        Workspace Code (Optional)
+                        Workspace Code *
                       </span>
-                      <span className="text-[10px] text-slate-400 font-normal">e.g. IBRAR01</span>
+                      <span className="text-[10px] text-slate-400 font-normal">e.g. SU9089</span>
                     </Label>
                     <Input
-                      placeholder="e.g. IBRAR01"
+                      placeholder="e.g. SU9089"
                       value={code}
                       onChange={(e) => setCode(e.target.value.toUpperCase())}
                       className="text-xs h-9 font-mono uppercase tracking-wider"

@@ -452,9 +452,17 @@ export async function createDirectWorkspace(
   payload: CreateDirectWorkspacePayload
 ): Promise<CreateDirectWorkspaceResponse> {
   try {
+    const supabase = createClient();
+    const { data: sessionData } = await supabase.auth.getSession();
+    const token = sessionData?.session?.access_token;
+    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
+
     const res = await fetch("/api/workspaces/create", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers,
       body: JSON.stringify(payload),
     });
 
@@ -476,9 +484,9 @@ export async function createDirectWorkspace(
           workspace_id: data.workspace.id,
           user_id: data.owner.id,
           role: "owner",
-          status: "active",
+          status: "pending",
           is_workspace_owner: true,
-          joined_at: new Date().toISOString(),
+          joined_at: null as any,
         };
         saveLocalMembers([...members, newMember]);
       }
@@ -488,6 +496,87 @@ export async function createDirectWorkspace(
   } catch (err: any) {
     console.error("createDirectWorkspace network error:", err);
     return { success: false, error: err.message || "Network error creating workspace." };
+  }
+}
+
+// ─── Workspace Approval & Rejection Actions (Server-Side) ─────────────────────
+
+export async function approveWorkspace(
+  workspaceId: string
+): Promise<{ success: boolean; error?: string; message?: string }> {
+  try {
+    const supabase = createClient();
+    const { data: sessionData } = await supabase.auth.getSession();
+    const token = sessionData?.session?.access_token;
+    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
+
+    const res = await fetch("/api/workspaces/approve", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ workspace_id: workspaceId, action: "approve" }),
+    });
+
+    const data = await res.json();
+    if (!res.ok || !data.success) {
+      return { success: false, error: data.error || "Failed to approve workspace." };
+    }
+
+    // Update local workspace cache
+    const current = getLocalWorkspaces();
+    const updated = current.map((w) =>
+      w.id === workspaceId ? { ...w, status: "active" as WorkspaceStatus, approved_at: new Date().toISOString(), rejection_reason: null } : w
+    );
+    saveLocalWorkspaces(updated);
+
+    return { success: true, message: data.message };
+  } catch (err: any) {
+    return { success: false, error: err.message || "Network error approving workspace." };
+  }
+}
+
+export async function rejectWorkspace(
+  workspaceId: string,
+  rejectionReason?: string
+): Promise<{ success: boolean; error?: string; message?: string }> {
+  try {
+    const supabase = createClient();
+    const { data: sessionData } = await supabase.auth.getSession();
+    const token = sessionData?.session?.access_token;
+    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
+
+    const res = await fetch("/api/workspaces/approve", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        workspace_id: workspaceId,
+        action: "reject",
+        rejection_reason: rejectionReason,
+      }),
+    });
+
+    const data = await res.json();
+    if (!res.ok || !data.success) {
+      return { success: false, error: data.error || "Failed to reject workspace." };
+    }
+
+    // Update local workspace cache
+    const current = getLocalWorkspaces();
+    const updated = current.map((w) =>
+      w.id === workspaceId
+        ? { ...w, status: "rejected" as WorkspaceStatus, rejection_reason: rejectionReason || "Rejected" }
+        : w
+    );
+    saveLocalWorkspaces(updated);
+
+    return { success: true, message: data.message };
+  } catch (err: any) {
+    return { success: false, error: err.message || "Network error rejecting workspace." };
   }
 }
 

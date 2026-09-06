@@ -120,13 +120,14 @@ export type InventoryTransactionType = 'purchase_in' | 'job_card_out' | 'adjustm
 
 export type ExpensePaymentMethod = 'cash' | 'bank_transfer' | 'credit_card' | 'other' | 'bank';
 
-export type WorkspaceStatus = 'active' | 'suspended' | 'archived';
-export type WorkspaceMemberStatus = 'active' | 'invited' | 'pending' | 'suspended' | 'removed';
+export type WorkspaceStatus = 'pending' | 'active' | 'suspended' | 'rejected' | 'archived';
+export type WorkspaceMemberStatus = 'pending' | 'active' | 'invited' | 'suspended' | 'rejected' | 'removed';
 
 export interface Workspace {
   id: string;
   name: string;
   code?: string | null;
+  workspace_code?: string | null;
   business_name: string;
   owner_user_id?: string | null;
   owner_name?: string | null;
@@ -140,6 +141,11 @@ export interface Workspace {
   trn_number?: string | null;
   logo_url?: string | null;
   status: WorkspaceStatus;
+  is_primary?: boolean;
+  created_by?: string | null;
+  approved_by?: string | null;
+  approved_at?: string | null;
+  rejection_reason?: string | null;
   created_at: string;
   updated_at: string;
   users_count?: number;

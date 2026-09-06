@@ -34,6 +34,7 @@ import {
   Lock,
   Unlock,
   Ban,
+  AlertCircle,
 } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import {
@@ -65,6 +66,8 @@ import {
   restoreWorkspaceOwner,
   removeWorkspaceUser,
   restoreWorkspaceUser,
+  approveWorkspace,
+  rejectWorkspace,
   getLocalMembers,
 } from "@/lib/services/workspace-service";
 import { getUsers, updateUserAccessControls } from "@/lib/services/user-service";
@@ -87,7 +90,7 @@ export function WorkspacesTab({ embedded = false }: WorkspacesTabProps) {
 
   // Search & Filter
   const [searchQuery, setSearchQuery] = useState("");
-  const [subTab, setSubTab] = useState<"active" | "archived">("active");
+  const [subTab, setSubTab] = useState<"active" | "pending" | "archived">("active");
 
   // Modals
   const [createModalOpen, setCreateModalOpen] = useState(false);
@@ -97,6 +100,11 @@ export function WorkspacesTab({ embedded = false }: WorkspacesTabProps) {
   const [deleteTargetWorkspace, setDeleteTargetWorkspace] = useState<Workspace | null>(null);
   const [typedDeleteName, setTypedDeleteName] = useState("");
   const [deletingWorkspace, setDeletingWorkspace] = useState(false);
+
+  // Reject Workspace Modal state (Requirement 9, 11)
+  const [rejectTargetWorkspace, setRejectTargetWorkspace] = useState<Workspace | null>(null);
+  const [rejectionReason, setRejectionReason] = useState("");
+  const [rejectingWorkspace, setRejectingWorkspace] = useState(false);
 
   // Manage Users / Manage Access scoped modal
   const [manageUsersWorkspace, setManageUsersWorkspace] = useState<Workspace | null>(null);
@@ -116,13 +124,18 @@ export function WorkspacesTab({ embedded = false }: WorkspacesTabProps) {
     setTimeout(() => setToast(null), 4500);
   };
 
-  // Top Stats calculation (Requirement 2)
+  // Top Stats calculation (Requirement 2 & 9)
   const activeCount = useMemo(
     () => workspaces.filter((w) => w.status === "active").length,
     [workspaces]
   );
+  const pendingWorkspaces = useMemo(
+    () => workspaces.filter((w) => w.status === "pending"),
+    [workspaces]
+  );
+  const pendingCount = pendingWorkspaces.length;
   const archivedCount = useMemo(
-    () => workspaces.filter((w) => w.status === "archived").length,
+    () => workspaces.filter((w) => w.status === "archived" || w.status === "rejected").length,
     [workspaces]
   );
 
@@ -135,16 +148,19 @@ export function WorkspacesTab({ embedded = false }: WorkspacesTabProps) {
     }
   }, [workspaces, manageUsersWorkspace]);
 
-  // Filter workspaces based on search and active/archived subtab
+  // Filter workspaces based on search and active/pending/archived subtab
   const filteredWorkspaces = useMemo(() => {
     return workspaces.filter((ws) => {
-      if (subTab === "active" && ws.status === "archived") return false;
-      if (subTab === "archived" && ws.status !== "archived") return false;
+      if (subTab === "active" && ws.status !== "active") return false;
+      if (subTab === "pending" && ws.status !== "pending") return false;
+      if (subTab === "archived" && ws.status !== "archived" && ws.status !== "rejected") return false;
 
       if (!searchQuery.trim()) return true;
       const q = searchQuery.toLowerCase();
       return (
         ws.name.toLowerCase().includes(q) ||
+        (ws.workspace_code && ws.workspace_code.toLowerCase().includes(q)) ||
+        (ws.code && ws.code.toLowerCase().includes(q)) ||
         (ws.business_name && ws.business_name.toLowerCase().includes(q)) ||
         (ws.owner_name && ws.owner_name.toLowerCase().includes(q)) ||
         (ws.owner_email && ws.owner_email.toLowerCase().includes(q)) ||
@@ -152,6 +168,45 @@ export function WorkspacesTab({ embedded = false }: WorkspacesTabProps) {
       );
     });
   }, [workspaces, searchQuery, subTab]);
+
+  // Approve Workspace (Requirement 10)
+  const handleApproveWorkspace = async (ws: Workspace) => {
+    setLoadingAction(ws.id);
+    try {
+      const res = await approveWorkspace(ws.id);
+      if (res.success) {
+        showToast("success", `Workspace "${ws.name}" approved and activated!`);
+        await refreshWorkspaces();
+      } else {
+        showToast("error", res.error || "Failed to approve workspace.");
+      }
+    } catch (e: any) {
+      showToast("error", e.message || "Approval failed.");
+    } finally {
+      setLoadingAction(null);
+    }
+  };
+
+  // Reject Workspace (Requirement 11)
+  const handleConfirmRejectWorkspace = async () => {
+    if (!rejectTargetWorkspace) return;
+    setRejectingWorkspace(true);
+    try {
+      const res = await rejectWorkspace(rejectTargetWorkspace.id, rejectionReason.trim());
+      if (res.success) {
+        showToast("success", `Workspace "${rejectTargetWorkspace.name}" rejected.`);
+        setRejectTargetWorkspace(null);
+        setRejectionReason("");
+        await refreshWorkspaces();
+      } else {
+        showToast("error", res.error || "Failed to reject workspace.");
+      }
+    } catch (e: any) {
+      showToast("error", e.message || "Rejection failed.");
+    } finally {
+      setRejectingWorkspace(false);
+    }
+  };
 
   // Open Manage Users / Manage Access modal scoped to a specific workspace (Requirement 5 & 15)
   const handleOpenManageUsers = async (workspace: Workspace) => {
@@ -356,14 +411,14 @@ export function WorkspacesTab({ embedded = false }: WorkspacesTabProps) {
         <div className="bg-white border border-slate-200/80 rounded-xl p-4 shadow-xs flex items-center justify-between">
           <div>
             <p className="text-[11px] font-semibold text-amber-700 uppercase tracking-wider">
-              Archived Workspaces
+              Pending Approvals
             </p>
             <p className="text-2xl font-bold font-mono tabular-nums text-amber-700 mt-0.5">
-              {archivedCount}
+              {pendingCount}
             </p>
           </div>
           <div className="w-9 h-9 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
-            <Archive className="w-4 h-4" />
+            <Clock className="w-4 h-4" />
           </div>
         </div>
 
@@ -381,6 +436,114 @@ export function WorkspacesTab({ embedded = false }: WorkspacesTabProps) {
           </div>
         </div>
       </div>
+
+      {/* ─── PENDING OWNER APPROVALS SECTION (Requirement 9) ──────────────── */}
+      {isPlatformOwner && pendingCount > 0 && (
+        <Card className="border-2 border-amber-300 bg-amber-50/50 dark:bg-amber-950/20 shadow-sm rounded-xl overflow-hidden">
+          <CardHeader className="pb-3 border-b border-amber-200/80">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center font-bold">
+                  <AlertCircle className="w-4 h-4" />
+                </div>
+                <div>
+                  <CardTitle className="text-sm font-black text-amber-950 dark:text-amber-100 flex items-center gap-2">
+                    Pending Workspace Approvals
+                    <Badge className="bg-amber-200 text-amber-950 border border-amber-300 text-[10px] font-black">
+                      {pendingCount} AWAITING APPROVAL
+                    </Badge>
+                  </CardTitle>
+                  <CardDescription className="text-xs text-amber-800 dark:text-amber-300">
+                    Review newly created workspaces and approve or reject access.
+                  </CardDescription>
+                </div>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-amber-100/60 text-amber-900 font-semibold text-[11px] uppercase tracking-wider border-b border-amber-200">
+                  <tr className="h-9">
+                    <th className="py-2 px-4">Workspace Name</th>
+                    <th className="py-2 px-4">Workspace Code</th>
+                    <th className="py-2 px-4">Owner Email</th>
+                    <th className="py-2 px-4">Role</th>
+                    <th className="py-2 px-4">Created Date</th>
+                    <th className="py-2 px-4">Status</th>
+                    <th className="py-2 px-4 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-amber-100/80 bg-white dark:bg-slate-900">
+                  {pendingWorkspaces.map((ws) => (
+                    <tr key={ws.id} className="h-12 hover:bg-amber-50/40 transition-colors">
+                      <td className="py-2.5 px-4 font-bold text-slate-900 dark:text-slate-100">
+                        {ws.name}
+                        {ws.business_name && ws.business_name !== ws.name && (
+                          <span className="block text-[11px] text-slate-500 font-normal">
+                            {ws.business_name}
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-2.5 px-4 font-mono font-bold text-blue-700">
+                        {ws.workspace_code || ws.code || "PENDING"}
+                      </td>
+                      <td className="py-2.5 px-4 text-slate-700 dark:text-slate-300">
+                        {ws.owner_email || ws.email || "N/A"}
+                        {ws.owner_name && (
+                          <span className="block text-[11px] text-slate-500 font-medium">
+                            {ws.owner_name}
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-2.5 px-4 font-semibold text-slate-700 uppercase">
+                        Owner
+                      </td>
+                      <td className="py-2.5 px-4 text-slate-500 text-[11px]">
+                        {ws.created_at ? new Date(ws.created_at).toLocaleDateString() : "Today"}
+                      </td>
+                      <td className="py-2.5 px-4">
+                        <Badge className="bg-amber-100 text-amber-900 border border-amber-300 text-[10px] font-bold">
+                          Pending Approval
+                        </Badge>
+                      </td>
+                      <td className="py-2.5 px-4 text-right">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <Button
+                            size="sm"
+                            onClick={() => handleApproveWorkspace(ws)}
+                            disabled={loadingAction === ws.id}
+                            className="text-xs h-7 px-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold gap-1 shadow-xs"
+                          >
+                            {loadingAction === ws.id ? (
+                              <Loader2 className="w-3 h-3 animate-spin" />
+                            ) : (
+                              <CheckCircle2 className="w-3.5 h-3.5" />
+                            )}
+                            Approve
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setRejectTargetWorkspace(ws);
+                              setRejectionReason("");
+                            }}
+                            disabled={loadingAction === ws.id}
+                            className="text-xs h-7 px-3 border-red-200 text-red-600 hover:bg-red-50 font-bold gap-1"
+                          >
+                            <Ban className="w-3.5 h-3.5" /> Reject
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* ─── 2. WORKSPACES DIRECTORY TABLE (Requirement 3 & 4) ────────────── */}
       <Card className="border border-slate-200/80 shadow-xs bg-white rounded-xl overflow-hidden">
@@ -418,7 +581,7 @@ export function WorkspacesTab({ embedded = false }: WorkspacesTabProps) {
             </div>
           </div>
 
-          {/* Subtabs: Active vs Archived Workspaces (Requirement 20) */}
+          {/* Subtabs: Active, Pending, Archived Workspaces */}
           <div className="flex items-center gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
             <button
               onClick={() => setSubTab("active")}
@@ -441,6 +604,26 @@ export function WorkspacesTab({ embedded = false }: WorkspacesTabProps) {
             </button>
 
             <button
+              onClick={() => setSubTab("pending")}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-2 ${
+                subTab === "pending"
+                  ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-xs"
+                  : "bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400"
+              }`}
+            >
+              <span>Pending Approval</span>
+              <span
+                className={`text-[10px] px-1.5 py-0.2 rounded-full font-black ${
+                  subTab === "pending"
+                    ? "bg-white/20 text-white dark:bg-black/20 dark:text-black"
+                    : "bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-400"
+                }`}
+              >
+                {pendingCount}
+              </span>
+            </button>
+
+            <button
               onClick={() => setSubTab("archived")}
               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-2 ${
                 subTab === "archived"
@@ -448,12 +631,12 @@ export function WorkspacesTab({ embedded = false }: WorkspacesTabProps) {
                   : "bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400"
               }`}
             >
-              <span>Archived Workspaces</span>
+              <span>Archived / Rejected</span>
               <span
                 className={`text-[10px] px-1.5 py-0.2 rounded-full font-black ${
                   subTab === "archived"
                     ? "bg-white/20 text-white dark:bg-black/20 dark:text-black"
-                    : "bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-400"
+                    : "bg-slate-200 text-slate-800 dark:bg-slate-800 dark:text-slate-300"
                 }`}
               >
                 {archivedCount}
@@ -554,12 +737,14 @@ export function WorkspacesTab({ embedded = false }: WorkspacesTabProps) {
                           className={`text-[10px] uppercase font-black ${
                             ws.status === "active"
                               ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300"
+                              : ws.status === "pending"
+                              ? "bg-amber-100 text-amber-900 border-amber-300 dark:bg-amber-950/60 dark:text-amber-300"
                               : ws.status === "archived"
-                              ? "bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300"
+                              ? "bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-300"
                               : "bg-red-100 text-red-800 dark:bg-red-950/60 dark:text-red-300"
                           }`}
                         >
-                          {ws.status}
+                          {ws.status === "pending" ? "Pending Approval" : ws.status}
                         </Badge>
                       </td>
 
@@ -587,115 +772,148 @@ export function WorkspacesTab({ embedded = false }: WorkspacesTabProps) {
                         )}
                       </td>
 
-                      {/* Actions (Requirement 4) */}
+                      {/* Actions (Requirement 4 & 9) */}
                       <td className="py-2.5 px-4 text-right w-[200px] whitespace-nowrap">
                         <div className="flex items-center justify-end gap-1.5">
-                          {!isCurrent && ws.status !== "archived" && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => switchWorkspace(ws.id)}
-                              className="text-xs h-8 border-slate-200 hover:bg-purple-50 hover:text-purple-700 font-semibold"
-                            >
-                              <ArrowRight className="w-3.5 h-3.5 mr-1" /> Open
-                            </Button>
-                          )}
-
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleOpenManageUsers(ws)}
-                            className="text-xs h-8 border-slate-200 hover:bg-slate-100 font-semibold text-slate-700 dark:text-slate-300"
-                          >
-                            <Users className="w-3.5 h-3.5 mr-1 text-blue-600" /> Manage Access
-                          </Button>
-
-                          {isPlatformOwner && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => setSelectedWorkspace(ws)}
-                              className="text-xs h-8 border-slate-200 hover:bg-blue-50 hover:text-blue-700 font-bold"
-                            >
-                              <Sliders className="w-3.5 h-3.5 mr-1" /> Manage
-                            </Button>
-                          )}
-
-                          {isPlatformOwner && (
-                            <DropdownMenu>
-                              <DropdownMenuTrigger className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800">
-                                <MoreVertical className="w-3.5 h-3.5" />
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end" className="text-xs">
-                                <DropdownMenuLabel>Workspace Actions</DropdownMenuLabel>
-                                {!isCurrent && ws.status !== "archived" && (
-                                  <DropdownMenuItem onClick={() => switchWorkspace(ws.id)}>
-                                    <ArrowRight className="w-3.5 h-3.5 mr-2" /> Open Workspace
-                                  </DropdownMenuItem>
+                          {/* If Workspace is Pending, show direct Approve / Reject actions */}
+                          {ws.status === "pending" && isPlatformOwner ? (
+                            <>
+                              <Button
+                                size="sm"
+                                onClick={() => handleApproveWorkspace(ws)}
+                                disabled={loadingAction === ws.id}
+                                className="text-xs h-8 bg-emerald-600 hover:bg-emerald-700 text-white font-bold gap-1 shadow-xs"
+                              >
+                                {loadingAction === ws.id ? (
+                                  <Loader2 className="w-3 h-3 animate-spin" />
+                                ) : (
+                                  <CheckCircle2 className="w-3.5 h-3.5" />
                                 )}
-                                <DropdownMenuItem onClick={() => setSelectedWorkspace(ws)}>
-                                  <Sliders className="w-3.5 h-3.5 mr-2" /> Manage Workspace
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => handleOpenManageUsers(ws)}>
-                                  <Users className="w-3.5 h-3.5 mr-2 text-blue-600" /> Manage Access &amp; Users
-                                </DropdownMenuItem>
-                                {!isPrimary && (
-                                  <>
-                                    <DropdownMenuSeparator />
-                                    {/* Suspend / Reactivate Workspace (Requirement 4) */}
-                                    {ws.status === "suspended" ? (
-                                      <DropdownMenuItem
-                                        onClick={() => handleToggleWorkspaceSuspend(ws)}
-                                        className="text-emerald-600 font-semibold cursor-pointer"
-                                      >
-                                        <CheckCircle2 className="w-3.5 h-3.5 mr-2 text-emerald-600" /> Reactivate Workspace
-                                      </DropdownMenuItem>
-                                    ) : ws.status === "active" ? (
-                                      <DropdownMenuItem
-                                        onClick={() => handleToggleWorkspaceSuspend(ws)}
-                                        className="text-amber-600 font-semibold cursor-pointer"
-                                      >
-                                        <Ban className="w-3.5 h-3.5 mr-2 text-amber-600" /> Suspend Workspace
-                                      </DropdownMenuItem>
-                                    ) : null}
+                                Approve
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  setRejectTargetWorkspace(ws);
+                                  setRejectionReason("");
+                                }}
+                                disabled={loadingAction === ws.id}
+                                className="text-xs h-8 border-red-200 text-red-600 hover:bg-red-50 font-bold gap-1"
+                              >
+                                <Ban className="w-3.5 h-3.5" /> Reject
+                              </Button>
+                            </>
+                          ) : (
+                            <>
+                              {!isCurrent && ws.status === "active" && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => switchWorkspace(ws.id)}
+                                  className="text-xs h-8 border-slate-200 hover:bg-purple-50 hover:text-purple-700 font-semibold"
+                                >
+                                  <ArrowRight className="w-3.5 h-3.5 mr-1" /> Open
+                                </Button>
+                              )}
 
-                                    {/* Archive / Restore Workspace (Requirement 4, 10) */}
-                                    {ws.status === "archived" ? (
-                                      <DropdownMenuItem
-                                        onClick={async () => {
-                                          await restoreWorkspace(ws.id, currentUser?.full_name || "Primary Owner");
-                                          refreshWorkspaces();
-                                        }}
-                                        className="text-emerald-600 font-semibold cursor-pointer"
-                                      >
-                                        <RotateCcw className="w-3.5 h-3.5 mr-2 text-emerald-600" /> Restore Workspace
-                                      </DropdownMenuItem>
-                                    ) : (
-                                      <DropdownMenuItem
-                                        onClick={async () => {
-                                          await archiveWorkspace(ws.id, currentUser?.full_name || "Primary Owner");
-                                          refreshWorkspaces();
-                                        }}
-                                        className="text-amber-600 font-semibold cursor-pointer"
-                                      >
-                                        <Archive className="w-3.5 h-3.5 mr-2 text-amber-600" /> Archive Workspace
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleOpenManageUsers(ws)}
+                                className="text-xs h-8 border-slate-200 hover:bg-slate-100 font-semibold text-slate-700 dark:text-slate-300"
+                              >
+                                <Users className="w-3.5 h-3.5 mr-1 text-blue-600" /> Manage Access
+                              </Button>
+
+                              {isPlatformOwner && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => setSelectedWorkspace(ws)}
+                                  className="text-xs h-8 border-slate-200 hover:bg-blue-50 hover:text-blue-700 font-bold"
+                                >
+                                  <Sliders className="w-3.5 h-3.5 mr-1" /> Manage
+                                </Button>
+                              )}
+
+                              {isPlatformOwner && (
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800">
+                                    <MoreVertical className="w-3.5 h-3.5" />
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end" className="text-xs">
+                                    <DropdownMenuLabel>Workspace Actions</DropdownMenuLabel>
+                                    {!isCurrent && ws.status === "active" && (
+                                      <DropdownMenuItem onClick={() => switchWorkspace(ws.id)}>
+                                        <ArrowRight className="w-3.5 h-3.5 mr-2" /> Open Workspace
                                       </DropdownMenuItem>
                                     )}
-
-                                    {/* Direct Delete Workspace (Requirement 4, 8, 9) */}
-                                    <DropdownMenuItem
-                                      onClick={() => {
-                                        setDeleteTargetWorkspace(ws);
-                                        setTypedDeleteName("");
-                                      }}
-                                      className="text-rose-600 font-semibold cursor-pointer"
-                                    >
-                                      <Trash2 className="w-3.5 h-3.5 mr-2 text-rose-600" /> Delete Workspace
+                                    <DropdownMenuItem onClick={() => setSelectedWorkspace(ws)}>
+                                      <Sliders className="w-3.5 h-3.5 mr-2" /> Manage Workspace
                                     </DropdownMenuItem>
-                                  </>
-                                )}
-                              </DropdownMenuContent>
-                            </DropdownMenu>
+                                    <DropdownMenuItem onClick={() => handleOpenManageUsers(ws)}>
+                                      <Users className="w-3.5 h-3.5 mr-2 text-blue-600" /> Manage Access &amp; Users
+                                    </DropdownMenuItem>
+                                    {!isPrimary && (
+                                      <>
+                                        <DropdownMenuSeparator />
+                                        {/* Suspend / Reactivate Workspace (Requirement 4) */}
+                                        {ws.status === "suspended" ? (
+                                          <DropdownMenuItem
+                                            onClick={() => handleToggleWorkspaceSuspend(ws)}
+                                            className="text-emerald-600 font-semibold cursor-pointer"
+                                          >
+                                            <CheckCircle2 className="w-3.5 h-3.5 mr-2 text-emerald-600" /> Reactivate Workspace
+                                          </DropdownMenuItem>
+                                        ) : ws.status === "active" ? (
+                                          <DropdownMenuItem
+                                            onClick={() => handleToggleWorkspaceSuspend(ws)}
+                                            className="text-amber-600 font-semibold cursor-pointer"
+                                          >
+                                            <Ban className="w-3.5 h-3.5 mr-2 text-amber-600" /> Suspend Workspace
+                                          </DropdownMenuItem>
+                                        ) : null}
+
+                                        {/* Archive / Restore Workspace (Requirement 4, 10) */}
+                                        {ws.status === "archived" ? (
+                                          <DropdownMenuItem
+                                            onClick={async () => {
+                                              await restoreWorkspace(ws.id, currentUser?.full_name || "Primary Owner");
+                                              refreshWorkspaces();
+                                            }}
+                                            className="text-emerald-600 font-semibold cursor-pointer"
+                                          >
+                                            <RotateCcw className="w-3.5 h-3.5 mr-2 text-emerald-600" /> Restore Workspace
+                                          </DropdownMenuItem>
+                                        ) : (
+                                          <DropdownMenuItem
+                                            onClick={async () => {
+                                              await archiveWorkspace(ws.id, currentUser?.full_name || "Primary Owner");
+                                              refreshWorkspaces();
+                                            }}
+                                            className="text-amber-600 font-semibold cursor-pointer"
+                                          >
+                                            <Archive className="w-3.5 h-3.5 mr-2 text-amber-600" /> Archive Workspace
+                                          </DropdownMenuItem>
+                                        )}
+
+                                        {/* Direct Delete Workspace (Requirement 4, 8, 9) */}
+                                        <DropdownMenuItem
+                                          onClick={() => {
+                                            setDeleteTargetWorkspace(ws);
+                                            setTypedDeleteName("");
+                                          }}
+                                          className="text-rose-600 font-semibold cursor-pointer"
+                                        >
+                                          <Trash2 className="w-3.5 h-3.5 mr-2 text-rose-600" /> Delete Workspace
+                                        </DropdownMenuItem>
+                                      </>
+                                    )}
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              )}
+                            </>
                           )}
                         </div>
                       </td>
@@ -1060,6 +1278,85 @@ export function WorkspacesTab({ embedded = false }: WorkspacesTabProps) {
                 className="text-xs font-bold h-8 bg-red-600 hover:bg-red-700"
               >
                 {deletingWorkspace ? "Deleting..." : "Delete Permanently"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* ─── 7. REJECT WORKSPACE CONFIRMATION MODAL (Requirement 11) ───────── */}
+      {rejectTargetWorkspace && (
+        <Dialog
+          open={Boolean(rejectTargetWorkspace)}
+          onOpenChange={(open) => {
+            if (!open) {
+              setRejectTargetWorkspace(null);
+              setRejectionReason("");
+            }
+          }}
+        >
+          <DialogContent className="max-w-md bg-white dark:bg-slate-900 p-6">
+            <DialogHeader>
+              <DialogTitle className="text-base font-black text-red-600 flex items-center gap-2">
+                <Ban className="w-4 h-4" />
+                Reject Workspace Request
+              </DialogTitle>
+              <DialogDescription className="text-xs text-slate-500">
+                Workspace: <strong>{rejectTargetWorkspace.name}</strong> ({rejectTargetWorkspace.workspace_code || rejectTargetWorkspace.code || "PENDING"})
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-3 py-2 text-xs">
+              <div className="p-3 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 rounded-xl space-y-1 text-red-800 dark:text-red-300">
+                <p className="font-bold flex items-center gap-1.5">
+                  <AlertTriangle className="w-3.5 h-3.5 text-red-600 shrink-0" />
+                  Workspace Rejection
+                </p>
+                <p className="text-[11px] text-red-700 dark:text-red-400">
+                  This workspace will be marked as rejected. The user will be informed with the rejection reason upon sign-in attempt and denied access to business data.
+                </p>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                  Rejection Reason (Optional):
+                </Label>
+                <Input
+                  value={rejectionReason}
+                  onChange={(e) => setRejectionReason(e.target.value)}
+                  placeholder="e.g. Incomplete business verification, duplicate entry, etc."
+                  className="text-xs h-9"
+                  autoFocus
+                />
+              </div>
+            </div>
+
+            <DialogFooter className="gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setRejectTargetWorkspace(null);
+                  setRejectionReason("");
+                }}
+                className="text-xs h-8"
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                size="sm"
+                disabled={rejectingWorkspace}
+                onClick={handleConfirmRejectWorkspace}
+                className="text-xs font-bold h-8 bg-red-600 hover:bg-red-700"
+              >
+                {rejectingWorkspace ? (
+                  <>
+                    <Loader2 className="w-3 h-3 animate-spin mr-1" /> Rejecting...
+                  </>
+                ) : (
+                  "Confirm Rejection"
+                )}
               </Button>
             </DialogFooter>
           </DialogContent>
