@@ -17,8 +17,25 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "ATIQ JEHAN — Auto Workshop Management System",
-  description: "Professional Auto Workshop Management SaaS for ATIQ JEHAN AUTO REPAIR & USED SPARE PARTS L.L.C.",
+  title: {
+    default: "ATIQ JEHAN AUTO REPAIR",
+    template: "%s | ATIQ JEHAN AUTO REPAIR",
+  },
+  description: "Workshop Management System",
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/branding/favicon-16x16.png", sizes: "16x16", type: "image/png" },
+      { url: "/branding/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+      { url: "/branding/favicon-48x48.png", sizes: "48x48", type: "image/png" },
+      { url: "/icon.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: [
+      { url: "/apple-icon.png", sizes: "180x180", type: "image/png" },
+      { url: "/branding/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+    ],
+    shortcut: "/favicon.ico",
+  },
 };
 
 export default function RootLayout({
