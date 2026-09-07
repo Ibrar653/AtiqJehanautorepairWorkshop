@@ -40,9 +40,9 @@ export function PageHeader({ title, description, breadcrumbs, actions, children 
       {/* Title + Actions */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl lg:text-[26px] font-bold text-slate-900 tracking-tight">{title}</h1>
+          <h1 className="text-2xl lg:text-[26px] font-bold text-[#0F172A] dark:text-slate-100 tracking-tight">{title}</h1>
           {description && (
-            <p className="text-[13.5px] text-slate-500 font-normal mt-0.5">{description}</p>
+            <p className="text-[13.5px] text-[#64748B] dark:text-slate-400 font-normal mt-0.5">{description}</p>
           )}
         </div>
         {headerActions && <div className="flex flex-wrap items-center gap-2.5 shrink-0">{headerActions}</div>}

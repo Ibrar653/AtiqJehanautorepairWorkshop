@@ -629,60 +629,60 @@ export function UserAccessTab() {
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
         <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-5 shadow-2xs flex flex-col justify-between">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Total Staff</span>
-            <div className="w-9 h-9 rounded-xl bg-blue-50 dark:bg-blue-950/50 text-blue-600 flex items-center justify-center">
-              <Users className="w-4 h-4" />
+            <span className="text-[11px] font-semibold text-[#64748B] dark:text-slate-400 uppercase tracking-[0.03em]">Total Staff</span>
+            <div className="w-9 h-9 rounded-xl bg-blue-50 dark:bg-blue-950/50 text-blue-600 flex items-center justify-center shrink-0">
+              <Users className="w-[18px] h-[18px]" aria-hidden="true" />
             </div>
           </div>
-          <p className="text-2xl font-bold font-mono tracking-tight text-slate-900 dark:text-slate-100 tabular-nums mt-2">
+          <p className="text-[22px] sm:text-[24px] font-bold font-mono tracking-tight text-[#0F172A] dark:text-slate-100 tabular-nums leading-tight mt-2">
             {totalStaff}
           </p>
         </div>
 
         <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-5 shadow-2xs flex flex-col justify-between">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-emerald-700 uppercase tracking-wider">Active Staff</span>
-            <div className="w-9 h-9 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 flex items-center justify-center">
-              <UserCheck className="w-4 h-4" />
+            <span className="text-[11px] font-semibold text-[#64748B] dark:text-slate-400 uppercase tracking-[0.03em]">Active Staff</span>
+            <div className="w-9 h-9 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 flex items-center justify-center shrink-0">
+              <UserCheck className="w-[18px] h-[18px]" aria-hidden="true" />
             </div>
           </div>
-          <p className="text-2xl font-bold font-mono tracking-tight text-emerald-700 dark:text-emerald-400 tabular-nums mt-2">
+          <p className="text-[22px] sm:text-[24px] font-bold font-mono tracking-tight text-emerald-700 dark:text-emerald-400 tabular-nums leading-tight mt-2">
             {activeStaff}
           </p>
         </div>
 
         <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-5 shadow-2xs flex flex-col justify-between">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-blue-700 uppercase tracking-wider">Pending Invites</span>
-            <div className="w-9 h-9 rounded-xl bg-blue-50 dark:bg-blue-950/50 text-blue-600 flex items-center justify-center">
-              <Mail className="w-4 h-4" />
+            <span className="text-[11px] font-semibold text-[#64748B] dark:text-slate-400 uppercase tracking-[0.03em]">Pending Invites</span>
+            <div className="w-9 h-9 rounded-xl bg-blue-50 dark:bg-blue-950/50 text-blue-600 flex items-center justify-center shrink-0">
+              <Mail className="w-[18px] h-[18px]" aria-hidden="true" />
             </div>
           </div>
-          <p className="text-2xl font-bold font-mono tracking-tight text-blue-700 dark:text-blue-400 tabular-nums mt-2">
+          <p className="text-[22px] sm:text-[24px] font-bold font-mono tracking-tight text-blue-700 dark:text-blue-400 tabular-nums leading-tight mt-2">
             {pendingInvitations}
           </p>
         </div>
 
         <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-5 shadow-2xs flex flex-col justify-between">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-amber-700 uppercase tracking-wider">Suspended Staff</span>
-            <div className="w-9 h-9 rounded-xl bg-amber-50 dark:bg-amber-950/50 text-amber-600 flex items-center justify-center">
-              <UserX className="w-4 h-4" />
+            <span className="text-[11px] font-semibold text-[#64748B] dark:text-slate-400 uppercase tracking-[0.03em]">Suspended Staff</span>
+            <div className="w-9 h-9 rounded-xl bg-amber-50 dark:bg-amber-950/50 text-amber-600 flex items-center justify-center shrink-0">
+              <UserX className="w-[18px] h-[18px]" aria-hidden="true" />
             </div>
           </div>
-          <p className="text-2xl font-bold font-mono tracking-tight text-amber-700 dark:text-amber-400 tabular-nums mt-2">
+          <p className="text-[22px] sm:text-[24px] font-bold font-mono tracking-tight text-amber-700 dark:text-amber-400 tabular-nums leading-tight mt-2">
             {suspendedStaff}
           </p>
         </div>
 
         <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-5 shadow-2xs flex flex-col justify-between">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-rose-700 uppercase tracking-wider">Removed Staff</span>
-            <div className="w-9 h-9 rounded-xl bg-rose-50 dark:bg-rose-950/50 text-rose-600 flex items-center justify-center">
-              <UserMinus className="w-4 h-4" />
+            <span className="text-[11px] font-semibold text-[#64748B] dark:text-slate-400 uppercase tracking-[0.03em]">Removed Staff</span>
+            <div className="w-9 h-9 rounded-xl bg-rose-50 dark:bg-rose-950/50 text-rose-600 flex items-center justify-center shrink-0">
+              <UserMinus className="w-[18px] h-[18px]" aria-hidden="true" />
             </div>
           </div>
-          <p className="text-2xl font-bold font-mono tracking-tight text-rose-700 dark:text-rose-400 tabular-nums mt-2">
+          <p className="text-[22px] sm:text-[24px] font-bold font-mono tracking-tight text-rose-700 dark:text-rose-400 tabular-nums leading-tight mt-2">
             {removedStaff}
           </p>
         </div>
@@ -719,17 +719,19 @@ export function UserAccessTab() {
               <button
                 key={tab.id}
                 onClick={() => setActiveSubTab(tab.id as AccessSubTab)}
-                className={`px-3.5 h-9 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all ${
+                className={`px-3.5 h-9 rounded-xl text-[12px] font-semibold flex items-center gap-2 transition-all ${
                   isActive
                     ? "bg-blue-600 text-white shadow-2xs"
                     : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60"
                 }`}
               >
-                <Icon className="w-3.5 h-3.5" />
+                <span className="inline-flex items-center justify-center shrink-0" aria-hidden="true">
+                  <Icon className="w-3.5 h-3.5" />
+                </span>
                 <span>{tab.label}</span>
                 {tab.badge !== undefined && (
                   <span
-                    className={`ml-1 px-1.5 py-0.5 rounded-lg text-[10px] font-black ${
+                    className={`ml-1 px-1.5 py-0.5 rounded-lg text-[10px] font-bold ${
                       isActive
                         ? "bg-white/20 text-white"
                         : tab.badgeColor

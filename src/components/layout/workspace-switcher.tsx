@@ -27,34 +27,34 @@ export function WorkspaceSwitcher() {
     <>
       <DropdownMenu>
         <DropdownMenuTrigger
-          className="flex items-center gap-2.5 px-3 py-1.5 h-10 rounded-xl border border-slate-200 dark:border-[#273449] bg-white dark:bg-[#172033] hover:bg-slate-50 dark:hover:bg-slate-800 text-left transition-all outline-none focus-visible:ring-2 focus-visible:ring-blue-500/30 shadow-2xs cursor-pointer max-w-[280px]"
+          className="flex items-center gap-2.5 px-3 py-1.5 h-10 rounded-xl border border-slate-200 dark:border-[#273449] bg-white dark:bg-[#172033] hover:bg-slate-50 dark:hover:bg-slate-800 text-left transition-all outline-none focus-visible:ring-2 focus-visible:ring-blue-500/30 shadow-2xs cursor-pointer min-w-[250px] sm:min-w-[280px] max-w-[360px]"
           title="Switch Active Business Workspace"
         >
-          <div className="w-7 h-7 rounded-lg bg-[#0F172A] text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-xs">
-            <Building2 className="w-3.5 h-3.5 text-blue-400" />
+          <div className="w-7 h-7 rounded-lg bg-[#0F172A] text-white flex items-center justify-center shrink-0 shadow-xs">
+            <Building2 className="w-3.5 h-3.5 text-blue-400" aria-hidden="true" />
           </div>
 
-          <div className="min-w-0 flex-1">
-            <p className="text-[10px] font-semibold text-slate-400 dark:text-slate-400 uppercase tracking-wider leading-none">
-              Current Workspace
+          <div className="min-w-0 flex-1 flex flex-col justify-center">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.06em] text-[#94A3B8] leading-none">
+              CURRENT WORKSPACE
             </p>
-            <div className="flex items-center gap-1.5 mt-0.5">
-              <span className="text-[12.5px] font-bold text-slate-900 dark:text-slate-100 truncate block leading-tight">
+            <div className="flex items-center gap-1.5 mt-0.5 min-w-0">
+              <span className="text-[13.5px] font-bold text-[#0F172A] dark:text-slate-100 truncate block leading-[1.2] whitespace-nowrap">
                 {currentWorkspace.name}
               </span>
               {isDefaultAtiq ? (
-                <span className="text-[8.5px] bg-blue-50 text-blue-700 font-bold px-1.5 py-0.5 rounded-[4px] uppercase tracking-wider shrink-0 border border-blue-200">
+                <span className="inline-flex items-center text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border border-blue-200/80 dark:border-blue-800/80 shrink-0">
                   PRIMARY
                 </span>
               ) : (
-                <span className="text-[8.5px] bg-purple-50 text-purple-700 font-bold px-1.5 py-0.5 rounded-[4px] uppercase tracking-wider shrink-0 border border-purple-200">
+                <span className="inline-flex items-center text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-md bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 border border-purple-200/80 dark:border-purple-800/80 shrink-0">
                   SECONDARY
                 </span>
               )}
             </div>
           </div>
 
-          <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0 ml-0.5" />
+          <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0 ml-0.5" aria-hidden="true" />
         </DropdownMenuTrigger>
 
         <DropdownMenuContent align="start" className="w-72 bg-card p-1.5 shadow-md border border-border rounded-xl">

@@ -380,59 +380,59 @@ export function WorkspacesTab({ embedded = false }: WorkspacesTabProps) {
 
       {/* ─── 1. TOP STATS CARDS (Requirement 2) ───────────────────────────── */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
-        <div className="bg-white border border-slate-200/80 rounded-xl p-4 shadow-xs flex items-center justify-between">
-          <div>
-            <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+        <div className="bg-white dark:bg-[#172033] border border-slate-200/80 dark:border-[#273449] rounded-xl p-4 shadow-xs flex items-center justify-between">
+          <div className="flex flex-col justify-center min-w-0">
+            <p className="text-[11px] font-semibold text-[#64748B] dark:text-slate-400 uppercase tracking-[0.03em]">
               Total Workspaces
             </p>
-            <p className="text-2xl font-bold font-mono tabular-nums text-slate-900 mt-0.5">
+            <p className="text-[22px] sm:text-[24px] font-bold text-[#0F172A] dark:text-slate-100 font-mono tabular-nums leading-tight mt-0.5">
               {workspaces.length}
             </p>
           </div>
-          <div className="w-9 h-9 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center">
-            <Building2 className="w-4 h-4" />
+          <div className="w-9 h-9 rounded-lg bg-purple-50 dark:bg-purple-950/50 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0">
+            <Building2 className="w-[18px] h-[18px]" aria-hidden="true" />
           </div>
         </div>
 
-        <div className="bg-white border border-slate-200/80 rounded-xl p-4 shadow-xs flex items-center justify-between">
-          <div>
-            <p className="text-[11px] font-semibold text-emerald-700 uppercase tracking-wider">
+        <div className="bg-white dark:bg-[#172033] border border-slate-200/80 dark:border-[#273449] rounded-xl p-4 shadow-xs flex items-center justify-between">
+          <div className="flex flex-col justify-center min-w-0">
+            <p className="text-[11px] font-semibold text-[#64748B] dark:text-slate-400 uppercase tracking-[0.03em]">
               Active Workspaces
             </p>
-            <p className="text-2xl font-bold font-mono tabular-nums text-emerald-700 mt-0.5">
+            <p className="text-[22px] sm:text-[24px] font-bold text-emerald-600 dark:text-emerald-400 font-mono tabular-nums leading-tight mt-0.5">
               {activeCount}
             </p>
           </div>
-          <div className="w-9 h-9 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
-            <CheckCircle2 className="w-4 h-4" />
+          <div className="w-9 h-9 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+            <CheckCircle2 className="w-[18px] h-[18px]" aria-hidden="true" />
           </div>
         </div>
 
-        <div className="bg-white border border-slate-200/80 rounded-xl p-4 shadow-xs flex items-center justify-between">
-          <div>
-            <p className="text-[11px] font-semibold text-amber-700 uppercase tracking-wider">
+        <div className="bg-white dark:bg-[#172033] border border-slate-200/80 dark:border-[#273449] rounded-xl p-4 shadow-xs flex items-center justify-between">
+          <div className="flex flex-col justify-center min-w-0">
+            <p className="text-[11px] font-semibold text-[#64748B] dark:text-slate-400 uppercase tracking-[0.03em]">
               Pending Approvals
             </p>
-            <p className="text-2xl font-bold font-mono tabular-nums text-amber-700 mt-0.5">
+            <p className="text-[22px] sm:text-[24px] font-bold text-amber-600 dark:text-amber-400 font-mono tabular-nums leading-tight mt-0.5">
               {pendingCount}
             </p>
           </div>
-          <div className="w-9 h-9 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
-            <Clock className="w-4 h-4" />
+          <div className="w-9 h-9 rounded-lg bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+            <Clock className="w-[18px] h-[18px]" aria-hidden="true" />
           </div>
         </div>
 
-        <div className="bg-white border border-slate-200/80 rounded-xl p-4 shadow-xs flex items-center justify-between">
-          <div>
-            <p className="text-[11px] font-semibold text-blue-700 uppercase tracking-wider">
+        <div className="bg-white dark:bg-[#172033] border border-slate-200/80 dark:border-[#273449] rounded-xl p-4 shadow-xs flex items-center justify-between">
+          <div className="flex flex-col justify-center min-w-0">
+            <p className="text-[11px] font-semibold text-[#64748B] dark:text-slate-400 uppercase tracking-[0.03em]">
               Total Workspace Users
             </p>
-            <p className="text-2xl font-bold font-mono tabular-nums text-blue-700 mt-0.5">
+            <p className="text-[22px] sm:text-[24px] font-bold text-blue-600 dark:text-blue-400 font-mono tabular-nums leading-tight mt-0.5">
               {totalWorkspaceUsers}
             </p>
           </div>
-          <div className="w-9 h-9 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
-            <Users className="w-4 h-4" />
+          <div className="w-9 h-9 rounded-lg bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+            <Users className="w-[18px] h-[18px]" aria-hidden="true" />
           </div>
         </div>
       </div>
@@ -463,47 +463,51 @@ export function WorkspacesTab({ embedded = false }: WorkspacesTabProps) {
           <CardContent className="p-0">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
-                <thead className="bg-amber-100/60 text-amber-900 font-semibold text-[11px] uppercase tracking-wider border-b border-amber-200">
-                  <tr className="h-9">
-                    <th className="py-2 px-4">Workspace Name</th>
-                    <th className="py-2 px-4">Workspace Code</th>
-                    <th className="py-2 px-4">Owner Email</th>
-                    <th className="py-2 px-4">Role</th>
-                    <th className="py-2 px-4">Created Date</th>
-                    <th className="py-2 px-4">Status</th>
-                    <th className="py-2 px-4 text-right">Actions</th>
+                <thead className="bg-amber-100/60 dark:bg-amber-950/40 text-[#64748B] dark:text-slate-400 font-bold text-[10.5px] uppercase tracking-[0.04em] border-b border-amber-200 dark:border-amber-800">
+                  <tr className="h-10">
+                    <th className="py-2.5 px-4 font-bold">Workspace Name</th>
+                    <th className="py-2.5 px-4 font-bold">Workspace Code</th>
+                    <th className="py-2.5 px-4 font-bold">Owner Email</th>
+                    <th className="py-2.5 px-4 font-bold">Role</th>
+                    <th className="py-2.5 px-4 font-bold">Created Date</th>
+                    <th className="py-2.5 px-4 font-bold">Status</th>
+                    <th className="py-2.5 px-4 text-right font-bold">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-amber-100/80 bg-white dark:bg-slate-900">
+                <tbody className="divide-y divide-amber-100/80 dark:divide-amber-950/40 bg-white dark:bg-slate-900 text-[12.5px] text-[#334155] dark:text-slate-300">
                   {pendingWorkspaces.map((ws) => (
-                    <tr key={ws.id} className="h-12 hover:bg-amber-50/40 transition-colors">
-                      <td className="py-2.5 px-4 font-bold text-slate-900 dark:text-slate-100">
-                        {ws.name}
+                    <tr key={ws.id} className="h-12 hover:bg-amber-50/40 dark:hover:bg-amber-950/20 transition-colors">
+                      <td className="py-2.5 px-4">
+                        <span className="text-[13px] font-bold text-[#0F172A] dark:text-slate-100 block">
+                          {ws.name}
+                        </span>
                         {ws.business_name && ws.business_name !== ws.name && (
-                          <span className="block text-[11px] text-slate-500 font-normal">
+                          <span className="text-[11px] text-[#64748B] dark:text-slate-400 mt-0.5 block">
                             {ws.business_name}
                           </span>
                         )}
                       </td>
-                      <td className="py-2.5 px-4 font-mono font-bold text-blue-700">
+                      <td className="py-2.5 px-4 font-mono font-bold text-[11.5px] text-blue-600 dark:text-blue-400">
                         {ws.workspace_code || ws.code || "PENDING"}
                       </td>
-                      <td className="py-2.5 px-4 text-slate-700 dark:text-slate-300">
-                        {ws.owner_email || ws.email || "N/A"}
+                      <td className="py-2.5 px-4">
+                        <span className="font-mono text-[#64748B] dark:text-slate-400 text-[11.5px] block">
+                          {ws.owner_email || ws.email || "N/A"}
+                        </span>
                         {ws.owner_name && (
-                          <span className="block text-[11px] text-slate-500 font-medium">
+                          <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium block mt-0.5">
                             {ws.owner_name}
                           </span>
                         )}
                       </td>
-                      <td className="py-2.5 px-4 font-semibold text-slate-700 uppercase">
+                      <td className="py-2.5 px-4 font-semibold text-[11px] text-slate-700 dark:text-slate-300 uppercase">
                         Owner
                       </td>
-                      <td className="py-2.5 px-4 text-slate-500 text-[11px]">
+                      <td className="py-2.5 px-4 text-[#64748B] dark:text-slate-400 text-[11px]">
                         {ws.created_at ? new Date(ws.created_at).toLocaleDateString() : "Today"}
                       </td>
                       <td className="py-2.5 px-4">
-                        <Badge className="bg-amber-100 text-amber-900 border border-amber-300 text-[10px] font-bold">
+                        <Badge className="bg-amber-50 text-amber-800 border border-amber-300 dark:bg-amber-950/60 dark:text-amber-300 text-[10px] font-bold uppercase tracking-wider">
                           Pending Approval
                         </Badge>
                       </td>
@@ -513,12 +517,12 @@ export function WorkspacesTab({ embedded = false }: WorkspacesTabProps) {
                             size="sm"
                             onClick={() => handleApproveWorkspace(ws)}
                             disabled={loadingAction === ws.id}
-                            className="text-xs h-7 px-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold gap-1 shadow-xs"
+                            className="text-[12px] h-8 px-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold gap-1.5 shadow-xs"
                           >
                             {loadingAction === ws.id ? (
-                              <Loader2 className="w-3 h-3 animate-spin" />
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden="true" />
                             ) : (
-                              <CheckCircle2 className="w-3.5 h-3.5" />
+                              <CheckCircle2 className="w-3.5 h-3.5" aria-hidden="true" />
                             )}
                             Approve
                           </Button>
@@ -530,9 +534,9 @@ export function WorkspacesTab({ embedded = false }: WorkspacesTabProps) {
                               setRejectionReason("");
                             }}
                             disabled={loadingAction === ws.id}
-                            className="text-xs h-7 px-3 border-red-200 text-red-600 hover:bg-red-50 font-bold gap-1"
+                            className="text-[12px] h-8 px-2.5 border-red-200 text-red-600 hover:bg-red-50 font-semibold gap-1.5"
                           >
-                            <Ban className="w-3.5 h-3.5" /> Reject
+                            <Ban className="w-3.5 h-3.5" aria-hidden="true" /> Reject
                           </Button>
                         </div>
                       </td>
@@ -648,19 +652,19 @@ export function WorkspacesTab({ embedded = false }: WorkspacesTabProps) {
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-slate-50/80 text-slate-600 font-semibold text-[11px] uppercase tracking-wider border-b border-slate-200/80 sticky top-0 z-10">
+              <thead className="bg-slate-50/80 dark:bg-slate-900/80 text-[#64748B] dark:text-slate-400 font-bold text-[10.5px] uppercase tracking-[0.04em] border-b border-slate-200/80 dark:border-slate-800 sticky top-0 z-10">
                 <tr className="h-10">
-                  <th className="py-2 px-4">Workspace Name</th>
-                  <th className="py-2 px-4">Workspace Owner</th>
-                  <th className="py-2 px-4">Owner Email</th>
-                  <th className="py-2 px-4">Status</th>
-                  <th className="py-2 px-4">Users</th>
-                  <th className="py-2 px-4">Created Date</th>
-                  <th className="py-2 px-4">Last Activity</th>
-                  <th className="py-2 px-4 text-right w-[200px] whitespace-nowrap">Actions</th>
+                  <th className="py-2.5 px-4 font-bold">Workspace Name</th>
+                  <th className="py-2.5 px-4 font-bold">Workspace Owner</th>
+                  <th className="py-2.5 px-4 font-bold">Owner Email</th>
+                  <th className="py-2.5 px-4 font-bold">Status</th>
+                  <th className="py-2.5 px-4 font-bold">Users</th>
+                  <th className="py-2.5 px-4 font-bold">Created Date</th>
+                  <th className="py-2.5 px-4 font-bold">Last Activity</th>
+                  <th className="py-2.5 px-4 text-right w-[200px] whitespace-nowrap font-bold">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-[12.5px] text-[#334155] dark:text-slate-300">
                 {filteredWorkspaces.map((ws) => {
                   const isCurrent = ws.id === currentWorkspace.id;
                   const isPrimary = ws.id === DEFAULT_WORKSPACE_ID;
@@ -692,25 +696,25 @@ export function WorkspacesTab({ embedded = false }: WorkspacesTabProps) {
                           </div>
                           <div>
                             <div className="flex items-center gap-1.5">
-                              <span className="font-bold text-slate-900 dark:text-slate-100">
+                              <span className="text-[13px] font-bold text-[#0F172A] dark:text-slate-100">
                                 {ws.name}
                               </span>
                               {isPrimary ? (
-                                <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900/60 dark:text-blue-300 text-[10px] font-black uppercase">
+                                <Badge className="bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-200 dark:border-blue-800 text-[9.5px] font-bold uppercase tracking-wider">
                                   PRIMARY WORKSPACE
                                 </Badge>
                               ) : (
-                                <Badge className="bg-purple-100 text-purple-800 dark:bg-purple-900/60 dark:text-purple-300 text-[10px] font-black uppercase">
+                                <Badge className="bg-purple-50 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300 border border-purple-200 dark:border-purple-800 text-[9.5px] font-bold uppercase tracking-wider">
                                   SECONDARY
                                 </Badge>
                               )}
                               {isCurrent && (
-                                <Badge className="bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 text-[10px] font-black">
+                                <Badge className="bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 text-[9.5px] font-bold">
                                   Active Session
                                 </Badge>
                               )}
                             </div>
-                            <div className="text-[11px] text-slate-400 mt-0.5">
+                            <div className="text-[11px] text-[#64748B] dark:text-slate-400 mt-0.5">
                               {ws.business_name || ws.address || "Sharjah, UAE"}
                             </div>
                           </div>
@@ -719,14 +723,14 @@ export function WorkspacesTab({ embedded = false }: WorkspacesTabProps) {
 
                       {/* Workspace Owner */}
                       <td className="py-2.5 px-4">
-                        <span className="font-bold text-slate-800 dark:text-slate-200">
+                        <span className="text-[12px] font-semibold text-slate-800 dark:text-slate-200">
                           {ownerName}
                         </span>
                       </td>
 
                       {/* Owner Email */}
                       <td className="py-2.5 px-4">
-                        <span className="font-mono text-slate-600 dark:text-slate-400 text-[11px]">
+                        <span className="font-mono text-[#64748B] dark:text-slate-400 text-[11.5px]">
                           {ownerEmail}
                         </span>
                       </td>
@@ -734,14 +738,14 @@ export function WorkspacesTab({ embedded = false }: WorkspacesTabProps) {
                       {/* Status */}
                       <td className="py-2.5 px-4">
                         <Badge
-                          className={`text-[10px] uppercase font-black ${
+                          className={`text-[10px] uppercase font-bold tracking-wider ${
                             ws.status === "active"
-                              ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300"
+                              ? "bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800"
                               : ws.status === "pending"
-                              ? "bg-amber-100 text-amber-900 border-amber-300 dark:bg-amber-950/60 dark:text-amber-300"
+                              ? "bg-amber-50 text-amber-800 border border-amber-300 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800"
                               : ws.status === "archived"
-                              ? "bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-300"
-                              : "bg-red-100 text-red-800 dark:bg-red-950/60 dark:text-red-300"
+                              ? "bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700"
+                              : "bg-red-50 text-red-700 border border-red-200 dark:bg-red-950/60 dark:text-red-300 dark:border-red-800"
                           }`}
                         >
                           {ws.status === "pending" ? "Pending Approval" : ws.status}
@@ -750,21 +754,21 @@ export function WorkspacesTab({ embedded = false }: WorkspacesTabProps) {
 
                       {/* Users Count (Requirement 3) */}
                       <td className="py-2.5 px-4">
-                        <span className="font-bold text-slate-900 dark:text-slate-100 font-mono tabular-nums">
+                        <span className="text-[12px] font-semibold text-[#0F172A] dark:text-slate-100 font-mono tabular-nums">
                           {wsUsersCount} {wsUsersCount === 1 ? "User" : "Users"}
                         </span>
                       </td>
 
                       {/* Created Date */}
-                      <td className="py-2.5 px-4 text-slate-500 text-[11px]">
+                      <td className="py-2.5 px-4 text-[#64748B] dark:text-slate-400 text-[11px]">
                         {ws.created_at ? new Date(ws.created_at).toLocaleDateString() : "2024-01-01"}
                       </td>
 
                       {/* Last Activity */}
-                      <td className="py-2.5 px-4 text-slate-500 text-[11px]">
+                      <td className="py-2.5 px-4 text-[#64748B] dark:text-slate-400 text-[11px]">
                         {ws.last_activity ? (
                           <span className="flex items-center gap-1 text-slate-700 dark:text-slate-300">
-                            <Clock className="w-3 h-3 text-slate-400" />
+                            <Clock className="w-3.5 h-3.5 text-slate-400" aria-hidden="true" />
                             {new Date(ws.last_activity).toLocaleDateString()}
                           </span>
                         ) : (
@@ -782,12 +786,12 @@ export function WorkspacesTab({ embedded = false }: WorkspacesTabProps) {
                                 size="sm"
                                 onClick={() => handleApproveWorkspace(ws)}
                                 disabled={loadingAction === ws.id}
-                                className="text-xs h-8 bg-emerald-600 hover:bg-emerald-700 text-white font-bold gap-1 shadow-xs"
+                                className="text-[12px] h-8 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold gap-1.5 shadow-xs px-2.5"
                               >
                                 {loadingAction === ws.id ? (
-                                  <Loader2 className="w-3 h-3 animate-spin" />
+                                  <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden="true" />
                                 ) : (
-                                  <CheckCircle2 className="w-3.5 h-3.5" />
+                                  <CheckCircle2 className="w-3.5 h-3.5" aria-hidden="true" />
                                 )}
                                 Approve
                               </Button>
@@ -799,9 +803,9 @@ export function WorkspacesTab({ embedded = false }: WorkspacesTabProps) {
                                   setRejectionReason("");
                                 }}
                                 disabled={loadingAction === ws.id}
-                                className="text-xs h-8 border-red-200 text-red-600 hover:bg-red-50 font-bold gap-1"
+                                className="text-[12px] h-8 border-red-200 text-red-600 hover:bg-red-50 font-semibold gap-1.5 px-2.5"
                               >
-                                <Ban className="w-3.5 h-3.5" /> Reject
+                                <Ban className="w-3.5 h-3.5" aria-hidden="true" /> Reject
                               </Button>
                             </>
                           ) : (
@@ -811,9 +815,9 @@ export function WorkspacesTab({ embedded = false }: WorkspacesTabProps) {
                                   size="sm"
                                   variant="outline"
                                   onClick={() => switchWorkspace(ws.id)}
-                                  className="text-xs h-8 border-slate-200 hover:bg-purple-50 hover:text-purple-700 font-semibold"
+                                  className="text-[12px] h-8 border-slate-200 hover:bg-purple-50 hover:text-purple-700 font-semibold px-2.5"
                                 >
-                                  <ArrowRight className="w-3.5 h-3.5 mr-1" /> Open
+                                  <ArrowRight className="w-3.5 h-3.5 mr-1" aria-hidden="true" /> Open
                                 </Button>
                               )}
 
@@ -821,9 +825,9 @@ export function WorkspacesTab({ embedded = false }: WorkspacesTabProps) {
                                 size="sm"
                                 variant="outline"
                                 onClick={() => handleOpenManageUsers(ws)}
-                                className="text-xs h-8 border-slate-200 hover:bg-slate-100 font-semibold text-slate-700 dark:text-slate-300"
+                                className="text-[12px] h-8 border-slate-200 hover:bg-slate-100 font-semibold text-slate-700 dark:text-slate-300 px-2.5"
                               >
-                                <Users className="w-3.5 h-3.5 mr-1 text-blue-600" /> Manage Access
+                                <Users className="w-3.5 h-3.5 mr-1 text-blue-600" aria-hidden="true" /> Manage Access
                               </Button>
 
                               {isPlatformOwner && (
@@ -831,16 +835,16 @@ export function WorkspacesTab({ embedded = false }: WorkspacesTabProps) {
                                   size="sm"
                                   variant="outline"
                                   onClick={() => setSelectedWorkspace(ws)}
-                                  className="text-xs h-8 border-slate-200 hover:bg-blue-50 hover:text-blue-700 font-bold"
+                                  className="text-[12px] h-8 border-slate-200 hover:bg-blue-50 hover:text-blue-700 font-semibold px-2.5"
                                 >
-                                  <Sliders className="w-3.5 h-3.5 mr-1" /> Manage
+                                  <Sliders className="w-3.5 h-3.5 mr-1" aria-hidden="true" /> Manage
                                 </Button>
                               )}
 
                               {isPlatformOwner && (
                                 <DropdownMenu>
-                                  <DropdownMenuTrigger className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800">
-                                    <MoreVertical className="w-3.5 h-3.5" />
+                                  <DropdownMenuTrigger className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer">
+                                    <MoreVertical className="w-3.5 h-3.5" aria-hidden="true" />
                                   </DropdownMenuTrigger>
                                   <DropdownMenuContent align="end" className="text-xs">
                                     <DropdownMenuLabel>Workspace Actions</DropdownMenuLabel>

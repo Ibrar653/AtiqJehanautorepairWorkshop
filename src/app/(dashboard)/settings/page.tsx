@@ -26,6 +26,7 @@ import {
   Users,
   Shield,
   ShieldCheck,
+  Building,
   Building2,
   Plus,
   Loader2,
@@ -509,61 +510,100 @@ export default function SettingsPage() {
         </div>
       )}
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="bg-slate-100/80 dark:bg-slate-800/70 p-1.5 rounded-2xl border border-slate-200/90 dark:border-slate-700/80 flex flex-wrap gap-1.5 shadow-2xs">
-          <TabsTrigger
-            value="user_access"
-            className="data-[state=active]:bg-white dark:data-[state=active]:bg-slate-900 data-[state=active]:text-blue-600 dark:data-[state=active]:text-blue-400 data-[state=active]:shadow-xs px-4 h-10 font-semibold text-xs flex items-center gap-2 rounded-xl transition-all"
-          >
-            <ShieldCheck className="h-4 w-4" /> User Access &amp; Permissions
-          </TabsTrigger>
-          <TabsTrigger
-            value="activity_audit"
-            className="data-[state=active]:bg-white dark:data-[state=active]:bg-slate-900 data-[state=active]:text-blue-600 dark:data-[state=active]:text-blue-400 data-[state=active]:shadow-xs px-4 h-10 font-semibold text-xs flex items-center gap-2 rounded-xl transition-all"
-          >
-            <History className="h-4 w-4" /> Activity &amp; Audit Logs
-          </TabsTrigger>
-          <TabsTrigger
-            value="security"
-            className="data-[state=active]:bg-white dark:data-[state=active]:bg-slate-900 data-[state=active]:text-blue-600 dark:data-[state=active]:text-blue-400 data-[state=active]:shadow-xs px-4 h-10 font-semibold text-xs flex items-center gap-2 rounded-xl transition-all"
-          >
-            <Shield className="h-4 w-4" /> Role Templates &amp; Policies
-          </TabsTrigger>
-          <TabsTrigger
-            value="workshop"
-            className="data-[state=active]:bg-white dark:data-[state=active]:bg-slate-900 data-[state=active]:text-blue-600 dark:data-[state=active]:text-blue-400 data-[state=active]:shadow-xs px-4 h-10 font-semibold text-xs flex items-center gap-2 rounded-xl transition-all"
-          >
-            <Building2 className="h-4 w-4" /> Workspace Details &amp; VAT
-          </TabsTrigger>
-          <TabsTrigger
-            value="appearance"
-            className="data-[state=active]:bg-white dark:data-[state=active]:bg-slate-900 data-[state=active]:text-blue-600 dark:data-[state=active]:text-blue-400 data-[state=active]:shadow-xs px-4 h-10 font-semibold text-xs flex items-center gap-2 rounded-xl transition-all"
-          >
-            <Palette className="h-4 w-4" /> Appearance &amp; Theme
-          </TabsTrigger>
-          {isPlatformOwner && (
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+        {/* Navigation Tabs Bar — Horizontal scrollable on small screens, clean single row on desktop */}
+        <div className="w-full overflow-x-auto pb-1 no-scrollbar">
+          <TabsList className="bg-slate-100/90 dark:bg-slate-800/80 p-1.5 rounded-2xl border border-slate-200/90 dark:border-slate-700/80 flex items-center justify-start gap-1.5 w-max min-w-full shadow-2xs">
             <TabsTrigger
-              value="workspaces"
-              className="data-[state=active]:bg-white dark:data-[state=active]:bg-slate-900 data-[state=active]:text-purple-600 dark:data-[state=active]:text-purple-400 data-[state=active]:shadow-xs px-4 h-10 font-semibold text-xs flex items-center gap-2 rounded-xl transition-all"
+              value="user_access"
+              className="group flex-shrink-0 inline-flex items-center justify-center gap-[7px] px-4 h-10 rounded-xl font-semibold text-[12.5px] leading-none text-[#475569] dark:text-slate-400 hover:text-[#0F172A] dark:hover:text-slate-200 data-active:bg-white data-active:text-[#0F172A] data-active:shadow-xs data-[state=active]:bg-white data-[state=active]:text-[#0F172A] data-[state=active]:shadow-xs dark:data-active:bg-slate-900 dark:data-active:text-white dark:data-[state=active]:bg-slate-900 dark:data-[state=active]:text-white transition-all whitespace-nowrap"
             >
-              <Building2 className="h-4 w-4 text-purple-600" /> Workspaces &amp; Businesses
-              <span className="bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300 text-[10px] font-black px-2 py-0.5 rounded-lg uppercase tracking-wider">
-                Super Admin
+              <span className="inline-flex items-center justify-center shrink-0 text-slate-400 dark:text-slate-500 group-hover:text-slate-600 dark:group-hover:text-slate-300 group-data-active:text-blue-600 group-data-[state=active]:text-blue-600 transition-colors" aria-hidden="true">
+                <ShieldCheck className="w-[15px] h-[15px] stroke-[1.8]" />
               </span>
+              <span>User Access &amp; Permissions</span>
             </TabsTrigger>
-          )}
-          {isPlatformOwner && (
+
             <TabsTrigger
-              value="test_reset"
-              className="data-[state=active]:bg-white dark:data-[state=active]:bg-slate-900 data-[state=active]:text-rose-600 dark:data-[state=active]:text-rose-400 data-[state=active]:shadow-xs px-4 h-10 font-semibold text-xs flex items-center gap-2 rounded-xl transition-all"
+              value="activity_audit"
+              className="group flex-shrink-0 inline-flex items-center justify-center gap-[7px] px-4 h-10 rounded-xl font-semibold text-[12.5px] leading-none text-[#475569] dark:text-slate-400 hover:text-[#0F172A] dark:hover:text-slate-200 data-active:bg-white data-active:text-[#0F172A] data-active:shadow-xs data-[state=active]:bg-white data-[state=active]:text-[#0F172A] data-[state=active]:shadow-xs dark:data-active:bg-slate-900 dark:data-active:text-white dark:data-[state=active]:bg-slate-900 dark:data-[state=active]:text-white transition-all whitespace-nowrap"
             >
-              <RotateCcw className="h-4 w-4 text-rose-600" /> Test Data Reset
-              <span className="bg-rose-100 text-rose-700 dark:bg-rose-900/50 dark:text-rose-300 text-[10px] font-black px-2 py-0.5 rounded-lg uppercase tracking-wider">
-                Owner Only
+              <span className="inline-flex items-center justify-center shrink-0 text-slate-400 dark:text-slate-500 group-hover:text-slate-600 dark:group-hover:text-slate-300 group-data-active:text-blue-600 group-data-[state=active]:text-blue-600 transition-colors" aria-hidden="true">
+                <History className="w-[15px] h-[15px] stroke-[1.8]" />
               </span>
+              <span>Activity &amp; Audit Logs</span>
             </TabsTrigger>
-          )}
-        </TabsList>
+
+            <TabsTrigger
+              value="security"
+              className="group flex-shrink-0 inline-flex items-center justify-center gap-[7px] px-4 h-10 rounded-xl font-semibold text-[12.5px] leading-none text-[#475569] dark:text-slate-400 hover:text-[#0F172A] dark:hover:text-slate-200 data-active:bg-white data-active:text-[#0F172A] data-active:shadow-xs data-[state=active]:bg-white data-[state=active]:text-[#0F172A] data-[state=active]:shadow-xs dark:data-active:bg-slate-900 dark:data-active:text-white dark:data-[state=active]:bg-slate-900 dark:data-[state=active]:text-white transition-all whitespace-nowrap"
+            >
+              <span className="inline-flex items-center justify-center shrink-0 text-slate-400 dark:text-slate-500 group-hover:text-slate-600 dark:group-hover:text-slate-300 group-data-active:text-blue-600 group-data-[state=active]:text-blue-600 transition-colors" aria-hidden="true">
+                <Shield className="w-[15px] h-[15px] stroke-[1.8]" />
+              </span>
+              <span>Role Templates &amp; Policies</span>
+            </TabsTrigger>
+
+            <TabsTrigger
+              value="workshop"
+              className="group flex-shrink-0 inline-flex items-center justify-center gap-[7px] px-4 h-10 rounded-xl font-semibold text-[12.5px] leading-none text-[#475569] dark:text-slate-400 hover:text-[#0F172A] dark:hover:text-slate-200 data-active:bg-white data-active:text-[#0F172A] data-active:shadow-xs data-[state=active]:bg-white data-[state=active]:text-[#0F172A] data-[state=active]:shadow-xs dark:data-active:bg-slate-900 dark:data-active:text-white dark:data-[state=active]:bg-slate-900 dark:data-[state=active]:text-white transition-all whitespace-nowrap"
+            >
+              <span className="inline-flex items-center justify-center shrink-0 text-slate-400 dark:text-slate-500 group-hover:text-slate-600 dark:group-hover:text-slate-300 group-data-active:text-blue-600 group-data-[state=active]:text-blue-600 transition-colors" aria-hidden="true">
+                <Building2 className="w-[15px] h-[15px] stroke-[1.8]" />
+              </span>
+              <span>Workspace Details &amp; VAT</span>
+            </TabsTrigger>
+
+            <TabsTrigger
+              value="appearance"
+              className="group flex-shrink-0 inline-flex items-center justify-center gap-[7px] px-4 h-10 rounded-xl font-semibold text-[12.5px] leading-none text-[#475569] dark:text-slate-400 hover:text-[#0F172A] dark:hover:text-slate-200 data-active:bg-white data-active:text-[#0F172A] data-active:shadow-xs data-[state=active]:bg-white data-[state=active]:text-[#0F172A] data-[state=active]:shadow-xs dark:data-active:bg-slate-900 dark:data-active:text-white dark:data-[state=active]:bg-slate-900 dark:data-[state=active]:text-white transition-all whitespace-nowrap"
+            >
+              <span className="inline-flex items-center justify-center shrink-0 text-slate-400 dark:text-slate-500 group-hover:text-slate-600 dark:group-hover:text-slate-300 group-data-active:text-blue-600 group-data-[state=active]:text-blue-600 transition-colors" aria-hidden="true">
+                <Palette className="w-[15px] h-[15px] stroke-[1.8]" />
+              </span>
+              <span>Appearance &amp; Theme</span>
+            </TabsTrigger>
+
+            {isPlatformOwner && (
+              <TabsTrigger
+                value="workspaces"
+                className="group flex-shrink-0 inline-flex items-center justify-center gap-[7px] px-4 h-10 rounded-xl font-semibold text-[12.5px] leading-none text-[#475569] dark:text-slate-400 hover:text-[#0F172A] dark:hover:text-slate-200 data-active:bg-white data-active:text-purple-700 data-active:shadow-xs data-[state=active]:bg-white data-[state=active]:text-purple-700 data-[state=active]:shadow-xs dark:data-active:bg-slate-900 dark:data-active:text-purple-300 dark:data-[state=active]:bg-slate-900 dark:data-[state=active]:text-purple-300 transition-all whitespace-nowrap"
+              >
+                <span className="inline-flex items-center justify-center shrink-0 text-slate-400 dark:text-slate-500 group-hover:text-slate-600 dark:group-hover:text-slate-300 group-data-active:text-purple-600 group-data-[state=active]:text-purple-600 transition-colors" aria-hidden="true">
+                  <Building className="w-[15px] h-[15px] stroke-[1.8]" />
+                </span>
+                <span>Workspaces &amp; Businesses</span>
+                <span className="inline-flex items-center ml-2 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-[0.03em] bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border border-purple-200/80 dark:border-purple-800/80">
+                  SUPER ADMIN
+                </span>
+              </TabsTrigger>
+            )}
+          </TabsList>
+        </div>
+
+        {/* Administration Action Area (Test Data Reset) — Right aligned below navigation, above KPI cards */}
+        {isPlatformOwner && (
+          <div className="flex items-center justify-end -mt-1 mb-2">
+            <button
+              type="button"
+              onClick={() => setActiveTab("test_reset")}
+              className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-all cursor-pointer ${
+                activeTab === "test_reset"
+                  ? "bg-rose-50 dark:bg-rose-950/40 border-rose-300 dark:border-rose-800 text-rose-700 dark:text-rose-300 shadow-xs"
+                  : "bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 text-rose-600 dark:text-rose-400 hover:bg-rose-50/70 dark:hover:bg-rose-950/30 hover:border-rose-300 shadow-2xs"
+              }`}
+              title="Reset workshop test records (Owner Only)"
+            >
+              <RotateCcw className="w-3.5 h-3.5 shrink-0 text-rose-600 dark:text-rose-400" aria-hidden="true" />
+              <span className="text-[12px] font-semibold text-rose-600 dark:text-rose-400">
+                Test Data Reset
+              </span>
+              <span className="inline-flex items-center text-[9px] font-bold uppercase tracking-[0.03em] px-2 py-0.5 rounded-full bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800">
+                OWNER ONLY
+              </span>
+            </button>
+          </div>
+        )}
 
         {/* ─── TAB 1: USER ACCESS & SECURITY (ENTERPRISE DELEGATED ACCESS) ─── */}
         <TabsContent value="user_access">
