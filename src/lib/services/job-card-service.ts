@@ -81,48 +81,211 @@ function withTimeout<T>(promise: PromiseLike<T>, timeoutMs = 2000): Promise<T> {
   ]);
 }
 
+export const DEFAULT_START_NUMBER = 1066;
+
 /**
- * Get Next Auto-incrementing Invoice Number:
- * - ATIQ JEHAN starts at 1060
- * - Any new workspace starts at 1 (fresh sequence)
+ * Extracts a numeric sequence value from a record's identifier string/number.
+ * Returns null if not a sequence number.
  */
-export function getNextInvoiceNumber(workspaceId?: string): number {
+export function extractSequenceNumber(val: string | number | null | undefined): number | null {
+  if (val === null || val === undefined) return null;
+  const str = String(val).trim();
+  if (!str) return null;
+
+  // Pure integer string like "1066" or number 1066
+  if (/^\d+$/.test(str)) {
+    const n = parseInt(str, 10);
+    if (!isNaN(n) && n > 0 && n < 100000000) return n;
+  }
+
+  // Pre-fixed identifiers like "JC-1066", "INV-1066", "JC1066", "INV1066"
+  const match = str.match(/^(?:JC-?|INV-?|JOB-?)(\d+)$/i);
+  if (match) {
+    const n = parseInt(match[1], 10);
+    if (!isNaN(n) && n > 0 && n < 100000000) return n;
+  }
+
+  return null;
+}
+
+/**
+ * Get Next Auto-incrementing Job Card Number:
+ * - Starts automatically from 1066
+ * - If records exist with number >= 1066, next is MAX + 1
+ * - Scoped to the active workspace
+ * - Guaranteed unique, plain string: "1066", "1067", etc.
+ */
+export function getNextJobCardNumber(workspaceId?: string): string {
   const targetWsId = workspaceId || getActiveWorkspaceId();
   const local = getLocalJobCards(targetWsId);
-  const usedNumbers = new Set(local.map((j) => Number(j.invoice_number)).filter((n) => !isNaN(n)));
+  const usedNumbers = new Set<number>();
 
-  let candidate = targetWsId === DEFAULT_WORKSPACE_ID ? 1060 : 1;
+  local.forEach((j) => {
+    const num = extractSequenceNumber(j.job_card_number);
+    if (num !== null) usedNumbers.add(num);
+  });
+
+  const sequenceNums = Array.from(usedNumbers).filter((n) => n >= DEFAULT_START_NUMBER);
+  let candidate = sequenceNums.length > 0 ? Math.max(...sequenceNums) + 1 : DEFAULT_START_NUMBER;
+
   while (usedNumbers.has(candidate)) {
     candidate++;
   }
+
+  return String(candidate);
+}
+
+export async function getNextJobCardNumberAsync(workspaceId?: string): Promise<string> {
+  const targetWsId = workspaceId || getActiveWorkspaceId();
+  const supabase = createClient();
+
+  try {
+    const fetchWithTimeout = async () => {
+      const { data, error } = await supabase
+        .from("job_cards")
+        .select("job_card_number")
+        .eq("workspace_id", targetWsId);
+
+      if (error) throw error;
+
+      const usedNumbers = new Set<number>();
+
+      (data || []).forEach((row: any) => {
+        const num = extractSequenceNumber(row.job_card_number);
+        if (num !== null) usedNumbers.add(num);
+      });
+
+      // Also merge local storage to avoid collisions
+      const local = getLocalJobCards(targetWsId);
+      local.forEach((j) => {
+        const num = extractSequenceNumber(j.job_card_number);
+        if (num !== null) usedNumbers.add(num);
+      });
+
+      const sequenceNums = Array.from(usedNumbers).filter((n) => n >= DEFAULT_START_NUMBER);
+      let candidate = sequenceNums.length > 0 ? Math.max(...sequenceNums) + 1 : DEFAULT_START_NUMBER;
+
+      while (usedNumbers.has(candidate)) {
+        candidate++;
+      }
+
+      return String(candidate);
+    };
+
+    return await withTimeout(fetchWithTimeout(), 1500);
+  } catch {
+    return getNextJobCardNumber(targetWsId);
+  }
+}
+
+/**
+ * Get Next Auto-incrementing Invoice Number:
+ * - Starts automatically from 1066
+ * - If records exist with number >= 1066, next is MAX + 1
+ * - Scoped to the active workspace
+ * - Guaranteed unique numeric sequence
+ */
+export function getNextInvoiceNumber(workspaceId?: string): number {
+  const targetWsId = workspaceId || getActiveWorkspaceId();
+  const localJc = getLocalJobCards(targetWsId);
+  const usedNumbers = new Set<number>();
+
+  localJc.forEach((j) => {
+    const num = extractSequenceNumber(j.invoice_number);
+    if (num !== null) usedNumbers.add(num);
+  });
+
+  try {
+    if (typeof window !== "undefined") {
+      const rawInvs = localStorage.getItem("atiq_local_invoices");
+      if (rawInvs) {
+        const parsedInvs = JSON.parse(rawInvs);
+        if (Array.isArray(parsedInvs)) {
+          parsedInvs
+            .filter((inv: any) => inv.workspace_id === targetWsId || (!inv.workspace_id && targetWsId === DEFAULT_WORKSPACE_ID))
+            .forEach((inv: any) => {
+              const num = extractSequenceNumber(inv.invoice_number);
+              if (num !== null) usedNumbers.add(num);
+            });
+        }
+      }
+    }
+  } catch {}
+
+  const sequenceNums = Array.from(usedNumbers).filter((n) => n >= DEFAULT_START_NUMBER);
+  let candidate = sequenceNums.length > 0 ? Math.max(...sequenceNums) + 1 : DEFAULT_START_NUMBER;
+
+  while (usedNumbers.has(candidate)) {
+    candidate++;
+  }
+
   return candidate;
 }
 
 export async function getNextInvoiceNumberAsync(workspaceId?: string): Promise<number> {
   const targetWsId = workspaceId || getActiveWorkspaceId();
   const supabase = createClient();
+
   try {
     const fetchWithTimeout = async () => {
-      const { data, error } = await supabase
+      // 1. Query job_cards for invoice_number in this workspace
+      const { data: jcData, error: jcErr } = await supabase
         .from("job_cards")
         .select("invoice_number")
         .eq("workspace_id", targetWsId)
         .not("invoice_number", "is", null);
 
-      if (error) throw error;
-      const usedNumbers = new Set(
-        (data || []).map((d: any) => Number(d.invoice_number)).filter((n: number) => !isNaN(n))
-      );
+      if (jcErr) throw jcErr;
 
-      const local = getLocalJobCards(targetWsId);
-      local.forEach((j) => {
-        if (j.invoice_number) usedNumbers.add(Number(j.invoice_number));
+      // 2. Query invoices table for invoice_number in this workspace
+      const { data: invData } = await supabase
+        .from("invoices")
+        .select("invoice_number")
+        .eq("workspace_id", targetWsId);
+
+      const usedNumbers = new Set<number>();
+
+      (jcData || []).forEach((d: any) => {
+        const num = extractSequenceNumber(d.invoice_number);
+        if (num !== null) usedNumbers.add(num);
       });
 
-      let candidate = targetWsId === DEFAULT_WORKSPACE_ID ? 1060 : 1;
+      (invData || []).forEach((d: any) => {
+        const num = extractSequenceNumber(d.invoice_number);
+        if (num !== null) usedNumbers.add(num);
+      });
+
+      // Merge local storage
+      const local = getLocalJobCards(targetWsId);
+      local.forEach((j) => {
+        const num = extractSequenceNumber(j.invoice_number);
+        if (num !== null) usedNumbers.add(num);
+      });
+
+      try {
+        if (typeof window !== "undefined") {
+          const rawInvs = localStorage.getItem("atiq_local_invoices");
+          if (rawInvs) {
+            const parsedInvs = JSON.parse(rawInvs);
+            if (Array.isArray(parsedInvs)) {
+              parsedInvs
+                .filter((inv: any) => inv.workspace_id === targetWsId || (!inv.workspace_id && targetWsId === DEFAULT_WORKSPACE_ID))
+                .forEach((inv: any) => {
+                  const num = extractSequenceNumber(inv.invoice_number);
+                  if (num !== null) usedNumbers.add(num);
+                });
+            }
+          }
+        }
+      } catch {}
+
+      const sequenceNums = Array.from(usedNumbers).filter((n) => n >= DEFAULT_START_NUMBER);
+      let candidate = sequenceNums.length > 0 ? Math.max(...sequenceNums) + 1 : DEFAULT_START_NUMBER;
+
       while (usedNumbers.has(candidate)) {
         candidate++;
       }
+
       return candidate;
     };
 
@@ -376,10 +539,12 @@ export async function createJobCard(
     : (Array.isArray(payload?.items) ? payload.items : []);
 
   const supabase = createClient();
-  const assignedInvoiceNumber = payload.invoice_number || getNextInvoiceNumber(targetWsId);
+  const assignedInvoiceNumber = payload.invoice_number || (await getNextInvoiceNumberAsync(targetWsId));
+  const assignedJobCardNumber = payload.job_card_number || (await getNextJobCardNumberAsync(targetWsId));
   const finalPayload = {
     ...payload,
     workspace_id: targetWsId,
+    job_card_number: assignedJobCardNumber,
     invoice_number: assignedInvoiceNumber,
     invoice_number_mode: payload.invoice_number_mode || "auto",
     payment_status: payload.payment_status || "Pending",
@@ -479,10 +644,9 @@ export async function createJobCard(
   } catch (err: any) {
     console.warn("Creating job card in local fallback store:", err.message || err);
 
-    const todayStr = (payload.date || new Date().toISOString().slice(0, 10)).replace(/-/g, "");
     const local = getLocalJobCards(targetWsId);
-    const countToday = local.filter((j) => (j.date || "").replace(/-/g, "") === todayStr).length + 1;
-    const jcNumber = payload.job_card_number || `JC-${todayStr}-${String(countToday).padStart(3, "0")}`;
+    const jcNumber = payload.job_card_number || getNextJobCardNumber(targetWsId);
+    const invNumber = payload.invoice_number || getNextInvoiceNumber(targetWsId);
 
     const allCustomers = getLocalCustomers(targetWsId);
     const allVehicles = getLocalVehicles();
@@ -537,7 +701,7 @@ export async function createJobCard(
       id: jobCardId,
       workspace_id: targetWsId,
       job_card_number: jcNumber,
-      invoice_number: assignedInvoiceNumber,
+      invoice_number: invNumber || assignedInvoiceNumber,
       invoice_number_mode: payload.invoice_number_mode || "auto",
       payment_status: payload.payment_status || "Pending",
       date: payload.date || new Date().toISOString().slice(0, 10),

@@ -54,10 +54,10 @@ export function JobCardPrintView({ jobCard }: JobCardPrintViewProps) {
   const vatAmount = Number(jobCard.vat_amount) || Math.round(subtotal * (vatRate / 100) * 100) / 100;
   const grandTotal = Number(jobCard.total) || Math.round((subtotal + vatAmount) * 100) / 100;
 
-  // Invoice Number (starting from 1060 sequence)
+  // Invoice Number (starting from 1066 sequence)
   const invoiceNumber = jobCard.invoice_number
     ? String(jobCard.invoice_number)
-    : (jobCard.job_card_number || "").replace(/^JC-/, "") || "1060";
+    : (jobCard.job_card_number || "").replace(/^JC-/, "") || "1066";
 
   // Payment Status & Color Logic
   const paymentStatus = jobCard.payment_status || "Pending";

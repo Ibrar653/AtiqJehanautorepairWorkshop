@@ -7,6 +7,7 @@ import {
   createJobCard,
   updateJobCard,
   getJobCardById,
+  getNextJobCardNumberAsync,
   getNextInvoiceNumberAsync,
   getNextInvoiceNumber,
   isInvoiceNumberAvailable,
@@ -165,7 +166,7 @@ export function JobCardForm({ jobCardId }: JobCardFormProps) {
   const [jobCardNumber, setJobCardNumber] = useState<string>("");
   const [invoiceNumberMode, setInvoiceNumberMode] = useState<"auto" | "manual">("auto");
   const [invoiceNumber, setInvoiceNumber] = useState<string>("");
-  const [nextAutoInvoiceNumber, setNextAutoInvoiceNumber] = useState<number>(1060);
+  const [nextAutoInvoiceNumber, setNextAutoInvoiceNumber] = useState<number>(1066);
   const [invoiceNumberError, setInvoiceNumberError] = useState<string | null>(null);
   const [checkingInvoiceNum, setCheckingInvoiceNum] = useState(false);
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
@@ -230,9 +231,12 @@ export function JobCardForm({ jobCardId }: JobCardFormProps) {
     return map;
   }, [serviceCatalog]);
 
-  // Fetch next sequential invoice number on create
+  // Fetch next sequential job card and invoice numbers on create
   useEffect(() => {
     if (!jobCardId) {
+      getNextJobCardNumberAsync()
+        .then((num) => setJobCardNumber(num))
+        .catch(console.error);
       getNextInvoiceNumberAsync()
         .then((num) => setNextAutoInvoiceNumber(num))
         .catch(console.error);
@@ -799,6 +803,7 @@ export function JobCardForm({ jobCardId }: JobCardFormProps) {
     }
 
     const payload: any = {
+      job_card_number: jobCardNumber || undefined,
       customer_id: selectedCustomer.id,
       vehicle_id: selectedVehicleId,
       invoice_number_mode: invoiceNumberMode,
@@ -1116,13 +1121,31 @@ export function JobCardForm({ jobCardId }: JobCardFormProps) {
           <CardContent className="space-y-4 pt-4">
             {/* Invoice Number Mode Selection (Automatic / Manual) */}
             <div className="p-4 rounded-xl border bg-primary/5 border-primary/20 space-y-3">
+              {/* Job Card Number Indicator */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2.5 border-b border-primary/15">
+                <div>
+                  <Label className="text-xs font-bold text-foreground uppercase tracking-wider flex items-center gap-1.5">
+                    <Wrench className="h-4 w-4 text-primary" /> Job Card Number
+                  </Label>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Independent auto-incrementing Job Card sequence starting from 1066.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground font-semibold">Assigned Job Card No:</span>
+                  <span className="font-mono font-black text-black dark:text-white bg-background px-3 py-1 rounded-lg border shadow-xs text-sm">
+                    {jobCardNumber || "1066"}
+                  </span>
+                </div>
+              </div>
+
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div>
                   <Label className="text-xs font-bold text-foreground uppercase tracking-wider flex items-center gap-1.5">
                     <Hash className="h-4 w-4 text-primary" /> Invoice Number Mode
                   </Label>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    Choose whether to generate sequential invoice numbers or enter a custom invoice number.
+                    Independent auto-incrementing Invoice sequence starting from 1066.
                   </p>
                 </div>
                 {!jobCardId ? (
@@ -1164,7 +1187,7 @@ export function JobCardForm({ jobCardId }: JobCardFormProps) {
                   <span className="font-mono font-bold text-black dark:text-white bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded border border-slate-300 dark:border-slate-700">
                     {nextAutoInvoiceNumber}
                   </span>
-                  <span className="text-[11px] italic text-muted-foreground">(Starts from 1060 and skips manual numbers)</span>
+                  <span className="text-[11px] italic text-muted-foreground">(Starts from 1066 and skips manual numbers)</span>
                 </div>
               )}
 

@@ -19,6 +19,7 @@ import { invalidateDashboardCache } from "./dashboard-service";
 import { getActiveWorkspaceId } from "./workspace-service";
 import { DEFAULT_WORKSPACE_ID } from "@/lib/constants";
 import { isTableMissingInSupabase, markTableMissingInSupabase } from "./supabase-schema-status";
+import { getNextInvoiceNumberAsync } from "./job-card-service";
 
 const LOCAL_INVOICES_KEY = "atiq_local_invoices";
 const LOCAL_INVOICE_ITEMS_KEY = "atiq_local_invoice_items";
@@ -496,11 +497,13 @@ export async function generateInvoiceFromJobCard(
     payment_status = "partially_paid";
   }
 
-  // Use existing Invoice Number logic (e.g., INV-1060)
-  const baseNum = jobCard.invoice_number
-    ? String(jobCard.invoice_number)
-    : (jobCard.job_card_number || "").replace(/^JC-/, "") || "1060";
-  const formattedInvoiceNumber = baseNum.startsWith("INV-") ? baseNum : `INV-${baseNum}`;
+  // Plain Invoice Number sequence (e.g., "1066", "1067")
+  let formattedInvoiceNumber: string;
+  if (jobCard.invoice_number) {
+    formattedInvoiceNumber = String(jobCard.invoice_number);
+  } else {
+    formattedInvoiceNumber = await generateNextInvoiceNumber(jobCard.workspace_id || targetWsId);
+  }
 
   const invoiceId = "inv-" + Date.now() + "-" + Math.random().toString(36).substring(2, 6);
   const now = new Date().toISOString();
@@ -670,38 +673,17 @@ export interface CreateDirectPartsInvoicePayload {
   date?: string;
 }
 
+/**
+ * Generate Next Plain Sequential Invoice Number (e.g. "1066", "1067"):
+ * - Starts automatically from 1066
+ * - If invoices exist >= 1066, returns MAX + 1
+ * - Preserves multi-workspace isolation
+ * - Never duplicates an invoice number
+ */
 export async function generateNextInvoiceNumber(workspaceId?: string): Promise<string> {
   const targetWsId = workspaceId || getActiveWorkspaceId();
-  const supabase = createClient();
-  let maxNum = 1000;
-
-  try {
-    const { data } = await supabase
-      .from("invoices")
-      .select("invoice_number")
-      .eq("workspace_id", targetWsId);
-
-    if (data && data.length > 0) {
-      for (const row of data) {
-        const match = (row.invoice_number || "").match(/(\d+)/);
-        if (match) {
-          const n = parseInt(match[1], 10);
-          if (!isNaN(n) && n > maxNum) maxNum = n;
-        }
-      }
-    }
-  } catch {}
-
-  const local = getLocalInvoices(targetWsId);
-  for (const row of local) {
-    const match = (row.invoice_number || "").match(/(\d+)/);
-    if (match) {
-      const n = parseInt(match[1], 10);
-      if (!isNaN(n) && n > maxNum) maxNum = n;
-    }
-  }
-
-  return `INV-${maxNum + 1}`;
+  const num = await getNextInvoiceNumberAsync(targetWsId);
+  return String(num);
 }
 
 /**
