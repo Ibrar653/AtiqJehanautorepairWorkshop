@@ -16,6 +16,7 @@ import { isTableMissingInSupabase, markTableMissingInSupabase } from "./supabase
 import type {
   Workspace,
   WorkspaceMember,
+  WorkspaceMemberStatus,
   UserRole,
   WorkspaceStatus,
   WorkspaceAuditLog,
@@ -499,6 +500,131 @@ export async function createDirectWorkspace(
   }
 }
 
+// ─── Workspace Access Duration & Expiry Helpers ──────────────────────────────
+
+export function calculateAccessExpiry(
+  duration?: string,
+  customDate?: string,
+  startDate: Date = new Date()
+): { startsAt: string; expiresAt: string | null; durationText: string } {
+  const startsAt = startDate.toISOString();
+  if (!duration || duration === "no_expiry" || duration === "never") {
+    return { startsAt, expiresAt: null, durationText: "No Expiry" };
+  }
+
+  const d = new Date(startDate);
+  switch (duration) {
+    case "7d":
+    case "7_days":
+      d.setDate(d.getDate() + 7);
+      return { startsAt, expiresAt: d.toISOString(), durationText: "7 Days" };
+    case "30d":
+    case "30_days":
+      d.setDate(d.getDate() + 30);
+      return { startsAt, expiresAt: d.toISOString(), durationText: "30 Days" };
+    case "3m":
+    case "3_months":
+      d.setMonth(d.getMonth() + 3);
+      return { startsAt, expiresAt: d.toISOString(), durationText: "3 Months" };
+    case "6m":
+    case "6_months":
+      d.setMonth(d.getMonth() + 6);
+      return { startsAt, expiresAt: d.toISOString(), durationText: "6 Months" };
+    case "1y":
+    case "1_year":
+      d.setFullYear(d.getFullYear() + 1);
+      return { startsAt, expiresAt: d.toISOString(), durationText: "1 Year" };
+    case "custom":
+      if (customDate) {
+        const customParsed = new Date(customDate);
+        return {
+          startsAt,
+          expiresAt: !isNaN(customParsed.getTime()) ? customParsed.toISOString() : null,
+          durationText: "Custom Expiry",
+        };
+      }
+      return { startsAt, expiresAt: null, durationText: "Custom (Unset)" };
+    default:
+      return { startsAt, expiresAt: null, durationText: "No Expiry" };
+  }
+}
+
+export function isMembershipExpired(
+  memberOrExpiresAt?: Partial<WorkspaceMember> | string | null,
+  status?: string
+): boolean {
+  if (!memberOrExpiresAt) {
+    return status === "expired";
+  }
+  if (typeof memberOrExpiresAt === "string") {
+    if (status === "expired") return true;
+    const exp = new Date(memberOrExpiresAt).getTime();
+    return !isNaN(exp) && exp <= Date.now();
+  }
+  if (memberOrExpiresAt.status === "expired") return true;
+  if (memberOrExpiresAt.access_expires_at) {
+    const exp = new Date(memberOrExpiresAt.access_expires_at).getTime();
+    return !isNaN(exp) && exp <= Date.now();
+  }
+  return false;
+}
+
+export function formatTimeRemaining(expiresAt?: string | null): {
+  isExpired: boolean;
+  text: string;
+  isWarning: boolean;
+  formattedDate: string;
+} {
+  if (!expiresAt) {
+    return { isExpired: false, text: "No Expiry", isWarning: false, formattedDate: "No Expiry" };
+  }
+
+  const expiryTime = new Date(expiresAt).getTime();
+  if (isNaN(expiryTime)) {
+    return { isExpired: false, text: "No Expiry", isWarning: false, formattedDate: "No Expiry" };
+  }
+
+  const formattedDate = new Date(expiresAt).toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+
+  const now = Date.now();
+  const diffMs = expiryTime - now;
+
+  if (diffMs <= 0) {
+    return { isExpired: true, text: "EXPIRED", isWarning: true, formattedDate };
+  }
+
+  const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+  if (diffDays <= 5) {
+    return {
+      isExpired: false,
+      text: `Expires in ${diffDays} day${diffDays === 1 ? "" : "s"}`,
+      isWarning: true,
+      formattedDate,
+    };
+  }
+
+  if (diffDays < 30) {
+    return {
+      isExpired: false,
+      text: `${diffDays} days remaining`,
+      isWarning: false,
+      formattedDate,
+    };
+  }
+
+  const diffMonths = Math.round(diffDays / 30);
+  return {
+    isExpired: false,
+    text: `${diffDays} days (${diffMonths} mo) remaining`,
+    isWarning: false,
+    formattedDate,
+  };
+}
+
 // ─── Workspace Approval & Rejection Actions (Server-Side) ─────────────────────
 
 export async function approveWorkspace(
@@ -531,10 +657,128 @@ export async function approveWorkspace(
     );
     saveLocalWorkspaces(updated);
 
+    // Also update member status in local storage
+    const members = getLocalMembers();
+    const updatedMembers = members.map((m) =>
+      m.workspace_id === workspaceId && m.status === "pending"
+        ? {
+            ...m,
+            status: "active" as WorkspaceMemberStatus,
+            access_starts_at: data.access_starts_at || new Date().toISOString(),
+            access_expires_at: data.access_expires_at || null,
+          }
+        : m
+    );
+    saveLocalMembers(updatedMembers);
+
     return { success: true, message: data.message };
   } catch (err: any) {
     return { success: false, error: err.message || "Network error approving workspace." };
   }
+}
+
+export async function renewWorkspaceAccess(
+  workspaceIdOrOptions:
+    | string
+    | {
+        workspace_id: string;
+        user_email?: string;
+        user_id?: string;
+        duration?: string;
+        custom_expiry_date?: string;
+        renewed_by?: string;
+      },
+  userIdOrEmail?: string,
+  duration?: string,
+  customDate?: string,
+  operator?: { id: string; name: string }
+): Promise<{ success: boolean; error?: string; member?: WorkspaceMember; expiresAt?: string | null }> {
+  let wsId: string;
+  let targetUserOrEmail: string;
+  let dur: string;
+  let custDate: string | undefined;
+
+  if (typeof workspaceIdOrOptions === "object" && workspaceIdOrOptions !== null) {
+    wsId = workspaceIdOrOptions.workspace_id;
+    targetUserOrEmail = (workspaceIdOrOptions.user_email || workspaceIdOrOptions.user_id || "").trim().toLowerCase();
+    dur = workspaceIdOrOptions.duration || "30_days";
+    custDate = workspaceIdOrOptions.custom_expiry_date;
+  } else {
+    wsId = workspaceIdOrOptions;
+    targetUserOrEmail = (userIdOrEmail || "").trim().toLowerCase();
+    dur = duration || "30_days";
+    custDate = customDate;
+  }
+
+  const cleanIdOrEmail = targetUserOrEmail;
+  const { startsAt, expiresAt } = calculateAccessExpiry(dur, custDate);
+
+  try {
+    const supabase = createClient();
+    const { data: sessionData } = await supabase.auth.getSession();
+    const token = sessionData?.session?.access_token;
+    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
+
+    const res = await fetch("/api/workspaces/renew-access", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        workspace_id: wsId,
+        user_id_or_email: cleanIdOrEmail,
+        duration: dur,
+        custom_date: custDate,
+      }),
+    });
+
+    const data = await res.json();
+    if (!res.ok || !data.success) {
+      throw new Error(data.error || "Failed to renew workspace access via API.");
+    }
+  } catch (apiErr: any) {
+    console.warn("Falling back to local renewal:", apiErr?.message || apiErr);
+  }
+
+  // Update local members cache
+  const members = getLocalMembers();
+  let target = members.find(
+    (m) =>
+      m.workspace_id === wsId &&
+      (m.user_id.toLowerCase() === cleanIdOrEmail || m.user?.email?.toLowerCase() === cleanIdOrEmail)
+  );
+
+  if (target) {
+    target.status = "active";
+    target.access_starts_at = startsAt;
+    target.access_expires_at = expiresAt;
+    target.access_duration = dur;
+    target.expired_at = null;
+    saveLocalMembers(members);
+  }
+
+  // Update workspace cache if workspace was expired
+  const workspaces = getLocalWorkspaces();
+  const ws = workspaces.find((w) => w.id === wsId);
+  if (ws && (ws.status === "suspended" || (ws.status as string) === "expired")) {
+    ws.status = "active";
+    saveLocalWorkspaces(workspaces);
+  }
+
+  await logWorkspaceAudit({
+    workspace_id: wsId,
+    action: "WORKSPACE_ACCESS_RENEWED",
+    performed_by: operator?.name || "Primary Owner",
+    target_user: cleanIdOrEmail,
+    details: {
+      duration: dur,
+      access_starts_at: startsAt,
+      access_expires_at: expiresAt,
+    },
+  });
+
+  return { success: true, member: target, expiresAt };
 }
 
 export async function rejectWorkspace(

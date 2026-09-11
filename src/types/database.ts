@@ -121,7 +121,7 @@ export type InventoryTransactionType = 'purchase_in' | 'job_card_out' | 'adjustm
 export type ExpensePaymentMethod = 'cash' | 'bank_transfer' | 'credit_card' | 'other' | 'bank';
 
 export type WorkspaceStatus = 'pending' | 'active' | 'suspended' | 'rejected' | 'archived';
-export type WorkspaceMemberStatus = 'pending' | 'active' | 'invited' | 'suspended' | 'rejected' | 'removed';
+export type WorkspaceMemberStatus = 'pending' | 'active' | 'invited' | 'suspended' | 'expired' | 'rejected' | 'removed';
 
 export interface Workspace {
   id: string;
@@ -166,6 +166,8 @@ export interface CreateDirectWorkspacePayload {
   owner_email: string;
   temporary_password?: string;
   role?: UserRole;
+  access_duration?: '7d' | '30d' | '3m' | '6m' | '1y' | '7_days' | '30_days' | '3_months' | '6_months' | '1_year' | 'custom' | 'no_expiry' | 'never' | string;
+  custom_expiry_date?: string;
   permissions?: Record<AppModule, UserModulePermission>;
   data_scope?: DataAccessScope;
   financial_visibility?: Partial<FinancialVisibilitySettings>;
@@ -195,6 +197,10 @@ export interface WorkspaceMember {
   role: UserRole;
   status: WorkspaceMemberStatus;
   is_workspace_owner?: boolean;
+  access_starts_at?: string | null;
+  access_expires_at?: string | null;
+  expired_at?: string | null;
+  access_duration?: string | null;
   joined_at: string;
   removed_at?: string | null;
   removed_by?: string | null;
@@ -218,7 +224,11 @@ export type WorkspaceAuditAction =
   | 'WORKSPACE_ARCHIVED'
   | 'WORKSPACE_RESTORED'
   | 'WORKSPACE_DELETED'
-  | 'WORKSPACE_STATUS_CHANGED';
+  | 'WORKSPACE_STATUS_CHANGED'
+  | 'WORKSPACE_ACCESS_APPROVED'
+  | 'WORKSPACE_ACCESS_RENEWED'
+  | 'WORKSPACE_ACCESS_SUSPENDED'
+  | 'WORKSPACE_ACCESS_REVOKED';
 
 export interface WorkspaceAuditLog {
   id: string;
@@ -337,6 +347,10 @@ export interface User {
   approval_limits?: Partial<UserApprovalLimits>;
   access_start_date?: string | null;
   access_expiry_date?: string | null;
+  access_starts_at?: string | null;
+  access_expires_at?: string | null;
+  expired_at?: string | null;
+  access_duration?: string | null;
   two_factor_enabled?: boolean;
   notes?: string | null;
   permissions?: Record<AppModule, UserModulePermission>;

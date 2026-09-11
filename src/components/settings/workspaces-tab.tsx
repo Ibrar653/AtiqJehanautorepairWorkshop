@@ -68,11 +68,25 @@ import {
   restoreWorkspaceUser,
   approveWorkspace,
   rejectWorkspace,
+  renewWorkspaceAccess,
+  formatTimeRemaining,
+  isMembershipExpired,
+  calculateAccessExpiry,
   getLocalMembers,
 } from "@/lib/services/workspace-service";
 import { getUsers, updateUserAccessControls } from "@/lib/services/user-service";
 import { DEFAULT_WORKSPACE_ID, PRIMARY_OWNER_EMAIL } from "@/lib/constants";
-import type { Workspace, User } from "@/types/database";
+import type { Workspace, User, WorkspaceMember } from "@/types/database";
+
+const RENEW_DURATION_OPTIONS = [
+  { value: "7_days", label: "7 Days" },
+  { value: "30_days", label: "30 Days" },
+  { value: "3_months", label: "3 Months" },
+  { value: "6_months", label: "6 Months" },
+  { value: "1_year", label: "1 Year" },
+  { value: "custom", label: "Custom Expiry Date" },
+  { value: "no_expiry", label: "No Expiry" },
+];
 
 interface WorkspacesTabProps {
   embedded?: boolean;
@@ -95,6 +109,12 @@ export function WorkspacesTab({ embedded = false }: WorkspacesTabProps) {
   // Modals
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [selectedWorkspace, setSelectedWorkspace] = useState<Workspace | null>(null);
+
+  // Renew Access Modal State (PART 9)
+  const [renewTargetWorkspace, setRenewTargetWorkspace] = useState<Workspace | null>(null);
+  const [renewDuration, setRenewDuration] = useState<string>("30_days");
+  const [renewCustomDate, setRenewCustomDate] = useState<string>("");
+  const [renewingAccess, setRenewingAccess] = useState<boolean>(false);
 
   // Direct Delete Modal state (Requirement 8, 9, 10)
   const [deleteTargetWorkspace, setDeleteTargetWorkspace] = useState<Workspace | null>(null);
@@ -297,6 +317,34 @@ export function WorkspacesTab({ embedded = false }: WorkspacesTabProps) {
       showToast("error", e.message || "Failed to restore access.");
     } finally {
       setLoadingAction(null);
+    }
+  };
+
+  // Renew Workspace Access (PART 9)
+  const handleConfirmRenewAccess = async () => {
+    if (!renewTargetWorkspace) return;
+    setRenewingAccess(true);
+    try {
+      const res = await renewWorkspaceAccess({
+        workspace_id: renewTargetWorkspace.id,
+        user_email: renewTargetWorkspace.owner_email || renewTargetWorkspace.email || undefined,
+        duration: renewDuration,
+        custom_expiry_date: renewDuration === "custom" && renewCustomDate ? new Date(renewCustomDate).toISOString() : undefined,
+        renewed_by: currentUser?.full_name || "Primary Owner",
+      });
+
+      if (res.success) {
+        showToast("success", `Workspace access for "${renewTargetWorkspace.name}" has been successfully renewed.`);
+        setRenewTargetWorkspace(null);
+        setRenewCustomDate("");
+        await refreshWorkspaces();
+      } else {
+        showToast("error", res.error || "Failed to renew access.");
+      }
+    } catch (e: any) {
+      showToast("error", e.message || "Failed to renew workspace access.");
+    } finally {
+      setRenewingAccess(false);
     }
   };
 
@@ -654,14 +702,15 @@ export function WorkspacesTab({ embedded = false }: WorkspacesTabProps) {
             <table className="w-full text-left text-xs">
               <thead className="bg-slate-50/80 dark:bg-slate-900/80 text-[#64748B] dark:text-slate-400 font-bold text-[10.5px] uppercase tracking-[0.04em] border-b border-slate-200/80 dark:border-slate-800 sticky top-0 z-10">
                 <tr className="h-10">
-                  <th className="py-2.5 px-4 font-bold">Workspace Name</th>
-                  <th className="py-2.5 px-4 font-bold">Workspace Owner</th>
+                  <th className="py-2.5 px-4 font-bold">Workspace</th>
+                  <th className="py-2.5 px-4 font-bold">Owner</th>
                   <th className="py-2.5 px-4 font-bold">Owner Email</th>
                   <th className="py-2.5 px-4 font-bold">Status</th>
+                  <th className="py-2.5 px-4 font-bold">Access Starts</th>
+                  <th className="py-2.5 px-4 font-bold">Access Expires</th>
+                  <th className="py-2.5 px-4 font-bold">Time Remaining</th>
                   <th className="py-2.5 px-4 font-bold">Users</th>
-                  <th className="py-2.5 px-4 font-bold">Created Date</th>
-                  <th className="py-2.5 px-4 font-bold">Last Activity</th>
-                  <th className="py-2.5 px-4 text-right w-[200px] whitespace-nowrap font-bold">Actions</th>
+                  <th className="py-2.5 px-4 text-right w-[220px] whitespace-nowrap font-bold">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-[12.5px] text-[#334155] dark:text-slate-300">
@@ -670,17 +719,27 @@ export function WorkspacesTab({ embedded = false }: WorkspacesTabProps) {
                   const isPrimary = ws.id === DEFAULT_WORKSPACE_ID;
                   const ownerName = ws.owner_name || "Assigned Operator";
                   const ownerEmail = ws.owner_email || ws.email || "owner@email.com";
-                  const activeMembersForWs = getLocalMembers().filter(
-                    (m) => m.workspace_id === ws.id && m.status === "active"
-                  );
+                  const allMembersForWs = getLocalMembers().filter((m) => m.workspace_id === ws.id);
+                  const activeMembersForWs = allMembersForWs.filter((m) => m.status === "active");
                   const wsUsersCount = activeMembersForWs.length;
+
+                  // Find owner member record for access duration info
+                  const ownerMember = allMembersForWs.find(
+                    (m) =>
+                      m.is_workspace_owner ||
+                      m.role === "owner" ||
+                      (ownerEmail && m.user_id?.toLowerCase() === ownerEmail.toLowerCase())
+                  );
+
+                  const isExpired =
+                    isMembershipExpired(ownerMember?.access_expires_at, ownerMember?.status || ws.status);
 
                   return (
                     <tr
                       key={ws.id}
                       className={`h-12 transition-colors hover:bg-slate-50/70 dark:hover:bg-slate-800/30 ${
                         isCurrent ? "bg-purple-50/30 dark:bg-purple-950/20" : ""
-                      }`}
+                      } ${isExpired ? "bg-rose-50/20 dark:bg-rose-950/10" : ""}`}
                     >
                       {/* Workspace Name */}
                       <td className="py-2.5 px-4">
@@ -737,19 +796,74 @@ export function WorkspacesTab({ embedded = false }: WorkspacesTabProps) {
 
                       {/* Status */}
                       <td className="py-2.5 px-4">
-                        <Badge
-                          className={`text-[10px] uppercase font-bold tracking-wider ${
-                            ws.status === "active"
-                              ? "bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800"
-                              : ws.status === "pending"
-                              ? "bg-amber-50 text-amber-800 border border-amber-300 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800"
-                              : ws.status === "archived"
-                              ? "bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700"
-                              : "bg-red-50 text-red-700 border border-red-200 dark:bg-red-950/60 dark:text-red-300 dark:border-red-800"
-                          }`}
-                        >
-                          {ws.status === "pending" ? "Pending Approval" : ws.status}
-                        </Badge>
+                        {isExpired ? (
+                          <Badge className="bg-rose-100 text-rose-800 border border-rose-300 dark:bg-rose-950/60 dark:text-rose-300 dark:border-rose-800 text-[10px] uppercase font-bold tracking-wider">
+                            EXPIRED
+                          </Badge>
+                        ) : (
+                          <Badge
+                            className={`text-[10px] uppercase font-bold tracking-wider ${
+                              ws.status === "active"
+                                ? "bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800"
+                                : ws.status === "pending"
+                                ? "bg-amber-50 text-amber-800 border border-amber-300 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800"
+                                : ws.status === "archived"
+                                ? "bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700"
+                                : "bg-red-50 text-red-700 border border-red-200 dark:bg-red-950/60 dark:text-red-300 dark:border-red-800"
+                            }`}
+                          >
+                            {ws.status === "pending" ? "Pending Approval" : ws.status}
+                          </Badge>
+                        )}
+                      </td>
+
+                      {/* Access Starts */}
+                      <td className="py-2.5 px-4 text-[#64748B] dark:text-slate-400 text-[11px] font-mono">
+                        {ownerMember?.access_starts_at
+                          ? new Date(ownerMember.access_starts_at).toLocaleDateString()
+                          : ws.created_at
+                          ? new Date(ws.created_at).toLocaleDateString()
+                          : "-"}
+                      </td>
+
+                      {/* Access Expires */}
+                      <td className="py-2.5 px-4 text-[11px] font-mono">
+                        {ownerMember?.access_expires_at ? (
+                          <span
+                            className={
+                              isExpired
+                                ? "text-rose-600 font-bold dark:text-rose-400"
+                                : "text-slate-700 dark:text-slate-300 font-medium"
+                            }
+                          >
+                            {new Date(ownerMember.access_expires_at).toLocaleDateString()}
+                          </span>
+                        ) : (
+                          <span className="text-slate-400">No Expiry</span>
+                        )}
+                      </td>
+
+                      {/* Time Remaining */}
+                      <td className="py-2.5 px-4 text-[11px]">
+                        {(() => {
+                          if (!ownerMember?.access_expires_at) {
+                            return <span className="text-slate-400 text-[10px]">Unlimited</span>;
+                          }
+                          const rem = formatTimeRemaining(ownerMember.access_expires_at);
+                          return (
+                            <span
+                              className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                                isExpired || rem.isExpired
+                                  ? "bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300"
+                                  : rem.isWarning
+                                  ? "bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 animate-pulse"
+                                  : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                              }`}
+                            >
+                              {rem.text}
+                            </span>
+                          );
+                        })()}
                       </td>
 
                       {/* Users Count (Requirement 3) */}
@@ -759,25 +873,8 @@ export function WorkspacesTab({ embedded = false }: WorkspacesTabProps) {
                         </span>
                       </td>
 
-                      {/* Created Date */}
-                      <td className="py-2.5 px-4 text-[#64748B] dark:text-slate-400 text-[11px]">
-                        {ws.created_at ? new Date(ws.created_at).toLocaleDateString() : "2024-01-01"}
-                      </td>
-
-                      {/* Last Activity */}
-                      <td className="py-2.5 px-4 text-[#64748B] dark:text-slate-400 text-[11px]">
-                        {ws.last_activity ? (
-                          <span className="flex items-center gap-1 text-slate-700 dark:text-slate-300">
-                            <Clock className="w-3.5 h-3.5 text-slate-400" aria-hidden="true" />
-                            {new Date(ws.last_activity).toLocaleDateString()}
-                          </span>
-                        ) : (
-                          <span className="text-slate-400 italic">Recently active</span>
-                        )}
-                      </td>
-
-                      {/* Actions (Requirement 4 & 9) */}
-                      <td className="py-2.5 px-4 text-right w-[200px] whitespace-nowrap">
+                      {/* Actions (Requirement 4, 9, 11) */}
+                      <td className="py-2.5 px-4 text-right w-[220px] whitespace-nowrap">
                         <div className="flex items-center justify-end gap-1.5">
                           {/* If Workspace is Pending, show direct Approve / Reject actions */}
                           {ws.status === "pending" && isPlatformOwner ? (
@@ -810,7 +907,7 @@ export function WorkspacesTab({ embedded = false }: WorkspacesTabProps) {
                             </>
                           ) : (
                             <>
-                              {!isCurrent && ws.status === "active" && (
+                              {!isCurrent && ws.status === "active" && !isExpired && (
                                 <Button
                                   size="sm"
                                   variant="outline"
@@ -827,8 +924,23 @@ export function WorkspacesTab({ embedded = false }: WorkspacesTabProps) {
                                 onClick={() => handleOpenManageUsers(ws)}
                                 className="text-[12px] h-8 border-slate-200 hover:bg-slate-100 font-semibold text-slate-700 dark:text-slate-300 px-2.5"
                               >
-                                <Users className="w-3.5 h-3.5 mr-1 text-blue-600" aria-hidden="true" /> Manage Access
+                                <Users className="w-3.5 h-3.5 mr-1 text-blue-600" aria-hidden="true" /> Access
                               </Button>
+
+                              {isPlatformOwner && !isPrimary && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => {
+                                    setRenewTargetWorkspace(ws);
+                                    setRenewDuration("30_days");
+                                    setRenewCustomDate("");
+                                  }}
+                                  className="text-[12px] h-8 border-amber-200 text-amber-700 hover:bg-amber-50 font-semibold px-2.5 gap-1"
+                                >
+                                  <Clock className="w-3.5 h-3.5 text-amber-600" aria-hidden="true" /> Renew
+                                </Button>
+                              )}
 
                               {isPlatformOwner && (
                                 <Button
@@ -1360,6 +1472,152 @@ export function WorkspacesTab({ embedded = false }: WorkspacesTabProps) {
                   </>
                 ) : (
                   "Confirm Rejection"
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* ─── 8. RENEW WORKSPACE ACCESS MODAL (PART 9) ───────────────────────── */}
+      {renewTargetWorkspace && (
+        <Dialog
+          open={Boolean(renewTargetWorkspace)}
+          onOpenChange={(open) => {
+            if (!open) {
+              setRenewTargetWorkspace(null);
+              setRenewCustomDate("");
+            }
+          }}
+        >
+          <DialogContent className="max-w-md bg-white dark:bg-slate-900 p-6">
+            <DialogHeader>
+              <DialogTitle className="text-base font-black text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                <Clock className="w-4 h-4 text-blue-600" />
+                Renew Workspace Access
+              </DialogTitle>
+              <DialogDescription className="text-xs text-slate-500">
+                Extend access duration for this workspace. User can log in with their existing credentials.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-3.5 py-2 text-xs">
+              {/* Target Details Card */}
+              <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-500">Workspace:</span>
+                  <span className="font-bold text-slate-900 dark:text-slate-100">
+                    {renewTargetWorkspace.name}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-500">Workspace Owner:</span>
+                  <span className="font-semibold text-slate-800 dark:text-slate-200">
+                    {renewTargetWorkspace.owner_name || "Owner"} ({renewTargetWorkspace.owner_email || renewTargetWorkspace.email})
+                  </span>
+                </div>
+                <div className="flex justify-between items-center pt-1 border-t border-slate-200 dark:border-slate-700">
+                  <span className="text-slate-500">Previous Expiry:</span>
+                  <span className="font-mono text-slate-700 dark:text-slate-300 font-semibold">
+                    {(() => {
+                      const m = getLocalMembers().find((mem) => mem.workspace_id === renewTargetWorkspace.id && (mem.is_workspace_owner || mem.role === "owner"));
+                      return m?.access_expires_at
+                        ? new Date(m.access_expires_at).toLocaleString()
+                        : "No Expiry (Indefinite)";
+                    })()}
+                  </span>
+                </div>
+              </div>
+
+              {/* Duration Options */}
+              <div className="space-y-1.5">
+                <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                  Select New Duration *
+                </Label>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+                  {RENEW_DURATION_OPTIONS.map((opt) => {
+                    const isSelected = renewDuration === opt.value;
+                    return (
+                      <div
+                        key={opt.value}
+                        onClick={() => setRenewDuration(opt.value)}
+                        className={`p-2 rounded-lg border text-center cursor-pointer transition-all ${
+                          isSelected
+                            ? "border-blue-600 bg-blue-50/80 dark:bg-blue-950/40 text-blue-900 dark:text-blue-100 ring-1 ring-blue-600 font-bold"
+                            : "border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300"
+                        }`}
+                      >
+                        <div className="text-[11px] font-bold">{opt.label}</div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Custom Date Input */}
+              {renewDuration === "custom" && (
+                <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700 space-y-1 animate-in fade-in-50">
+                  <Label className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
+                    New Expiry Date &amp; Time *
+                  </Label>
+                  <Input
+                    type="datetime-local"
+                    value={renewCustomDate}
+                    onChange={(e) => setRenewCustomDate(e.target.value)}
+                    className="text-xs h-9"
+                    min={new Date().toISOString().slice(0, 16)}
+                  />
+                </div>
+              )}
+
+              {/* Real-Time Expiry Calculation Summary */}
+              <div className="p-3 bg-blue-50/70 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900 rounded-xl space-y-1 text-xs text-blue-950 dark:text-blue-200">
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-500 dark:text-slate-400">New Access Starts:</span>
+                  <span className="font-semibold text-slate-800 dark:text-slate-200">Immediately (Now)</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-500 dark:text-slate-400">New Access Expires:</span>
+                  <span className="font-bold text-blue-700 dark:text-blue-300 font-mono">
+                    {renewDuration === "no_expiry"
+                      ? "Never (No Expiry)"
+                      : renewDuration === "custom" && renewCustomDate
+                      ? new Date(renewCustomDate).toLocaleString()
+                      : calculateAccessExpiry(renewDuration).expiresAt
+                      ? new Date(calculateAccessExpiry(renewDuration).expiresAt!).toLocaleString()
+                      : "No Expiry"}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <DialogFooter className="gap-2 pt-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setRenewTargetWorkspace(null);
+                  setRenewCustomDate("");
+                }}
+                disabled={renewingAccess}
+                className="text-xs h-8"
+              >
+                Cancel
+              </Button>
+              <Button
+                size="sm"
+                disabled={renewingAccess || (renewDuration === "custom" && !renewCustomDate)}
+                onClick={handleConfirmRenewAccess}
+                className="text-xs font-bold h-8 bg-blue-600 hover:bg-blue-700 text-white gap-1.5"
+              >
+                {renewingAccess ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" /> Renewing...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 className="w-3.5 h-3.5" /> Confirm Renewal
+                  </>
                 )}
               </Button>
             </DialogFooter>

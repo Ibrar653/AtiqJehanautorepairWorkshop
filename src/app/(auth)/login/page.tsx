@@ -54,6 +54,11 @@ function LoginForm() {
     workspaceCode: string;
     status: string;
   } | null>(null);
+  const [expiredNotice, setExpiredNotice] = useState<{
+    workspaceName: string;
+    workspaceCode: string;
+    expiredAt: string;
+  } | null>(null);
 
   // Manual Activation Code Modal State
   const [codeModalOpen, setCodeModalOpen] = useState(false);
@@ -222,14 +227,30 @@ function LoginForm() {
       // 1. Fetch user's active workspace memberships directly from Supabase
       const { data: dbMembers, error: dbError } = await supabase
         .from("workspace_members")
-        .select("id, workspace_id, user_id, role, status, is_workspace_owner")
+        .select("id, workspace_id, user_id, role, status, is_workspace_owner, access_starts_at, access_expires_at, expired_at")
         .eq("user_id", userId);
 
       if (!dbError && dbMembers && dbMembers.length > 0) {
-        // Check active memberships first
-        const activeMembers = dbMembers.filter((m) => m.status === "active");
-        if (activeMembers.length > 0) {
-          const wsIds = activeMembers.map((m) => m.workspace_id).filter(Boolean);
+        // Filter out expired memberships
+        const validActiveMembers = dbMembers.filter((m) => {
+          if (m.status === "expired") return false;
+          if (m.status !== "active") return false;
+          if (m.access_expires_at) {
+            const expTime = new Date(m.access_expires_at).getTime();
+            if (expTime <= Date.now()) return false;
+          }
+          return true;
+        });
+
+        // Check if user has an expired membership
+        const expiredMember = dbMembers.find(
+          (m) =>
+            m.status === "expired" ||
+            (m.access_expires_at && new Date(m.access_expires_at).getTime() <= Date.now())
+        );
+
+        if (validActiveMembers.length > 0) {
+          const wsIds = validActiveMembers.map((m) => m.workspace_id).filter(Boolean);
           if (wsIds.length > 0) {
             const { data: wsRows, error: wsErr } = await supabase
               .from("workspaces")
@@ -241,13 +262,40 @@ function LoginForm() {
               memberWorkspaces = wsRows as Workspace[];
             }
           }
-          if (activeMembers[0]?.role) {
-            memberRole = activeMembers[0].role;
+          if (validActiveMembers[0]?.role) {
+            memberRole = validActiveMembers[0].role;
           }
         }
 
-        // If no active workspaces found, check if membership or workspace is pending
+        // If no active valid workspaces found, check if membership is expired or pending
         if (memberWorkspaces.length === 0) {
+          // Handle Expired Access
+          if (expiredMember) {
+            const { data: wsData } = await supabase
+              .from("workspaces")
+              .select("id, name, workspace_code, code")
+              .eq("id", expiredMember.workspace_id)
+              .maybeSingle();
+
+            await supabase.auth.signOut();
+
+            setExpiredNotice({
+              workspaceName: wsData?.name || "Your Workspace",
+              workspaceCode: wsData?.workspace_code || wsData?.code || "EXPIRED",
+              expiredAt: expiredMember.access_expires_at
+                ? new Date(expiredMember.access_expires_at).toLocaleString("en-US", {
+                    day: "2-digit",
+                    month: "short",
+                    year: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })
+                : "Recently",
+            });
+            setLoading(false);
+            return;
+          }
+
           const pendingMember = dbMembers.find((m) => m.status === "pending");
           const anyWsId = (pendingMember || dbMembers[0])?.workspace_id;
 
@@ -509,6 +557,58 @@ function LoginForm() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleLogin} className="space-y-4">
+            {/* Workspace Access Expired Notice (PART 6) */}
+            {expiredNotice && (
+              <div className="p-4 bg-rose-50/90 border border-rose-300/80 rounded-xl space-y-2.5 text-xs text-rose-950 animate-in fade-in-50 shadow-sm">
+                <div className="flex items-center gap-2 font-bold text-rose-900 text-sm">
+                  <AlertCircle className="h-4 w-4 text-rose-600 shrink-0" />
+                  <span>Workspace Access Expired</span>
+                </div>
+                <p className="text-rose-800 leading-relaxed">
+                  Your access to this workspace expired on <strong className="font-semibold text-rose-950">{expiredNotice.expiredAt}</strong>. Please contact the Platform Owner to renew your access.
+                </p>
+                <div className="bg-white/90 rounded-lg p-2.5 border border-rose-200/80 space-y-1.5 text-slate-800 font-medium">
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-500">Workspace:</span>
+                    <span className="font-bold text-slate-900">{expiredNotice.workspaceName}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-500">Workspace Code:</span>
+                    <span className="font-mono font-semibold text-blue-700">{expiredNotice.workspaceCode}</span>
+                  </div>
+                  <div className="flex justify-between items-center pt-1 border-t border-rose-100">
+                    <span className="text-slate-500">Access Status:</span>
+                    <Badge variant="outline" className="bg-rose-100 text-rose-800 border-rose-300 text-[10px] font-bold uppercase">
+                      EXPIRED
+                    </Badge>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 pt-1">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setExpiredNotice(null);
+                      setEmail("");
+                      setPassword("");
+                    }}
+                    className="flex-1 h-8 text-xs font-semibold border-rose-200 text-rose-800 hover:bg-rose-100"
+                  >
+                    Sign Out
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={() => {
+                      window.location.href = `mailto:${PRIMARY_OWNER_EMAIL}?subject=Workspace Access Renewal Request for ${expiredNotice.workspaceName}&body=Hello Platform Owner,%0D%0A%0D%0APlease renew my access for workspace: ${expiredNotice.workspaceName} (${expiredNotice.workspaceCode}).%0D%0AEmail: ${email}`;
+                    }}
+                    className="flex-1 h-8 text-xs font-semibold bg-rose-600 hover:bg-rose-700 text-white"
+                  >
+                    Contact Administrator
+                  </Button>
+                </div>
+              </div>
+            )}
+
             {/* Pending Platform Approval Notice */}
             {pendingNotice && (
               <div className="p-4 bg-amber-50/90 border border-amber-300/80 rounded-xl space-y-2 text-xs text-amber-950 animate-in fade-in-50 shadow-sm">

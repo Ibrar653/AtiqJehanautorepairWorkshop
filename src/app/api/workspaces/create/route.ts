@@ -214,7 +214,8 @@ export async function POST(request: NextRequest) {
       throw new Error(`Failed to insert workspace record: ${wsInsertErr.message}`);
     }
 
-    // B. Insert Workspace Member as 'pending'
+    // B. Insert Workspace Member as 'pending' with duration settings
+    const accessDuration = body.access_duration || "no_expiry";
     const { error: memInsertErr } = await supabaseAdmin
       .from("workspace_members")
       .insert({
@@ -224,6 +225,9 @@ export async function POST(request: NextRequest) {
         role: role || "owner",
         status: "pending",
         is_workspace_owner: true,
+        access_duration: accessDuration,
+        access_starts_at: null,
+        access_expires_at: null,
         joined_at: null,
         created_at: now,
         updated_at: now,

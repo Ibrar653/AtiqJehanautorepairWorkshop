@@ -96,9 +96,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const isAccessExpired = useMemo(() => {
     if (!user) return false;
     if (isOwner) return false;
-    if (user.status === "expired") return true;
+    if (user.status === "expired" || user.membership_status === "expired") return true;
+    if (user.access_expires_at) {
+      return new Date(user.access_expires_at).getTime() <= Date.now();
+    }
     if (user.access_expiry_date) {
-      return new Date(user.access_expiry_date).getTime() < Date.now();
+      return new Date(user.access_expiry_date).getTime() <= Date.now();
     }
     return false;
   }, [user, isOwner]);

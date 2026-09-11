@@ -433,7 +433,7 @@ export async function logUserActivity(payload: Omit<UserActivityLog, "id" | "tim
   }
 }
 
-export async function getUserActivityLogs(userId?: string): Promise<UserActivityLog[]> {
+export async function getUserActivityLogs(userId?: string, workspaceId?: string): Promise<UserActivityLog[]> {
   const supabase = createClient();
   try {
     let query = supabase
@@ -444,6 +444,9 @@ export async function getUserActivityLogs(userId?: string): Promise<UserActivity
 
     if (userId) {
       query = query.eq("user_id", userId);
+    }
+    if (workspaceId) {
+      query = query.eq("workspace_id", workspaceId);
     }
 
     const { data, error } = await withTimeout<any>(query, 3000);
@@ -466,10 +469,14 @@ export async function getUserActivityLogs(userId?: string): Promise<UserActivity
   }
 
   const local = getLocalActivityLogs();
-  if (userId) {
-    return local.filter((l) => l.user_id === userId);
+  let filtered = local;
+  if (workspaceId) {
+    filtered = filtered.filter((l: any) => !l.workspace_id || l.workspace_id === workspaceId);
   }
-  return local;
+  if (userId) {
+    filtered = filtered.filter((l) => l.user_id === userId);
+  }
+  return filtered;
 }
 
 export async function getPermissionChangeLogs(userId?: string): Promise<PermissionChangeLog[]> {
@@ -1102,7 +1109,7 @@ export async function getCurrentUser(): Promise<User | null> {
   }
 }
 
-// ─── Fetch All Staff Users ──────────────────────────────────────────────────
+// ─── Fetch All Staff Users (Strict Workspace Isolation) ─────────────────────
 
 export async function getUsers(workspaceId?: string): Promise<User[]> {
   const local = getLocalUsers();
@@ -1170,107 +1177,114 @@ export async function getUsers(workspaceId?: string): Promise<User[]> {
     targetWorkspace = getLocalWorkspaces().find((w) => w.id === targetWsId) || null;
   } catch {}
 
-  // Enrich with workspace membership for targetWsId
-  const enrichedUsers: User[] = baseUsers
-    .filter((u) => {
-      const cleanEmail = u.email.toLowerCase();
-      const isOwner =
-        targetWorkspace?.owner_user_id === u.id ||
-        targetWorkspace?.owner_email?.toLowerCase() === cleanEmail;
-      const isPrimaryPlatformOwner = cleanEmail === PRIMARY_OWNER_EMAIL.toLowerCase();
+  // STRICT MULTI-TENANT ISOLATION:
+  // A user belongs to targetWsId IF AND ONLY IF there is an actual membership record
+  // in wsMembers for targetWsId, OR they are the explicitly assigned workspace owner.
+  // Platform admins / Primary owner do NOT automatically appear unless they have an explicit membership record.
+  const enrichedUsers: User[] = [];
 
-      // Find member record for targetWsId
-      const hasMemberRecord = wsMembers.some(
-        (m) =>
-          m.workspace_id === targetWsId &&
-          (m.user_id === u.id ||
-            m.user_id.toLowerCase() === cleanEmail ||
-            m.user?.email?.toLowerCase() === cleanEmail)
-      );
+  for (const member of wsMembers) {
+    // Match base user by id or email
+    const cleanMemUserId = member.user_id?.toLowerCase() || "";
+    let matchedUser = baseUsers.find(
+      (u) =>
+        u.id === member.user_id ||
+        u.email.toLowerCase() === cleanMemUserId ||
+        (member.user?.email && u.email.toLowerCase() === member.user.email.toLowerCase())
+    );
 
-      if (targetWsId === DEFAULT_WORKSPACE_ID) {
-        return true;
-      }
-
-      return hasMemberRecord || isOwner || isPrimaryPlatformOwner;
-    })
-    .map((u) => {
-      const isPrimaryOwner = u.email.toLowerCase() === PRIMARY_OWNER_EMAIL.toLowerCase();
-      const evaluated = checkAndEnforceExpiry(u);
-      const cleanEmail = u.email.toLowerCase();
-
-      // If the software user account is deleted globally
-      if (u.status === "deleted" || Boolean(u.deleted_at)) {
-        return {
-          ...evaluated,
-          status: "deleted",
-          membership_status: "removed",
-          is_active: false,
-          workspace_id: targetWsId,
-        };
-      }
-
-      // Find member record for targetWsId
-      const member = wsMembers.find(
-        (m) =>
-          m.workspace_id === targetWsId &&
-          (m.user_id === u.id ||
-            m.user_id.toLowerCase() === cleanEmail ||
-            m.user?.email?.toLowerCase() === cleanEmail)
-      );
-
-      const isTargetWorkspaceOwner =
-        targetWorkspace?.owner_user_id === u.id ||
-        targetWorkspace?.owner_email?.toLowerCase() === cleanEmail;
-
-      let effectiveStatus: UserStatus = evaluated.status || (evaluated.is_active ? "active" : "disabled");
-      let membershipStatus: WorkspaceMemberStatus = "active";
-      let removedAt: string | null = null;
-      let removedBy: string | null = null;
-      let effectiveRole: UserRole = isPrimaryOwner || isTargetWorkspaceOwner ? "owner" : u.role;
-
-      if (member) {
-        membershipStatus = member.status;
-        removedAt = member.removed_at || null;
-        removedBy = member.removed_by || null;
-        effectiveRole = isPrimaryOwner || isTargetWorkspaceOwner ? "owner" : member.role || u.role;
-
-        if (member.status === "removed") {
-          effectiveStatus = "removed";
-        } else if (member.status === "suspended") {
-          effectiveStatus = "suspended";
-        } else if (member.status === "active") {
-          effectiveStatus = (evaluated.status === "disabled" || evaluated.status === "suspended") ? evaluated.status : "active";
-        } else if (member.status === "invited") {
-          effectiveStatus = "invited";
-        }
-      } else {
-        // If no membership row exists for this workspace:
-        if ((isPrimaryOwner || isTargetWorkspaceOwner) || targetWsId === DEFAULT_WORKSPACE_ID) {
-          effectiveStatus = evaluated.status || "active";
-          membershipStatus = "active";
-        } else {
-          effectiveStatus = "removed";
-          membershipStatus = "removed";
-        }
-      }
-
-      return {
-        ...evaluated,
-        role: effectiveRole,
-        status: isPrimaryOwner ? "active" : effectiveStatus,
-        is_active: isPrimaryOwner ? true : effectiveStatus === "active",
-        membership_status: membershipStatus,
-        removed_at: removedAt,
-        removed_by: removedBy,
-        workspace_id: targetWsId,
-        permissions: isPrimaryOwner
-          ? getAllPermissionsEnabled()
-          : (effectiveStatus === "removed" || effectiveStatus === "deleted" || !u.is_active)
-          ? getEmptyPermissions()
-          : permsMap[u.id] || u.permissions || getDefaultPermissionsForRole(effectiveRole),
+    // If not in baseUsers, construct from member metadata
+    if (!matchedUser) {
+      const isOwnerRole = member.role === "owner";
+      matchedUser = {
+        id: member.user_id || `usr-${Date.now().toString(36)}`,
+        email: member.user?.email || (cleanMemUserId.includes("@") ? cleanMemUserId : `${member.user_id}@workshop.local`),
+        full_name: member.user?.full_name || (isOwnerRole ? targetWorkspace?.owner_name || "Workspace Owner" : "Workshop Staff"),
+        role: member.role || "viewer",
+        is_active: member.status === "active",
+        status: member.status === "active" ? "active" : (member.status as any),
+        created_at: member.joined_at || new Date().toISOString(),
+        updated_at: new Date().toISOString(),
       };
+    }
+
+    const evaluated = checkAndEnforceExpiry(matchedUser);
+
+    // Check time-limited access duration expiry
+    const isExpired =
+      member.status === "expired" ||
+      Boolean(member.access_expires_at && new Date(member.access_expires_at).getTime() <= Date.now());
+
+    let effectiveStatus: UserStatus = evaluated.status || "active";
+    let membershipStatus: WorkspaceMemberStatus = member.status;
+
+    if (isExpired) {
+      effectiveStatus = "expired";
+      membershipStatus = "expired";
+    } else if (member.status === "suspended") {
+      effectiveStatus = "suspended";
+      membershipStatus = "suspended";
+    } else if (member.status === "removed") {
+      effectiveStatus = "removed";
+      membershipStatus = "removed";
+    } else if (member.status === "invited") {
+      effectiveStatus = "invited";
+      membershipStatus = "invited";
+    } else if (member.status === "active") {
+      effectiveStatus = (evaluated.status === "disabled" || evaluated.status === "suspended") ? evaluated.status : "active";
+      membershipStatus = "active";
+    }
+
+    const effectiveRole: UserRole = member.role || matchedUser.role || "viewer";
+
+    enrichedUsers.push({
+      ...evaluated,
+      role: effectiveRole,
+      status: effectiveStatus,
+      is_active: effectiveStatus === "active",
+      membership_status: membershipStatus,
+      access_starts_at: member.access_starts_at || null,
+      access_expires_at: member.access_expires_at || null,
+      expired_at: member.expired_at || (isExpired ? (member.access_expires_at || new Date().toISOString()) : null),
+      access_duration: member.access_duration || null,
+      removed_at: member.removed_at || null,
+      removed_by: member.removed_by || null,
+      workspace_id: targetWsId,
+      permissions:
+        effectiveStatus === "removed" || effectiveStatus === "deleted" || effectiveStatus === "expired" || !matchedUser.is_active
+          ? getEmptyPermissions()
+          : permsMap[matchedUser.id] || matchedUser.permissions || getDefaultPermissionsForRole(effectiveRole),
     });
+  }
+
+  // If workspace owner is assigned in targetWorkspace and not yet in enrichedUsers
+  if (targetWorkspace?.owner_email) {
+    const ownerEmailClean = targetWorkspace.owner_email.toLowerCase();
+    const alreadyInList = enrichedUsers.some(
+      (u) => u.email.toLowerCase() === ownerEmailClean || (targetWorkspace.owner_user_id && u.id === targetWorkspace.owner_user_id)
+    );
+
+    if (!alreadyInList) {
+      const matchedOwnerUser = baseUsers.find(
+        (u) => u.email.toLowerCase() === ownerEmailClean || (targetWorkspace.owner_user_id && u.id === targetWorkspace.owner_user_id)
+      );
+      const isOwnerPrimary = ownerEmailClean === PRIMARY_OWNER_EMAIL.toLowerCase();
+
+      enrichedUsers.unshift({
+        id: targetWorkspace.owner_user_id || matchedOwnerUser?.id || `usr-owner-${targetWsId.slice(0, 6)}`,
+        email: targetWorkspace.owner_email,
+        full_name: targetWorkspace.owner_name || matchedOwnerUser?.full_name || "Workspace Owner",
+        role: "owner",
+        status: "active",
+        is_active: true,
+        membership_status: "active",
+        workspace_id: targetWsId,
+        permissions: isOwnerPrimary ? getAllPermissionsEnabled() : getDefaultPermissionsForRole("owner"),
+        created_at: targetWorkspace.created_at || new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      });
+    }
+  }
 
   return enrichedUsers;
 }

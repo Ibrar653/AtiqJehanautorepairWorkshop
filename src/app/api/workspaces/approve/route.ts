@@ -113,29 +113,53 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // Activate workspace members
+      // Fetch pending member to inspect duration settings
+      const { data: pendingMembers } = await supabaseAdmin
+        .from("workspace_members")
+        .select("id, access_duration, user_id")
+        .eq("workspace_id", workspace_id)
+        .eq("status", "pending");
+
+      const memberDuration = pendingMembers?.[0]?.access_duration || "no_expiry";
+      let calculatedExpiry: string | null = null;
+      if (memberDuration && memberDuration !== "no_expiry" && memberDuration !== "never") {
+        const d = new Date();
+        if (memberDuration === "7d") d.setDate(d.getDate() + 7);
+        else if (memberDuration === "30d") d.setDate(d.getDate() + 30);
+        else if (memberDuration === "3m") d.setMonth(d.getMonth() + 3);
+        else if (memberDuration === "6m") d.setMonth(d.getMonth() + 6);
+        else if (memberDuration === "1y") d.setFullYear(d.getFullYear() + 1);
+        calculatedExpiry = d.toISOString();
+      }
+
+      // Activate workspace members with calculated access duration
       await supabaseAdmin
         .from("workspace_members")
         .update({
           status: "active",
+          access_starts_at: now,
+          access_expires_at: calculatedExpiry,
           joined_at: now,
           updated_at: now,
         })
         .eq("workspace_id", workspace_id)
         .eq("status", "pending");
 
-      // Audit log
+      // Audit log: workspace_access_approved
       try {
         await supabaseAdmin.from("workspace_audit_logs").insert({
           id: crypto.randomUUID(),
           workspace_id,
-          action: "workspace_approved",
+          action: "workspace_access_approved",
           performed_by: callerUser.id,
-          target_user: wsRecord.owner_user_id,
+          target_user: wsRecord.owner_user_id || pendingMembers?.[0]?.user_id,
           details: {
             approved_at: now,
             workspace_name: wsRecord.name,
             workspace_code: wsRecord.workspace_code,
+            duration: memberDuration,
+            access_starts_at: now,
+            access_expires_at: calculatedExpiry,
           },
           created_at: now,
         });
@@ -145,9 +169,11 @@ export async function POST(request: NextRequest) {
 
       return NextResponse.json({
         success: true,
-        message: `Workspace "${wsRecord.name}" successfully approved and activated.`,
+        message: `Workspace "${wsRecord.name}" successfully approved and activated. Access expires: ${calculatedExpiry ? new Date(calculatedExpiry).toLocaleDateString() : "No Expiry"}.`,
         workspace_id,
         status: "active",
+        access_starts_at: now,
+        access_expires_at: calculatedExpiry,
       });
     } else {
       // 5. REJECTION WORKFLOW

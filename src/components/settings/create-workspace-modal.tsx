@@ -41,9 +41,10 @@ import {
   Send,
   Eye,
   EyeOff,
+  Clock,
 } from "lucide-react";
 import { useWorkspace } from "@/lib/context/workspace-context";
-import { createDirectWorkspace } from "@/lib/services/workspace-service";
+import { createDirectWorkspace, calculateAccessExpiry } from "@/lib/services/workspace-service";
 import {
   getDefaultPermissionsForRole,
   getDefaultDataScope,
@@ -62,6 +63,16 @@ import type {
   FinancialVisibilitySettings,
   UserApprovalLimits,
 } from "@/types/database";
+
+const DURATION_OPTIONS = [
+  { value: "7_days", label: "7 Days", desc: "Short-term trial or temporary contractor access" },
+  { value: "30_days", label: "30 Days", desc: "Standard 1-month trial access" },
+  { value: "3_months", label: "3 Months", desc: "Quarterly operational duration" },
+  { value: "6_months", label: "6 Months", desc: "Semi-annual workspace duration" },
+  { value: "1_year", label: "1 Year", desc: "Annual business subscription" },
+  { value: "custom", label: "Custom Expiry Date", desc: "Specify an exact future expiry timestamp" },
+  { value: "no_expiry", label: "No Expiry", desc: "Permanent indefinite access until revoked" },
+];
 
 const WORKSPACE_MODULES: { id: AppModule; label: string }[] = [
   { id: "dashboard", label: "Dashboard" },
@@ -177,6 +188,10 @@ export function CreateWorkspaceModal({ isOpen, onClose, onCreated }: CreateWorks
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
+  // STEP 2: Access Duration (PART 3)
+  const [accessDuration, setAccessDuration] = useState<string>("30_days");
+  const [customExpiryDate, setCustomExpiryDate] = useState<string>("");
+
   // STEP 3: Access Level (Defaults to Workspace Owner)
   const [selectedRole, setSelectedRole] = useState<UserRole>("owner");
 
@@ -238,6 +253,8 @@ export function CreateWorkspaceModal({ isOpen, onClose, onCreated }: CreateWorks
     setConfirmPassword("");
     setShowPassword(false);
     setShowConfirmPassword(false);
+    setAccessDuration("30_days");
+    setCustomExpiryDate("");
     setSelectedRole("owner");
     setPermissions(getDefaultPermissionsForRole("owner"));
     setDataScope("all");
@@ -350,6 +367,8 @@ export function CreateWorkspaceModal({ isOpen, onClose, onCreated }: CreateWorks
         owner_name: assignedFullName.trim(),
         owner_email: assignedEmail.trim().toLowerCase(),
         temporary_password: mode === "direct" ? tempPassword.trim() : undefined,
+        access_duration: accessDuration,
+        custom_expiry_date: accessDuration === "custom" && customExpiryDate ? new Date(customExpiryDate).toISOString() : undefined,
         role: selectedRole,
         permissions,
         data_scope: dataScope,
@@ -871,6 +890,82 @@ export function CreateWorkspaceModal({ isOpen, onClose, onCreated }: CreateWorks
                     />
                   </div>
 
+                  {/* ─── ACCESS DURATION SECTION (PART 3) ─── */}
+                  <div className="sm:col-span-2 pt-2 space-y-2 border-t border-slate-200 dark:border-slate-800">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                        <Clock className="w-3.5 h-3.5 text-blue-600" />
+                        ACCESS DURATION *
+                      </Label>
+                      <span className="text-[11px] text-slate-500">Duration granted to this workspace membership</span>
+                    </div>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                      {DURATION_OPTIONS.map((opt) => {
+                        const isSelected = accessDuration === opt.value;
+                        return (
+                          <div
+                            key={opt.value}
+                            onClick={() => setAccessDuration(opt.value)}
+                            className={`p-2.5 rounded-xl border text-center cursor-pointer transition-all ${
+                              isSelected
+                                ? "border-blue-600 bg-blue-50/70 dark:bg-blue-950/40 text-blue-900 dark:text-blue-100 ring-1 ring-blue-600 font-bold"
+                                : "border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/40 text-slate-700 dark:text-slate-300"
+                            }`}
+                          >
+                            <div className="text-xs font-bold">{opt.label}</div>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* Custom Expiry Date Picker */}
+                    {accessDuration === "custom" && (
+                      <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700 space-y-1.5 animate-in fade-in-50">
+                        <Label className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
+                          Select Custom Expiry Date &amp; Time *
+                        </Label>
+                        <Input
+                          type="datetime-local"
+                          value={customExpiryDate}
+                          onChange={(e) => setCustomExpiryDate(e.target.value)}
+                          className="text-xs h-9"
+                          min={new Date().toISOString().slice(0, 16)}
+                        />
+                      </div>
+                    )}
+
+                    {/* Access Expiry Summary Box */}
+                    <div className="p-3 bg-blue-50/60 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900 rounded-xl space-y-1 text-xs text-blue-950 dark:text-blue-200">
+                      <div className="flex justify-between items-center">
+                        <span className="text-slate-500 dark:text-slate-400">Access Starts:</span>
+                        <span className="font-semibold text-slate-800 dark:text-slate-200">Immediately after approval</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-slate-500 dark:text-slate-400">Access Expires:</span>
+                        <span className="font-bold text-blue-700 dark:text-blue-300 font-mono">
+                          {accessDuration === "no_expiry"
+                            ? "Never (No Expiry)"
+                            : accessDuration === "custom" && customExpiryDate
+                            ? new Date(customExpiryDate).toLocaleString("en-US", {
+                                day: "2-digit",
+                                month: "short",
+                                year: "numeric",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })
+                            : calculateAccessExpiry(accessDuration).expiresAt
+                            ? new Date(calculateAccessExpiry(accessDuration).expiresAt!).toLocaleDateString("en-US", {
+                                day: "2-digit",
+                                month: "short",
+                                year: "numeric",
+                              })
+                            : "Select date"}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
                   <div className="sm:col-span-2 pt-2">
                     <div className="flex items-center justify-between p-2.5 bg-slate-50 dark:bg-slate-800/40 rounded-xl border text-xs">
                       <div className="flex items-center gap-2">
@@ -1062,6 +1157,27 @@ export function CreateWorkspaceModal({ isOpen, onClose, onCreated }: CreateWorks
                         <Badge variant="outline" className="text-[10px] uppercase font-bold mt-0.5 text-blue-600 border-blue-300">
                           {selectedRole}
                         </Badge>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
+                      <div>
+                        <span className="text-slate-500 text-[11px]">Access Duration:</span>
+                        <p className="font-bold text-blue-700 dark:text-blue-300">
+                          {DURATION_OPTIONS.find((d) => d.value === accessDuration)?.label || accessDuration}
+                        </p>
+                      </div>
+                      <div>
+                        <span className="text-slate-500 text-[11px]">Access Expires:</span>
+                        <p className="font-bold text-slate-800 dark:text-slate-200 font-mono">
+                          {accessDuration === "no_expiry"
+                            ? "Never (No Expiry)"
+                            : accessDuration === "custom" && customExpiryDate
+                            ? new Date(customExpiryDate).toLocaleDateString()
+                            : calculateAccessExpiry(accessDuration).expiresAt
+                            ? new Date(calculateAccessExpiry(accessDuration).expiresAt!).toLocaleDateString()
+                            : "No Expiry"}
+                        </p>
                       </div>
                     </div>
 

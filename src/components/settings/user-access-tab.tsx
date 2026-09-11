@@ -222,14 +222,16 @@ export function UserAccessTab() {
   );
 
   const totalStaff = staffUsers.filter((u) => u.status !== "deleted").length;
-  const activeStaff = staffUsers.filter(
-    (u) =>
-      (u.status === "active" || (!u.status && u.is_active)) &&
-      u.membership_status !== "removed" &&
-      u.membership_status !== "suspended" &&
-      (u.membership_status as string) !== "pending" &&
-      (u.membership_status as string) !== "invited"
-  ).length;
+  const activeStaff = staffUsers.filter((u) => {
+    const isExplicitlyActive = u.status === "active" || (!u.status && u.is_active);
+    if (!isExplicitlyActive) return false;
+    if (u.membership_status === "removed" || u.membership_status === "suspended" || u.membership_status === "expired" || u.status === "expired") return false;
+    if (u.membership_status === "pending" || u.membership_status === "invited" || u.status === "invited") return false;
+    if (u.access_expires_at && new Date(u.access_expires_at).getTime() <= Date.now()) return false;
+    if (u.access_expiry_date && new Date(u.access_expiry_date).getTime() <= Date.now()) return false;
+    return true;
+  }).length;
+
   const pendingInvitations =
     staffUsers.filter(
       (u) =>
@@ -269,7 +271,12 @@ export function UserAccessTab() {
       const isRemoved = u.status === "removed" || u.membership_status === "removed" || isAccountDeleted;
       const isSuspended = u.status === "suspended" || u.membership_status === "suspended";
       const isPending = u.status === "invited" || u.membership_status === "pending" || u.membership_status === "invited";
-      const isActive = !isRemoved && !isSuspended && !isPending && (u.status === "active" || !u.status);
+      const isExpired =
+        u.status === "expired" ||
+        u.membership_status === "expired" ||
+        Boolean(u.access_expires_at && new Date(u.access_expires_at).getTime() <= Date.now()) ||
+        Boolean(u.access_expiry_date && new Date(u.access_expiry_date).getTime() <= Date.now());
+      const isActive = !isRemoved && !isSuspended && !isPending && !isExpired && (u.status === "active" || !u.status);
 
       let matchesStatus = true;
       if (statusFilter === "active") {
@@ -1017,13 +1024,23 @@ export function UserAccessTab() {
                           )}
                         </td>
                         <td className="px-3 py-3 text-slate-600 dark:text-slate-400 text-[11px] font-mono tabular-nums">
-                          {u.access_expiry_date ? (
-                            <span className="font-medium text-amber-600 dark:text-amber-400">
-                              {new Date(u.access_expiry_date).toLocaleDateString()}
-                            </span>
-                          ) : (
-                            <span className="text-slate-400">No Expiry</span>
-                          )}
+                          {(() => {
+                            const exp = u.access_expires_at || u.access_expiry_date;
+                            if (!exp) return <span className="text-slate-400">No Expiry</span>;
+                            const isExp = new Date(exp).getTime() <= Date.now() || u.status === "expired" || u.membership_status === "expired";
+                            if (isExp) {
+                              return (
+                                <Badge variant="outline" className="bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/50 dark:text-rose-400 text-[10px] font-bold">
+                                  Expired
+                                </Badge>
+                              );
+                            }
+                            return (
+                              <span className="font-medium text-slate-700 dark:text-slate-300">
+                                {new Date(exp).toLocaleDateString()}
+                              </span>
+                            );
+                          })()}
                         </td>
                         <td className="px-4 py-3 text-right pr-4">
                           <div className="flex items-center justify-end gap-1.5">
