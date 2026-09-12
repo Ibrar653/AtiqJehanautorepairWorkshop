@@ -91,6 +91,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { HistoryDateFilterBar } from "@/components/shared/history-date-filter-bar";
+import {
+  getDateRangeBounds,
+  isDateWithinBounds,
+  type DateRangeBounds,
+  type HistoryDateFilterPreset,
+} from "@/lib/date-filters";
 
 interface PurchaseItemRow {
   part_id: string;
@@ -136,6 +143,9 @@ export function SuppliersView() {
   const [detailsModalOpen, setDetailsModalOpen] = useState(false);
   const [selectedSupplierDetails, setSelectedSupplierDetails] = useState<(SupplierWithStats & { purchases: any[]; parts: any[] }) | null>(null);
   const [loadingDetails, setLoadingDetails] = useState(false);
+  const [supplierHistoryPreset, setSupplierHistoryPreset] = useState<HistoryDateFilterPreset>("all");
+  const [supplierHistoryFromDate, setSupplierHistoryFromDate] = useState("");
+  const [supplierHistoryToDate, setSupplierHistoryToDate] = useState("");
 
   // ─── Create / Edit Purchase Modal State ───
   const [purchaseModalOpen, setPurchaseModalOpen] = useState(false);
@@ -313,8 +323,76 @@ export function SuppliersView() {
     }
   };
 
+  // ─── Filtered Supplier Purchases & Period Summary ───
+  const supplierHistoryDateBounds = useMemo(
+    () => getDateRangeBounds(supplierHistoryPreset, supplierHistoryFromDate, supplierHistoryToDate),
+    [supplierHistoryPreset, supplierHistoryFromDate, supplierHistoryToDate]
+  );
+
+  const filteredSupplierPurchases = useMemo(() => {
+    if (!selectedSupplierDetails?.purchases) return [];
+    if (!supplierHistoryDateBounds) return selectedSupplierDetails.purchases;
+    return selectedSupplierDetails.purchases.filter((p: any) =>
+      isDateWithinBounds(p.date || p.created_at, supplierHistoryDateBounds)
+    );
+  }, [selectedSupplierDetails?.purchases, supplierHistoryDateBounds]);
+
+  const supplierPeriodSummary = useMemo(() => {
+    if (!filteredSupplierPurchases.length) {
+      return {
+        totalPurchasesCount: 0,
+        totalPurchasesValue: 0,
+        totalPaidAmount: 0,
+        totalOutstandingAmount: 0,
+        unitsPurchased: 0,
+        returnsCount: 0,
+        lastPurchaseDate: null as string | null,
+      };
+    }
+
+    let totalPurchasesValue = 0;
+    let totalPaidAmount = 0;
+    let totalOutstandingAmount = 0;
+    let unitsPurchased = 0;
+    let lastDate = "";
+
+    filteredSupplierPurchases.forEach((p: any) => {
+      const tot = Number(p.total) || 0;
+      const paid = Number(p.paid_amount !== undefined ? p.paid_amount : (p.payment_status === "paid" ? tot : 0));
+      const bal = p.balance !== undefined ? Number(p.balance) : Math.max(0, tot - paid);
+
+      totalPurchasesValue += tot;
+      totalPaidAmount += paid;
+      totalOutstandingAmount += bal;
+
+      if (Array.isArray(p.items)) {
+        p.items.forEach((it: any) => {
+          unitsPurchased += Number(it.quantity) || 0;
+        });
+      }
+
+      const pDate = p.date || p.created_at;
+      if (pDate && (!lastDate || new Date(pDate).getTime() > new Date(lastDate).getTime())) {
+        lastDate = pDate;
+      }
+    });
+
+    return {
+      totalPurchasesCount: filteredSupplierPurchases.length,
+      totalPurchasesValue,
+      totalPaidAmount,
+      totalOutstandingAmount,
+      unitsPurchased,
+      returnsCount: 0,
+      lastPurchaseDate: lastDate || null,
+    };
+  }, [filteredSupplierPurchases]);
+
   // View Supplier Details & Purchase History
   const handleViewSupplierDetails = async (supId: string) => {
+    setSupplierHistoryPreset("all");
+    setSupplierHistoryFromDate("");
+    setSupplierHistoryToDate("");
     setDetailsModalOpen(true);
     setLoadingDetails(true);
     try {
@@ -842,211 +920,219 @@ export function SuppliersView() {
 
       {/* ─── Suppliers Table ─── */}
       <div className="border border-slate-200/90 shadow-2xs bg-white rounded-2xl overflow-hidden">
-        <div className="p-0">
-          {loading ? (
-            <div className="py-20 text-center text-slate-500">
-              <Loader2 className="h-8 w-8 mx-auto animate-spin mb-3 text-blue-600" />
-              <p className="font-medium text-xs">Loading suppliers...</p>
-            </div>
-          ) : suppliers.length > 0 ? (
-            <div className="overflow-x-auto min-w-full">
-              <Table className="min-w-[1050px]">
-                <TableHeader>
-                  <TableRow className="border-b border-slate-200/80 bg-slate-50/80 hover:bg-slate-50/80 text-[11px] font-bold text-slate-500 uppercase tracking-wider h-11">
-                    <TableHead className="w-[44px] pl-4">
-                      <Checkbox
-                        checked={
-                          suppliers.length > 0 && selectedSupplierIds.length === suppliers.length
-                            ? true
-                            : selectedSupplierIds.length > 0
-                            ? "indeterminate"
-                            : false
-                        }
-                        onCheckedChange={handleSelectAll}
-                        aria-label="Select all visible suppliers"
-                      />
-                    </TableHead>
-                    <TableHead className="w-[22%] min-w-[200px] text-slate-600 font-bold">Supplier</TableHead>
-                    <TableHead className="w-[14%] min-w-[120px] text-slate-600 font-bold">Contact Person</TableHead>
-                    <TableHead className="w-[15%] min-w-[130px] text-slate-600 font-bold">Phone / Mobile</TableHead>
-                    <TableHead className="w-[13%] min-w-[110px] text-slate-600 font-bold">Company</TableHead>
-                    <TableHead className="w-[10%] min-w-[95px] text-slate-600 font-bold">TRN</TableHead>
-                    <TableHead className="w-[11%] min-w-[95px] text-right text-slate-600 font-bold">Total Purchases</TableHead>
-                    <TableHead className="w-[11%] min-w-[95px] text-right text-slate-600 font-bold">Outstanding</TableHead>
-                    <TableHead className="w-[8%] min-w-[75px] text-center text-slate-600 font-bold">Status</TableHead>
-                    <TableHead className="w-[105px] min-w-[105px] text-right pr-4 text-slate-600 font-bold">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {suppliers.map((s) => {
-                    const hasBalance = s.outstanding_balance > 0;
-                    return (
-                      <TableRow
-                        key={s.id}
-                        className={`h-12 hover:bg-slate-50/60 border-b border-slate-100 text-xs transition-colors ${
-                          selectedSupplierIds.includes(s.id) ? "bg-blue-50/30" : ""
-                        }`}
-                      >
-                        <TableCell className="pl-4 py-2.5">
-                          <Checkbox
-                            checked={selectedSupplierIds.includes(s.id)}
-                            onCheckedChange={() => handleToggleSelectSupplier(s.id)}
-                            aria-label={`Select ${s.name}`}
-                          />
-                        </TableCell>
+          {/* ─── Suppliers Table ─── */}
+          <div className="p-0">
+            {loading ? (
+              <div className="py-20 text-center text-slate-500">
+                <Loader2 className="h-8 w-8 mx-auto animate-spin mb-3 text-blue-600" />
+                <p className="font-medium text-xs">Loading suppliers...</p>
+              </div>
+            ) : suppliers.length > 0 ? (
+              <div className="overflow-x-auto w-full">
+                <Table className="w-full table-fixed text-xs">
+                  <TableHeader>
+                    <TableRow className="border-b border-slate-200/80 bg-slate-50/80 hover:bg-slate-50/80 text-[11px] font-bold text-slate-500 uppercase tracking-wider h-11">
+                      <TableHead className="w-[38px] pl-3">
+                        <Checkbox
+                          checked={
+                            suppliers.length > 0 && selectedSupplierIds.length === suppliers.length
+                              ? true
+                              : selectedSupplierIds.length > 0
+                              ? "indeterminate"
+                              : false
+                          }
+                          onCheckedChange={handleSelectAll}
+                          aria-label="Select all visible suppliers"
+                        />
+                      </TableHead>
+                      <TableHead className="w-[22%] min-w-0 text-slate-600 font-bold">Supplier</TableHead>
+                      <TableHead className="w-[14%] min-w-0 text-slate-600 font-bold">Contact Person</TableHead>
+                      <TableHead className="w-[15%] min-w-0 text-slate-600 font-bold">Phone / Email</TableHead>
+                      <TableHead className="w-[13%] min-w-0 text-slate-600 font-bold">Company</TableHead>
+                      <TableHead className="w-[9%] min-w-0 text-slate-600 font-bold">TRN</TableHead>
+                      <TableHead className="w-[10%] text-right text-slate-600 font-bold">Purchases</TableHead>
+                      <TableHead className="w-[10%] text-right text-slate-600 font-bold">Outstanding</TableHead>
+                      <TableHead className="w-[7%] text-center text-slate-600 font-bold">Status</TableHead>
+                      <TableHead className="w-[85px] text-right pr-3 text-slate-600 font-bold">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {suppliers.map((s) => {
+                      const hasBalance = s.outstanding_balance > 0;
+                      return (
+                        <TableRow
+                          key={s.id}
+                          className={`h-12 hover:bg-slate-50/60 border-b border-slate-100 text-xs transition-colors ${
+                            selectedSupplierIds.includes(s.id) ? "bg-blue-50/30" : ""
+                          }`}
+                        >
+                          <TableCell className="pl-3 py-2.5">
+                            <Checkbox
+                              checked={selectedSupplierIds.includes(s.id)}
+                              onCheckedChange={() => handleToggleSelectSupplier(s.id)}
+                              aria-label={`Select ${s.name}`}
+                            />
+                          </TableCell>
 
-                        {/* Supplier Name & Location */}
-                        <TableCell className="font-semibold text-slate-900 py-2.5">
-                          <button
-                            type="button"
-                            onClick={() => handleViewSupplierDetails(s.id)}
-                            className="font-bold text-sm text-left text-slate-900 hover:text-blue-600 transition-colors block"
-                          >
-                            {s.name}
-                          </button>
-                          {s.city && (
-                            <span className="text-[11px] text-slate-500 flex items-center gap-1 mt-0.5">
-                              <MapPin className="h-3 w-3 text-slate-400" /> {s.city}
-                            </span>
-                          )}
-                        </TableCell>
-
-                        {/* Contact Person */}
-                        <TableCell className="text-slate-800 py-2.5 font-medium">
-                          {s.contact_person || <span className="text-slate-400 italic font-normal">—</span>}
-                        </TableCell>
-
-                        {/* Phone & Email */}
-                        <TableCell className="py-2.5">
-                          <span className="font-mono text-xs font-semibold text-slate-800 block">{s.phone || "—"}</span>
-                          {s.email && (
-                            <span className="text-[11px] text-slate-500 block truncate max-w-[140px]">
-                              {s.email}
-                            </span>
-                          )}
-                        </TableCell>
-
-                        {/* Company */}
-                        <TableCell className="py-2.5 text-slate-800">
-                          {s.company_name || <span className="text-slate-400 italic font-normal">—</span>}
-                        </TableCell>
-
-                        {/* TRN */}
-                        <TableCell className="py-2.5">
-                          {s.trn_number ? (
-                            <span className="font-mono text-[11px] text-slate-700 bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded-lg">
-                              {s.trn_number}
-                            </span>
-                          ) : (
-                            <span className="text-slate-400 italic font-normal">—</span>
-                          )}
-                        </TableCell>
-
-                        {/* Total Purchases */}
-                        <TableCell className="text-right font-mono font-bold text-slate-900 py-2.5 tabular-nums">
-                          {formatCurrency(s.total_purchases)}
-                        </TableCell>
-
-                        {/* Outstanding Balance */}
-                        <TableCell className="text-right font-mono py-2.5 tabular-nums">
-                          <span
-                            className={`font-bold px-2 py-0.5 rounded-lg text-xs inline-block ${
-                              hasBalance
-                                ? "bg-rose-50 text-rose-700 border border-rose-200"
-                                : "text-emerald-600 font-semibold"
-                            }`}
-                          >
-                            {formatCurrency(s.outstanding_balance)}
-                          </span>
-                        </TableCell>
-
-                        {/* Status */}
-                        <TableCell className="text-center py-2.5">
-                          {s.is_active !== false ? (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                              <CheckCircle2 className="h-3 w-3" /> Active
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-500 border border-slate-200">
-                              <XCircle className="h-3 w-3" /> Inactive
-                            </span>
-                          )}
-                        </TableCell>
-
-                        {/* Actions */}
-                        <TableCell className="text-right pr-4 py-2.5">
-                          <div className="flex items-center justify-end gap-1">
-                            <Button
-                              variant="ghost"
-                              size="sm"
+                          {/* Supplier Name & Location */}
+                          <TableCell className="font-semibold text-slate-900 py-2.5 min-w-0">
+                            <button
+                              type="button"
                               onClick={() => handleViewSupplierDetails(s.id)}
-                              className="h-8 px-2 text-xs font-semibold text-blue-600 hover:bg-blue-50 rounded-xl"
-                              title="View supplier details & purchase history"
+                              className="font-bold text-xs text-left text-slate-900 hover:text-blue-600 transition-colors truncate block max-w-full"
+                              title={s.name}
                             >
-                              <Eye className="h-3.5 w-3.5 mr-1" /> View
-                            </Button>
+                              {s.name}
+                            </button>
+                            {s.city && (
+                              <span className="text-[10px] text-slate-500 flex items-center gap-1 mt-0.5 truncate" title={s.city}>
+                                <MapPin className="h-2.5 w-2.5 text-slate-400 shrink-0" /> {s.city}
+                              </span>
+                            )}
+                          </TableCell>
 
-                            <DropdownMenu>
-                              <DropdownMenuTrigger className="h-8 w-8 inline-flex items-center justify-center rounded-xl border border-slate-200 text-slate-500 hover:bg-slate-100 hover:text-slate-800 focus:outline-none">
-                                <MoreVertical className="h-3.5 w-3.5" />
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end" className="w-48 text-xs rounded-xl shadow-lg border-slate-200">
-                                <DropdownMenuLabel>Supplier Actions</DropdownMenuLabel>
-                                <DropdownMenuItem onClick={() => handleViewSupplierDetails(s.id)}>
-                                  <Eye className="h-3.5 w-3.5 mr-2 text-blue-600" /> View Details
-                                </DropdownMenuItem>
-                                {canEdit && (
-                                  <>
-                                    <DropdownMenuItem onClick={() => handleOpenCreatePurchase(s.id)}>
-                                      <ShoppingCart className="h-3.5 w-3.5 mr-2 text-emerald-600" /> Create PO
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => handleOpenSupplierModal(s)}>
-                                      <Edit2 className="h-3.5 w-3.5 mr-2 text-slate-500" /> Edit Details
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => handleToggleStatus(s)}>
-                                      {s.is_active !== false ? (
-                                        <>
-                                          <UserX className="h-3.5 w-3.5 mr-2 text-amber-600" /> Deactivate
-                                        </>
-                                      ) : (
-                                        <>
-                                          <UserCheck className="h-3.5 w-3.5 mr-2 text-emerald-600" /> Activate
-                                        </>
-                                      )}
-                                    </DropdownMenuItem>
-                                  </>
-                                )}
-                                {Boolean(isOwner || canDelete) && (
-                                  <>
-                                    <DropdownMenuSeparator />
-                                    <DropdownMenuItem
-                                      onClick={() => openDeleteDialog(s)}
-                                      className="text-rose-600 hover:text-rose-700 font-semibold focus:text-rose-600"
-                                    >
-                                      <Trash2 className="h-3.5 w-3.5 mr-2" /> Delete
-                                    </DropdownMenuItem>
-                                  </>
-                                )}
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </div>
-          ) : (
-            <div className="py-16 text-center text-slate-500 space-y-2">
-              <Building2 className="h-10 w-10 mx-auto text-slate-300" />
-              <p className="text-sm font-semibold text-slate-900">No suppliers match your search criteria</p>
-              <p className="text-xs max-w-sm mx-auto text-slate-500">
-                Try adjusting your search query or status filter to see other suppliers.
-              </p>
-            </div>
-          )}
-        </div>
+                          {/* Contact Person */}
+                          <TableCell className="text-slate-800 py-2.5 font-medium min-w-0">
+                            <span className="truncate block" title={s.contact_person || "—"}>
+                              {s.contact_person || <span className="text-slate-400 italic font-normal">—</span>}
+                            </span>
+                          </TableCell>
+
+                          {/* Phone & Email */}
+                          <TableCell className="py-2.5 min-w-0">
+                            <span className="font-mono text-[11px] font-semibold text-slate-800 block truncate" title={s.phone || "—"}>
+                              {s.phone || "—"}
+                            </span>
+                            {s.email && (
+                              <span className="text-[10px] text-slate-500 block truncate" title={s.email}>
+                                {s.email}
+                              </span>
+                            )}
+                          </TableCell>
+
+                          {/* Company */}
+                          <TableCell className="py-2.5 text-slate-800 min-w-0">
+                            <span className="truncate block" title={s.company_name || "—"}>
+                              {s.company_name || <span className="text-slate-400 italic font-normal">—</span>}
+                            </span>
+                          </TableCell>
+
+                          {/* TRN */}
+                          <TableCell className="py-2.5 min-w-0">
+                            {s.trn_number ? (
+                              <span className="font-mono text-[10px] text-slate-700 bg-slate-100 border border-slate-200 px-1 py-0.5 rounded truncate block" title={s.trn_number}>
+                                {s.trn_number}
+                              </span>
+                            ) : (
+                              <span className="text-slate-400 italic font-normal">—</span>
+                            )}
+                          </TableCell>
+
+                          {/* Total Purchases */}
+                          <TableCell className="text-right font-mono font-bold text-slate-900 py-2.5 tabular-nums">
+                            {formatCurrency(s.total_purchases)}
+                          </TableCell>
+
+                          {/* Outstanding Balance */}
+                          <TableCell className="text-right font-mono py-2.5 tabular-nums">
+                            <span
+                              className={`font-bold px-1.5 py-0.5 rounded text-[11px] inline-block ${
+                                hasBalance
+                                  ? "bg-rose-50 text-rose-700 border border-rose-200"
+                                  : "text-emerald-600 font-semibold"
+                              }`}
+                            >
+                              {formatCurrency(s.outstanding_balance)}
+                            </span>
+                          </TableCell>
+
+                          {/* Status */}
+                          <TableCell className="text-center py-2.5">
+                            {s.is_active !== false ? (
+                              <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                <CheckCircle2 className="h-2.5 w-2.5" /> Active
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-500 border border-slate-200">
+                                <XCircle className="h-2.5 w-2.5" /> Inactive
+                              </span>
+                            )}
+                          </TableCell>
+
+                          {/* Actions */}
+                          <TableCell className="text-right pr-3 py-2.5">
+                            <div className="flex items-center justify-end gap-1">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleViewSupplierDetails(s.id)}
+                                className="h-7 w-7 text-blue-600 hover:bg-blue-50 rounded-lg"
+                                title="View Details & Purchase History"
+                              >
+                                <Eye className="h-3.5 w-3.5" />
+                              </Button>
+
+                              <DropdownMenu>
+                                <DropdownMenuTrigger className="h-7 w-7 inline-flex items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-100 hover:text-slate-800 focus:outline-none">
+                                  <MoreVertical className="h-3.5 w-3.5" />
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-48 text-xs rounded-xl shadow-lg border-slate-200">
+                                  <DropdownMenuLabel>Supplier Actions</DropdownMenuLabel>
+                                  <DropdownMenuItem onClick={() => handleViewSupplierDetails(s.id)}>
+                                    <Eye className="h-3.5 w-3.5 mr-2 text-blue-600" /> View History
+                                  </DropdownMenuItem>
+                                  {canEdit && (
+                                    <>
+                                      <DropdownMenuItem onClick={() => handleOpenCreatePurchase(s.id)}>
+                                        <ShoppingCart className="h-3.5 w-3.5 mr-2 text-emerald-600" /> Create PO
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem onClick={() => handleOpenSupplierModal(s)}>
+                                        <Edit2 className="h-3.5 w-3.5 mr-2 text-slate-500" /> Edit Details
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem onClick={() => handleToggleStatus(s)}>
+                                        {s.is_active !== false ? (
+                                          <>
+                                            <UserX className="h-3.5 w-3.5 mr-2 text-amber-600" /> Deactivate
+                                          </>
+                                        ) : (
+                                          <>
+                                            <UserCheck className="h-3.5 w-3.5 mr-2 text-emerald-600" /> Activate
+                                          </>
+                                        )}
+                                      </DropdownMenuItem>
+                                    </>
+                                  )}
+                                  {Boolean(isOwner || canDelete) && (
+                                    <>
+                                      <DropdownMenuSeparator />
+                                      <DropdownMenuItem
+                                        onClick={() => openDeleteDialog(s)}
+                                        className="text-rose-600 hover:text-rose-700 font-semibold focus:text-rose-600"
+                                      >
+                                        <Trash2 className="h-3.5 w-3.5 mr-2" /> Delete
+                                      </DropdownMenuItem>
+                                    </>
+                                  )}
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+            ) : (
+              <div className="py-16 text-center text-slate-500 space-y-2">
+                <Building2 className="h-10 w-10 mx-auto text-slate-300" />
+                <p className="text-sm font-semibold text-slate-900">No suppliers match your search criteria</p>
+                <p className="text-xs max-w-sm mx-auto text-slate-500">
+                  Try adjusting your search query or status filter to see other suppliers.
+                </p>
+              </div>
+            )}
+          </div>
 
         {/* Pagination Footer */}
         {totalPages > 1 && (
@@ -1348,36 +1434,67 @@ export function SuppliersView() {
                 </div>
               </div>
 
-              {/* 4 Financial KPIs */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <div className="p-3 bg-white dark:bg-slate-900 rounded-lg border text-center">
-                  <span className="text-[10px] font-bold text-muted-foreground uppercase">Total Purchases</span>
-                  <span className="text-base font-black font-mono block text-foreground mt-1">
-                    {formatCurrency(selectedSupplierDetails.total_purchases)}
+              {/* Quick Filter Chips & Custom Date Range */}
+              <div className="pt-1">
+                <HistoryDateFilterBar
+                  preset={supplierHistoryPreset}
+                  onPresetChange={setSupplierHistoryPreset}
+                  fromDate={supplierHistoryFromDate}
+                  toDate={supplierHistoryToDate}
+                  onCustomRangeApply={(from, to) => {
+                    setSupplierHistoryFromDate(from);
+                    setSupplierHistoryToDate(to);
+                  }}
+                  onClear={() => {
+                    setSupplierHistoryPreset("all");
+                    setSupplierHistoryFromDate("");
+                    setSupplierHistoryToDate("");
+                  }}
+                />
+              </div>
+
+              {/* Dynamic Period Summary KPIs */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
+                <div className="p-3 bg-white dark:bg-slate-900 rounded-xl border text-center shadow-2xs">
+                  <span className="text-[10px] font-bold text-muted-foreground uppercase block">Total Purchases</span>
+                  <span className="text-sm font-black font-mono block text-foreground mt-1">
+                    {formatCurrency(supplierPeriodSummary.totalPurchasesValue)}
                   </span>
                 </div>
-                <div className="p-3 bg-white dark:bg-slate-900 rounded-lg border text-center">
-                  <span className="text-[10px] font-bold text-muted-foreground uppercase">Total Paid</span>
-                  <span className="text-base font-black font-mono block text-emerald-600 dark:text-emerald-400 mt-1">
-                    {formatCurrency(selectedSupplierDetails.total_paid)}
+                <div className="p-3 bg-white dark:bg-slate-900 rounded-xl border text-center shadow-2xs">
+                  <span className="text-[10px] font-bold text-muted-foreground uppercase block">Units Purchased</span>
+                  <span className="text-sm font-black font-mono block text-blue-600 dark:text-blue-400 mt-1">
+                    {supplierPeriodSummary.unitsPurchased}
                   </span>
                 </div>
-                <div className="p-3 bg-white dark:bg-slate-900 rounded-lg border text-center">
-                  <span className="text-[10px] font-bold text-muted-foreground uppercase">Outstanding Balance</span>
+                <div className="p-3 bg-white dark:bg-slate-900 rounded-xl border text-center shadow-2xs">
+                  <span className="text-[10px] font-bold text-muted-foreground uppercase block">Total Paid</span>
+                  <span className="text-sm font-black font-mono block text-emerald-600 dark:text-emerald-400 mt-1">
+                    {formatCurrency(supplierPeriodSummary.totalPaidAmount)}
+                  </span>
+                </div>
+                <div className="p-3 bg-white dark:bg-slate-900 rounded-xl border text-center shadow-2xs">
+                  <span className="text-[10px] font-bold text-muted-foreground uppercase block">Outstanding</span>
                   <span
-                    className={`text-base font-black font-mono block mt-1 ${
-                      selectedSupplierDetails.outstanding_balance > 0
+                    className={`text-sm font-black font-mono block mt-1 ${
+                      supplierPeriodSummary.totalOutstandingAmount > 0
                         ? "text-rose-600 dark:text-rose-400"
                         : "text-emerald-600"
                     }`}
                   >
-                    {formatCurrency(selectedSupplierDetails.outstanding_balance)}
+                    {formatCurrency(supplierPeriodSummary.totalOutstandingAmount)}
                   </span>
                 </div>
-                <div className="p-3 bg-white dark:bg-slate-900 rounded-lg border text-center">
-                  <span className="text-[10px] font-bold text-muted-foreground uppercase">Purchase Invoices</span>
-                  <span className="text-base font-black font-mono block text-blue-600 dark:text-blue-400 mt-1">
-                    {selectedSupplierDetails.purchases_count}
+                <div className="p-3 bg-white dark:bg-slate-900 rounded-xl border text-center shadow-2xs">
+                  <span className="text-[10px] font-bold text-muted-foreground uppercase block">PO Invoices</span>
+                  <span className="text-sm font-black font-mono block text-indigo-600 dark:text-indigo-400 mt-1">
+                    {supplierPeriodSummary.totalPurchasesCount}
+                  </span>
+                </div>
+                <div className="p-3 bg-white dark:bg-slate-900 rounded-xl border text-center shadow-2xs">
+                  <span className="text-[10px] font-bold text-muted-foreground uppercase block">Last Purchase</span>
+                  <span className="text-xs font-bold font-mono block text-slate-700 dark:text-slate-300 mt-1 truncate" title={supplierPeriodSummary.lastPurchaseDate ? formatDate(supplierPeriodSummary.lastPurchaseDate) : "—"}>
+                    {supplierPeriodSummary.lastPurchaseDate ? formatDate(supplierPeriodSummary.lastPurchaseDate) : "—"}
                   </span>
                 </div>
               </div>
@@ -1388,22 +1505,22 @@ export function SuppliersView() {
                   <Receipt className="h-4 w-4 text-blue-600" /> Purchase History & Invoices
                 </h4>
 
-                {selectedSupplierDetails.purchases && selectedSupplierDetails.purchases.length > 0 ? (
-                  <div className="border rounded-lg overflow-hidden">
-                    <Table>
+                {filteredSupplierPurchases && filteredSupplierPurchases.length > 0 ? (
+                  <div className="border rounded-xl overflow-hidden">
+                    <Table className="w-full table-fixed text-xs">
                       <TableHeader>
                         <TableRow className="bg-slate-50 dark:bg-slate-800/60 text-xs font-bold">
                           <TableHead className="w-[15%]">Date</TableHead>
-                          <TableHead className="w-[20%]">Purchase Invoice No</TableHead>
+                          <TableHead className="w-[20%] min-w-0">Purchase Invoice #</TableHead>
                           <TableHead className="w-[15%] text-right">Total Amount</TableHead>
-                          <TableHead className="w-[15%] text-right">Paid</TableHead>
-                          <TableHead className="w-[15%] text-right">Balance</TableHead>
+                          <TableHead className="w-[14%] text-right">Paid</TableHead>
+                          <TableHead className="w-[14%] text-right">Balance</TableHead>
                           <TableHead className="w-[12%] text-center">Payment Status</TableHead>
-                          <TableHead className="w-[8%] text-right pr-4">Action</TableHead>
+                          <TableHead className="w-[10%] text-right pr-4">Action</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {selectedSupplierDetails.purchases.map((p: any) => {
+                        {filteredSupplierPurchases.map((p: any) => {
                           const tot = Number(p.total) || 0;
                           const paid = Number(p.paid_amount !== undefined ? p.paid_amount : (p.payment_status === "paid" ? tot : 0));
                           const bal = p.balance !== undefined ? Number(p.balance) : Math.max(0, tot - paid);
@@ -1413,7 +1530,7 @@ export function SuppliersView() {
                               <TableCell className="font-mono text-muted-foreground text-[11px] py-2.5">
                                 {formatDate(p.date || p.created_at)}
                               </TableCell>
-                              <TableCell className="font-mono font-bold text-foreground py-2.5">
+                              <TableCell className="font-mono font-bold text-foreground py-2.5 min-w-0 truncate" title={p.purchase_invoice_number || `#${p.id.slice(-6)}`}>
                                 {p.purchase_invoice_number || `#${p.id.slice(-6)}`}
                               </TableCell>
                               <TableCell className="text-right font-mono font-bold text-foreground py-2.5">
@@ -1475,8 +1592,8 @@ export function SuppliersView() {
                     </Table>
                   </div>
                 ) : (
-                  <div className="py-12 text-center text-xs text-muted-foreground border rounded-lg">
-                    No purchase history found for this supplier yet.
+                  <div className="py-12 text-center text-xs text-muted-foreground border rounded-xl">
+                    No purchase records found for this selected period.
                   </div>
                 )}
               </div>

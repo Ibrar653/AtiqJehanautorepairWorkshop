@@ -39,6 +39,14 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
+  HistoryDateFilterBar,
+} from "@/components/shared/history-date-filter-bar";
+import {
+  getDateRangeBounds,
+  isDateWithinBounds,
+  type HistoryDateFilterPreset,
+} from "@/lib/date-filters";
+import {
   Package,
   Plus,
   Pencil,
@@ -133,11 +141,14 @@ export function PartsListView() {
   const [formLocation, setFormLocation] = useState("");
   const [formActive, setFormActive] = useState(true);
 
-  // Stock History Modal
+  // Stock History Modal & Date Filters
   const [historyModalOpen, setHistoryModalOpen] = useState(false);
   const [historyPart, setHistoryPart] = useState<Part | null>(null);
   const [historyTransactions, setHistoryTransactions] = useState<InventoryTransaction[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
+  const [historyDatePreset, setHistoryDatePreset] = useState<HistoryDateFilterPreset>("all");
+  const [historyFromDate, setHistoryFromDate] = useState("");
+  const [historyToDate, setHistoryToDate] = useState("");
 
   // Manual Stock Adjustment Modal
   const [adjustModalOpen, setAdjustModalOpen] = useState(false);
@@ -298,10 +309,13 @@ export function PartsListView() {
   // Open Stock History Modal
   const openStockHistory = async (part: Part) => {
     setHistoryPart(part);
+    setHistoryDatePreset("all");
+    setHistoryFromDate("");
+    setHistoryToDate("");
     setHistoryModalOpen(true);
     setLoadingHistory(true);
     try {
-      const res = await getInventoryTransactions(part.id, "all", 1, 50);
+      const res = await getInventoryTransactions(part.id, "all", 1, 200);
       setHistoryTransactions(res.transactions);
     } catch (e) {
       console.error("Failed to load part stock history:", e);
@@ -669,11 +683,12 @@ export function PartsListView() {
               <p className="text-xs font-semibold">Loading spare parts catalog...</p>
             </div>
           ) : parts.length > 0 ? (
-            <div className="overflow-x-auto min-w-full">
-              <Table className="min-w-[1050px]">
+            <>
+              <div className="overflow-x-auto w-full">
+              <Table className="w-full table-fixed text-xs">
                 <TableHeader>
-                  <TableRow className="border-b border-slate-200/80 bg-slate-50/80 hover:bg-slate-50/80 h-11 text-[11px] text-slate-500 font-bold uppercase tracking-wider">
-                    <TableHead className="w-[44px] pl-4">
+                  <TableRow className="border-b border-slate-200/80 bg-slate-50/80 hover:bg-slate-50/80 h-10 text-[11px] text-slate-500 font-bold uppercase tracking-wider">
+                    <TableHead className="w-[36px] pl-3">
                       <Checkbox
                         checked={
                           parts.length > 0 && selectedPartIds.length === parts.length
@@ -686,16 +701,16 @@ export function PartsListView() {
                         aria-label="Select all parts"
                       />
                     </TableHead>
-                    <TableHead className="w-[24%] min-w-[200px] text-slate-500 font-bold uppercase tracking-wider text-[11px]">Part</TableHead>
-                    <TableHead className="w-[14%] min-w-[130px] text-slate-500 font-bold uppercase tracking-wider text-[11px]">Part No / OEM</TableHead>
-                    <TableHead className="w-[10%] min-w-[90px] text-slate-500 font-bold uppercase tracking-wider text-[11px]">Brand</TableHead>
-                    <TableHead className="w-[9%] min-w-[85px] text-right text-slate-500 font-bold uppercase tracking-wider text-[11px]">Cost</TableHead>
-                    <TableHead className="w-[10%] min-w-[95px] text-right text-slate-500 font-bold uppercase tracking-wider text-[11px]">Selling Price</TableHead>
-                    <TableHead className="w-[12%] min-w-[110px] text-center text-slate-500 font-bold uppercase tracking-wider text-[11px]">Stock</TableHead>
-                    <TableHead className="w-[11%] min-w-[110px] text-slate-500 font-bold uppercase tracking-wider text-[11px]">Supplier</TableHead>
-                    <TableHead className="w-[8%] min-w-[80px] text-slate-500 font-bold uppercase tracking-wider text-[11px]">Location</TableHead>
-                    <TableHead className="w-[7%] min-w-[70px] text-center text-slate-500 font-bold uppercase tracking-wider text-[11px]">Status</TableHead>
-                    <TableHead className="w-[105px] min-w-[105px] text-right pr-4 text-slate-500 font-bold uppercase tracking-wider text-[11px]">Actions</TableHead>
+                    <TableHead className="w-[23%] min-w-0 text-slate-500 font-bold uppercase tracking-wider text-[11px]">Part</TableHead>
+                    <TableHead className="w-[13%] min-w-0 text-slate-500 font-bold uppercase tracking-wider text-[11px]">Part No / OEM</TableHead>
+                    <TableHead className="w-[10%] min-w-0 text-slate-500 font-bold uppercase tracking-wider text-[11px]">Brand</TableHead>
+                    <TableHead className="w-[9%] min-w-0 text-right text-slate-500 font-bold uppercase tracking-wider text-[11px]">Cost</TableHead>
+                    <TableHead className="w-[10%] min-w-0 text-right text-slate-500 font-bold uppercase tracking-wider text-[11px]">Selling Price</TableHead>
+                    <TableHead className="w-[10%] min-w-0 text-center text-slate-500 font-bold uppercase tracking-wider text-[11px]">Stock</TableHead>
+                    <TableHead className="w-[11%] min-w-0 text-slate-500 font-bold uppercase tracking-wider text-[11px]">Supplier</TableHead>
+                    <TableHead className="w-[7%] min-w-0 text-slate-500 font-bold uppercase tracking-wider text-[11px]">Location</TableHead>
+                    <TableHead className="w-[7%] min-w-0 text-center text-slate-500 font-bold uppercase tracking-wider text-[11px]">Status</TableHead>
+                    <TableHead className="w-[80px] min-w-[80px] text-right pr-3 text-slate-500 font-bold uppercase tracking-wider text-[11px]">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -712,11 +727,11 @@ export function PartsListView() {
                     return (
                       <TableRow
                         key={part.id}
-                        className={`h-13 hover:bg-muted/40 transition-colors border-b border-border/60 text-xs ${
+                        className={`h-11 hover:bg-muted/40 transition-colors border-b border-border/60 text-xs ${
                           selectedPartIds.includes(part.id) ? "bg-primary/5" : ""
                         } ${!part.is_active ? "opacity-60 bg-muted/20" : ""}`}
                       >
-                        <TableCell className="pl-4 py-2.5">
+                        <TableCell className="pl-3 py-2">
                           <Checkbox
                             checked={selectedPartIds.includes(part.id)}
                             onCheckedChange={() => handleToggleSelectPart(part.id)}
@@ -725,35 +740,36 @@ export function PartsListView() {
                         </TableCell>
 
                         {/* Part */}
-                        <TableCell className="py-2.5">
-                          <div className="flex items-start gap-2.5">
-                            <div className="p-1.5 rounded-lg bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 mt-0.5 shrink-0">
+                        <TableCell className="py-2 min-w-0">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <div className="p-1 rounded-md bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 shrink-0">
                               <Package className="h-3.5 w-3.5" />
                             </div>
-                            <div className="min-w-0">
+                            <div className="min-w-0 flex-1">
                               <button
                                 type="button"
                                 onClick={() => openViewDialog(part)}
-                                className="font-semibold text-foreground text-sm text-left hover:text-primary transition-colors block truncate"
+                                className="font-semibold text-foreground text-xs text-left hover:text-primary transition-colors block truncate w-full"
+                                title={part.name}
                               >
                                 {part.name}
                               </button>
                               {part.description ? (
-                                <p className="text-[11px] text-muted-foreground mt-0.5 line-clamp-1">
+                                <p className="text-[10px] text-muted-foreground truncate w-full mt-0.5" title={part.description}>
                                   {part.description}
                                 </p>
                               ) : null}
-                              <p className="text-[10px] text-muted-foreground mt-0.5">
-                                Unit: <span className="font-medium text-foreground">{part.unit || "piece"}</span>
-                              </p>
                             </div>
                           </div>
                         </TableCell>
 
                         {/* Part Number / OEM */}
-                        <TableCell className="py-2.5">
+                        <TableCell className="py-2 min-w-0">
                           {part.part_number ? (
-                            <span className="font-mono text-xs font-semibold text-foreground bg-muted/60 px-2 py-0.5 rounded inline-block">
+                            <span
+                              className="font-mono text-[11px] font-semibold text-foreground bg-muted/60 px-1.5 py-0.5 rounded truncate block max-w-full"
+                              title={part.part_number}
+                            >
                               {part.part_number}
                             </span>
                           ) : (
@@ -762,27 +778,29 @@ export function PartsListView() {
                         </TableCell>
 
                         {/* Brand */}
-                        <TableCell className="py-2.5 text-foreground font-medium">
-                          {part.brand || <span className="text-muted-foreground italic font-normal">—</span>}
+                        <TableCell className="py-2 text-foreground font-medium min-w-0">
+                          <span className="truncate block" title={part.brand || undefined}>
+                            {part.brand || <span className="text-muted-foreground italic font-normal">—</span>}
+                          </span>
                         </TableCell>
 
                         {/* Cost Price */}
-                        <TableCell className="text-right py-2.5 font-mono text-xs text-muted-foreground tabular-nums">
+                        <TableCell className="text-right py-2 font-mono text-[11px] text-muted-foreground tabular-nums min-w-0">
                           {formatCurrency(part.purchase_price)}
                         </TableCell>
 
                         {/* Selling Price */}
-                        <TableCell className="text-right py-2.5 font-mono text-xs tabular-nums">
-                          <span className="font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-800 px-2 py-0.5 rounded inline-block">
+                        <TableCell className="text-right py-2 font-mono text-[11px] tabular-nums min-w-0">
+                          <span className="font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-800 px-1.5 py-0.5 rounded inline-block">
                             {formatCurrency(part.selling_price)}
                           </span>
                         </TableCell>
 
                         {/* Stock */}
-                        <TableCell className="text-center py-2.5">
+                        <TableCell className="text-center py-2 min-w-0">
                           <div className="inline-flex flex-col items-center gap-0.5">
                             <span
-                              className={`px-2.5 py-0.5 rounded-full font-bold text-[11px] border inline-flex items-center gap-1 ${
+                              className={`px-2 py-0.5 rounded-full font-bold text-[10px] border inline-flex items-center gap-1 ${
                                 isOutOfStock
                                   ? "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-900"
                                   : isLowStock
@@ -791,25 +809,22 @@ export function PartsListView() {
                               }`}
                             >
                               {isOutOfStock ? (
-                                <>0 Out of Stock</>
+                                <>0 Stock</>
                               ) : isLowStock ? (
                                 <>
-                                  <AlertTriangle className="h-3 w-3" /> {part.current_stock} {part.unit || "pcs"}
+                                  <AlertTriangle className="h-2.5 w-2.5" /> {part.current_stock}
                                 </>
                               ) : (
                                 <>{part.current_stock} {part.unit || "pcs"}</>
                               )}
                             </span>
-                            <span className="text-[10px] text-muted-foreground">
-                              Min Alert: {part.minimum_stock}
-                            </span>
                           </div>
                         </TableCell>
 
                         {/* Supplier */}
-                        <TableCell className="py-2.5">
+                        <TableCell className="py-2 min-w-0">
                           {supplierName ? (
-                            <span className="font-medium text-foreground truncate block max-w-[130px]" title={supplierName}>
+                            <span className="font-medium text-foreground truncate block" title={supplierName}>
                               {supplierName}
                             </span>
                           ) : (
@@ -818,10 +833,9 @@ export function PartsListView() {
                         </TableCell>
 
                         {/* Location */}
-                        <TableCell className="py-2.5">
+                        <TableCell className="py-2 min-w-0">
                           {part.location ? (
-                            <span className="inline-flex items-center gap-1 font-mono text-[11px] bg-muted/60 px-2 py-0.5 rounded text-foreground">
-                              <MapPin className="h-3 w-3 text-muted-foreground" />
+                            <span className="font-mono text-[11px] bg-muted/60 px-1.5 py-0.5 rounded text-foreground truncate block" title={part.location}>
                               {part.location}
                             </span>
                           ) : (
@@ -830,45 +844,45 @@ export function PartsListView() {
                         </TableCell>
 
                         {/* Status */}
-                        <TableCell className="text-center py-2.5">
+                        <TableCell className="text-center py-2 min-w-0">
                           {part.is_active ? (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800">
+                            <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800">
                               <Check className="h-2.5 w-2.5" /> Active
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-muted text-muted-foreground border border-border">
-                              <PowerOff className="h-2.5 w-2.5" /> Inactive
+                            <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-muted text-muted-foreground border border-border">
+                              <PowerOff className="h-2.5 w-2.5" /> Off
                             </span>
                           )}
                         </TableCell>
 
-                        {/* Actions (fixed right-side column, never clipped) */}
-                        <TableCell className="text-right pr-4 py-2.5">
+                        {/* Actions (compact, right-side) */}
+                        <TableCell className="text-right pr-3 py-2">
                           <div className="flex items-center justify-end gap-1">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-muted/60"
-                              onClick={() => openViewDialog(part)}
-                              title="View Spare Part Details"
-                            >
-                              <Eye className="h-4 w-4" />
-                            </Button>
-
                             {canEdit && (
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-muted/60"
+                                className="h-7 w-7 text-muted-foreground hover:text-primary hover:bg-muted/60"
                                 onClick={() => openEditDialog(part)}
                                 title="Edit Part Master"
                               >
-                                <Pencil className="h-4 w-4" />
+                                <Pencil className="h-3.5 w-3.5" />
                               </Button>
                             )}
 
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950/40"
+                              onClick={() => openStockHistory(part)}
+                              title="View Stock Movement History"
+                            >
+                              <History className="h-3.5 w-3.5" />
+                            </Button>
+
                             <DropdownMenu>
-                              <DropdownMenuTrigger className="h-8 w-8 inline-flex items-center justify-center rounded-md border border-border/80 text-muted-foreground hover:bg-muted/60 hover:text-foreground focus:outline-none">
+                              <DropdownMenuTrigger className="h-7 w-7 inline-flex items-center justify-center rounded-md border border-border/80 text-muted-foreground hover:bg-muted/60 hover:text-foreground focus:outline-none">
                                 <MoreVertical className="h-3.5 w-3.5" />
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end" className="w-48 text-xs">
@@ -902,12 +916,12 @@ export function PartsListView() {
                                     )}
                                   </DropdownMenuItem>
                                 )}
-                                {isOwnerOrAdmin && (
+                                {Boolean(isOwnerOrAdmin) && (
                                   <>
                                     <DropdownMenuSeparator />
                                     <DropdownMenuItem
                                       onClick={() => openDeleteDialog(part)}
-                                      className="text-rose-600 hover:text-rose-700 font-semibold focus:text-rose-600"
+                                      className="text-rose-600 focus:text-rose-600 font-semibold"
                                     >
                                       <Trash2 className="h-3.5 w-3.5 mr-2" /> Delete
                                     </DropdownMenuItem>
@@ -922,6 +936,7 @@ export function PartsListView() {
                   })}
                 </TableBody>
               </Table>
+            </div>
 
               {/* Pagination Bar */}
               {totalPages > 1 && (
@@ -954,7 +969,7 @@ export function PartsListView() {
                   </div>
                 </div>
               )}
-            </div>
+            </>
           ) : (
             <div className="py-20 text-center text-muted-foreground">
               <Package className="h-12 w-12 mx-auto text-muted-foreground/30 mb-3" />
@@ -1500,7 +1515,7 @@ export function PartsListView() {
 
       {/* ─── Stock Movement History & Audit Modal ─── */}
       <Dialog open={historyModalOpen} onOpenChange={setHistoryModalOpen}>
-        <DialogContent className="sm:max-w-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 max-h-[85vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-4xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 max-h-[90vh] overflow-y-auto">
           <div>
             <DialogTitle className="text-base font-bold flex items-center gap-2 text-foreground">
               <History className="h-5 w-5 text-blue-600" />
@@ -1512,86 +1527,198 @@ export function PartsListView() {
             </DialogDescription>
           </div>
 
+          {/* Date Filter Bar */}
+          <div className="pt-2">
+            <HistoryDateFilterBar
+              preset={historyDatePreset}
+              onPresetChange={setHistoryDatePreset}
+              fromDate={historyFromDate}
+              toDate={historyToDate}
+              onCustomRangeApply={(from, to) => {
+                setHistoryFromDate(from);
+                setHistoryToDate(to);
+              }}
+              onClear={() => {
+                setHistoryDatePreset("all");
+                setHistoryFromDate("");
+                setHistoryToDate("");
+              }}
+            />
+          </div>
+
           <div className="py-2">
             {loadingHistory ? (
               <div className="py-12 text-center text-muted-foreground">
                 <Loader2 className="h-6 w-6 mx-auto animate-spin mb-2 text-blue-600" />
                 <p className="text-xs">Loading ledger transactions...</p>
               </div>
-            ) : historyTransactions.length > 0 ? (
-              <div className="rounded-lg border overflow-hidden">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="bg-slate-50 dark:bg-slate-800 text-[11px]">
-                      <TableHead className="w-[20%]">Date</TableHead>
-                      <TableHead className="w-[22%]">Transaction</TableHead>
-                      <TableHead className="w-[18%]">Reference</TableHead>
-                      <TableHead className="w-[12%] text-right">Qty In</TableHead>
-                      <TableHead className="w-[12%] text-right">Qty Out</TableHead>
-                      <TableHead className="w-[16%] text-right">Stock After</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {historyTransactions.map((tx) => {
-                      const isPositive = tx.quantity > 0;
-                      const isNegative = tx.quantity < 0;
+            ) : (() => {
+              const dateBounds = getDateRangeBounds(historyDatePreset, historyFromDate, historyToDate);
+              const sortedAll = [...historyTransactions].sort(
+                (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+              );
 
-                      return (
-                        <TableRow key={tx.id} className="text-xs">
-                          <TableCell className="text-muted-foreground font-mono text-[11px]">
-                            {formatDate(tx.created_at)}
-                          </TableCell>
-                          <TableCell>
-                            <span
-                              className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
-                                tx.transaction_type.includes("purchase") || tx.transaction_type.includes("in")
-                                  ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800"
-                                  : tx.transaction_type.includes("job_card")
-                                  ? "bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 border border-blue-200 dark:border-blue-800"
-                                  : "bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 border border-amber-200 dark:border-amber-800"
-                              }`}
-                            >
-                              {tx.transaction_type.replace(/_/g, " ")}
-                            </span>
-                            {tx.notes && (
-                              <p className="text-[10px] text-muted-foreground mt-0.5 line-clamp-1">{tx.notes}</p>
-                            )}
-                          </TableCell>
-                          <TableCell className="font-mono text-xs font-semibold text-foreground">
-                            {tx.reference_type === "job_card" && tx.reference_id ? (
-                              <a
-                                href={`/job-cards/${tx.reference_id}`}
-                                className="text-blue-600 hover:text-blue-800 hover:underline inline-flex items-center gap-1 font-bold"
-                                title="Open Job Card"
-                              >
-                                {tx.notes?.includes("Job Card #")
-                                  ? tx.notes.match(/Job Card #\d+/)?.[0] || tx.reference_id
-                                  : `Job Card ${tx.reference_id}`}
-                              </a>
-                            ) : (
-                              tx.reference_id || tx.reference_type || "Direct"
-                            )}
-                          </TableCell>
-                          <TableCell className="text-right font-mono font-bold text-emerald-600">
-                            {isPositive ? `+${tx.quantity}` : "—"}
-                          </TableCell>
-                          <TableCell className="text-right font-mono font-bold text-rose-600">
-                            {isNegative ? Math.abs(tx.quantity) : "—"}
-                          </TableCell>
-                          <TableCell className="text-right font-mono font-black text-foreground">
-                            {tx.quantity_after !== undefined ? tx.quantity_after : "—"}
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
-              </div>
-            ) : (
-              <div className="py-12 text-center text-xs text-muted-foreground">
-                No inventory transactions recorded for this part yet.
-              </div>
-            )}
+              // Compute Opening Stock before the period
+              let openingStock = 0;
+              if (dateBounds.start) {
+                const beforeList = sortedAll.filter((tx) => new Date(tx.created_at).getTime() < dateBounds.start!.getTime());
+                if (beforeList.length > 0) {
+                  openingStock = beforeList[beforeList.length - 1].quantity_after ?? 0;
+                } else if (sortedAll.length > 0) {
+                  openingStock = sortedAll[0].quantity_before ?? 0;
+                }
+              } else {
+                openingStock = sortedAll.length > 0 ? (sortedAll[0].quantity_before ?? 0) : (historyPart?.current_stock ?? 0);
+              }
+
+              const filteredTxs = historyTransactions.filter((tx) => isDateWithinBounds(tx.created_at, dateBounds));
+
+              let purchasedQty = 0;
+              let soldUsedQty = 0;
+              let returnsQty = 0;
+              let adjustmentsQty = 0;
+              let purchaseValue = 0;
+              let salesUsageValue = 0;
+
+              filteredTxs.forEach((tx) => {
+                const tType = (tx.transaction_type || "").toLowerCase();
+                const qty = Number(tx.quantity) || 0;
+                const unitCost = Number(tx.unit_cost) || Number(historyPart?.purchase_price) || 0;
+                const sellPrice = Number(historyPart?.selling_price) || 0;
+
+                if (tType.includes("purchase") || tType.includes("opening") || tType === "stock_in") {
+                  if (qty > 0) {
+                    purchasedQty += qty;
+                    purchaseValue += qty * unitCost;
+                  }
+                } else if (tType.includes("job_card") || tType.includes("sale") || tType === "direct_sale") {
+                  const absQty = Math.abs(qty);
+                  soldUsedQty += absQty;
+                  salesUsageValue += absQty * sellPrice;
+                } else if (tType.includes("return")) {
+                  returnsQty += qty;
+                } else if (tType.includes("adjust")) {
+                  adjustmentsQty += qty;
+                }
+              });
+
+              const netChange = filteredTxs.reduce((acc, tx) => acc + (Number(tx.quantity) || 0), 0);
+              const closingStock = openingStock + netChange;
+
+              return (
+                <div className="space-y-3">
+                  {/* Period Summary Cards */}
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 text-xs">
+                    <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/80">
+                      <span className="text-[10px] font-bold text-muted-foreground uppercase block">Opening Stock</span>
+                      <span className="text-base font-black font-mono text-foreground block mt-0.5">{openingStock}</span>
+                    </div>
+                    <div className="p-2.5 rounded-xl bg-emerald-50/60 dark:bg-emerald-950/30 border border-emerald-200/80 dark:border-emerald-800/80">
+                      <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-300 uppercase block">Purchased</span>
+                      <span className="text-base font-black font-mono text-emerald-700 dark:text-emerald-300 block mt-0.5">+{purchasedQty}</span>
+                    </div>
+                    <div className="p-2.5 rounded-xl bg-blue-50/60 dark:bg-blue-950/30 border border-blue-200/80 dark:border-blue-800/80">
+                      <span className="text-[10px] font-bold text-blue-700 dark:text-blue-300 uppercase block">Sold / Used</span>
+                      <span className="text-base font-black font-mono text-blue-700 dark:text-blue-300 block mt-0.5">-{soldUsedQty}</span>
+                    </div>
+                    <div className="p-2.5 rounded-xl bg-amber-50/60 dark:bg-amber-950/30 border border-amber-200/80 dark:border-amber-800/80">
+                      <span className="text-[10px] font-bold text-amber-700 dark:text-amber-300 uppercase block">Adjustments</span>
+                      <span className="text-base font-black font-mono text-amber-700 dark:text-amber-300 block mt-0.5">
+                        {adjustmentsQty >= 0 ? `+${adjustmentsQty}` : adjustmentsQty}
+                      </span>
+                    </div>
+                    <div className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700">
+                      <span className="text-[10px] font-bold text-slate-700 dark:text-slate-300 uppercase block">Closing Stock</span>
+                      <span className="text-base font-black font-mono text-slate-900 dark:text-slate-100 block mt-0.5">{closingStock}</span>
+                    </div>
+                    <div className="p-2.5 rounded-xl bg-indigo-50/60 dark:bg-indigo-950/30 border border-indigo-200/80 dark:border-indigo-800/80">
+                      <span className="text-[10px] font-bold text-indigo-700 dark:text-indigo-300 uppercase block">Usage Value</span>
+                      <span className="text-xs font-black font-mono text-indigo-700 dark:text-indigo-300 block mt-1">{formatCurrency(salesUsageValue)}</span>
+                    </div>
+                  </div>
+
+                  {/* Transactions Table */}
+                  {filteredTxs.length > 0 ? (
+                    <div className="rounded-xl border overflow-hidden">
+                      <Table className="w-full table-fixed text-xs">
+                        <TableHeader>
+                          <TableRow className="bg-slate-50 dark:bg-slate-800/80 text-[11px] h-9">
+                            <TableHead className="w-[18%]">Date & Time</TableHead>
+                            <TableHead className="w-[22%]">Transaction Type</TableHead>
+                            <TableHead className="w-[18%]">Reference</TableHead>
+                            <TableHead className="w-[11%] text-right">Qty In</TableHead>
+                            <TableHead className="w-[11%] text-right">Qty Out</TableHead>
+                            <TableHead className="w-[20%] text-right pr-3">Balance After</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {filteredTxs.map((tx) => {
+                            const isPositive = tx.quantity > 0;
+                            const isNegative = tx.quantity < 0;
+
+                            return (
+                              <TableRow key={tx.id} className="h-10 hover:bg-slate-50/60 dark:hover:bg-slate-800/40">
+                                <TableCell className="text-muted-foreground font-mono text-[11px] py-2 truncate">
+                                  {formatDate(tx.created_at)}
+                                </TableCell>
+                                <TableCell className="py-2 min-w-0">
+                                  <span
+                                    className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase inline-block truncate max-w-full ${
+                                      tx.transaction_type.includes("purchase") || tx.transaction_type.includes("in")
+                                        ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800"
+                                        : tx.transaction_type.includes("job_card")
+                                        ? "bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 border border-blue-200 dark:border-blue-800"
+                                        : "bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 border border-amber-200 dark:border-amber-800"
+                                    }`}
+                                  >
+                                    {tx.transaction_type.replace(/_/g, " ")}
+                                  </span>
+                                  {tx.notes && (
+                                    <p className="text-[10px] text-muted-foreground mt-0.5 truncate" title={tx.notes}>
+                                      {tx.notes}
+                                    </p>
+                                  )}
+                                </TableCell>
+                                <TableCell className="font-mono text-xs font-semibold text-foreground py-2 truncate">
+                                  {tx.reference_type === "job_card" && tx.reference_id ? (
+                                    <a
+                                      href={`/job-cards/${tx.reference_id}`}
+                                      className="text-blue-600 hover:text-blue-800 hover:underline inline-flex items-center gap-1 font-bold truncate"
+                                      title="Open Job Card"
+                                    >
+                                      {tx.notes?.includes("Job Card #")
+                                        ? tx.notes.match(/Job Card #\d+/)?.[0] || tx.reference_id
+                                        : `Job Card #${tx.reference_id}`}
+                                    </a>
+                                  ) : (
+                                    <span className="truncate block" title={tx.reference_id || tx.reference_type || "Direct"}>
+                                      {tx.reference_id || tx.reference_type || "Direct"}
+                                    </span>
+                                  )}
+                                </TableCell>
+                                <TableCell className="text-right font-mono font-bold text-emerald-600 py-2">
+                                  {isPositive ? `+${tx.quantity}` : "—"}
+                                </TableCell>
+                                <TableCell className="text-right font-mono font-bold text-rose-600 py-2">
+                                  {isNegative ? Math.abs(tx.quantity) : "—"}
+                                </TableCell>
+                                <TableCell className="text-right font-mono font-black text-foreground py-2 pr-3">
+                                  {tx.quantity_after !== undefined ? tx.quantity_after : "—"}
+                                </TableCell>
+                              </TableRow>
+                            );
+                          })}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  ) : (
+                    <div className="py-12 text-center text-xs text-muted-foreground border rounded-xl">
+                      No transactions recorded in the selected period.
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
           </div>
 
           <DialogFooter className="pt-2 border-t">

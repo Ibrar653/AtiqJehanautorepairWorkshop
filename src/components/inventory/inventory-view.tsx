@@ -6,6 +6,7 @@ import {
   getParts,
   getPartById,
   createPart,
+  updatePart,
   checkDuplicatePartNumber,
   type PartsFilterType,
 } from "@/lib/services/parts-service";
@@ -39,6 +40,7 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import {
   Package,
@@ -63,8 +65,17 @@ import {
   Building2,
   Sparkles,
   Info,
+  Edit2,
+  MoreVertical,
 } from "lucide-react";
 import { formatCurrency, formatDate } from "@/lib/utils";
+import { HistoryDateFilterBar } from "@/components/shared/history-date-filter-bar";
+import {
+  getDateRangeBounds,
+  isDateWithinBounds,
+  type DateRangeBounds,
+  type HistoryDateFilterPreset,
+} from "@/lib/date-filters";
 
 const ADJUSTMENT_REASONS = [
   "Physical Count Reconciled",
@@ -102,9 +113,29 @@ export function InventoryView() {
 
   // Filters for Global Ledger Table
   const [ledgerTypeFilter, setLedgerTypeFilter] = useState<string>("all");
+  const [ledgerPreset, setLedgerPreset] = useState<HistoryDateFilterPreset>("all");
+  const [ledgerFromDate, setLedgerFromDate] = useState("");
+  const [ledgerToDate, setLedgerToDate] = useState("");
   const [ledgerPage, setLedgerPage] = useState(1);
   const [totalLedgerCount, setTotalLedgerCount] = useState(0);
   const ledgerPageSize = 25;
+
+  // ─── Edit Part Modal State ───
+  const [editPartModalOpen, setEditPartModalOpen] = useState(false);
+  const [editingPart, setEditingPart] = useState<Part | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editPartNumber, setEditPartNumber] = useState("");
+  const [editBrand, setEditBrand] = useState("");
+  const [editDescription, setEditDescription] = useState("");
+  const [editUnit, setEditUnit] = useState("piece");
+  const [editPurchasePrice, setEditPurchasePrice] = useState<number | "">(0);
+  const [editSellingPrice, setEditSellingPrice] = useState<number | "">(0);
+  const [editMinStock, setEditMinStock] = useState<number | "">(5);
+  const [editSupplierId, setEditSupplierId] = useState("");
+  const [editLocation, setEditLocation] = useState("");
+  const [editIsActive, setEditIsActive] = useState(true);
+  const [savingEditPart, setSavingEditPart] = useState(false);
+  const [editPartError, setEditPartError] = useState<string | null>(null);
 
   // ─── Stock Adjustment Modal State ───
   const [adjustModalOpen, setAdjustModalOpen] = useState(false);
@@ -153,7 +184,10 @@ export function InventoryView() {
   // Per-Part History Modal State
   const [historyModalOpen, setHistoryModalOpen] = useState(false);
   const [historyPart, setHistoryPart] = useState<Part | null>(null);
-  const [historyTransactions, setHistoryTransactions] = useState<InventoryTransaction[]>([]);
+  const [allHistoryTransactions, setAllHistoryTransactions] = useState<InventoryTransaction[]>([]);
+  const [historyPreset, setHistoryPreset] = useState<HistoryDateFilterPreset>("all");
+  const [historyFromDate, setHistoryFromDate] = useState("");
+  const [historyToDate, setHistoryToDate] = useState("");
   const [loadingHistory, setLoadingHistory] = useState(false);
 
   // Debounce search query
@@ -304,6 +338,151 @@ export function InventoryView() {
     };
   }, [allPartsForSelect, transactions]);
 
+  // ─── Filtered Ledger Transactions & Summary ───
+  const ledgerDateBounds = useMemo(
+    () => getDateRangeBounds(ledgerPreset, ledgerFromDate, ledgerToDate),
+    [ledgerPreset, ledgerFromDate, ledgerToDate]
+  );
+
+  const filteredLedgerTransactions = useMemo(() => {
+    if (!ledgerDateBounds) return transactions;
+    return transactions.filter((tx) => isDateWithinBounds(tx.created_at, ledgerDateBounds));
+  }, [transactions, ledgerDateBounds]);
+
+  const ledgerPeriodSummary = useMemo(() => {
+    let qtyIn = 0;
+    let qtyOut = 0;
+    let netDelta = 0;
+    filteredLedgerTransactions.forEach((tx) => {
+      if (tx.quantity > 0) {
+        qtyIn += tx.quantity;
+        netDelta += tx.quantity;
+      } else if (tx.quantity < 0) {
+        qtyOut += Math.abs(tx.quantity);
+        netDelta += tx.quantity;
+      }
+    });
+    return {
+      totalRecords: filteredLedgerTransactions.length,
+      qtyIn,
+      qtyOut,
+      netDelta,
+    };
+  }, [filteredLedgerTransactions]);
+
+  // ─── Filtered Per-Part History & Summary ───
+  const historyDateBounds = useMemo(
+    () => getDateRangeBounds(historyPreset, historyFromDate, historyToDate),
+    [historyPreset, historyFromDate, historyToDate]
+  );
+
+  const filteredHistoryTransactions = useMemo(() => {
+    if (!historyDateBounds) return allHistoryTransactions;
+    return allHistoryTransactions.filter((tx) => isDateWithinBounds(tx.created_at, historyDateBounds));
+  }, [allHistoryTransactions, historyDateBounds]);
+
+  const historySummary = useMemo(() => {
+    if (!filteredHistoryTransactions.length) {
+      const cur = historyPart ? Number(historyPart.current_stock) || 0 : 0;
+      return {
+        openingStock: cur,
+        stockIn: 0,
+        stockOut: 0,
+        adjustments: 0,
+        closingStock: cur,
+      };
+    }
+
+    const sorted = [...filteredHistoryTransactions].sort(
+      (a, b) => new Date(a.created_at || "").getTime() - new Date(b.created_at || "").getTime()
+    );
+
+    let stockIn = 0;
+    let stockOut = 0;
+    let adjustments = 0;
+
+    sorted.forEach((tx) => {
+      if (tx.transaction_type.includes("purchase") || tx.transaction_type.includes("opening")) {
+        if (tx.quantity > 0) stockIn += tx.quantity;
+      } else if (tx.transaction_type.includes("job_card") || tx.transaction_type.includes("sale") || tx.transaction_type.includes("out")) {
+        stockOut += Math.abs(tx.quantity);
+      } else if (tx.transaction_type.includes("adjust")) {
+        adjustments += tx.quantity;
+      } else if (tx.quantity > 0) {
+        stockIn += tx.quantity;
+      } else {
+        stockOut += Math.abs(tx.quantity);
+      }
+    });
+
+    const earliest = sorted[0];
+    const latest = sorted[sorted.length - 1];
+    const openingStock = earliest.quantity_before !== undefined ? earliest.quantity_before : ((earliest.quantity_after ?? 0) - earliest.quantity);
+    const closingStock = latest.quantity_after !== undefined ? latest.quantity_after : (Number(historyPart?.current_stock) || 0);
+
+    return {
+      openingStock,
+      stockIn,
+      stockOut,
+      adjustments,
+      closingStock,
+    };
+  }, [filteredHistoryTransactions, historyPart]);
+
+  // ─── Open Edit Part Modal ───
+  const handleOpenEditPartModal = (part: Part) => {
+    setEditingPart(part);
+    setEditName(part.name);
+    setEditPartNumber(part.part_number || "");
+    setEditBrand(part.brand || "");
+    setEditDescription(part.description || "");
+    setEditUnit(part.unit || "piece");
+    setEditPurchasePrice(Number(part.purchase_price) || 0);
+    setEditSellingPrice(Number(part.selling_price) || 0);
+    setEditMinStock(Number(part.minimum_stock) || 5);
+    setEditSupplierId(part.supplier_id || "");
+    setEditLocation(part.location || "");
+    setEditIsActive(part.is_active !== false);
+    setEditPartError(null);
+    setEditPartModalOpen(true);
+  };
+
+  // ─── Save Edit Part ───
+  const handleSaveEditPart = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingPart) return;
+    if (!editName.trim()) {
+      setEditPartError("Part Name is required.");
+      return;
+    }
+
+    setSavingEditPart(true);
+    setEditPartError(null);
+
+    try {
+      await updatePart(editingPart.id, {
+        name: editName.trim(),
+        part_number: editPartNumber.trim() || null,
+        brand: editBrand.trim() || null,
+        description: editDescription.trim() || null,
+        unit: editUnit.trim() || "piece",
+        purchase_price: Number(editPurchasePrice) || 0,
+        selling_price: Number(editSellingPrice) || 0,
+        minimum_stock: Number(editMinStock) || 0,
+        supplier_id: editSupplierId || null,
+        location: editLocation.trim() || null,
+        is_active: editIsActive,
+      });
+
+      await loadInventory();
+      setEditPartModalOpen(false);
+    } catch (err: any) {
+      setEditPartError(err.message || "Failed to update spare part.");
+    } finally {
+      setSavingEditPart(false);
+    }
+  };
+
   // Open Adjust Modal
   const handleOpenAdjustModal = (part?: Part) => {
     if (part) {
@@ -351,11 +530,14 @@ export function InventoryView() {
   // Open Part Stock History Modal
   const handleOpenHistoryModal = async (part: Part) => {
     setHistoryPart(part);
+    setHistoryPreset("all");
+    setHistoryFromDate("");
+    setHistoryToDate("");
     setHistoryModalOpen(true);
     setLoadingHistory(true);
     try {
-      const res = await getInventoryTransactions(part.id, "all", 1, 100);
-      setHistoryTransactions(res.transactions);
+      const res = await getInventoryTransactions(part.id, "all", 1, 500);
+      setAllHistoryTransactions(res.transactions);
     } catch (e) {
       console.error("Error loading part history:", e);
     } finally {
@@ -804,21 +986,21 @@ export function InventoryView() {
                 <p className="font-medium text-xs">Loading stock inventory...</p>
               </div>
             ) : parts.length > 0 ? (
-              <div className="overflow-x-auto min-w-full">
-                <Table className="min-w-[1100px]">
+              <div className="overflow-x-auto w-full">
+                <Table className="w-full table-fixed text-xs">
                   <TableHeader>
                     <TableRow className="border-b border-slate-200/80 bg-slate-50/80 hover:bg-slate-50/80 text-[11px] font-bold text-slate-500 uppercase tracking-wider h-11">
-                      <TableHead className="w-[22%] min-w-[200px] text-slate-600 font-bold">Part</TableHead>
-                      <TableHead className="w-[12%] min-w-[110px] text-slate-600 font-bold">Part Number</TableHead>
-                      <TableHead className="w-[10%] min-w-[90px] text-slate-600 font-bold">Brand</TableHead>
-                      <TableHead className="w-[13%] min-w-[120px] text-slate-600 font-bold">Purchased From</TableHead>
-                      <TableHead className="w-[9%] min-w-[90px] text-center text-slate-600 font-bold">Stock</TableHead>
-                      <TableHead className="w-[7%] min-w-[70px] text-center text-slate-600 font-bold">Min</TableHead>
-                      <TableHead className="w-[9%] min-w-[85px] text-right text-slate-600 font-bold">Cost (AED)</TableHead>
-                      <TableHead className="w-[9%] min-w-[85px] text-right text-slate-600 font-bold">Sell (AED)</TableHead>
-                      <TableHead className="w-[8%] min-w-[80px] text-slate-600 font-bold">Rack</TableHead>
-                      <TableHead className="w-[9%] min-w-[90px] text-center text-slate-600 font-bold">Status</TableHead>
-                      <TableHead className="w-[115px] min-w-[115px] text-right pr-4 text-slate-600 font-bold">Actions</TableHead>
+                      <TableHead className="w-[24%] min-w-0 text-slate-600 font-bold">Part</TableHead>
+                      <TableHead className="w-[11%] min-w-0 text-slate-600 font-bold">Part Number</TableHead>
+                      <TableHead className="w-[9%] min-w-0 text-slate-600 font-bold">Brand</TableHead>
+                      <TableHead className="w-[11%] min-w-0 text-slate-600 font-bold">Purchased From</TableHead>
+                      <TableHead className="w-[8%] text-center text-slate-600 font-bold">Stock</TableHead>
+                      <TableHead className="w-[6%] text-center text-slate-600 font-bold">Min</TableHead>
+                      <TableHead className="w-[8%] text-right text-slate-600 font-bold">Cost (AED)</TableHead>
+                      <TableHead className="w-[8%] text-right text-slate-600 font-bold">Sell (AED)</TableHead>
+                      <TableHead className="w-[7%] min-w-0 text-slate-600 font-bold">Rack</TableHead>
+                      <TableHead className="w-[8%] text-center text-slate-600 font-bold">Status</TableHead>
+                      <TableHead className="w-[90px] text-right pr-3 text-slate-600 font-bold">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -827,21 +1009,21 @@ export function InventoryView() {
                       const minStock = Number(p.minimum_stock) || 0;
 
                       let statusBadge = (
-                        <span className="px-2 py-0.5 rounded-lg text-[10px] font-bold uppercase bg-emerald-50 text-emerald-700 border border-emerald-200 inline-flex items-center gap-1">
-                          <CheckCircle2 className="h-3 w-3" /> In Stock
+                        <span className="px-1.5 py-0.5 rounded-md text-[10px] font-bold uppercase bg-emerald-50 text-emerald-700 border border-emerald-200 inline-flex items-center gap-1">
+                          <CheckCircle2 className="h-3 w-3 shrink-0" /> In Stock
                         </span>
                       );
 
                       if (stock <= 0) {
                         statusBadge = (
-                          <span className="px-2 py-0.5 rounded-lg text-[10px] font-bold uppercase bg-rose-50 text-rose-700 border border-rose-200 inline-flex items-center gap-1">
-                            <XCircle className="h-3 w-3" /> Out of Stock
+                          <span className="px-1.5 py-0.5 rounded-md text-[10px] font-bold uppercase bg-rose-50 text-rose-700 border border-rose-200 inline-flex items-center gap-1">
+                            <XCircle className="h-3 w-3 shrink-0" /> Out of Stock
                           </span>
                         );
                       } else if (stock <= minStock) {
                         statusBadge = (
-                          <span className="px-2 py-0.5 rounded-lg text-[10px] font-bold uppercase bg-amber-50 text-amber-700 border border-amber-200 inline-flex items-center gap-1">
-                            <AlertTriangle className="h-3 w-3" /> Low Stock
+                          <span className="px-1.5 py-0.5 rounded-md text-[10px] font-bold uppercase bg-amber-50 text-amber-700 border border-amber-200 inline-flex items-center gap-1">
+                            <AlertTriangle className="h-3 w-3 shrink-0" /> Low Stock
                           </span>
                         );
                       }
@@ -852,19 +1034,21 @@ export function InventoryView() {
                           className="h-12 hover:bg-slate-50/60 border-b border-slate-100 text-xs transition-colors"
                         >
                           {/* Part Name */}
-                          <TableCell className="font-semibold text-slate-900 py-2.5">
-                            <span className="font-bold text-sm block hover:text-blue-600 transition-colors">{p.name}</span>
+                          <TableCell className="font-semibold text-slate-900 py-2.5 min-w-0">
+                            <span className="font-bold text-xs text-slate-900 truncate block hover:text-blue-600 transition-colors" title={p.name}>
+                              {p.name}
+                            </span>
                             {p.description && (
-                              <span className="text-[11px] text-slate-500 line-clamp-1 mt-0.5">
+                              <span className="text-[10px] text-slate-500 truncate block mt-0.5" title={p.description}>
                                 {p.description}
                               </span>
                             )}
                           </TableCell>
 
                           {/* Part Number */}
-                          <TableCell className="py-2.5">
+                          <TableCell className="py-2.5 min-w-0">
                             {p.part_number ? (
-                              <span className="font-mono text-xs font-semibold text-slate-800 bg-slate-100 px-2 py-0.5 rounded-lg inline-block border border-slate-200">
+                              <span className="font-mono text-[11px] font-semibold text-slate-800 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200 truncate block max-w-full" title={p.part_number}>
                                 {p.part_number}
                               </span>
                             ) : (
@@ -873,14 +1057,18 @@ export function InventoryView() {
                           </TableCell>
 
                           {/* Brand */}
-                          <TableCell className="text-slate-800 py-2.5 font-medium">
-                            {p.brand || <span className="text-slate-400 italic font-normal">—</span>}
+                          <TableCell className="text-slate-800 py-2.5 font-medium min-w-0">
+                            <span className="truncate block" title={p.brand || "—"}>
+                              {p.brand || <span className="text-slate-400 italic font-normal">—</span>}
+                            </span>
                           </TableCell>
 
                           {/* Supplier */}
-                          <TableCell className="py-2.5">
+                          <TableCell className="py-2.5 min-w-0">
                             {p.supplier ? (
-                              <span className="font-medium text-slate-800 truncate block max-w-[140px]">{p.supplier.name}</span>
+                              <span className="font-medium text-slate-800 truncate block" title={p.supplier.name}>
+                                {p.supplier.name}
+                              </span>
                             ) : (
                               <span className="text-slate-400 italic text-[11px]">Direct / Local</span>
                             )}
@@ -889,7 +1077,7 @@ export function InventoryView() {
                           {/* Current Stock */}
                           <TableCell className="text-center py-2.5">
                             <span
-                              className={`font-mono font-bold text-xs px-2.5 py-1 rounded-full border inline-flex items-center gap-1 ${
+                              className={`font-mono font-bold text-xs px-2 py-0.5 rounded-full border inline-flex items-center gap-0.5 ${
                                 stock <= 0
                                   ? "bg-rose-50 text-rose-700 border-rose-200"
                                   : stock <= minStock
@@ -913,15 +1101,15 @@ export function InventoryView() {
 
                           {/* Selling Price */}
                           <TableCell className="text-right font-mono text-xs font-bold text-blue-600 py-2.5 tabular-nums">
-                            <span className="bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-lg inline-block">
+                            <span className="bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded inline-block">
                               {formatCurrency(p.selling_price)}
                             </span>
                           </TableCell>
 
                           {/* Rack / Location */}
-                          <TableCell className="py-2.5">
+                          <TableCell className="py-2.5 min-w-0">
                             {p.location ? (
-                              <span className="font-mono text-[11px] bg-slate-100 px-2 py-0.5 rounded-lg text-slate-700 inline-block border border-slate-200">
+                              <span className="font-mono text-[10px] bg-slate-100 px-1.5 py-0.5 rounded text-slate-700 truncate block border border-slate-200" title={p.location}>
                                 {p.location}
                               </span>
                             ) : (
@@ -933,25 +1121,36 @@ export function InventoryView() {
                           <TableCell className="text-center py-2.5">{statusBadge}</TableCell>
 
                           {/* Actions */}
-                          <TableCell className="text-right pr-4 py-2.5">
+                          <TableCell className="text-right pr-3 py-2.5">
                             <div className="flex items-center justify-end gap-1">
                               {canEdit && (
                                 <Button
                                   variant="ghost"
-                                  size="sm"
-                                  onClick={() => handleOpenAdjustModal(p)}
-                                  className="h-8 px-2 text-xs font-semibold text-blue-600 hover:bg-blue-50 rounded-xl"
-                                  title="Adjust stock quantity"
+                                  size="icon"
+                                  onClick={() => handleOpenEditPartModal(p)}
+                                  className="h-7 w-7 text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg"
+                                  title="Edit Part Details"
                                 >
-                                  <ArrowUpDown className="h-3.5 w-3.5 mr-1" /> Adjust
+                                  <Edit2 className="h-3.5 w-3.5" />
+                                </Button>
+                              )}
+                              {canEdit && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => handleOpenAdjustModal(p)}
+                                  className="h-7 w-7 text-blue-600 hover:bg-blue-50 rounded-lg"
+                                  title="Adjust Stock Quantity"
+                                >
+                                  <ArrowUpDown className="h-3.5 w-3.5" />
                                 </Button>
                               )}
                               <Button
                                 variant="ghost"
                                 size="icon"
                                 onClick={() => handleOpenHistoryModal(p)}
-                                className="h-8 w-8 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-xl"
-                                title="View stock history ledger"
+                                className="h-7 w-7 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-lg"
+                                title="View Stock Movement History"
                               >
                                 <History className="h-3.5 w-3.5" />
                               </Button>
@@ -1013,194 +1212,241 @@ export function InventoryView() {
       {/* TAB 2: GLOBAL TRANSACTION AUDIT LEDGER                                    */}
       {/* ========================================================================= */}
       {activeTab === "ledger" && (
-        <div className="border border-slate-200/90 rounded-2xl bg-white shadow-2xs overflow-hidden">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 bg-slate-50/50 border-b border-slate-200/80">
-            <div>
-              <h3 className="text-sm font-bold flex items-center gap-2 text-slate-900">
-                <History className="h-4 w-4 text-blue-600" /> Full Stock Movement Audit Trail
-              </h3>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Chronological stock ledger logging all additions, job card allocations, returns, and adjustments
-              </p>
-            </div>
-
-            {/* Transaction Type Filter */}
-            <div className="flex flex-wrap items-center gap-1.5">
-              {[
-                { id: "all", label: "All Types" },
-                { id: "purchase", label: "Purchases" },
-                { id: "opening_stock", label: "Opening Stock" },
-                { id: "job_card_usage", label: "Job Card Usages" },
-                { id: "adjustment_in", label: "Adjustments" },
-                { id: "job_card_reversal", label: "Returns / Reversals" },
-              ].map((f) => (
-                <button
-                  key={f.id}
-                  type="button"
-                  onClick={() => {
-                    setLedgerTypeFilter(f.id);
-                    setLedgerPage(1);
-                  }}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
-                    ledgerTypeFilter === f.id
-                      ? "bg-blue-600 text-white shadow-2xs"
-                      : "border border-slate-200 bg-white text-slate-600 hover:text-slate-900 hover:bg-slate-50"
-                  }`}
-                >
-                  {f.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="p-0">
-            {loadingLedger ? (
-              <div className="py-20 text-center text-slate-500">
-                <Loader2 className="h-8 w-8 mx-auto animate-spin mb-3 text-blue-600" />
-                <p className="font-medium text-xs">Loading transaction ledger records...</p>
-              </div>
-            ) : transactions.length > 0 ? (
-              <div className="overflow-x-auto min-w-full">
-                <Table className="min-w-[1000px]">
-                  <TableHeader>
-                    <TableRow className="border-b border-slate-200/80 bg-slate-50/80 hover:bg-slate-50/80 text-[11px] font-bold text-slate-500 uppercase tracking-wider h-11">
-                      <TableHead className="w-[14%] text-slate-600 font-bold">Date & Time</TableHead>
-                      <TableHead className="w-[24%] text-slate-600 font-bold">Spare Part</TableHead>
-                      <TableHead className="w-[14%] text-slate-600 font-bold">Transaction Type</TableHead>
-                      <TableHead className="w-[14%] text-slate-600 font-bold">Reference</TableHead>
-                      <TableHead className="w-[8%] text-right text-slate-600 font-bold">Qty In</TableHead>
-                      <TableHead className="w-[8%] text-right text-slate-600 font-bold">Qty Out</TableHead>
-                      <TableHead className="w-[8%] text-right text-slate-600 font-bold">Stock Before</TableHead>
-                      <TableHead className="w-[8%] text-right text-slate-600 font-bold">Stock After</TableHead>
-                      <TableHead className="w-[10%] text-right pr-4 text-slate-600 font-bold">User</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {transactions.map((tx) => {
-                      const isPositive = tx.quantity > 0;
-                      const isNegative = tx.quantity < 0;
-
-                      return (
-                        <TableRow
-                          key={tx.id}
-                          className="h-12 hover:bg-slate-50/60 border-b border-slate-100 text-xs transition-colors"
-                        >
-                          <TableCell className="font-mono text-slate-500 text-[11px] py-2.5">
-                            {formatDate(tx.created_at)}
-                          </TableCell>
-
-                          <TableCell className="font-semibold text-slate-900 py-2.5">
-                            <span className="font-bold text-xs block">{tx.part?.name || "Spare Part"}</span>
-                            {tx.part?.part_number && (
-                              <span className="text-[10px] font-mono text-slate-500">
-                                Part #{tx.part.part_number}
-                              </span>
-                            )}
-                          </TableCell>
-
-                          <TableCell className="py-2.5">
-                            <span
-                              className={`px-2.5 py-0.5 rounded-full text-[10px] font-semibold border inline-block ${
-                                tx.transaction_type.includes("purchase") || tx.transaction_type.includes("in") || tx.transaction_type.includes("opening")
-                                  ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                                  : tx.transaction_type.includes("job_card")
-                                  ? "bg-blue-50 text-blue-700 border-blue-200"
-                                  : "bg-amber-50 text-amber-700 border-amber-200"
-                              }`}
-                            >
-                              {tx.transaction_type.replace(/_/g, " ")}
-                            </span>
-                            {tx.notes && (
-                              <p className="text-[10px] text-slate-500 mt-0.5 line-clamp-1 max-w-[200px]" title={tx.notes}>
-                                {tx.notes}
-                              </p>
-                            )}
-                          </TableCell>
-
-                          <TableCell className="py-2.5 font-mono text-xs font-semibold text-slate-800">
-                            {tx.reference_type === "job_card" && tx.reference_id ? (
-                              <a
-                                href={`/job-cards/${tx.reference_id}`}
-                                className="text-blue-600 hover:underline inline-flex items-center gap-1 font-bold"
-                                title="Open Job Card"
-                              >
-                                {tx.notes?.includes("Job Card #")
-                                  ? tx.notes.match(/Job Card #\d+/)?.[0] || tx.reference_id
-                                  : `Job Card ${tx.reference_id}`}
-                              </a>
-                            ) : (
-                              tx.reference_id || tx.reference_type || "Direct"
-                            )}
-                          </TableCell>
-
-                          <TableCell className="text-right font-mono font-bold text-emerald-600 py-2.5 tabular-nums">
-                            {isPositive ? `+${tx.quantity}` : "—"}
-                          </TableCell>
-
-                          <TableCell className="text-right font-mono font-bold text-rose-600 py-2.5 tabular-nums">
-                            {isNegative ? Math.abs(tx.quantity) : "—"}
-                          </TableCell>
-
-                          <TableCell className="text-right font-mono text-slate-500 py-2.5 tabular-nums font-semibold">
-                            {tx.quantity_before !== undefined ? tx.quantity_before : "—"}
-                          </TableCell>
-
-                          <TableCell className="text-right font-mono font-bold text-slate-900 py-2.5 tabular-nums">
-                            {tx.quantity_after !== undefined ? tx.quantity_after : "—"}
-                          </TableCell>
-
-                          <TableCell className="text-right pr-4 font-medium text-slate-500 py-2.5">
-                            {tx.created_by || "System"}
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
-              </div>
-            ) : (
-              <div className="py-16 text-center text-slate-500 space-y-2">
-                <History className="h-10 w-10 mx-auto text-slate-300" />
-                <p className="text-sm font-semibold text-slate-900">No transaction records found</p>
-                <p className="text-xs max-w-sm mx-auto text-slate-500">
-                  Transactions will automatically log here whenever parts are purchased, used in job cards, or adjusted.
+        <div className="space-y-4">
+          <div className="border border-slate-200/90 rounded-2xl bg-white shadow-2xs overflow-hidden">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 bg-slate-50/50 border-b border-slate-200/80">
+              <div>
+                <h3 className="text-sm font-bold flex items-center gap-2 text-slate-900">
+                  <History className="h-4 w-4 text-blue-600" /> Full Stock Movement Audit Trail
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Chronological stock ledger logging all additions, job card allocations, returns, and adjustments
                 </p>
+              </div>
+
+              {/* Transaction Type Filter */}
+              <div className="flex flex-wrap items-center gap-1.5">
+                {[
+                  { id: "all", label: "All Types" },
+                  { id: "purchase", label: "Purchases" },
+                  { id: "opening_stock", label: "Opening Stock" },
+                  { id: "job_card_usage", label: "Job Card Usages" },
+                  { id: "adjustment_in", label: "Adjustments" },
+                  { id: "job_card_reversal", label: "Returns / Reversals" },
+                ].map((f) => (
+                  <button
+                    key={f.id}
+                    type="button"
+                    onClick={() => {
+                      setLedgerTypeFilter(f.id);
+                      setLedgerPage(1);
+                    }}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+                      ledgerTypeFilter === f.id
+                        ? "bg-blue-600 text-white shadow-2xs"
+                        : "border border-slate-200 bg-white text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                    }`}
+                  >
+                    {f.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Date Range Filter Bar for Ledger */}
+            <div className="p-3 bg-white border-b border-slate-200/80">
+              <HistoryDateFilterBar
+                preset={ledgerPreset}
+                onPresetChange={setLedgerPreset}
+                fromDate={ledgerFromDate}
+                toDate={ledgerToDate}
+                onCustomRangeApply={(from, to) => {
+                  setLedgerFromDate(from);
+                  setLedgerToDate(to);
+                }}
+                onClear={() => {
+                  setLedgerPreset("all");
+                  setLedgerFromDate("");
+                  setLedgerToDate("");
+                }}
+              />
+            </div>
+
+            {/* Period Summary Metric Cards for Ledger */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-4 bg-slate-50/40 border-b border-slate-200/80">
+              <div className="bg-white rounded-xl border border-slate-200 p-3 shadow-2xs">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">Ledger Records</span>
+                <span className="text-lg font-bold font-mono text-slate-900 block mt-0.5">{ledgerPeriodSummary.totalRecords}</span>
+              </div>
+              <div className="bg-white rounded-xl border border-slate-200 p-3 shadow-2xs">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 block">Stock In (+)</span>
+                <span className="text-lg font-bold font-mono text-emerald-600 block mt-0.5">+{ledgerPeriodSummary.qtyIn}</span>
+              </div>
+              <div className="bg-white rounded-xl border border-slate-200 p-3 shadow-2xs">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-rose-600 block">Stock Out (-)</span>
+                <span className="text-lg font-bold font-mono text-rose-600 block mt-0.5">-{ledgerPeriodSummary.qtyOut}</span>
+              </div>
+              <div className="bg-white rounded-xl border border-slate-200 p-3 shadow-2xs">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-blue-600 block">Net Change</span>
+                <span className={`text-lg font-bold font-mono block mt-0.5 ${ledgerPeriodSummary.netDelta >= 0 ? "text-blue-600" : "text-amber-600"}`}>
+                  {ledgerPeriodSummary.netDelta > 0 ? `+${ledgerPeriodSummary.netDelta}` : ledgerPeriodSummary.netDelta}
+                </span>
+              </div>
+            </div>
+
+            <div className="p-0">
+              {loadingLedger ? (
+                <div className="py-20 text-center text-slate-500">
+                  <Loader2 className="h-8 w-8 mx-auto animate-spin mb-3 text-blue-600" />
+                  <p className="font-medium text-xs">Loading transaction ledger records...</p>
+                </div>
+              ) : filteredLedgerTransactions.length > 0 ? (
+                <div className="overflow-x-auto w-full">
+                  <Table className="w-full table-fixed text-xs">
+                    <TableHeader>
+                      <TableRow className="border-b border-slate-200/80 bg-slate-50/80 hover:bg-slate-50/80 text-[11px] font-bold text-slate-500 uppercase tracking-wider h-11">
+                        <TableHead className="w-[13%] text-slate-600 font-bold">Date & Time</TableHead>
+                        <TableHead className="w-[23%] min-w-0 text-slate-600 font-bold">Spare Part</TableHead>
+                        <TableHead className="w-[14%] text-slate-600 font-bold">Transaction Type</TableHead>
+                        <TableHead className="w-[14%] min-w-0 text-slate-600 font-bold">Reference</TableHead>
+                        <TableHead className="w-[8%] text-right text-slate-600 font-bold">Qty In</TableHead>
+                        <TableHead className="w-[8%] text-right text-slate-600 font-bold">Qty Out</TableHead>
+                        <TableHead className="w-[7%] text-right text-slate-600 font-bold">Before</TableHead>
+                        <TableHead className="w-[7%] text-right text-slate-600 font-bold">After</TableHead>
+                        <TableHead className="w-[6%] text-right pr-3 text-slate-600 font-bold">User</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredLedgerTransactions.map((tx) => {
+                        const isPositive = tx.quantity > 0;
+                        const isNegative = tx.quantity < 0;
+
+                        return (
+                          <TableRow
+                            key={tx.id}
+                            className="h-12 hover:bg-slate-50/60 border-b border-slate-100 text-xs transition-colors"
+                          >
+                            <TableCell className="font-mono text-slate-500 text-[11px] py-2.5">
+                              {formatDate(tx.created_at)}
+                            </TableCell>
+
+                            <TableCell className="font-semibold text-slate-900 py-2.5 min-w-0">
+                              <span className="font-bold text-xs truncate block" title={tx.part?.name || "Spare Part"}>
+                                {tx.part?.name || "Spare Part"}
+                              </span>
+                              {tx.part?.part_number && (
+                                <span className="text-[10px] font-mono text-slate-500 truncate block">
+                                  Part #{tx.part.part_number}
+                                </span>
+                              )}
+                            </TableCell>
+
+                            <TableCell className="py-2.5 min-w-0">
+                              <span
+                                className={`px-2 py-0.5 rounded-full text-[10px] font-semibold border inline-block ${
+                                  tx.transaction_type.includes("purchase") || tx.transaction_type.includes("in") || tx.transaction_type.includes("opening")
+                                    ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                    : tx.transaction_type.includes("job_card")
+                                    ? "bg-blue-50 text-blue-700 border-blue-200"
+                                    : "bg-amber-50 text-amber-700 border-amber-200"
+                                }`}
+                              >
+                                {tx.transaction_type.replace(/_/g, " ")}
+                              </span>
+                              {tx.notes && (
+                                <p className="text-[10px] text-slate-500 mt-0.5 truncate max-w-full" title={tx.notes}>
+                                  {tx.notes}
+                                </p>
+                              )}
+                            </TableCell>
+
+                            <TableCell className="py-2.5 font-mono text-xs font-semibold text-slate-800 min-w-0">
+                              {tx.reference_type === "job_card" && tx.reference_id ? (
+                                <a
+                                  href={`/job-cards/${tx.reference_id}`}
+                                  className="text-blue-600 hover:underline inline-flex items-center gap-1 font-bold truncate max-w-full"
+                                  title="Open Job Card"
+                                >
+                                  {tx.notes?.includes("Job Card #")
+                                    ? tx.notes.match(/Job Card #\d+/)?.[0] || tx.reference_id
+                                    : `Job Card ${tx.reference_id}`}
+                                </a>
+                              ) : (
+                                <span className="truncate block" title={tx.reference_id || tx.reference_type || "Direct"}>
+                                  {tx.reference_id || tx.reference_type || "Direct"}
+                                </span>
+                              )}
+                            </TableCell>
+
+                            <TableCell className="text-right font-mono font-bold text-emerald-600 py-2.5 tabular-nums">
+                              {isPositive ? `+${tx.quantity}` : "—"}
+                            </TableCell>
+
+                            <TableCell className="text-right font-mono font-bold text-rose-600 py-2.5 tabular-nums">
+                              {isNegative ? Math.abs(tx.quantity) : "—"}
+                            </TableCell>
+
+                            <TableCell className="text-right font-mono text-slate-500 py-2.5 tabular-nums font-semibold">
+                              {tx.quantity_before !== undefined ? tx.quantity_before : "—"}
+                            </TableCell>
+
+                            <TableCell className="text-right font-mono font-bold text-slate-900 py-2.5 tabular-nums">
+                              {tx.quantity_after !== undefined ? tx.quantity_after : "—"}
+                            </TableCell>
+
+                            <TableCell className="text-right pr-3 font-medium text-slate-500 py-2.5 truncate" title={tx.created_by || "System"}>
+                              {tx.created_by || "System"}
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+              ) : (
+                <div className="py-16 text-center text-slate-500 space-y-2">
+                  <History className="h-10 w-10 mx-auto text-slate-300" />
+                  <p className="text-sm font-semibold text-slate-900">No transaction records found</p>
+                  <p className="text-xs max-w-sm mx-auto text-slate-500">
+                    Transactions will automatically log here whenever parts are purchased, used in job cards, or adjusted.
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Ledger Pagination */}
+            {totalLedgerPages > 1 && (
+              <div className="p-3.5 border-t border-slate-200/80 bg-slate-50/40 flex items-center justify-between text-xs text-slate-500">
+                <span>
+                  Showing {(ledgerPage - 1) * ledgerPageSize + 1} to{" "}
+                  {Math.min(ledgerPage * ledgerPageSize, totalLedgerCount)} of {totalLedgerCount} records
+                </span>
+                <div className="flex items-center gap-1.5">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setLedgerPage((p) => Math.max(1, p - 1))}
+                    disabled={ledgerPage === 1}
+                    className="h-8 text-xs font-semibold rounded-xl border-slate-200 bg-white hover:bg-slate-50"
+                  >
+                    <ChevronLeft className="h-3.5 w-3.5 mr-1" /> Previous
+                  </Button>
+                  <span className="font-semibold px-2 font-mono text-slate-900">
+                    {ledgerPage} / {totalLedgerPages}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setLedgerPage((p) => Math.min(totalLedgerPages, p + 1))}
+                    disabled={ledgerPage >= totalLedgerPages}
+                    className="h-8 text-xs font-semibold rounded-xl border-slate-200 bg-white hover:bg-slate-50"
+                  >
+                    Next <ChevronRight className="h-3.5 w-3.5 ml-1" />
+                  </Button>
+                </div>
               </div>
             )}
           </div>
-
-          {/* Ledger Pagination */}
-          {totalLedgerPages > 1 && (
-            <div className="p-3.5 border-t border-slate-200/80 bg-slate-50/40 flex items-center justify-between text-xs text-slate-500">
-              <span>
-                Showing {(ledgerPage - 1) * ledgerPageSize + 1} to{" "}
-                {Math.min(ledgerPage * ledgerPageSize, totalLedgerCount)} of {totalLedgerCount} records
-              </span>
-              <div className="flex items-center gap-1.5">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setLedgerPage((p) => Math.max(1, p - 1))}
-                  disabled={ledgerPage === 1}
-                  className="h-8 text-xs font-semibold rounded-xl border-slate-200 bg-white hover:bg-slate-50"
-                >
-                  <ChevronLeft className="h-3.5 w-3.5 mr-1" /> Previous
-                </Button>
-                <span className="font-semibold px-2 font-mono text-slate-900">
-                  {ledgerPage} / {totalLedgerPages}
-                </span>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setLedgerPage((p) => Math.min(totalLedgerPages, p + 1))}
-                  disabled={ledgerPage >= totalLedgerPages}
-                  className="h-8 text-xs font-semibold rounded-xl border-slate-200 bg-white hover:bg-slate-50"
-                >
-                  Next <ChevronRight className="h-3.5 w-3.5 ml-1" />
-                </Button>
-              </div>
-            </div>
-          )}
         </div>
       )}
 
@@ -1750,10 +1996,10 @@ export function InventoryView() {
       </Dialog>
 
       {/* ========================================================================= */}
-      {/* 6. PER-PART STOCK HISTORY MODAL                                           */}
+      {/* 6. PER-PART STOCK HISTORY MODAL WITH CUSTOM DATE FILTERS & PERIOD SUMMARY */}
       {/* ========================================================================= */}
       <Dialog open={historyModalOpen} onOpenChange={setHistoryModalOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-base font-bold text-foreground">
               <History className="h-5 w-5 text-blue-600" /> Stock Movement History
@@ -1778,28 +2024,81 @@ export function InventoryView() {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="mt-2 max-h-[60vh] overflow-y-auto">
+          {/* Quick Filter Chips & Custom Date Range */}
+          <div className="pt-2">
+            <HistoryDateFilterBar
+              preset={historyPreset}
+              onPresetChange={setHistoryPreset}
+              fromDate={historyFromDate}
+              toDate={historyToDate}
+              onCustomRangeApply={(from, to) => {
+                setHistoryFromDate(from);
+                setHistoryToDate(to);
+              }}
+              onClear={() => {
+                setHistoryPreset("all");
+                setHistoryFromDate("");
+                setHistoryToDate("");
+              }}
+            />
+          </div>
+
+          {/* Period Summary KPI Cards */}
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 pt-1">
+            <div className="p-2.5 bg-slate-50 dark:bg-slate-800/50 rounded-xl border text-center">
+              <span className="text-[10px] font-bold text-slate-500 uppercase block">Opening Stock</span>
+              <span className="text-sm font-bold font-mono text-slate-900 dark:text-slate-100 block mt-0.5">
+                {historySummary.openingStock} {historyPart?.unit || "pcs"}
+              </span>
+            </div>
+            <div className="p-2.5 bg-slate-50 dark:bg-slate-800/50 rounded-xl border text-center">
+              <span className="text-[10px] font-bold text-emerald-600 uppercase block">Stock In (+)</span>
+              <span className="text-sm font-bold font-mono text-emerald-600 block mt-0.5">
+                +{historySummary.stockIn}
+              </span>
+            </div>
+            <div className="p-2.5 bg-slate-50 dark:bg-slate-800/50 rounded-xl border text-center">
+              <span className="text-[10px] font-bold text-rose-600 uppercase block">Stock Out (-)</span>
+              <span className="text-sm font-bold font-mono text-rose-600 block mt-0.5">
+                -{historySummary.stockOut}
+              </span>
+            </div>
+            <div className="p-2.5 bg-slate-50 dark:bg-slate-800/50 rounded-xl border text-center">
+              <span className="text-[10px] font-bold text-amber-600 uppercase block">Adjustments</span>
+              <span className="text-sm font-bold font-mono text-amber-600 block mt-0.5">
+                {historySummary.adjustments > 0 ? `+${historySummary.adjustments}` : historySummary.adjustments}
+              </span>
+            </div>
+            <div className="p-2.5 bg-slate-50 dark:bg-slate-800/50 rounded-xl border text-center col-span-2 sm:col-span-1">
+              <span className="text-[10px] font-bold text-blue-600 uppercase block">Closing Stock</span>
+              <span className="text-sm font-black font-mono text-blue-600 block mt-0.5">
+                {historySummary.closingStock} {historyPart?.unit || "pcs"}
+              </span>
+            </div>
+          </div>
+
+          <div className="mt-2 max-h-[50vh] overflow-y-auto">
             {loadingHistory ? (
               <div className="py-16 text-center text-muted-foreground">
                 <Loader2 className="h-8 w-8 mx-auto animate-spin mb-3 text-blue-600" />
                 <p className="font-medium text-sm">Loading stock history...</p>
               </div>
-            ) : historyTransactions.length > 0 ? (
-              <div className="border rounded-md overflow-hidden">
-                <Table>
+            ) : filteredHistoryTransactions.length > 0 ? (
+              <div className="border rounded-xl overflow-hidden">
+                <Table className="w-full table-fixed text-xs">
                   <TableHeader>
                     <TableRow className="bg-slate-50 dark:bg-slate-800/60 text-xs font-bold">
-                      <TableHead className="w-[20%]">Date</TableHead>
-                      <TableHead className="w-[22%]">Type</TableHead>
-                      <TableHead className="w-[18%]">Reference</TableHead>
-                      <TableHead className="w-[10%] text-right">Qty In</TableHead>
-                      <TableHead className="w-[10%] text-right">Qty Out</TableHead>
+                      <TableHead className="w-[18%]">Date</TableHead>
+                      <TableHead className="w-[22%] min-w-0">Type</TableHead>
+                      <TableHead className="w-[20%] min-w-0">Reference</TableHead>
+                      <TableHead className="w-[10%] text-right">In</TableHead>
+                      <TableHead className="w-[10%] text-right">Out</TableHead>
                       <TableHead className="w-[10%] text-right">Before</TableHead>
                       <TableHead className="w-[10%] text-right font-black">After</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {historyTransactions.map((tx) => {
+                    {filteredHistoryTransactions.map((tx) => {
                       const isPositive = tx.quantity > 0;
                       const isNegative = tx.quantity < 0;
 
@@ -1808,7 +2107,7 @@ export function InventoryView() {
                           <TableCell className="text-muted-foreground font-mono text-[11px] py-2.5">
                             {formatDate(tx.created_at)}
                           </TableCell>
-                          <TableCell className="py-2.5">
+                          <TableCell className="py-2.5 min-w-0">
                             <span
                               className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
                                 tx.transaction_type.includes("purchase") || tx.transaction_type.includes("in") || tx.transaction_type.includes("opening")
@@ -1821,14 +2120,14 @@ export function InventoryView() {
                               {tx.transaction_type.replace(/_/g, " ")}
                             </span>
                             {tx.notes && (
-                              <p className="text-[10px] text-muted-foreground mt-0.5 line-clamp-1">{tx.notes}</p>
+                              <p className="text-[10px] text-muted-foreground mt-0.5 truncate max-w-full" title={tx.notes}>{tx.notes}</p>
                             )}
                           </TableCell>
-                          <TableCell className="font-mono text-xs font-semibold text-foreground py-2.5">
+                          <TableCell className="font-mono text-xs font-semibold text-foreground py-2.5 min-w-0">
                             {tx.reference_type === "job_card" && tx.reference_id ? (
                               <a
                                 href={`/job-cards/${tx.reference_id}`}
-                                className="text-blue-600 hover:text-blue-800 hover:underline inline-flex items-center gap-1 font-bold"
+                                className="text-blue-600 hover:text-blue-800 hover:underline inline-flex items-center gap-1 font-bold truncate max-w-full"
                                 title="Open Job Card"
                               >
                                 {tx.notes?.includes("Job Card #")
@@ -1836,7 +2135,9 @@ export function InventoryView() {
                                   : `Job Card ${tx.reference_id}`}
                               </a>
                             ) : (
-                              tx.reference_id || tx.reference_type || "Direct"
+                              <span className="truncate block" title={tx.reference_id || tx.reference_type || "Direct"}>
+                                {tx.reference_id || tx.reference_type || "Direct"}
+                              </span>
                             )}
                           </TableCell>
                           <TableCell className="text-right font-mono font-bold text-emerald-600 py-2.5">
@@ -1858,8 +2159,8 @@ export function InventoryView() {
                 </Table>
               </div>
             ) : (
-              <div className="py-12 text-center text-xs text-muted-foreground">
-                No inventory transactions recorded for this part yet.
+              <div className="py-12 text-center text-xs text-muted-foreground border rounded-xl">
+                No inventory transactions found for this selected period.
               </div>
             )}
           </div>
@@ -1869,6 +2170,205 @@ export function InventoryView() {
               Close
             </Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* ========================================================================= */}
+      {/* 7. EDIT SPARE PART MODAL DIALOG                                           */}
+      {/* ========================================================================= */}
+      <Dialog open={editPartModalOpen} onOpenChange={setEditPartModalOpen}>
+        <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-base font-bold text-foreground">
+              <Edit2 className="h-5 w-5 text-blue-600" /> Edit Spare Part Details
+            </DialogTitle>
+            <DialogDescription className="text-xs text-muted-foreground">
+              Modify catalog specifications, pricing, shelf location, and alert thresholds. Stock is safely protected.
+            </DialogDescription>
+          </DialogHeader>
+
+          {editPartError && (
+            <div className="p-3 bg-rose-50 border border-rose-200 rounded-lg text-xs font-semibold text-rose-700 flex items-start gap-2">
+              <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
+              <span>{editPartError}</span>
+            </div>
+          )}
+
+          <form onSubmit={handleSaveEditPart} className="space-y-3.5 pt-1">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label htmlFor="edit-p-name" className="text-xs font-bold">
+                  Part Name <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="edit-p-name"
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  required
+                  className="h-8 text-xs font-medium"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <Label htmlFor="edit-p-num" className="text-xs font-bold">Part Number / OEM</Label>
+                <Input
+                  id="edit-p-num"
+                  value={editPartNumber}
+                  onChange={(e) => setEditPartNumber(e.target.value)}
+                  className="h-8 text-xs font-mono font-semibold"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label htmlFor="edit-p-brand" className="text-xs font-bold">Brand / Manufacturer</Label>
+                <Input
+                  id="edit-p-brand"
+                  value={editBrand}
+                  onChange={(e) => setEditBrand(e.target.value)}
+                  className="h-8 text-xs"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <Label htmlFor="edit-p-unit" className="text-xs font-bold">Unit of Measurement</Label>
+                <select
+                  id="edit-p-unit"
+                  value={editUnit}
+                  onChange={(e) => setEditUnit(e.target.value)}
+                  className="flex h-8 w-full rounded-md border border-input bg-background px-2 text-xs shadow-sm font-medium"
+                >
+                  <option value="piece">Piece (pcs)</option>
+                  <option value="set">Set</option>
+                  <option value="pair">Pair</option>
+                  <option value="can">Can / Tin</option>
+                  <option value="bottle">Bottle</option>
+                  <option value="liter">Liter (L)</option>
+                  <option value="meter">Meter (m)</option>
+                  <option value="kg">Kilogram (kg)</option>
+                  <option value="box">Box</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="space-y-1">
+                <Label htmlFor="edit-p-cost" className="text-xs font-bold">Purchase Cost (AED)</Label>
+                <Input
+                  id="edit-p-cost"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={editPurchasePrice}
+                  onChange={(e) => setEditPurchasePrice(e.target.value === "" ? "" : Number(e.target.value))}
+                  className="h-8 text-xs font-mono"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <Label htmlFor="edit-p-sell" className="text-xs font-bold">Selling Price (AED)</Label>
+                <Input
+                  id="edit-p-sell"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={editSellingPrice}
+                  onChange={(e) => setEditSellingPrice(e.target.value === "" ? "" : Number(e.target.value))}
+                  className="h-8 text-xs font-mono font-bold text-blue-600"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <Label htmlFor="edit-p-min" className="text-xs font-bold">Min Stock Alert</Label>
+                <Input
+                  id="edit-p-min"
+                  type="number"
+                  min="0"
+                  step="1"
+                  value={editMinStock}
+                  onChange={(e) => setEditMinStock(e.target.value === "" ? "" : Number(e.target.value))}
+                  className="h-8 text-xs font-mono"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label htmlFor="edit-p-sup" className="text-xs font-bold">Preferred Supplier</Label>
+                <select
+                  id="edit-p-sup"
+                  value={editSupplierId}
+                  onChange={(e) => setEditSupplierId(e.target.value)}
+                  className="flex h-8 w-full rounded-md border border-input bg-background px-2 text-xs shadow-sm font-medium"
+                >
+                  <option value="">-- Direct / Unknown Supplier --</option>
+                  {suppliers.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="space-y-1">
+                <Label htmlFor="edit-p-loc" className="text-xs font-bold">Rack / Storage Location</Label>
+                <Input
+                  id="edit-p-loc"
+                  placeholder="e.g. Shelf A-02 / Bin 14"
+                  value={editLocation}
+                  onChange={(e) => setEditLocation(e.target.value)}
+                  className="h-8 text-xs font-mono"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <Label htmlFor="edit-p-desc" className="text-xs font-bold">Description / Fitment Notes</Label>
+              <Textarea
+                id="edit-p-desc"
+                rows={2}
+                value={editDescription}
+                onChange={(e) => setEditDescription(e.target.value)}
+                className="text-xs"
+              />
+            </div>
+
+            <div className="flex items-center gap-2 pt-1">
+              <input
+                type="checkbox"
+                id="edit-p-active"
+                checked={editIsActive}
+                onChange={(e) => setEditIsActive(e.target.checked)}
+                className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+              />
+              <Label htmlFor="edit-p-active" className="text-xs font-bold cursor-pointer">
+                Spare Part is Active
+              </Label>
+            </div>
+
+            <DialogFooter className="pt-3 border-t">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setEditPartModalOpen(false)}
+                disabled={savingEditPart}
+                className="text-xs"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                size="sm"
+                disabled={savingEditPart}
+                className="text-xs font-bold bg-primary text-primary-foreground"
+              >
+                {savingEditPart ? <Loader2 className="h-4 w-4 animate-spin mr-1.5" /> : null}
+                Update Spare Part
+              </Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
     </div>
