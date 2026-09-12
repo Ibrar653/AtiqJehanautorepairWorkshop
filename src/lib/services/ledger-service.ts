@@ -2684,7 +2684,7 @@ export async function searchAccountsAndLedger(
   // 1. Search Chart of Accounts (Ledger Accounts)
   const allowAccounts =
     normalizedFilter === "all" ||
-    ["asset", "liability", "income", "expense", "equity", "banks", "owner"].includes(normalizedFilter);
+    ["asset", "liability", "income", "expense", "equity", "customers", "suppliers", "workers", "banks", "owner"].includes(normalizedFilter);
 
   if (allowAccounts) {
     const accList = dataContext?.accounts || (await getLedgerAccounts());
@@ -2695,8 +2695,11 @@ export async function searchAccountsAndLedger(
         (normalizedFilter === "income" && acc.account_type !== "income") ||
         (normalizedFilter === "expense" && acc.account_type !== "expense") ||
         (normalizedFilter === "equity" && acc.account_type !== "equity") ||
-        (normalizedFilter === "banks" && acc.account_sub_type !== "Bank") ||
-        (normalizedFilter === "owner" && acc.account_type !== "equity" && !acc.account_sub_type.toLowerCase().includes("owner"))
+        (normalizedFilter === "customers" && acc.related_entity_type !== "customer" && !acc.account_sub_type.toLowerCase().includes("customer")) ||
+        (normalizedFilter === "suppliers" && acc.related_entity_type !== "supplier" && !acc.account_sub_type.toLowerCase().includes("supplier")) ||
+        (normalizedFilter === "workers" && acc.related_entity_type !== "worker" && !acc.account_sub_type.toLowerCase().includes("worker") && !acc.account_sub_type.toLowerCase().includes("salary")) ||
+        (normalizedFilter === "banks" && acc.related_entity_type !== "bank" && acc.account_sub_type !== "Bank" && !acc.account_sub_type.toLowerCase().includes("bank")) ||
+        (normalizedFilter === "owner" && acc.account_type !== "equity" && acc.related_entity_type !== "owner" && !acc.account_sub_type.toLowerCase().includes("owner"))
       ) {
         continue;
       }
@@ -2709,8 +2712,11 @@ export async function searchAccountsAndLedger(
 
       if (matchName || matchCode || matchType || matchSubType || matchNotes) {
         let relType: LedgerSearchResult["related_entity_type"] = "ledger_account";
-        if (acc.account_sub_type === "Bank") relType = "bank";
-        else if (acc.account_type === "equity" || acc.account_sub_type.toLowerCase().includes("owner")) relType = "owner";
+        if (acc.related_entity_type === "customer" || acc.account_sub_type.toLowerCase().includes("customer")) relType = "customer";
+        else if (acc.related_entity_type === "supplier" || acc.account_sub_type.toLowerCase().includes("supplier")) relType = "supplier";
+        else if (acc.related_entity_type === "worker" || acc.account_sub_type.toLowerCase().includes("worker")) relType = "worker";
+        else if (acc.related_entity_type === "bank" || acc.account_sub_type.toLowerCase().includes("bank")) relType = "bank";
+        else if (acc.account_type === "equity" || acc.related_entity_type === "owner" || acc.account_sub_type.toLowerCase().includes("owner")) relType = "owner";
 
         results.push({
           id: `acc-${acc.id}`,

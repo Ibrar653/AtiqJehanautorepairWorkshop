@@ -144,6 +144,115 @@ const SEARCH_FILTERS: { id: LedgerSearchFilter; label: string }[] = [
   { id: "equity", label: "Equity" },
 ];
 
+export interface AccountCategoryConfig {
+  value: string;
+  label: string;
+  group: "standard" | "business";
+  baseType: AccountType;
+  relatedEntityType: "customer" | "supplier" | "worker" | "bank" | "owner" | "none";
+  defaultSubType: string;
+  subTypes: string[];
+}
+
+export const ACCOUNT_CATEGORY_OPTIONS: AccountCategoryConfig[] = [
+  // STANDARD ACCOUNT TYPES
+  {
+    value: "asset",
+    label: "Asset",
+    group: "standard",
+    baseType: "asset",
+    relatedEntityType: "none",
+    defaultSubType: "Cash",
+    subTypes: ["Cash", "Bank", "Customer Receivable", "Inventory", "Staff Advance", "Other Current Asset"],
+  },
+  {
+    value: "liability",
+    label: "Liability",
+    group: "standard",
+    baseType: "liability",
+    relatedEntityType: "none",
+    defaultSubType: "Supplier Payable",
+    subTypes: ["Customer Advance", "Supplier Payable", "Worker Payable", "VAT / Tax Payable", "Other Liability"],
+  },
+  {
+    value: "income",
+    label: "Income",
+    group: "standard",
+    baseType: "income",
+    relatedEntityType: "none",
+    defaultSubType: "Service Revenue",
+    subTypes: ["Service Revenue", "Spare Parts Revenue", "Other Income"],
+  },
+  {
+    value: "expense",
+    label: "Expense",
+    group: "standard",
+    baseType: "expense",
+    relatedEntityType: "none",
+    defaultSubType: "Miscellaneous Expense",
+    subTypes: [
+      "Rent",
+      "Salaries / Wages",
+      "Electricity",
+      "Water",
+      "Internet / Phone",
+      "Fuel",
+      "Tools",
+      "Workshop Supplies",
+      "Maintenance",
+      "Government Fees",
+      "Miscellaneous Expense",
+    ],
+  },
+  {
+    value: "equity",
+    label: "Equity",
+    group: "standard",
+    baseType: "equity",
+    relatedEntityType: "none",
+    defaultSubType: "Owner Capital",
+    subTypes: ["Owner Capital", "Owner Drawings", "Owner Advance"],
+  },
+
+  // BUSINESS ACCOUNTS
+  {
+    value: "customer",
+    label: "Customers",
+    group: "business",
+    baseType: "asset",
+    relatedEntityType: "customer",
+    defaultSubType: "Customer Receivable",
+    subTypes: ["Customer Receivable", "Trade Debtor / Client Account", "Corporate Fleet Account", "Other Receivable"],
+  },
+  {
+    value: "supplier",
+    label: "Suppliers",
+    group: "business",
+    baseType: "liability",
+    relatedEntityType: "supplier",
+    defaultSubType: "Supplier Payable",
+    subTypes: ["Supplier Payable", "Trade Creditor / Vendor Account", "Parts Distributor Payable", "Other Payable"],
+  },
+  {
+    value: "worker",
+    label: "Workers",
+    group: "business",
+    baseType: "liability",
+    relatedEntityType: "worker",
+    defaultSubType: "Worker Payable",
+    subTypes: ["Worker Payable", "Salary Payable", "Technician Commission Payable", "Staff Welfare Payable"],
+  },
+  {
+    value: "bank",
+    label: "Banks",
+    group: "business",
+    baseType: "asset",
+    relatedEntityType: "bank",
+    defaultSubType: "Bank",
+    subTypes: ["Bank", "Cash at Bank", "Savings Account", "Current Account", "POS / Card Settlement Account"],
+  },
+];
+
 export function AccountsView() {
   const { user, role, isOwner, isManager, isViewer, canDelete: authCanDelete, canEdit: authCanEdit } = usePermissions();
   const canManageAccounts = isOwner || role === "admin";
@@ -292,6 +401,7 @@ export function AccountsView() {
 
   // Add Account Modal
   const [newAccountOpen, setNewAccountOpen] = useState(false);
+  const [accCategory, setAccCategory] = useState<string>("expense");
   const [accCode, setAccCode] = useState("");
   const [accName, setAccName] = useState("");
   const [accType, setAccType] = useState<AccountType>("expense");
@@ -740,13 +850,14 @@ export function AccountsView() {
 
   const handleCreateAccount = async (e: React.FormEvent) => {
     e.preventDefault();
+    const cfg = ACCOUNT_CATEGORY_OPTIONS.find((c) => c.value === accCategory) || ACCOUNT_CATEGORY_OPTIONS[3]; // default expense
     try {
       await createLedgerAccount({
         account_code: accCode.trim(),
         account_name: accName.trim(),
-        account_type: accType,
+        account_type: cfg.baseType,
         account_sub_type: accSubType,
-        related_entity_type: "none",
+        related_entity_type: cfg.relatedEntityType,
         related_entity_id: null,
         opening_balance: Number(accOpeningBal) || 0,
         opening_balance_date: new Date().toISOString().slice(0, 10),
@@ -758,6 +869,10 @@ export function AccountsView() {
       setAccCode("");
       setAccName("");
       setAccNotes("");
+      setAccOpeningBal("0");
+      setAccCategory("expense");
+      setAccType("expense");
+      setAccSubType("Miscellaneous Expense");
       loadAllData();
     } catch (err: any) {
       showToast(err.message || "Failed to create account", "error");
@@ -1489,7 +1604,21 @@ export function AccountsView() {
 
   // Filtered accounts
   const filteredAccounts = accounts.filter((acc) => {
-    if (accountTypeFilter !== "all" && acc.account_type !== accountTypeFilter) return false;
+    if (accountTypeFilter !== "all") {
+      if (accountTypeFilter === "customers") {
+        if (acc.related_entity_type !== "customer" && !acc.account_sub_type.toLowerCase().includes("customer")) return false;
+      } else if (accountTypeFilter === "suppliers") {
+        if (acc.related_entity_type !== "supplier" && !acc.account_sub_type.toLowerCase().includes("supplier")) return false;
+      } else if (accountTypeFilter === "workers") {
+        if (acc.related_entity_type !== "worker" && !acc.account_sub_type.toLowerCase().includes("worker") && !acc.account_sub_type.toLowerCase().includes("salary")) return false;
+      } else if (accountTypeFilter === "banks") {
+        if (acc.related_entity_type !== "bank" && acc.account_sub_type !== "Bank" && !acc.account_sub_type.toLowerCase().includes("bank")) return false;
+      } else if (accountTypeFilter === "owner") {
+        if (acc.account_type !== "equity" && acc.related_entity_type !== "owner" && !acc.account_sub_type.toLowerCase().includes("owner")) return false;
+      } else if (acc.account_type !== accountTypeFilter) {
+        return false;
+      }
+    }
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       return (
@@ -1753,44 +1882,73 @@ export function AccountsView() {
 
       {/* Main Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-9 h-auto p-1.5 bg-slate-100/80 rounded-2xl border border-slate-200/80 shadow-2xs gap-1">
-          <TabsTrigger value="dashboard" className="text-xs py-2.5 rounded-xl font-semibold gap-1.5 transition-all data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-xs">
-            <LayoutDashboard className="w-3.5 h-3.5" />
-            Dashboard
-          </TabsTrigger>
-          <TabsTrigger value="accounts" className="text-xs py-2.5 rounded-xl font-semibold gap-1.5 transition-all data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-xs">
-            <BookOpen className="w-3.5 h-3.5" />
-            Accounts
-          </TabsTrigger>
-          <TabsTrigger value="customers" className="text-xs py-2.5 rounded-xl font-semibold gap-1.5 transition-all data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-xs">
-            <Users className="w-3.5 h-3.5" />
-            Customers
-          </TabsTrigger>
-          <TabsTrigger value="suppliers" className="text-xs py-2.5 rounded-xl font-semibold gap-1.5 transition-all data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-xs">
-            <Truck className="w-3.5 h-3.5" />
-            Suppliers
-          </TabsTrigger>
-          <TabsTrigger value="workers" className="text-xs py-2.5 rounded-xl font-semibold gap-1.5 transition-all data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-xs">
-            <HardHat className="w-3.5 h-3.5" />
-            Workers
-          </TabsTrigger>
-          <TabsTrigger value="banks" className="text-xs py-2.5 rounded-xl font-semibold gap-1.5 transition-all data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-xs">
-            <Landmark className="w-3.5 h-3.5" />
-            Banks
-          </TabsTrigger>
-          <TabsTrigger value="owner" className="text-xs py-2.5 rounded-xl font-semibold gap-1.5 transition-all data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-xs">
-            <UserCheck className="w-3.5 h-3.5" />
-            Owner
-          </TabsTrigger>
-          <TabsTrigger value="transfers" className="text-xs py-2.5 rounded-xl font-semibold gap-1.5 transition-all data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-xs">
-            <ArrowRightLeft className="w-3.5 h-3.5" />
-            Transfers
-          </TabsTrigger>
-          <TabsTrigger value="journal" className="text-xs py-2.5 rounded-xl font-semibold gap-1.5 transition-all data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-xs">
-            <FileSpreadsheet className="w-3.5 h-3.5" />
-            Journal
-          </TabsTrigger>
-        </TabsList>
+        <div className="w-full overflow-x-auto pb-1 -mb-1 no-scrollbar">
+          <TabsList className="inline-flex w-full min-w-max items-center justify-start sm:justify-between h-11 p-1 bg-slate-100/90 dark:bg-slate-800/90 rounded-xl border border-slate-200/80 dark:border-slate-700/80 shadow-2xs gap-1">
+            <TabsTrigger
+              value="dashboard"
+              className="inline-flex items-center justify-center gap-1.5 h-9 px-3 text-xs font-semibold whitespace-nowrap rounded-lg transition-all text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 data-[state=active]:bg-white dark:data-[state=active]:bg-slate-900 data-[state=active]:text-blue-600 dark:data-[state=active]:text-blue-400 data-[state=active]:shadow-xs"
+            >
+              <LayoutDashboard className="w-3.5 h-3.5 shrink-0" />
+              Dashboard
+            </TabsTrigger>
+            <TabsTrigger
+              value="accounts"
+              className="inline-flex items-center justify-center gap-1.5 h-9 px-3 text-xs font-semibold whitespace-nowrap rounded-lg transition-all text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 data-[state=active]:bg-white dark:data-[state=active]:bg-slate-900 data-[state=active]:text-blue-600 dark:data-[state=active]:text-blue-400 data-[state=active]:shadow-xs"
+            >
+              <BookOpen className="w-3.5 h-3.5 shrink-0" />
+              Accounts
+            </TabsTrigger>
+            <TabsTrigger
+              value="customers"
+              className="inline-flex items-center justify-center gap-1.5 h-9 px-3 text-xs font-semibold whitespace-nowrap rounded-lg transition-all text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 data-[state=active]:bg-white dark:data-[state=active]:bg-slate-900 data-[state=active]:text-blue-600 dark:data-[state=active]:text-blue-400 data-[state=active]:shadow-xs"
+            >
+              <Users className="w-3.5 h-3.5 shrink-0" />
+              Customers
+            </TabsTrigger>
+            <TabsTrigger
+              value="suppliers"
+              className="inline-flex items-center justify-center gap-1.5 h-9 px-3 text-xs font-semibold whitespace-nowrap rounded-lg transition-all text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 data-[state=active]:bg-white dark:data-[state=active]:bg-slate-900 data-[state=active]:text-blue-600 dark:data-[state=active]:text-blue-400 data-[state=active]:shadow-xs"
+            >
+              <Truck className="w-3.5 h-3.5 shrink-0" />
+              Suppliers
+            </TabsTrigger>
+            <TabsTrigger
+              value="workers"
+              className="inline-flex items-center justify-center gap-1.5 h-9 px-3 text-xs font-semibold whitespace-nowrap rounded-lg transition-all text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 data-[state=active]:bg-white dark:data-[state=active]:bg-slate-900 data-[state=active]:text-blue-600 dark:data-[state=active]:text-blue-400 data-[state=active]:shadow-xs"
+            >
+              <HardHat className="w-3.5 h-3.5 shrink-0" />
+              Workers
+            </TabsTrigger>
+            <TabsTrigger
+              value="banks"
+              className="inline-flex items-center justify-center gap-1.5 h-9 px-3 text-xs font-semibold whitespace-nowrap rounded-lg transition-all text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 data-[state=active]:bg-white dark:data-[state=active]:bg-slate-900 data-[state=active]:text-blue-600 dark:data-[state=active]:text-blue-400 data-[state=active]:shadow-xs"
+            >
+              <Landmark className="w-3.5 h-3.5 shrink-0" />
+              Banks
+            </TabsTrigger>
+            <TabsTrigger
+              value="owner"
+              className="inline-flex items-center justify-center gap-1.5 h-9 px-3 text-xs font-semibold whitespace-nowrap rounded-lg transition-all text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 data-[state=active]:bg-white dark:data-[state=active]:bg-slate-900 data-[state=active]:text-blue-600 dark:data-[state=active]:text-blue-400 data-[state=active]:shadow-xs"
+            >
+              <UserCheck className="w-3.5 h-3.5 shrink-0" />
+              Owner
+            </TabsTrigger>
+            <TabsTrigger
+              value="transfers"
+              className="inline-flex items-center justify-center gap-1.5 h-9 px-3 text-xs font-semibold whitespace-nowrap rounded-lg transition-all text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 data-[state=active]:bg-white dark:data-[state=active]:bg-slate-900 data-[state=active]:text-blue-600 dark:data-[state=active]:text-blue-400 data-[state=active]:shadow-xs"
+            >
+              <ArrowRightLeft className="w-3.5 h-3.5 shrink-0" />
+              Transfers
+            </TabsTrigger>
+            <TabsTrigger
+              value="journal"
+              className="inline-flex items-center justify-center gap-1.5 h-9 px-3 text-xs font-semibold whitespace-nowrap rounded-lg transition-all text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 data-[state=active]:bg-white dark:data-[state=active]:bg-slate-900 data-[state=active]:text-blue-600 dark:data-[state=active]:text-blue-400 data-[state=active]:shadow-xs"
+            >
+              <FileSpreadsheet className="w-3.5 h-3.5 shrink-0" />
+              Journal
+            </TabsTrigger>
+          </TabsList>
+        </div>
 
         {/* ─── TAB 1: DASHBOARD ───────────────────────────────────────────── */}
         <TabsContent value="dashboard" className="space-y-6">
@@ -2138,16 +2296,28 @@ export function AccountsView() {
 
             <div className="flex items-center gap-2">
               <Select value={accountTypeFilter} onValueChange={(val) => { if (val) setAccountTypeFilter(val); }}>
-                <SelectTrigger className="w-[160px] text-xs h-10 rounded-xl border-slate-200 bg-white font-medium">
-                  <SelectValue placeholder="All Types" />
+                <SelectTrigger className="w-[180px] text-xs h-10 rounded-xl border-slate-200 bg-white font-medium">
+                  <SelectValue placeholder="All Accounts" />
                 </SelectTrigger>
-                <SelectContent className="rounded-xl border-slate-200 shadow-lg">
-                  <SelectItem value="all">All Types</SelectItem>
+                <SelectContent className="rounded-xl border-slate-200 shadow-xl">
+                  <SelectItem value="all">All Accounts</SelectItem>
+                  <div className="px-2 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                    Standard Types
+                  </div>
                   <SelectItem value="asset">Asset (1000s)</SelectItem>
                   <SelectItem value="liability">Liability (2000s)</SelectItem>
                   <SelectItem value="equity">Equity (3000s)</SelectItem>
                   <SelectItem value="income">Income (4000s)</SelectItem>
                   <SelectItem value="expense">Expense (5000s)</SelectItem>
+                  <div className="my-1 border-t border-slate-100" />
+                  <div className="px-2 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                    Business Categories
+                  </div>
+                  <SelectItem value="customers">Customers</SelectItem>
+                  <SelectItem value="suppliers">Suppliers</SelectItem>
+                  <SelectItem value="workers">Workers</SelectItem>
+                  <SelectItem value="banks">Banks</SelectItem>
+                  <SelectItem value="owner">Owner / Equity</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -4456,20 +4626,35 @@ export function AccountsView() {
                   />
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs font-semibold">Account Type *</Label>
+                  <Label className="text-xs font-semibold">Account Type / Category *</Label>
                   <Select
-                    value={accType}
+                    value={accCategory}
                     onValueChange={(val: any) => {
-                      setAccType(val);
-                      const defaultSubs = DEFAULT_ACCOUNT_SUB_TYPES[val] || [];
-                      if (defaultSubs.length > 0) setAccSubType(defaultSubs[0]);
+                      setAccCategory(val);
+                      const cfg = ACCOUNT_CATEGORY_OPTIONS.find((c) => c.value === val);
+                      if (cfg) {
+                        setAccType(cfg.baseType);
+                        setAccSubType(cfg.defaultSubType);
+                      }
                     }}
                   >
                     <SelectTrigger className="text-xs h-9">
                       <SelectValue placeholder="Select Type" />
                     </SelectTrigger>
-                    <SelectContent>
-                      {ACCOUNT_TYPES.map((t) => (
+                    <SelectContent className="rounded-xl border-slate-200 shadow-xl">
+                      <div className="px-2 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                        Standard Account Types
+                      </div>
+                      {ACCOUNT_CATEGORY_OPTIONS.filter((o) => o.group === "standard").map((t) => (
+                        <SelectItem key={t.value} value={t.value}>
+                          {t.label}
+                        </SelectItem>
+                      ))}
+                      <div className="my-1 border-t border-slate-100" />
+                      <div className="px-2 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                        Business Accounts
+                      </div>
+                      {ACCOUNT_CATEGORY_OPTIONS.filter((o) => o.group === "business").map((t) => (
                         <SelectItem key={t.value} value={t.value}>
                           {t.label}
                         </SelectItem>
@@ -4478,6 +4663,22 @@ export function AccountsView() {
                   </Select>
                 </div>
               </div>
+
+              {/* Informational mapping banner for Business Account categories */}
+              {(() => {
+                const currentCfg = ACCOUNT_CATEGORY_OPTIONS.find((c) => c.value === accCategory);
+                if (currentCfg && currentCfg.group === "business") {
+                  return (
+                    <div className="text-[11px] text-blue-700 dark:text-blue-300 font-medium flex items-center gap-1.5 bg-blue-50/80 dark:bg-blue-950/40 p-2 rounded-xl border border-blue-200/80 dark:border-blue-900/60">
+                      <Info className="w-3.5 h-3.5 shrink-0 text-blue-600 dark:text-blue-400" />
+                      <span>
+                        Base Accounting Type: <strong className="uppercase font-bold">{currentCfg.baseType}</strong> ({currentCfg.label})
+                      </span>
+                    </div>
+                  );
+                }
+                return null;
+              })()}
 
               <div className="space-y-1">
                 <Label className="text-xs font-semibold">Account Name *</Label>
@@ -4496,8 +4697,8 @@ export function AccountsView() {
                   <SelectTrigger className="text-xs h-9">
                     <SelectValue placeholder="Sub Type" />
                   </SelectTrigger>
-                  <SelectContent>
-                    {(DEFAULT_ACCOUNT_SUB_TYPES[accType] || []).map((sub) => (
+                  <SelectContent className="rounded-xl border-slate-200 shadow-lg">
+                    {(ACCOUNT_CATEGORY_OPTIONS.find((c) => c.value === accCategory)?.subTypes || DEFAULT_ACCOUNT_SUB_TYPES[accType] || []).map((sub) => (
                       <SelectItem key={sub} value={sub}>
                         {sub}
                       </SelectItem>
@@ -4533,7 +4734,7 @@ export function AccountsView() {
               <Button type="button" variant="outline" size="sm" onClick={() => setNewAccountOpen(false)}>
                 Cancel
               </Button>
-              <Button type="submit" size="sm" className="bg-blue-600 hover:bg-blue-700 text-white">
+              <Button type="submit" size="sm" className="bg-blue-600 hover:bg-blue-700 text-white font-semibold">
                 Save Account
               </Button>
             </DialogFooter>
