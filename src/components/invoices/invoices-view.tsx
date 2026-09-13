@@ -1283,7 +1283,7 @@ export function InvoicesView() {
                       {formatCurrency(selectedInvoice.total)}
                     </div>
                     <span className="text-[10px] text-blue-200">
-                      Inclusive of 5% UAE VAT
+                      Inclusive of {selectedInvoice.vat_rate ?? 5}% UAE VAT
                     </span>
                   </div>
                 </div>
