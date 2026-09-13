@@ -28,6 +28,7 @@ import {
   Search,
   Plus,
   Trash2,
+  Pencil,
   AlertCircle,
   CheckCircle2,
   DollarSign,
@@ -72,10 +73,14 @@ export interface SelectedServiceRow {
 
 export interface SelectedPartRow {
   id: string; // client temporary id
-  part_id: string;
+  part_id?: string | null;
+  item_source?: "inventory" | "manual";
   part_name: string;
   part_number?: string | null;
   brand?: string | null;
+  description?: string | null;
+  notes?: string | null;
+  unit?: string | null;
   available_stock: number;
   quantity: number;
   unit_price: number;
@@ -142,8 +147,22 @@ export function DirectInvoiceModal({
   const [partDropdownOpen, setPartDropdownOpen] = useState(false);
   const [selectedParts, setSelectedParts] = useState<SelectedPartRow[]>([]);
 
+  // Manual Spare Part Dialog Entry State
+  const [manualPartModalOpen, setManualPartModalOpen] = useState(false);
+  const [editingPartRowId, setEditingPartRowId] = useState<string | null>(null);
+  const [manualPartName, setManualPartName] = useState("");
+  const [manualPartNumber, setManualPartNumber] = useState("");
+  const [manualPartBrand, setManualPartBrand] = useState("");
+  const [manualPartDesc, setManualPartDesc] = useState("");
+  const [manualPartQty, setManualPartQty] = useState<number | "">(1);
+  const [manualPartPrice, setManualPartPrice] = useState<number | "">("");
+  const [manualPartDisc, setManualPartDisc] = useState<number | "">(0);
+  const [manualPartUnit, setManualPartUnit] = useState("pcs");
+  const [manualPartNotes, setManualPartNotes] = useState("");
+
   // 6. FINANCIALS & PAYMENT
   const [discountAmount, setDiscountAmount] = useState<number | "">("");
+  const [vatRateInput, setVatRateInput] = useState<number | "">(5);
   const [paymentStatus, setPaymentStatus] = useState<"paid" | "partially_paid" | "credit">("paid");
   const [paymentMethod, setPaymentMethod] = useState<"cash" | "bank" | "credit">("cash");
   const [paidAmountInput, setPaidAmountInput] = useState<number | "">("");
@@ -371,6 +390,7 @@ export function DirectInvoiceModal({
         {
           id: "temp-part-" + Date.now() + "-" + Math.random().toString(36).slice(2, 5),
           part_id: part.id,
+          item_source: "inventory",
           part_name: part.name,
           part_number: part.part_number || null,
           brand: part.brand || null,
@@ -387,6 +407,96 @@ export function DirectInvoiceModal({
     setErrorMessage(null);
   };
 
+  const handleOpenManualPartDialog = () => {
+    setEditingPartRowId(null);
+    setManualPartName("");
+    setManualPartNumber("");
+    setManualPartBrand("");
+    setManualPartDesc("");
+    setManualPartQty(1);
+    setManualPartPrice("");
+    setManualPartDisc(0);
+    setManualPartUnit("pcs");
+    setManualPartNotes("");
+    setManualPartModalOpen(true);
+  };
+
+  const handleEditManualPart = (part: SelectedPartRow) => {
+    setEditingPartRowId(part.id);
+    setManualPartName(part.part_name);
+    setManualPartNumber(part.part_number || "");
+    setManualPartBrand(part.brand || "");
+    setManualPartDesc(part.description || "");
+    setManualPartQty(part.quantity);
+    setManualPartPrice(part.unit_price);
+    setManualPartDisc(part.discount || 0);
+    setManualPartUnit(part.unit || "pcs");
+    setManualPartNotes(part.notes || "");
+    setManualPartModalOpen(true);
+  };
+
+  const handleConfirmAddManualPart = () => {
+    if (!manualPartName.trim()) {
+      setErrorMessage("Spare part name is required.");
+      return;
+    }
+    const q = Number(manualPartQty);
+    if (isNaN(q) || q <= 0) {
+      setErrorMessage("Quantity must be greater than zero.");
+      return;
+    }
+    const p = Number(manualPartPrice);
+    if (isNaN(p) || p < 0) {
+      setErrorMessage("Unit selling price must be 0 or greater.");
+      return;
+    }
+    const d = Number(manualPartDisc) >= 0 ? Number(manualPartDisc) : 0;
+
+    if (editingPartRowId) {
+      setSelectedParts((prev) =>
+        prev.map((item) =>
+          item.id === editingPartRowId
+            ? {
+                ...item,
+                part_name: manualPartName.trim(),
+                part_number: manualPartNumber.trim() || null,
+                brand: manualPartBrand.trim() || null,
+                description: manualPartDesc.trim() || null,
+                quantity: q,
+                unit_price: p,
+                discount: d,
+                unit: manualPartUnit.trim() || null,
+                notes: manualPartNotes.trim() || null,
+              }
+            : item
+        )
+      );
+    } else {
+      setSelectedParts((prev) => [
+        ...prev,
+        {
+          id: "manual-part-" + Date.now() + "-" + Math.random().toString(36).slice(2, 5),
+          part_id: null,
+          item_source: "manual",
+          part_name: manualPartName.trim(),
+          part_number: manualPartNumber.trim() || null,
+          brand: manualPartBrand.trim() || null,
+          description: manualPartDesc.trim() || null,
+          available_stock: 0,
+          quantity: q,
+          unit_price: p,
+          discount: d,
+          cost_price: 0,
+          unit: manualPartUnit.trim() || null,
+          notes: manualPartNotes.trim() || null,
+        },
+      ]);
+    }
+
+    setManualPartModalOpen(false);
+    setErrorMessage(null);
+  };
+
   const handleUpdatePartField = (
     id: string,
     field: "quantity" | "unit_price" | "discount",
@@ -396,7 +506,10 @@ export function DirectInvoiceModal({
       prev.map((item) => {
         if (item.id !== id) return item;
         if (field === "quantity") {
-          const clamped = Math.max(1, Math.min(item.available_stock, Number(val) || 1));
+          const isManual = item.item_source === "manual" || !item.part_id;
+          const clamped = isManual
+            ? Math.max(1, Number(val) || 1)
+            : Math.max(1, Math.min(item.available_stock, Number(val) || 1));
           return { ...item, quantity: clamped };
         }
         return { ...item, [field]: Math.max(0, Number(val) || 0) };
@@ -428,7 +541,16 @@ export function DirectInvoiceModal({
   const totalItemsSubtotal = servicesSubtotal + partsSubtotal;
   const overallDiscount = typeof discountAmount === "number" ? discountAmount : 0;
   const taxableSubtotal = Math.max(0, totalItemsSubtotal - overallDiscount);
-  const vatAmount = Math.round(taxableSubtotal * 0.05 * 100) / 100;
+
+  // Editable VAT Rate Calculation
+  const effectiveVatRate = useMemo(() => {
+    if (vatRateInput === "") return 0;
+    const parsed = Number(vatRateInput);
+    if (isNaN(parsed) || parsed < 0) return 0;
+    return Math.min(100, parsed);
+  }, [vatRateInput]);
+
+  const vatAmount = Math.round(taxableSubtotal * (effectiveVatRate / 100) * 100) / 100;
   const grandTotal = Math.round((taxableSubtotal + vatAmount) * 100) / 100;
 
   const paidAmount =
@@ -460,6 +582,7 @@ export function DirectInvoiceModal({
     setSelectedServices([]);
     setSelectedParts([]);
     setDiscountAmount("");
+    setVatRateInput(5);
     setPaymentStatus("paid");
     setPaymentMethod("cash");
     setPaidAmountInput("");
@@ -496,18 +619,20 @@ export function DirectInvoiceModal({
       return;
     }
 
-    // Parts stock validation
+    // Parts stock validation (Only validate stock for catalog items; manual parts bypass inventory limits)
     if (invoiceTypeMode !== "service") {
       for (const item of selectedParts) {
         if (item.quantity <= 0) {
           setErrorMessage(`Quantity for "${item.part_name}" must be greater than zero.`);
           return;
         }
-        if (item.quantity > item.available_stock) {
-          setErrorMessage(
-            `Only ${item.available_stock} units are available in stock for "${item.part_name}". Cannot finalize sale exceeding stock.`
-          );
-          return;
+        if (item.item_source !== "manual" && item.part_id) {
+          if (item.quantity > item.available_stock) {
+            setErrorMessage(
+              `Only ${item.available_stock} units are available in stock for "${item.part_name}". Cannot finalize sale exceeding stock.`
+            );
+            return;
+          }
         }
       }
     }
@@ -548,9 +673,14 @@ export function DirectInvoiceModal({
         parts:
           invoiceTypeMode !== "service"
             ? selectedParts.map((p) => ({
-                part_id: p.part_id,
+                part_id: p.item_source === "manual" ? null : p.part_id,
+                item_source: p.item_source || (p.part_id ? "inventory" : "manual"),
                 part_name: p.part_name,
                 part_number: p.part_number,
+                brand: p.brand,
+                description: p.description,
+                notes: p.notes,
+                unit: p.unit,
                 quantity: p.quantity,
                 unit_price: p.unit_price,
                 discount: p.discount,
@@ -559,7 +689,7 @@ export function DirectInvoiceModal({
             : [],
 
         discount: overallDiscount,
-        vat_rate: 5,
+        vat_rate: effectiveVatRate,
 
         payment_status: paymentStatus,
         payment_method: paymentMethod,
@@ -594,9 +724,9 @@ export function DirectInvoiceModal({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-4xl max-h-[92vh] flex flex-col p-0 overflow-hidden bg-background text-foreground shadow-2xl border-border">
+        <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col gap-0 p-0 overflow-hidden bg-background text-foreground shadow-2xl border-border">
           {/* Top Modal Header */}
-          <DialogHeader className="px-6 py-4 border-b border-border bg-slate-50/50 dark:bg-slate-900/50 shrink-0">
+          <DialogHeader className="px-6 py-3.5 border-b border-border bg-slate-50/50 dark:bg-slate-900/50 shrink-0">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-sm shrink-0">
@@ -626,8 +756,10 @@ export function DirectInvoiceModal({
             </div>
           </DialogHeader>
 
-          {/* Scrollable Form Body */}
-          <form onSubmit={handleFinalizeInvoice} className="flex-1 overflow-y-auto p-6 space-y-5">
+          {/* Form Wrapper */}
+          <form onSubmit={handleFinalizeInvoice} className="flex-1 flex flex-col min-h-0 overflow-hidden">
+            {/* Scrollable Form Body */}
+            <div className="flex-1 overflow-y-auto min-h-0 p-6 space-y-4">
             {/* Error Notification Banner */}
             {errorMessage && (
               <div className="flex items-start gap-2.5 p-3.5 rounded-xl border border-red-200 bg-red-50 text-red-800 dark:bg-red-950/40 dark:border-red-900/60 dark:text-red-300 text-xs font-semibold animate-in fade-in">
@@ -1039,7 +1171,7 @@ export function DirectInvoiceModal({
                           <TableHead className="w-16 text-center">Qty</TableHead>
                           <TableHead className="w-24 text-right">Rate (AED)</TableHead>
                           <TableHead className="w-20 text-right">Discount</TableHead>
-                          <TableHead className="w-20 text-center">VAT (5%)</TableHead>
+                          <TableHead className="w-20 text-center">VAT ({effectiveVatRate}%)</TableHead>
                           <TableHead className="w-28 text-right font-bold text-foreground">Amount (AED)</TableHead>
                           <TableHead className="w-12 text-center"></TableHead>
                         </TableRow>
@@ -1047,7 +1179,7 @@ export function DirectInvoiceModal({
                       <TableBody>
                         {selectedServices.map((s) => {
                           const lineTotal = Math.max(0, s.quantity * s.unit_price - s.discount);
-                          const lineVat = Math.round(lineTotal * 0.05 * 100) / 100;
+                          const lineVat = Math.round(lineTotal * (effectiveVatRate / 100) * 100) / 100;
                           return (
                             <TableRow key={s.id} className="h-11 border-b border-border/40">
                               <TableCell className="py-2">
@@ -1135,78 +1267,100 @@ export function DirectInvoiceModal({
                       <Package className="h-3.5 w-3.5 text-blue-600" /> Spare Parts &amp; Materials
                     </Label>
                     <p className="text-[11px] text-muted-foreground mt-0.5">
-                      Search inventory parts. Stock will be atomically deducted upon invoice finalization.
+                      Search inventory parts or add manual invoice-only spare parts.
                     </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleOpenManualPartDialog}
+                      className="h-8 text-xs font-semibold rounded-xl border-border bg-background hover:bg-muted gap-1.5 shadow-2xs"
+                    >
+                      <Plus className="h-3.5 w-3.5 text-blue-600" /> + Add Manual Spare Part
+                    </Button>
                   </div>
                 </div>
 
-                {/* Part Search Input */}
-                <div className="relative" ref={partSearchRef}>
-                  <div className="relative">
-                    <Search className="h-3.5 w-3.5 absolute left-3 top-2.5 text-muted-foreground" />
-                    <Input
-                      value={partSearchQuery}
-                      onChange={(e) => {
-                        setPartSearchQuery(e.target.value);
-                        setPartDropdownOpen(true);
-                      }}
-                      onFocus={() => setPartDropdownOpen(true)}
-                      placeholder="Search spare parts catalog by name, part no, OEM, or brand..."
-                      className="h-9 pl-9 text-xs"
-                    />
-                  </div>
-
-                  {partDropdownOpen && filteredParts.length > 0 && (
-                    <div className="absolute z-30 left-0 right-0 mt-1 max-h-56 overflow-y-auto bg-popover border border-border rounded-xl shadow-xl divide-y divide-border/40">
-                      {filteredParts.map((part) => {
-                        const stock = Number(part.current_stock) || 0;
-                        const isOut = stock <= 0;
-                        return (
-                          <div
-                            key={part.id}
-                            onClick={() => !isOut && handleAddCatalogPart(part)}
-                            className={`p-2.5 flex items-center justify-between text-xs ${
-                              isOut
-                                ? "opacity-50 cursor-not-allowed bg-muted/20"
-                                : "hover:bg-muted/60 cursor-pointer"
-                            }`}
-                          >
-                            <div className="min-w-0 pr-2">
-                              <p className="font-semibold text-foreground truncate">{part.name}</p>
-                              <p className="text-[11px] text-muted-foreground font-mono truncate">
-                                {part.part_number ? `PN: ${part.part_number}` : ""} {part.brand ? `• ${part.brand}` : ""}
-                              </p>
-                            </div>
-                            <div className="flex items-center gap-3 shrink-0">
-                              <span
-                                className={`text-[10px] font-mono px-2 py-0.5 rounded-full font-bold border ${
-                                  stock > 5
-                                    ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                                    : stock > 0
-                                    ? "bg-amber-50 text-amber-700 border-amber-200"
-                                    : "bg-red-50 text-red-700 border-red-200"
-                                }`}
-                              >
-                                Stock: {stock}
-                              </span>
-                              <span className="font-bold font-mono text-foreground">
-                                {formatCurrency(part.selling_price || 0)}
-                              </span>
-                              <Button
-                                type="button"
-                                size="sm"
-                                variant="outline"
-                                disabled={isOut}
-                                className="h-6 text-[10px] px-2"
-                              >
-                                + Add
-                              </Button>
-                            </div>
-                          </div>
-                        );
-                      })}
+                {/* Part Search Input & Manual Button */}
+                <div className="flex items-center gap-2">
+                  <div className="relative flex-1" ref={partSearchRef}>
+                    <div className="relative">
+                      <Search className="h-3.5 w-3.5 absolute left-3 top-2.5 text-muted-foreground" />
+                      <Input
+                        value={partSearchQuery}
+                        onChange={(e) => {
+                          setPartSearchQuery(e.target.value);
+                          setPartDropdownOpen(true);
+                        }}
+                        onFocus={() => setPartDropdownOpen(true)}
+                        placeholder="Search spare parts catalog by name, part no, OEM, or brand..."
+                        className="h-9 pl-9 text-xs"
+                      />
                     </div>
-                  )}
+
+                    {partDropdownOpen && filteredParts.length > 0 && (
+                      <div className="absolute z-30 left-0 right-0 mt-1 max-h-56 overflow-y-auto bg-popover border border-border rounded-xl shadow-xl divide-y divide-border/40">
+                        {filteredParts.map((part) => {
+                          const stock = Number(part.current_stock) || 0;
+                          const isOut = stock <= 0;
+                          return (
+                            <div
+                              key={part.id}
+                              onClick={() => !isOut && handleAddCatalogPart(part)}
+                              className={`p-2.5 flex items-center justify-between text-xs ${
+                                isOut
+                                  ? "opacity-50 cursor-not-allowed bg-muted/20"
+                                  : "hover:bg-muted/60 cursor-pointer"
+                              }`}
+                            >
+                              <div className="min-w-0 pr-2">
+                                <p className="font-semibold text-foreground truncate">{part.name}</p>
+                                <p className="text-[11px] text-muted-foreground font-mono truncate">
+                                  {part.part_number ? `PN: ${part.part_number}` : ""} {part.brand ? `• ${part.brand}` : ""}
+                                </p>
+                              </div>
+                              <div className="flex items-center gap-3 shrink-0">
+                                <span
+                                  className={`text-[10px] font-mono px-2 py-0.5 rounded-full font-bold border ${
+                                    stock > 5
+                                      ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                      : stock > 0
+                                      ? "bg-amber-50 text-amber-700 border-amber-200"
+                                      : "bg-red-50 text-red-700 border-red-200"
+                                  }`}
+                                >
+                                  Stock: {stock}
+                                </span>
+                                <span className="font-bold font-mono text-foreground">
+                                  {formatCurrency(part.selling_price || 0)}
+                                </span>
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="outline"
+                                  disabled={isOut}
+                                  className="h-6 text-[10px] px-2"
+                                >
+                                  + Add
+                                </Button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleOpenManualPartDialog}
+                    className="h-9 px-3 text-xs font-semibold rounded-xl border-border bg-background hover:bg-muted gap-1.5 shrink-0"
+                  >
+                    <Plus className="h-3.5 w-3.5 text-blue-600" /> + Add Manual Part
+                  </Button>
                 </div>
 
                 {/* Selected Parts Table */}
@@ -1220,35 +1374,49 @@ export function DirectInvoiceModal({
                           <TableHead className="w-16 text-center">Qty</TableHead>
                           <TableHead className="w-24 text-right">Unit Price (AED)</TableHead>
                           <TableHead className="w-20 text-right">Discount</TableHead>
-                          <TableHead className="w-20 text-center">VAT (5%)</TableHead>
+                          <TableHead className="w-20 text-center">VAT ({effectiveVatRate}%)</TableHead>
                           <TableHead className="w-28 text-right font-bold text-foreground">Amount (AED)</TableHead>
-                          <TableHead className="w-12 text-center"></TableHead>
+                          <TableHead className="w-16 text-center">Actions</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {selectedParts.map((p) => {
                           const lineTotal = Math.max(0, p.quantity * p.unit_price - p.discount);
-                          const lineVat = Math.round(lineTotal * 0.05 * 100) / 100;
+                          const lineVat = Math.round(lineTotal * (effectiveVatRate / 100) * 100) / 100;
+                          const isManual = p.item_source === "manual" || !p.part_id;
                           return (
                             <TableRow key={p.id} className="h-11 border-b border-border/40">
                               <TableCell className="py-2">
-                                <div className="font-semibold text-foreground leading-tight">{p.part_name}</div>
-                                {p.part_number && (
-                                  <div className="text-[10px] font-mono text-muted-foreground mt-0.5">
-                                    PN: {p.part_number} {p.brand ? `• ${p.brand}` : ""}
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  <span className="font-semibold text-foreground leading-tight">{p.part_name}</span>
+                                  {isManual && (
+                                    <span className="text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.2 rounded bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
+                                      Manual
+                                    </span>
+                                  )}
+                                </div>
+                                {(p.part_number || p.brand || p.description) && (
+                                  <div className="text-[10px] font-mono text-muted-foreground mt-0.5 truncate max-w-xs">
+                                    {p.part_number ? `PN: ${p.part_number}` : ""} {p.brand ? `• ${p.brand}` : ""} {p.description ? `• ${p.description}` : ""}
                                   </div>
                                 )}
                               </TableCell>
                               <TableCell className="py-2 text-center">
-                                <span className="inline-block font-mono text-[11px] font-bold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md">
-                                  {p.available_stock}
-                                </span>
+                                {isManual ? (
+                                  <span className="inline-block text-[10px] text-muted-foreground font-medium italic">
+                                    Manual (No Stock)
+                                  </span>
+                                ) : (
+                                  <span className="inline-block font-mono text-[11px] font-bold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md">
+                                    {p.available_stock}
+                                  </span>
+                                )}
                               </TableCell>
                               <TableCell className="py-2 text-center">
                                 <Input
                                   type="number"
                                   min="1"
-                                  max={p.available_stock}
+                                  max={isManual ? undefined : p.available_stock}
                                   value={p.quantity}
                                   onChange={(e) =>
                                     handleUpdatePartField(p.id, "quantity", Number(e.target.value))
@@ -1287,15 +1455,30 @@ export function DirectInvoiceModal({
                                 {formatCurrency(lineTotal)}
                               </TableCell>
                               <TableCell className="py-2 text-center">
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => handleRemovePart(p.id)}
-                                  className="h-7 w-7 p-0 text-muted-foreground hover:text-red-600 rounded-lg"
-                                >
-                                  <Trash2 className="h-3.5 w-3.5" />
-                                </Button>
+                                <div className="flex items-center justify-center gap-1">
+                                  {isManual && (
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => handleEditManualPart(p)}
+                                      className="h-7 w-7 p-0 text-muted-foreground hover:text-blue-600 rounded-lg"
+                                      title="Edit Manual Part"
+                                    >
+                                      <Pencil className="h-3.5 w-3.5" />
+                                    </Button>
+                                  )}
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleRemovePart(p.id)}
+                                    className="h-7 w-7 p-0 text-muted-foreground hover:text-red-600 rounded-lg"
+                                    title="Remove Part"
+                                  >
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                  </Button>
+                                </div>
                               </TableCell>
                             </TableRow>
                           );
@@ -1304,9 +1487,18 @@ export function DirectInvoiceModal({
                     </Table>
                   </div>
                 ) : (
-                  <div className="py-6 text-center border border-dashed border-border rounded-xl text-xs text-muted-foreground bg-slate-50/40 dark:bg-slate-900/20">
-                    <Package className="h-5 w-5 mx-auto mb-1.5 text-slate-400" />
-                    No spare parts added yet. Search catalog above to select parts.
+                  <div className="py-6 text-center border border-dashed border-border rounded-xl text-xs text-muted-foreground bg-slate-50/40 dark:bg-slate-900/20 space-y-2">
+                    <Package className="h-5 w-5 mx-auto text-slate-400" />
+                    <p>No spare parts added yet. Search inventory or add a manual spare part.</p>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleOpenManualPartDialog}
+                      className="h-7 text-xs font-semibold rounded-lg text-blue-600 hover:text-blue-700 border-blue-200 dark:border-blue-800 hover:bg-blue-50 dark:hover:bg-blue-950/40 gap-1"
+                    >
+                      <Plus className="h-3.5 w-3.5" /> Add Manual Spare Part
+                    </Button>
                   </div>
                 )}
               </div>
@@ -1485,8 +1677,31 @@ export function DirectInvoiceModal({
                     </div>
                   </div>
 
-                  <div className="flex justify-between text-muted-foreground">
-                    <span>UAE VAT (5%):</span>
+                  <div className="flex items-center justify-between text-muted-foreground">
+                    <div className="flex items-center gap-1.5">
+                      <span>UAE VAT:</span>
+                      <div className="flex items-center gap-1">
+                        <Input
+                          type="number"
+                          min="0"
+                          max="100"
+                          step="any"
+                          value={vatRateInput}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (val === "") {
+                              setVatRateInput("");
+                            } else {
+                              const num = parseFloat(val);
+                              setVatRateInput(isNaN(num) ? "" : Math.max(0, Math.min(100, num)));
+                            }
+                          }}
+                          placeholder="5.00"
+                          className="h-6 w-16 text-right font-mono text-xs px-1.5 py-0"
+                        />
+                        <span className="text-[11px] font-semibold">%</span>
+                      </div>
+                    </div>
                     <span className="font-mono font-semibold text-foreground">{formatCurrency(vatAmount)}</span>
                   </div>
 
@@ -1515,51 +1730,49 @@ export function DirectInvoiceModal({
                 </div>
               </div>
             </div>
-          </form>
+          </div>
 
           {/* Bottom Footer Actions */}
-          <DialogFooter className="px-6 py-3.5 border-t border-border bg-slate-50/50 dark:bg-slate-900/50 flex items-center justify-between shrink-0">
+          <div className="shrink-0 px-6 py-3 border-t border-border bg-slate-50/90 dark:bg-slate-900/90 flex flex-wrap items-center justify-end gap-2.5 z-10">
             <Button
               type="button"
               variant="outline"
               size="sm"
               onClick={() => onOpenChange(false)}
-              className="h-9 text-xs"
+              className="h-9 text-xs px-4"
               disabled={isSubmitting}
             >
               Cancel
             </Button>
-            <div className="flex items-center gap-2">
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={handleResetForm}
-                className="h-9 text-xs text-muted-foreground hover:text-foreground"
-                disabled={isSubmitting}
-              >
-                Reset Form
-              </Button>
-              <Button
-                type="button"
-                onClick={handleFinalizeInvoice}
-                disabled={isSubmitting || (selectedServices.length === 0 && selectedParts.length === 0)}
-                className="h-9 px-5 text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-md gap-2"
-              >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" /> Finalizing Direct Invoice...
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle2 className="h-4 w-4" /> Create &amp; Finalize Invoice
-                  </>
-                )}
-              </Button>
-            </div>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={handleResetForm}
+              className="h-9 text-xs text-muted-foreground hover:text-foreground px-4"
+              disabled={isSubmitting}
+            >
+              Reset Form
+            </Button>
+            <Button
+              type="submit"
+              disabled={isSubmitting || (selectedServices.length === 0 && selectedParts.length === 0)}
+              className="h-9 px-5 text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-md gap-2 cursor-pointer"
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" /> Finalizing Direct Invoice...
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 className="h-4 w-4" /> Create &amp; Finalize Invoice
+                </>
+              )}
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
 
       {/* ─── MODAL: MANUAL SERVICE ENTRY ─── */}
       <Dialog open={manualServiceModalOpen} onOpenChange={setManualServiceModalOpen}>
@@ -1666,6 +1879,147 @@ export function DirectInvoiceModal({
               className="h-8 text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white"
             >
               + Add to Invoice
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ─── MODAL: MANUAL SPARE PART ENTRY ─── */}
+      <Dialog open={manualPartModalOpen} onOpenChange={setManualPartModalOpen}>
+        <DialogContent className="max-w-md p-5 bg-background border border-border shadow-xl rounded-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-sm font-bold flex items-center gap-2">
+              <Package className="h-4 w-4 text-blue-600" />
+              {editingPartRowId ? "Edit Manual Spare Part" : "Add Manual Spare Part"}
+            </DialogTitle>
+            <DialogDescription className="text-xs text-muted-foreground mt-0.5">
+              Enter non-catalog spare part or counter sale item. Will not deduct inventory stock.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3 py-2 text-xs">
+            <div>
+              <Label className="text-[11px] font-semibold text-foreground">Part Name *</Label>
+              <Input
+                value={manualPartName}
+                onChange={(e) => setManualPartName(e.target.value)}
+                placeholder="e.g. Toyota Ignition Coil Used"
+                className="h-8 text-xs mt-1"
+                autoFocus
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-2.5">
+              <div>
+                <Label className="text-[11px] text-muted-foreground">Part No / OEM (Optional)</Label>
+                <Input
+                  value={manualPartNumber}
+                  onChange={(e) => setManualPartNumber(e.target.value)}
+                  placeholder="e.g. 90919-02240"
+                  className="h-8 text-xs font-mono mt-1"
+                />
+              </div>
+              <div>
+                <Label className="text-[11px] text-muted-foreground">Brand (Optional)</Label>
+                <Input
+                  value={manualPartBrand}
+                  onChange={(e) => setManualPartBrand(e.target.value)}
+                  placeholder="e.g. Denso / OEM"
+                  className="h-8 text-xs mt-1"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-2.5">
+              <div>
+                <Label className="text-[11px] font-semibold text-foreground">Quantity *</Label>
+                <Input
+                  type="number"
+                  min="1"
+                  step="any"
+                  value={manualPartQty}
+                  onChange={(e) =>
+                    setManualPartQty(e.target.value === "" ? "" : Number(e.target.value))
+                  }
+                  className="h-8 text-xs font-mono mt-1"
+                />
+              </div>
+              <div>
+                <Label className="text-[11px] font-semibold text-foreground">Selling Price (AED) *</Label>
+                <Input
+                  type="number"
+                  min="0"
+                  step="any"
+                  value={manualPartPrice}
+                  onChange={(e) =>
+                    setManualPartPrice(e.target.value === "" ? "" : Number(e.target.value))
+                  }
+                  placeholder="90"
+                  className="h-8 text-xs font-mono mt-1"
+                />
+              </div>
+              <div>
+                <Label className="text-[11px] text-muted-foreground">Discount (AED)</Label>
+                <Input
+                  type="number"
+                  min="0"
+                  step="any"
+                  value={manualPartDisc}
+                  onChange={(e) =>
+                    setManualPartDisc(e.target.value === "" ? "" : Number(e.target.value))
+                  }
+                  placeholder="0"
+                  className="h-8 text-xs font-mono mt-1"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2.5">
+              <div>
+                <Label className="text-[11px] text-muted-foreground">Unit / UOM (Optional)</Label>
+                <Input
+                  value={manualPartUnit}
+                  onChange={(e) => setManualPartUnit(e.target.value)}
+                  placeholder="pcs / set / ltr"
+                  className="h-8 text-xs mt-1"
+                />
+              </div>
+              <div>
+                <Label className="text-[11px] text-muted-foreground">VAT Applicability</Label>
+                <div className="h-8 mt-1 px-2.5 rounded-md border border-border bg-muted/40 text-[11px] flex items-center font-mono text-muted-foreground">
+                  Standard ({effectiveVatRate}%)
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <Label className="text-[11px] text-muted-foreground">Description / Notes (Optional)</Label>
+              <Input
+                value={manualPartDesc}
+                onChange={(e) => setManualPartDesc(e.target.value)}
+                placeholder="e.g. Clean condition tested with warranty"
+                className="h-8 text-xs mt-1"
+              />
+            </div>
+          </div>
+
+          <DialogFooter className="pt-2 border-t flex justify-end gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setManualPartModalOpen(false)}
+              className="h-8 text-xs"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              onClick={handleConfirmAddManualPart}
+              className="h-8 text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              {editingPartRowId ? "Save Changes" : "+ Add to Invoice"}
             </Button>
           </DialogFooter>
         </DialogContent>

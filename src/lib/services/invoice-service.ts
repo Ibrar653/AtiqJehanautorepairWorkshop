@@ -785,11 +785,16 @@ export async function createDirectInvoice(
     });
   }
 
-  // 2. Strict Stock Validation for Spare Parts
+  // 2. Strict Stock Validation for Spare Parts (Catalog vs Manual)
   const verifiedParts: Array<{
-    part_id: string;
+    part_id: string | null;
+    item_source: "inventory" | "manual";
     part_name: string;
     part_number?: string | null;
+    brand?: string | null;
+    description?: string | null;
+    notes?: string | null;
+    unit?: string | null;
     quantity: number;
     unit_price: number;
     discount: number;
@@ -807,7 +812,33 @@ export async function createDirectInvoice(
         throw new Error(`Quantity for "${item.part_name}" must be greater than zero.`);
       }
 
-      const part = await getPartById(item.part_id);
+      const isManual = item.item_source === "manual" || !item.part_id;
+      if (isManual) {
+        const price = Number(item.unit_price) >= 0 ? Number(item.unit_price) : 0;
+        const disc = Number(item.discount) >= 0 ? Number(item.discount) : 0;
+        const lineTotal = Math.max(0, qty * price - disc);
+
+        verifiedParts.push({
+          part_id: null,
+          item_source: "manual",
+          part_name: item.part_name,
+          part_number: item.part_number || null,
+          brand: item.brand || null,
+          description: item.description || null,
+          notes: item.notes || null,
+          unit: item.unit || null,
+          quantity: qty,
+          unit_price: price,
+          discount: disc,
+          total_price: lineTotal,
+          cost_price: Number(item.cost_price) >= 0 ? Number(item.cost_price) : 0,
+          currentStock: 0,
+          partObj: null,
+        });
+        continue;
+      }
+
+      const part = await getPartById(item.part_id!);
       if (!part) {
         throw new Error(`Spare part "${item.part_name || item.part_id}" was not found in catalog.`);
       }
@@ -822,9 +853,14 @@ export async function createDirectInvoice(
       const lineTotal = Math.max(0, qty * price - disc);
 
       verifiedParts.push({
-        part_id: item.part_id,
+        part_id: item.part_id!,
+        item_source: "inventory",
         part_name: part.name || item.part_name,
         part_number: item.part_number || part.part_number || null,
+        brand: item.brand || part.brand || null,
+        description: item.description || part.description || null,
+        notes: item.notes || null,
+        unit: item.unit || part.unit || null,
         quantity: qty,
         unit_price: price,
         discount: disc,
@@ -1005,13 +1041,16 @@ export async function createDirectInvoice(
     });
   }
 
-  // 7. Inventory Deduction: ONLY Spare Parts Deduct Inventory (Services NEVER touch stock)
-  if (verifiedParts.length > 0) {
+  // 7. Inventory Deduction: ONLY Catalog Spare Parts Deduct Inventory (Services & Manual parts NEVER touch stock)
+  const inventoryPartsToDeduct = verifiedParts.filter(
+    (p) => p.part_id && p.item_source !== "manual"
+  );
+  if (inventoryPartsToDeduct.length > 0) {
     const { recordStockTransaction } = await import("./inventory-service");
-    for (const item of verifiedParts) {
+    for (const item of inventoryPartsToDeduct) {
       try {
         await recordStockTransaction({
-          partId: item.part_id,
+          partId: item.part_id!,
           transactionType: "direct_sale",
           quantityChange: -item.quantity,
           unitCost: item.cost_price,

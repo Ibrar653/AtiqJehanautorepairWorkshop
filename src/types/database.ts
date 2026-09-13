@@ -585,9 +585,14 @@ export interface DirectInvoiceServiceItemPayload {
 }
 
 export interface DirectInvoicePartItemPayload {
-  part_id: string;
+  part_id?: string | null;
+  item_source?: "inventory" | "manual";
   part_name: string;
   part_number?: string | null;
+  brand?: string | null;
+  description?: string | null;
+  notes?: string | null;
+  unit?: string | null;
   quantity: number;
   unit_price: number;
   discount?: number;

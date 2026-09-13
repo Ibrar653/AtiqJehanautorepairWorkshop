@@ -1259,7 +1259,7 @@ export function InvoicesView() {
                       </div>
                     )}
                     <div className="flex justify-between text-muted-foreground">
-                      <span>VAT ({selectedInvoice.vat_rate || 5}%):</span>
+                      <span>VAT ({selectedInvoice.vat_rate ?? 5}%):</span>
                       <span className="font-mono font-semibold text-foreground">{formatCurrency(selectedInvoice.vat_amount)}</span>
                     </div>
                     <div className="flex justify-between text-muted-foreground pt-1 border-t">
