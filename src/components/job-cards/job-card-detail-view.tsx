@@ -13,6 +13,7 @@ import {
 } from "@/lib/services/document-service";
 import type { JobCardWithRelations, JobCardStatus, JobCardAttachment, DocumentType } from "@/types/database";
 import { JobCardPrintView } from "@/components/job-cards/job-card-print-view";
+import { useWorkspace } from "@/lib/context/workspace-context";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -47,6 +48,7 @@ interface JobCardDetailViewProps {
 
 export function JobCardDetailView({ id }: JobCardDetailViewProps) {
   const searchParams = useSearchParams();
+  const { currentWorkspace } = useWorkspace();
   const [jobCard, setJobCard] = useState<JobCardWithRelations | null>(null);
   const [attachments, setAttachments] = useState<JobCardAttachment[]>([]);
   const [existingInvoice, setExistingInvoice] = useState<any | null>(null);
@@ -418,7 +420,11 @@ export function JobCardDetailView({ id }: JobCardDetailViewProps) {
             </h2>
             <p className="text-xs text-slate-500 mt-0.5 font-medium">Specialized Auto Repairing, Maintenance &amp; Diagnostic Workshop</p>
             <p className="text-xs text-slate-500 mt-0.5">Al Dhafra Region, Madinat Zayed, MZE16, ST 04 • Tel: +971-501233517, +971-501517497</p>
-            <p className="text-xs font-mono text-blue-700 font-semibold mt-1">TRN: 100456789000003</p>
+            {((jobCard as any)?.workspace?.trn_number || (jobCard as any)?.workspace?.trn || currentWorkspace?.trn_number || (currentWorkspace as any)?.trn || "").trim() ? (
+              <p className="text-xs font-mono text-blue-700 font-semibold mt-1">
+                TRN: {((jobCard as any)?.workspace?.trn_number || (jobCard as any)?.workspace?.trn || currentWorkspace?.trn_number || (currentWorkspace as any)?.trn || "").trim()}
+              </p>
+            ) : null}
           </div>
           <div className="md:text-right">
             <span className="text-[11px] font-bold text-blue-700 uppercase tracking-wider bg-blue-50 border border-blue-200 px-3 py-1 rounded-full">

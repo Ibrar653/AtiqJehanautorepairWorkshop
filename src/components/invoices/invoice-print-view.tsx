@@ -2,14 +2,17 @@
 
 import type { Invoice, InvoiceItem, Payment } from "@/types/database";
 import { formatAmount, formatCurrency, formatDate } from "@/lib/utils";
+import { useWorkspace } from "@/lib/context/workspace-context";
 
 interface InvoicePrintViewProps {
   invoice: any;
 }
 
 export function InvoicePrintView({ invoice }: InvoicePrintViewProps) {
+  const { currentWorkspace } = useWorkspace();
   if (!invoice) return null;
 
+  const companyTrn = (invoice?.workspace?.trn_number || invoice?.workspace?.trn || currentWorkspace?.trn_number || (currentWorkspace as any)?.trn || "").trim();
   const rawItems: any[] = invoice.items || [];
 
   // Separate actual services and spare parts
@@ -200,9 +203,11 @@ export function InvoicePrintView({ invoice }: InvoicePrintViewProps) {
               <span className="font-mono text-black mr-2">+971-501233517</span>
               <span className="font-mono text-black">+971-501517497</span>
             </div>
-            <p className="text-[7.5px] font-mono text-gray-700 mt-0.5">
-              TRN: 100345678900003
-            </p>
+            {companyTrn ? (
+              <p className="text-[7.5px] font-mono text-gray-700 mt-0.5">
+                TRN: {companyTrn}
+              </p>
+            ) : null}
           </div>
 
           {/* Center Column: Official Logo */}

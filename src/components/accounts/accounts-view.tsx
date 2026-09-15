@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useTransition } from "react";
 import { usePermissions } from "@/lib/context/auth-context";
+import { useWorkspace } from "@/lib/context/workspace-context";
 import {
   getLedgerAccounts,
   getAccountDashboardMetrics,
@@ -255,6 +256,8 @@ export const ACCOUNT_CATEGORY_OPTIONS: AccountCategoryConfig[] = [
 
 export function AccountsView() {
   const { user, role, isOwner, isManager, isViewer, canDelete: authCanDelete, canEdit: authCanEdit } = usePermissions();
+  const { currentWorkspace } = useWorkspace();
+  const companyTrn = currentWorkspace?.trn_number || (currentWorkspace as any)?.trn || "";
   const canManageAccounts = isOwner || role === "admin";
   const canEdit = !isViewer && (authCanEdit || canManageAccounts);
   const canTransfer = !isViewer && (isOwner || role === "admin" || (isManager && canEdit));
@@ -4301,7 +4304,7 @@ export function AccountsView() {
               <div className="border-b pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
                   <h2 className="text-xl font-black tracking-wider text-slate-900">ATIQ JEHAN AUTO REPAIR</h2>
-                  <p className="text-xs text-slate-500 mt-0.5">Musaffah M-14, Abu Dhabi, UAE &bull; TRN: 100234567800003 &bull; Phone: +971 50 123 4567</p>
+                  <p className="text-xs text-slate-500 mt-0.5">Musaffah M-14, Abu Dhabi, UAE{companyTrn ? ` • TRN: ${companyTrn}` : ""} &bull; Phone: +971 50 123 4567</p>
                   <h3 className="text-base font-bold text-blue-700 mt-2 uppercase tracking-wide">General Ledger Account Statement</h3>
                 </div>
                 <div className="sm:text-right text-xs">
@@ -6248,7 +6251,7 @@ export function AccountsView() {
                     ATIQ JEHAN AUTO REPAIR
                   </h2>
                   <p className="text-[11px] text-muted-foreground">
-                    Industrial Area, Musaffah, Abu Dhabi, UAE &bull; TRN: 100523498100003
+                    Industrial Area, Musaffah, Abu Dhabi, UAE{companyTrn ? ` • TRN: ${companyTrn}` : ""}
                   </p>
                   <p className="text-xs font-bold uppercase text-indigo-600 dark:text-indigo-400 mt-1">
                     {activeVoucher.cash_flow_type === "cash_in"

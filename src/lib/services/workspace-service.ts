@@ -50,7 +50,7 @@ const DEFAULT_INITIAL_WORKSPACES: Workspace[] = [
     address: "Industrial Area 4, Sharjah, United Arab Emirates",
     country: "United Arab Emirates",
     currency: "AED",
-    trn: "100482910400003",
+    trn: undefined,
     status: "active",
     users_count: 5,
     last_activity: new Date().toISOString(),
@@ -130,7 +130,15 @@ export function getLocalWorkspaces(): Workspace[] {
   try {
     const raw = localStorage.getItem(LOCAL_STORAGE_WS_KEY);
     const parsed = raw ? JSON.parse(raw) : [];
-    if (parsed.length > 0) return parsed;
+    if (parsed.length > 0) {
+      const mockTrns = ["100482910400003", "100345678900003", "100456789000003", "100523498100003", "100234567800003"];
+      return parsed.map((ws: Workspace) => {
+        if (ws.trn && mockTrns.includes(ws.trn)) {
+          return { ...ws, trn: undefined, trn_number: undefined };
+        }
+        return ws;
+      });
+    }
     localStorage.setItem(LOCAL_STORAGE_WS_KEY, JSON.stringify(DEFAULT_INITIAL_WORKSPACES));
     return DEFAULT_INITIAL_WORKSPACES;
   } catch {

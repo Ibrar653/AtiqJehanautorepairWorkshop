@@ -2,14 +2,17 @@
 
 import type { JobCardWithRelations } from "@/types/database";
 import { formatAmount, formatCurrency, formatDate } from "@/lib/utils";
+import { useWorkspace } from "@/lib/context/workspace-context";
 
 interface JobCardPrintViewProps {
   jobCard: JobCardWithRelations;
 }
 
 export function JobCardPrintView({ jobCard }: JobCardPrintViewProps) {
+  const { currentWorkspace } = useWorkspace();
   if (!jobCard) return null;
 
+  const companyTrn = ((jobCard as any)?.workspace?.trn_number || (jobCard as any)?.workspace?.trn || currentWorkspace?.trn_number || (currentWorkspace as any)?.trn || "").trim();
   const rawItems = jobCard.items || [];
 
   // 1. Separate actual services and spare parts
@@ -228,9 +231,11 @@ export function JobCardPrintView({ jobCard }: JobCardPrintViewProps) {
               <span className="font-mono text-black mr-2">+971-501233517</span>
               <span className="font-mono text-black">+971-501517497</span>
             </div>
-            <p className="text-[7.5px] font-mono text-gray-700 mt-0.5">
-              TRN: 100345678900003
-            </p>
+            {companyTrn ? (
+              <p className="text-[7.5px] font-mono text-gray-700 mt-0.5">
+                TRN: {companyTrn}
+              </p>
+            ) : null}
           </div>
 
           {/* Center Column: Official Logo ONLY */}

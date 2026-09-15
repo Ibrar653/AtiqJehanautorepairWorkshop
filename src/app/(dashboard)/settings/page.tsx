@@ -120,7 +120,7 @@ const roleBadgeColors: Record<UserRole, string> = {
 
 export default function SettingsPage() {
   const { user: currentUser, isOwner } = usePermissions();
-  const { isPlatformOwner } = useWorkspace();
+  const { isPlatformOwner, currentWorkspace } = useWorkspace();
   const [activeTab, setActiveTab] = useState("user_access");
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
@@ -670,7 +670,12 @@ export default function SettingsPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">Trade License TRN</Label>
-                  <Input value="100482910400003" readOnly className="text-xs h-10 rounded-xl border-slate-200 bg-slate-50/60 dark:bg-slate-800 font-mono font-medium" />
+                  <Input
+                    value={currentWorkspace?.trn_number || (currentWorkspace as any)?.trn || ""}
+                    placeholder="Not Registered"
+                    readOnly
+                    className="text-xs h-10 rounded-xl border-slate-200 bg-slate-50/60 dark:bg-slate-800 font-mono font-medium"
+                  />
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">Standard UAE VAT Rate</Label>

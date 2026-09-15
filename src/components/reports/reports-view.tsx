@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useTransition } from "react";
 import { usePermissions } from "@/lib/context/auth-context";
+import { useWorkspace } from "@/lib/context/workspace-context";
 import {
   getDailyTransactionReport,
   getBalanceSummaryReport,
@@ -81,6 +82,8 @@ import {
 
 export function ReportsView() {
   const { isOwner, isManager, isViewer, role } = usePermissions();
+  const { currentWorkspace } = useWorkspace();
+  const companyTrn = currentWorkspace?.trn_number || (currentWorkspace as any)?.trn || "";
   const canViewReports = isOwner || isManager || role === "admin" || isViewer;
 
   // Active Report Tab
@@ -247,7 +250,7 @@ export function ReportsView() {
           ATIQ JEHAN AUTO REPAIR
         </h1>
         <p className="text-xs text-slate-600">
-          Industrial Area, Musaffah, Abu Dhabi, UAE &bull; TRN: 100523498100003 &bull; Phone: +971 50 123 4567
+          Industrial Area, Musaffah, Abu Dhabi, UAE{companyTrn ? ` • TRN: ${companyTrn}` : ""} &bull; Phone: +971 50 123 4567
         </p>
         <p className="text-sm font-bold uppercase mt-2 text-slate-800">
           {activeReportTab === "daily"
