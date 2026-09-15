@@ -133,13 +133,20 @@ export function DirectInvoiceModal({
   const [serviceDropdownOpen, setServiceDropdownOpen] = useState(false);
   const [selectedServices, setSelectedServices] = useState<SelectedServiceRow[]>([]);
 
-  // Manual Service Dialog / Inline Entry State
+  // Manual Service Dialog State
   const [manualServiceModalOpen, setManualServiceModalOpen] = useState(false);
   const [manualDesc, setManualDesc] = useState("");
   const [manualQty, setManualQty] = useState<number | "">(1);
   const [manualRate, setManualRate] = useState<number | "">("");
   const [manualDisc, setManualDisc] = useState<number | "">(0);
   const [manualSaveToCatalog, setManualSaveToCatalog] = useState(false);
+
+  // Direct Inline Service Quick Entry State & Ref
+  const inlineServiceDescRef = useRef<HTMLInputElement>(null);
+  const [inlineServiceDesc, setInlineServiceDesc] = useState("");
+  const [inlineServiceQty, setInlineServiceQty] = useState<number | "">(1);
+  const [inlineServiceRate, setInlineServiceRate] = useState<number | "">("");
+  const [inlineServiceDisc, setInlineServiceDisc] = useState<number | "">(0);
 
   // 5. SPARE PARTS CATALOG & SELECTED PARTS
   const [catalogParts, setCatalogParts] = useState<Part[]>([]);
@@ -159,6 +166,29 @@ export function DirectInvoiceModal({
   const [manualPartDisc, setManualPartDisc] = useState<number | "">(0);
   const [manualPartUnit, setManualPartUnit] = useState("pcs");
   const [manualPartNotes, setManualPartNotes] = useState("");
+
+  // Direct Inline Spare Part Quick Entry State & Ref
+  const inlinePartNameRef = useRef<HTMLInputElement>(null);
+  const [inlinePartName, setInlinePartName] = useState("");
+  const [inlinePartNumber, setInlinePartNumber] = useState("");
+  const [inlinePartQty, setInlinePartQty] = useState<number | "">(1);
+  const [inlinePartPrice, setInlinePartPrice] = useState<number | "">("");
+  const [inlinePartDisc, setInlinePartDisc] = useState<number | "">(0);
+
+  // Live Auto-Calculated Amounts for Inline Rows
+  const inlineServiceLineTotal = useMemo(() => {
+    const q = typeof inlineServiceQty === "number" && inlineServiceQty > 0 ? inlineServiceQty : 0;
+    const r = typeof inlineServiceRate === "number" && inlineServiceRate >= 0 ? inlineServiceRate : 0;
+    const d = typeof inlineServiceDisc === "number" && inlineServiceDisc >= 0 ? inlineServiceDisc : 0;
+    return Math.max(0, q * r - d);
+  }, [inlineServiceQty, inlineServiceRate, inlineServiceDisc]);
+
+  const inlinePartLineTotal = useMemo(() => {
+    const q = typeof inlinePartQty === "number" && inlinePartQty > 0 ? inlinePartQty : 0;
+    const p = typeof inlinePartPrice === "number" && inlinePartPrice >= 0 ? inlinePartPrice : 0;
+    const d = typeof inlinePartDisc === "number" && inlinePartDisc >= 0 ? inlinePartDisc : 0;
+    return Math.max(0, q * p - d);
+  }, [inlinePartQty, inlinePartPrice, inlinePartDisc]);
 
   // 6. FINANCIALS & PAYMENT
   const [discountAmount, setDiscountAmount] = useState<number | "">("");
@@ -362,6 +392,51 @@ export function DirectInvoiceModal({
     setSelectedServices((prev) => prev.filter((s) => s.id !== id));
   };
 
+  // Quick Direct Inline Service Add (No modal required)
+  const handleAddInlineService = () => {
+    const desc = inlineServiceDesc.trim();
+    if (!desc) {
+      setErrorMessage("Please enter a service description.");
+      inlineServiceDescRef.current?.focus();
+      return;
+    }
+    const q = typeof inlineServiceQty === "number" && inlineServiceQty > 0 ? inlineServiceQty : 1;
+    const r = typeof inlineServiceRate === "number" && inlineServiceRate >= 0 ? inlineServiceRate : 0;
+    const d = typeof inlineServiceDisc === "number" && inlineServiceDisc >= 0 ? inlineServiceDisc : 0;
+
+    setSelectedServices((prev) => [
+      ...prev,
+      {
+        id: "inline-srv-" + Date.now() + "-" + Math.random().toString(36).slice(2, 5),
+        service_id: null,
+        name: desc,
+        description: desc,
+        quantity: q,
+        unit_price: r,
+        discount: d,
+        save_to_catalog: false,
+      },
+    ]);
+
+    // Clear and refocus for rapid counter typing
+    setInlineServiceDesc("");
+    setInlineServiceQty(1);
+    setInlineServiceRate("");
+    setInlineServiceDisc(0);
+    setErrorMessage(null);
+    setTimeout(() => {
+      inlineServiceDescRef.current?.focus();
+    }, 10);
+  };
+
+  const handleServiceInlineKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      e.stopPropagation();
+      handleAddInlineService();
+    }
+  };
+
   // --- Handlers: Spare Parts ---
   const handleAddCatalogPart = (part: Part) => {
     const available = Number(part.current_stock) || 0;
@@ -499,12 +574,15 @@ export function DirectInvoiceModal({
 
   const handleUpdatePartField = (
     id: string,
-    field: "quantity" | "unit_price" | "discount",
-    val: number
+    field: "quantity" | "unit_price" | "discount" | "part_name",
+    val: any
   ) => {
     setSelectedParts((prev) =>
       prev.map((item) => {
         if (item.id !== id) return item;
+        if (field === "part_name") {
+          return { ...item, part_name: String(val) };
+        }
         if (field === "quantity") {
           const isManual = item.item_source === "manual" || !item.part_id;
           const clamped = isManual
@@ -519,6 +597,58 @@ export function DirectInvoiceModal({
 
   const handleRemovePart = (id: string) => {
     setSelectedParts((prev) => prev.filter((p) => p.id !== id));
+  };
+
+  // Quick Direct Inline Spare Part Add (Invoice-only manual part, NO inventory stock deduction)
+  const handleAddInlinePart = () => {
+    const name = inlinePartName.trim();
+    if (!name) {
+      setErrorMessage("Please enter a spare part name.");
+      inlinePartNameRef.current?.focus();
+      return;
+    }
+    const q = typeof inlinePartQty === "number" && inlinePartQty > 0 ? inlinePartQty : 1;
+    const p = typeof inlinePartPrice === "number" && inlinePartPrice >= 0 ? inlinePartPrice : 0;
+    const d = typeof inlinePartDisc === "number" && inlinePartDisc >= 0 ? inlinePartDisc : 0;
+
+    setSelectedParts((prev) => [
+      ...prev,
+      {
+        id: "inline-part-" + Date.now() + "-" + Math.random().toString(36).slice(2, 5),
+        part_id: null,
+        item_source: "manual",
+        part_name: name,
+        part_number: inlinePartNumber.trim() || null,
+        brand: null,
+        description: null,
+        notes: null,
+        unit: "pcs",
+        available_stock: 0,
+        quantity: q,
+        unit_price: p,
+        discount: d,
+        cost_price: 0,
+      },
+    ]);
+
+    // Clear and refocus for rapid counter typing
+    setInlinePartName("");
+    setInlinePartNumber("");
+    setInlinePartQty(1);
+    setInlinePartPrice("");
+    setInlinePartDisc(0);
+    setErrorMessage(null);
+    setTimeout(() => {
+      inlinePartNameRef.current?.focus();
+    }, 10);
+  };
+
+  const handlePartInlineKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      e.stopPropagation();
+      handleAddInlinePart();
+    }
   };
 
   // --- Financial Calculations ---
@@ -581,6 +711,15 @@ export function DirectInvoiceModal({
     setVehicleVin("");
     setSelectedServices([]);
     setSelectedParts([]);
+    setInlineServiceDesc("");
+    setInlineServiceQty(1);
+    setInlineServiceRate("");
+    setInlineServiceDisc(0);
+    setInlinePartName("");
+    setInlinePartNumber("");
+    setInlinePartQty(1);
+    setInlinePartPrice("");
+    setInlinePartDisc(0);
     setDiscountAmount("");
     setVatRateInput(5);
     setPaymentStatus("paid");
@@ -1097,26 +1236,24 @@ export function DirectInvoiceModal({
             {/* ─── SECTION 3: SERVICES SECTION (Shown if Service or Mixed) ─── */}
             {(invoiceTypeMode === "service" || invoiceTypeMode === "mixed") && (
               <div className="rounded-2xl border border-border bg-card p-4 space-y-3.5 shadow-2xs">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div className="flex items-center justify-between gap-2 pb-2 border-b border-border/40">
                   <div>
-                    <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-                      <Wrench className="h-3.5 w-3.5 text-blue-600" /> Workshop Services
+                    <Label className="text-xs font-bold uppercase tracking-wider text-foreground flex items-center gap-1.5">
+                      <Wrench className="h-4 w-4 text-blue-600" /> WORKSHOP SERVICES
                     </Label>
                     <p className="text-[11px] text-muted-foreground mt-0.5">
-                      Search catalog services or add custom manual services. Services do not touch inventory.
+                      Type services directly below or search existing catalog.
                     </p>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={handleOpenManualServiceDialog}
-                      className="h-8 text-xs font-semibold rounded-xl border-border bg-background hover:bg-muted gap-1.5 shadow-2xs"
-                    >
-                      <Plus className="h-3.5 w-3.5 text-blue-600" /> + Add Service Manually
-                    </Button>
-                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleOpenManualServiceDialog}
+                    className="h-8 text-xs font-semibold rounded-xl border-border bg-background hover:bg-muted gap-1.5 shadow-2xs shrink-0"
+                  >
+                    <Plus className="h-3.5 w-3.5 text-blue-600" /> + Add Service Manually
+                  </Button>
                 </div>
 
                 {/* Service Catalog Search Input */}
@@ -1161,6 +1298,97 @@ export function DirectInvoiceModal({
                   )}
                 </div>
 
+                {/* Direct Inline Service Quick Entry Row */}
+                <div className="bg-slate-50/90 dark:bg-slate-900/50 border border-slate-200/90 dark:border-slate-800 rounded-xl p-3 space-y-2">
+                  <div className="flex items-center justify-between text-[11px] font-bold text-slate-700 dark:text-slate-300">
+                    <span className="flex items-center gap-1.5">
+                      <Sparkles className="h-3.5 w-3.5 text-blue-600" /> Direct Service Entry (Quick Add)
+                    </span>
+                    <span className="text-[10px] font-normal text-muted-foreground hidden sm:inline">
+                      Press <kbd className="px-1.5 py-0.5 bg-background rounded border text-[9px] font-mono shadow-2xs">Tab</kbd> to move, <kbd className="px-1.5 py-0.5 bg-background rounded border text-[9px] font-mono shadow-2xs">Enter</kbd> to add
+                    </span>
+                  </div>
+
+                  <div className="flex flex-wrap md:flex-nowrap items-end gap-2">
+                    <div className="flex-1 min-w-[200px]">
+                      <Label className="text-[10px] font-semibold text-muted-foreground mb-1 block">
+                        Service / Description *
+                      </Label>
+                      <Input
+                        ref={inlineServiceDescRef}
+                        value={inlineServiceDesc}
+                        onChange={(e) => setInlineServiceDesc(e.target.value)}
+                        onKeyDown={handleServiceInlineKeyDown}
+                        placeholder="e.g., AC Repair, Brake Inspection, Oil Service..."
+                        className="h-8 text-xs bg-background"
+                      />
+                    </div>
+
+                    <div className="w-16">
+                      <Label className="text-[10px] font-semibold text-muted-foreground mb-1 block text-center">
+                        Qty *
+                      </Label>
+                      <Input
+                        type="number"
+                        min="1"
+                        value={inlineServiceQty}
+                        onChange={(e) => setInlineServiceQty(e.target.value === "" ? "" : Number(e.target.value))}
+                        onKeyDown={handleServiceInlineKeyDown}
+                        className="h-8 text-center font-mono text-xs bg-background px-1"
+                      />
+                    </div>
+
+                    <div className="w-24">
+                      <Label className="text-[10px] font-semibold text-muted-foreground mb-1 block text-right">
+                        Rate (AED) *
+                      </Label>
+                      <Input
+                        type="number"
+                        min="0"
+                        step="any"
+                        value={inlineServiceRate}
+                        onChange={(e) => setInlineServiceRate(e.target.value === "" ? "" : Number(e.target.value))}
+                        onKeyDown={handleServiceInlineKeyDown}
+                        placeholder="0.00"
+                        className="h-8 text-right font-mono text-xs bg-background px-1.5"
+                      />
+                    </div>
+
+                    <div className="w-20">
+                      <Label className="text-[10px] font-semibold text-muted-foreground mb-1 block text-right">
+                        Discount
+                      </Label>
+                      <Input
+                        type="number"
+                        min="0"
+                        step="any"
+                        value={inlineServiceDisc}
+                        onChange={(e) => setInlineServiceDisc(e.target.value === "" ? "" : Number(e.target.value))}
+                        onKeyDown={handleServiceInlineKeyDown}
+                        placeholder="0.00"
+                        className="h-8 text-right font-mono text-xs bg-background px-1.5"
+                      />
+                    </div>
+
+                    <div className="w-24">
+                      <Label className="text-[10px] font-semibold text-muted-foreground mb-1 block text-right">
+                        Amount
+                      </Label>
+                      <div className="h-8 flex items-center justify-end px-2 font-mono font-bold text-xs bg-background border border-border rounded-md text-foreground">
+                        {formatCurrency(inlineServiceLineTotal)}
+                      </div>
+                    </div>
+
+                    <Button
+                      type="button"
+                      onClick={handleAddInlineService}
+                      className="h-8 px-4 text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-lg gap-1.5 shrink-0 cursor-pointer shadow-xs"
+                    >
+                      <Plus className="h-3.5 w-3.5" /> Add
+                    </Button>
+                  </div>
+                </div>
+
                 {/* Selected Services Table */}
                 {selectedServices.length > 0 ? (
                   <div className="border border-border/80 rounded-xl overflow-hidden shadow-2xs">
@@ -1183,7 +1411,17 @@ export function DirectInvoiceModal({
                           return (
                             <TableRow key={s.id} className="h-11 border-b border-border/40">
                               <TableCell className="py-2">
-                                <div className="font-semibold text-foreground leading-tight">{s.name}</div>
+                                <Input
+                                  value={s.description || s.name}
+                                  onChange={(e) =>
+                                    handleUpdateServiceField(s.id, "description", e.target.value)
+                                  }
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter") e.preventDefault();
+                                  }}
+                                  className="h-7 text-xs font-medium px-2 py-0 bg-background border-border/80 focus:border-blue-500"
+                                  placeholder="Service description"
+                                />
                                 {s.save_to_catalog && (
                                   <span className="inline-block mt-0.5 px-1.5 py-0.2 rounded text-[9px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 uppercase">
                                     Saved to Catalog
@@ -1198,6 +1436,9 @@ export function DirectInvoiceModal({
                                   onChange={(e) =>
                                     handleUpdateServiceField(s.id, "quantity", e.target.value)
                                   }
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter") e.preventDefault();
+                                  }}
                                   className="h-7 w-14 text-center font-mono text-xs mx-auto px-1"
                                 />
                               </TableCell>
@@ -1210,6 +1451,9 @@ export function DirectInvoiceModal({
                                   onChange={(e) =>
                                     handleUpdateServiceField(s.id, "unit_price", e.target.value)
                                   }
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter") e.preventDefault();
+                                  }}
                                   className="h-7 w-20 text-right font-mono text-xs ml-auto px-1.5"
                                 />
                               </TableCell>
@@ -1222,6 +1466,9 @@ export function DirectInvoiceModal({
                                   onChange={(e) =>
                                     handleUpdateServiceField(s.id, "discount", e.target.value)
                                   }
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter") e.preventDefault();
+                                  }}
                                   className="h-7 w-16 text-right font-mono text-xs ml-auto px-1.5"
                                 />
                               </TableCell>
@@ -1249,10 +1496,8 @@ export function DirectInvoiceModal({
                     </Table>
                   </div>
                 ) : (
-                  <div className="py-6 text-center border border-dashed border-border rounded-xl text-xs text-muted-foreground bg-slate-50/40 dark:bg-slate-900/20">
-                    <Wrench className="h-5 w-5 mx-auto mb-1.5 text-slate-400" />
-                    No services added yet. Search catalog above or click{" "}
-                    <span className="font-semibold text-blue-600">+ Add Service Manually</span>.
+                  <div className="py-2.5 px-3 text-center border border-dashed border-border/70 rounded-xl text-xs text-muted-foreground bg-muted/10">
+                    No services added yet. Type directly above or search the catalog.
                   </div>
                 )}
               </div>
@@ -1268,97 +1513,191 @@ export function DirectInvoiceModal({
                       <Package className="h-4 w-4 text-blue-600" /> SPARE PARTS &amp; MATERIALS
                     </Label>
                     <p className="text-[11px] text-muted-foreground mt-0.5">
-                      Search inventory parts below.
+                      Type manual parts directly below or search existing inventory.
                     </p>
-                  </div>
-                  <Button
-                    type="button"
-                    size="sm"
-                    onClick={handleOpenManualPartDialog}
-                    className="h-8 px-3.5 text-xs font-bold rounded-xl bg-blue-600 hover:bg-blue-700 text-white shadow-xs gap-1.5 flex items-center shrink-0 cursor-pointer"
-                  >
-                    <Plus className="h-3.5 w-3.5" /> + Add Manual Spare Part
-                  </Button>
-                </div>
-
-                {/* Part Search Input & Manual Button */}
-                <div className="flex items-center gap-2">
-                  <div className="relative flex-1" ref={partSearchRef}>
-                    <div className="relative">
-                      <Search className="h-3.5 w-3.5 absolute left-3 top-2.5 text-muted-foreground" />
-                      <Input
-                        value={partSearchQuery}
-                        onChange={(e) => {
-                          setPartSearchQuery(e.target.value);
-                          setPartDropdownOpen(true);
-                        }}
-                        onFocus={() => setPartDropdownOpen(true)}
-                        placeholder="Search spare parts catalog by name, part no, OEM, or brand..."
-                        className="h-9 pl-9 text-xs"
-                      />
-                    </div>
-
-                    {partDropdownOpen && filteredParts.length > 0 && (
-                      <div className="absolute z-30 left-0 right-0 mt-1 max-h-56 overflow-y-auto bg-popover border border-border rounded-xl shadow-xl divide-y divide-border/40">
-                        {filteredParts.map((part) => {
-                          const stock = Number(part.current_stock) || 0;
-                          const isOut = stock <= 0;
-                          return (
-                            <div
-                              key={part.id}
-                              onClick={() => !isOut && handleAddCatalogPart(part)}
-                              className={`p-2.5 flex items-center justify-between text-xs ${
-                                isOut
-                                  ? "opacity-50 cursor-not-allowed bg-muted/20"
-                                  : "hover:bg-muted/60 cursor-pointer"
-                              }`}
-                            >
-                              <div className="min-w-0 pr-2">
-                                <p className="font-semibold text-foreground truncate">{part.name}</p>
-                                <p className="text-[11px] text-muted-foreground font-mono truncate">
-                                  {part.part_number ? `PN: ${part.part_number}` : ""} {part.brand ? `• ${part.brand}` : ""}
-                                </p>
-                              </div>
-                              <div className="flex items-center gap-3 shrink-0">
-                                <span
-                                  className={`text-[10px] font-mono px-2 py-0.5 rounded-full font-bold border ${
-                                    stock > 5
-                                      ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                                      : stock > 0
-                                      ? "bg-amber-50 text-amber-700 border-amber-200"
-                                      : "bg-red-50 text-red-700 border-red-200"
-                                  }`}
-                                >
-                                  Stock: {stock}
-                                </span>
-                                <span className="font-bold font-mono text-foreground">
-                                  {formatCurrency(part.selling_price || 0)}
-                                </span>
-                                <Button
-                                  type="button"
-                                  size="sm"
-                                  variant="outline"
-                                  disabled={isOut}
-                                  className="h-6 text-[10px] px-2"
-                                >
-                                  + Add
-                                </Button>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
                   </div>
                   <Button
                     type="button"
                     variant="outline"
                     size="sm"
                     onClick={handleOpenManualPartDialog}
-                    className="h-9 px-3 text-xs font-semibold rounded-xl border-border bg-background hover:bg-muted gap-1.5 shrink-0"
+                    className="h-8 px-3.5 text-xs font-semibold rounded-xl border-border bg-background hover:bg-muted gap-1.5 flex items-center shrink-0 cursor-pointer shadow-2xs"
                   >
-                    <Plus className="h-3.5 w-3.5 text-blue-600" /> + Add Manual Part
+                    <Plus className="h-3.5 w-3.5 text-blue-600" /> + Add Manual Spare Part
                   </Button>
+                </div>
+
+                {/* Part Search Input */}
+                <div className="relative" ref={partSearchRef}>
+                  <div className="relative">
+                    <Search className="h-3.5 w-3.5 absolute left-3 top-2.5 text-muted-foreground" />
+                    <Input
+                      value={partSearchQuery}
+                      onChange={(e) => {
+                        setPartSearchQuery(e.target.value);
+                        setPartDropdownOpen(true);
+                      }}
+                      onFocus={() => setPartDropdownOpen(true)}
+                      placeholder="Search spare parts catalog by name, part no, OEM, or brand..."
+                      className="h-9 pl-9 text-xs"
+                    />
+                  </div>
+
+                  {partDropdownOpen && filteredParts.length > 0 && (
+                    <div className="absolute z-30 left-0 right-0 mt-1 max-h-56 overflow-y-auto bg-popover border border-border rounded-xl shadow-xl divide-y divide-border/40">
+                      {filteredParts.map((part) => {
+                        const stock = Number(part.current_stock) || 0;
+                        const isOut = stock <= 0;
+                        return (
+                          <div
+                            key={part.id}
+                            onClick={() => !isOut && handleAddCatalogPart(part)}
+                            className={`p-2.5 flex items-center justify-between text-xs ${
+                              isOut
+                                ? "opacity-50 cursor-not-allowed bg-muted/20"
+                                : "hover:bg-muted/60 cursor-pointer"
+                            }`}
+                          >
+                            <div className="min-w-0 pr-2">
+                              <p className="font-semibold text-foreground truncate">{part.name}</p>
+                              <p className="text-[11px] text-muted-foreground font-mono truncate">
+                                {part.part_number ? `PN: ${part.part_number}` : ""} {part.brand ? `• ${part.brand}` : ""}
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-3 shrink-0">
+                              <span
+                                className={`text-[10px] font-mono px-2 py-0.5 rounded-full font-bold border ${
+                                  stock > 5
+                                    ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                    : stock > 0
+                                    ? "bg-amber-50 text-amber-700 border-amber-200"
+                                    : "bg-red-50 text-red-700 border-red-200"
+                                }`}
+                              >
+                                Stock: {stock}
+                              </span>
+                              <span className="font-bold font-mono text-foreground">
+                                {formatCurrency(part.selling_price || 0)}
+                              </span>
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                disabled={isOut}
+                                className="h-6 text-[10px] px-2"
+                              >
+                                + Add
+                              </Button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                {/* Direct Inline Spare Part Quick Entry Row */}
+                <div className="bg-slate-50/90 dark:bg-slate-900/50 border border-slate-200/90 dark:border-slate-800 rounded-xl p-3 space-y-2">
+                  <div className="flex items-center justify-between text-[11px] font-bold text-slate-700 dark:text-slate-300">
+                    <span className="flex items-center gap-1.5">
+                      <Sparkles className="h-3.5 w-3.5 text-blue-600" /> Direct Spare Part Entry (Invoice-Only, No Stock Deduction)
+                    </span>
+                    <span className="text-[10px] font-normal text-muted-foreground hidden sm:inline">
+                      Press <kbd className="px-1.5 py-0.5 bg-background rounded border text-[9px] font-mono shadow-2xs">Tab</kbd> to move, <kbd className="px-1.5 py-0.5 bg-background rounded border text-[9px] font-mono shadow-2xs">Enter</kbd> to add
+                    </span>
+                  </div>
+
+                  <div className="flex flex-wrap md:flex-nowrap items-end gap-2">
+                    <div className="flex-1 min-w-[180px]">
+                      <Label className="text-[10px] font-semibold text-muted-foreground mb-1 block">
+                        Part Name / Description *
+                      </Label>
+                      <Input
+                        ref={inlinePartNameRef}
+                        value={inlinePartName}
+                        onChange={(e) => setInlinePartName(e.target.value)}
+                        onKeyDown={handlePartInlineKeyDown}
+                        placeholder="e.g., Toyota Brake Pad, Used Compressor, Filter..."
+                        className="h-8 text-xs bg-background"
+                      />
+                    </div>
+
+                    <div className="w-28">
+                      <Label className="text-[10px] font-semibold text-muted-foreground mb-1 block">
+                        Part No / OEM
+                      </Label>
+                      <Input
+                        value={inlinePartNumber}
+                        onChange={(e) => setInlinePartNumber(e.target.value)}
+                        onKeyDown={handlePartInlineKeyDown}
+                        placeholder="Optional"
+                        className="h-8 font-mono text-xs bg-background px-1.5"
+                      />
+                    </div>
+
+                    <div className="w-16">
+                      <Label className="text-[10px] font-semibold text-muted-foreground mb-1 block text-center">
+                        Qty *
+                      </Label>
+                      <Input
+                        type="number"
+                        min="1"
+                        value={inlinePartQty}
+                        onChange={(e) => setInlinePartQty(e.target.value === "" ? "" : Number(e.target.value))}
+                        onKeyDown={handlePartInlineKeyDown}
+                        className="h-8 text-center font-mono text-xs bg-background px-1"
+                      />
+                    </div>
+
+                    <div className="w-24">
+                      <Label className="text-[10px] font-semibold text-muted-foreground mb-1 block text-right">
+                        Unit Price *
+                      </Label>
+                      <Input
+                        type="number"
+                        min="0"
+                        step="any"
+                        value={inlinePartPrice}
+                        onChange={(e) => setInlinePartPrice(e.target.value === "" ? "" : Number(e.target.value))}
+                        onKeyDown={handlePartInlineKeyDown}
+                        placeholder="0.00"
+                        className="h-8 text-right font-mono text-xs bg-background px-1.5"
+                      />
+                    </div>
+
+                    <div className="w-20">
+                      <Label className="text-[10px] font-semibold text-muted-foreground mb-1 block text-right">
+                        Discount
+                      </Label>
+                      <Input
+                        type="number"
+                        min="0"
+                        step="any"
+                        value={inlinePartDisc}
+                        onChange={(e) => setInlinePartDisc(e.target.value === "" ? "" : Number(e.target.value))}
+                        onKeyDown={handlePartInlineKeyDown}
+                        placeholder="0.00"
+                        className="h-8 text-right font-mono text-xs bg-background px-1.5"
+                      />
+                    </div>
+
+                    <div className="w-24">
+                      <Label className="text-[10px] font-semibold text-muted-foreground mb-1 block text-right">
+                        Amount
+                      </Label>
+                      <div className="h-8 flex items-center justify-end px-2 font-mono font-bold text-xs bg-background border border-border rounded-md text-foreground">
+                        {formatCurrency(inlinePartLineTotal)}
+                      </div>
+                    </div>
+
+                    <Button
+                      type="button"
+                      onClick={handleAddInlinePart}
+                      className="h-8 px-4 text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-lg gap-1.5 shrink-0 cursor-pointer shadow-xs"
+                    >
+                      <Plus className="h-3.5 w-3.5" /> Add
+                    </Button>
+                  </div>
                 </div>
 
                 {/* Selected Parts Table */}
@@ -1385,16 +1724,30 @@ export function DirectInvoiceModal({
                           return (
                             <TableRow key={p.id} className="h-11 border-b border-border/40">
                               <TableCell className="py-2">
-                                <div className="flex items-center gap-1.5 flex-wrap">
-                                  <span className="font-semibold text-foreground leading-tight">{p.part_name}</span>
-                                  {isManual && (
-                                    <span className="text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.2 rounded bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
+                                {isManual ? (
+                                  <div className="flex items-center gap-1.5">
+                                    <Input
+                                      value={p.part_name}
+                                      onChange={(e) =>
+                                        handleUpdatePartField(p.id, "part_name", e.target.value)
+                                      }
+                                      onKeyDown={(e) => {
+                                        if (e.key === "Enter") e.preventDefault();
+                                      }}
+                                      className="h-7 text-xs font-medium px-2 py-0 flex-1 bg-background border-border/80 focus:border-blue-500"
+                                      placeholder="Part name / description"
+                                    />
+                                    <span className="text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300 border border-amber-200 dark:border-amber-800 shrink-0">
                                       Manual
                                     </span>
-                                  )}
-                                </div>
+                                  </div>
+                                ) : (
+                                  <div className="flex items-center gap-1.5 flex-wrap">
+                                    <span className="font-semibold text-foreground leading-tight px-1">{p.part_name}</span>
+                                  </div>
+                                )}
                                 {(p.part_number || p.brand || p.description) && (
-                                  <div className="text-[10px] font-mono text-muted-foreground mt-0.5 truncate max-w-xs">
+                                  <div className="text-[10px] font-mono text-muted-foreground mt-0.5 truncate max-w-xs px-1">
                                     {p.part_number ? `PN: ${p.part_number}` : ""} {p.brand ? `• ${p.brand}` : ""} {p.description ? `• ${p.description}` : ""}
                                   </div>
                                 )}
@@ -1419,6 +1772,9 @@ export function DirectInvoiceModal({
                                   onChange={(e) =>
                                     handleUpdatePartField(p.id, "quantity", Number(e.target.value))
                                   }
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter") e.preventDefault();
+                                  }}
                                   className="h-7 w-14 text-center font-mono text-xs mx-auto px-1"
                                 />
                               </TableCell>
@@ -1431,6 +1787,9 @@ export function DirectInvoiceModal({
                                   onChange={(e) =>
                                     handleUpdatePartField(p.id, "unit_price", Number(e.target.value))
                                   }
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter") e.preventDefault();
+                                  }}
                                   className="h-7 w-20 text-right font-mono text-xs ml-auto px-1.5"
                                 />
                               </TableCell>
@@ -1443,6 +1802,9 @@ export function DirectInvoiceModal({
                                   onChange={(e) =>
                                     handleUpdatePartField(p.id, "discount", Number(e.target.value))
                                   }
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter") e.preventDefault();
+                                  }}
                                   className="h-7 w-16 text-right font-mono text-xs ml-auto px-1.5"
                                 />
                               </TableCell>
@@ -1485,18 +1847,8 @@ export function DirectInvoiceModal({
                     </Table>
                   </div>
                 ) : (
-                  <div className="py-6 text-center border border-dashed border-border rounded-xl text-xs text-muted-foreground bg-slate-50/40 dark:bg-slate-900/20 space-y-2">
-                    <Package className="h-5 w-5 mx-auto text-slate-400" />
-                    <p>No spare parts added yet. Search inventory or add a manual spare part.</p>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={handleOpenManualPartDialog}
-                      className="h-7 text-xs font-semibold rounded-lg text-blue-600 hover:text-blue-700 border-blue-200 dark:border-blue-800 hover:bg-blue-50 dark:hover:bg-blue-950/40 gap-1"
-                    >
-                      <Plus className="h-3.5 w-3.5" /> Add Manual Spare Part
-                    </Button>
+                  <div className="py-2.5 px-3 text-center border border-dashed border-border/70 rounded-xl text-xs text-muted-foreground bg-muted/10">
+                    No spare parts added yet. Type directly above or search inventory.
                   </div>
                 )}
               </div>
