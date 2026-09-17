@@ -149,6 +149,9 @@ export function InvoicesView() {
   const [convertModalOpen, setConvertModalOpen] = useState(false);
   const [availableJobCards, setAvailableJobCards] = useState<any[]>([]);
   const [selectedJobCardId, setSelectedJobCardId] = useState("");
+  const [convertSearchQuery, setConvertSearchQuery] = useState("");
+  const [highlightedJobCardIndex, setHighlightedJobCardIndex] = useState(0);
+  const [loadingJobCards, setLoadingJobCards] = useState(false);
   const [converting, setConverting] = useState(false);
   const [convertError, setConvertError] = useState<string | null>(null);
 
@@ -463,20 +466,83 @@ export function InvoicesView() {
   };
 
 
+  // ─── Filtered Job Cards for Conversion Modal (Fast client-side search) ───
+  const filteredConvertJobCards = useMemo(() => {
+    if (!convertSearchQuery.trim()) {
+      return availableJobCards;
+    }
+    const q = convertSearchQuery.trim().toLowerCase();
+    const qClean = q.replace(/[^a-z0-9]/gi, "");
+
+    return availableJobCards.filter((jc) => {
+      // 1. Job Card Number
+      const jcNo = String(jc.job_card_number || "").toLowerCase();
+      const invNo = String(jc.invoice_number || "").toLowerCase();
+      if (jcNo.includes(q) || invNo.includes(q)) return true;
+
+      // 2. Customer Name, Company Name, Mobile Phone
+      const custName = String(jc.customer?.name || "").toLowerCase();
+      const compName = String(jc.customer?.company_name || "").toLowerCase();
+      const custMobile = String(jc.customer?.mobile || "").toLowerCase();
+      const custMobileClean = custMobile.replace(/[^a-z0-9]/gi, "");
+      if (custName.includes(q) || compName.includes(q) || custMobile.includes(q)) return true;
+      if (qClean && custMobileClean && custMobileClean.includes(qClean)) return true;
+
+      // 3. Vehicle Make, Model, Registration / Plate, VIN / Chassis
+      const vehMake = String(jc.vehicle?.make || "").toLowerCase();
+      const vehModel = String(jc.vehicle?.model || "").toLowerCase();
+      const vehMakeModel = `${vehMake} ${vehModel}`.trim();
+      const vehReg = String(jc.vehicle?.registration_number || "").toLowerCase();
+      const vehRegClean = vehReg.replace(/[^a-z0-9]/gi, "");
+      const vehVin = String(jc.vehicle?.chassis_vin || "").toLowerCase();
+
+      if (
+        vehMake.includes(q) ||
+        vehModel.includes(q) ||
+        vehMakeModel.includes(q) ||
+        vehReg.includes(q) ||
+        vehVin.includes(q)
+      ) {
+        return true;
+      }
+      if (qClean && vehRegClean && vehRegClean.includes(qClean)) return true;
+
+      // 4. Multi-word search terms (e.g. "Nissan Patrol", "1069 Ameesh")
+      const words = q.split(/\s+/).filter(Boolean);
+      if (words.length > 1) {
+        const combined = `${jcNo} ${invNo} ${custName} ${compName} ${custMobile} ${vehMake} ${vehModel} ${vehReg} ${vehVin}`.toLowerCase();
+        if (words.every((w) => combined.includes(w))) return true;
+      }
+
+      return false;
+    });
+  }, [availableJobCards, convertSearchQuery]);
+
+  const selectedJobCard = useMemo(
+    () => availableJobCards.find((jc) => jc.id === selectedJobCardId),
+    [availableJobCards, selectedJobCardId]
+  );
+
   // Open Convert Job Card Modal
   const handleOpenConvertModal = async () => {
     setConvertError(null);
     setSelectedJobCardId("");
+    setConvertSearchQuery("");
+    setHighlightedJobCardIndex(0);
     setConvertModalOpen(true);
+    setLoadingJobCards(true);
 
     try {
-      const res = await getJobCards({ search: "", status: "all", page: 1, limit: 100 });
-      setAvailableJobCards(res.jobCards || []);
-      if (res.jobCards && res.jobCards.length > 0) {
-        setSelectedJobCardId(res.jobCards[0].id);
-      }
+      const res = await getJobCards({ search: "", status: "all", page: 1, limit: 200 }, activeWorkspaceId);
+      const validCards = (res.jobCards || []).filter((jc: any) => {
+        const matchesWs = !jc.workspace_id || jc.workspace_id === activeWorkspaceId;
+        return matchesWs && !jc.is_deleted && jc.status !== "cancelled";
+      });
+      setAvailableJobCards(validCards);
     } catch (e) {
       console.warn("Could not load job cards for conversion:", e);
+    } finally {
+      setLoadingJobCards(false);
     }
   };
 
@@ -1551,51 +1617,212 @@ export function InvoicesView() {
       {/* 4. CONVERT JOB CARD MODAL DIALOG                                          */}
       {/* ========================================================================= */}
       <Dialog open={convertModalOpen} onOpenChange={setConvertModalOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-base font-bold text-foreground">
-              <Plus className="h-5 w-5 text-emerald-600" /> Convert Job Card to Invoice
-            </DialogTitle>
-            <DialogDescription className="text-xs text-muted-foreground">
-              Select an existing Job Card to instantly generate its official Tax Invoice with auto-populated services and spare parts.
-            </DialogDescription>
-          </DialogHeader>
+        <DialogContent className="max-w-lg p-0 overflow-hidden sm:rounded-2xl border-slate-200 dark:border-slate-800">
+          <div className="p-5 border-b bg-slate-50/70 dark:bg-slate-900/50">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-base font-bold text-foreground">
+                <div className="h-8 w-8 rounded-lg bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 flex items-center justify-center">
+                  <FileText className="h-4 w-4" />
+                </div>
+                Convert Job Card to Invoice
+              </DialogTitle>
+              <DialogDescription className="text-xs text-muted-foreground mt-1">
+                Search and select an active Job Card to automatically generate its official Tax Invoice.
+              </DialogDescription>
+            </DialogHeader>
+          </div>
 
-          <form onSubmit={handleConvertJobCard} className="space-y-4 pt-1">
+          <form onSubmit={handleConvertJobCard} className="p-5 space-y-4">
             {convertError && (
-              <div className="p-3 bg-rose-50 border border-rose-200 rounded-md text-xs font-semibold text-rose-700 flex items-center gap-2">
+              <div className="p-3 bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-800 rounded-xl text-xs font-semibold text-rose-700 dark:text-rose-400 flex items-center gap-2">
                 <AlertTriangle className="h-4 w-4 shrink-0" />
                 <span>{convertError}</span>
               </div>
             )}
 
+            {/* Currently Selected Card Header Box (if chosen) */}
+            {selectedJobCard && (
+              <div className="p-3 rounded-xl border border-emerald-300 dark:border-emerald-800 bg-emerald-50/60 dark:bg-emerald-950/20 flex items-center justify-between gap-3 animate-in fade-in-50">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono font-bold text-xs text-emerald-800 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-900/60 px-2 py-0.5 rounded">
+                      {selectedJobCard.job_card_number}
+                    </span>
+                    <span className="text-xs font-bold text-slate-800 dark:text-slate-100 truncate">
+                      {selectedJobCard.customer?.name || "Customer"}
+                      {selectedJobCard.customer?.company_name ? ` (${selectedJobCard.customer.company_name})` : ""}
+                    </span>
+                  </div>
+                  <div className="text-[11px] text-slate-600 dark:text-slate-400 mt-1 flex items-center gap-2 truncate">
+                    {selectedJobCard.vehicle ? (
+                      <span>
+                        {[selectedJobCard.vehicle.make, selectedJobCard.vehicle.model].filter(Boolean).join(" ")}
+                        {selectedJobCard.vehicle.registration_number ? ` • Plate ${selectedJobCard.vehicle.registration_number}` : ""}
+                      </span>
+                    ) : (
+                      <span>No vehicle specified</span>
+                    )}
+                    {selectedJobCard.customer?.mobile && <span>• {selectedJobCard.customer.mobile}</span>}
+                  </div>
+                </div>
+                <div className="text-right shrink-0">
+                  <div className="font-bold text-sm text-emerald-700 dark:text-emerald-400 font-mono">
+                    {formatCurrency(selectedJobCard.total)}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedJobCardId("")}
+                    className="text-[10px] text-muted-foreground hover:text-rose-600 underline mt-0.5"
+                  >
+                    Change
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Instant Search Input */}
             <div className="space-y-1.5">
-              <Label className="text-xs font-semibold">Select Job Card *</Label>
-              <select
-                required
-                value={selectedJobCardId}
-                onChange={(e) => setSelectedJobCardId(e.target.value)}
-                className="w-full h-9 px-3 text-xs rounded-md border border-input bg-background font-medium focus:outline-none focus:ring-1 focus:ring-ring"
-              >
-                <option value="" disabled>
-                  -- Select a Job Card --
-                </option>
-                {availableJobCards.map((jc) => (
-                  <option key={jc.id} value={jc.id}>
-                    {jc.job_card_number} — {jc.customer?.name || "Customer"} ({formatCurrency(jc.total)})
-                  </option>
-                ))}
-              </select>
+              <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center justify-between">
+                <span>Search Job Card *</span>
+                <span className="text-[10px] font-normal text-muted-foreground">
+                  {filteredConvertJobCards.length} available
+                </span>
+              </Label>
+              <div className="relative">
+                <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+                <Input
+                  type="text"
+                  value={convertSearchQuery}
+                  onChange={(e) => {
+                    setConvertSearchQuery(e.target.value);
+                    setHighlightedJobCardIndex(0);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "ArrowDown") {
+                      e.preventDefault();
+                      setHighlightedJobCardIndex((prev) =>
+                        Math.min(prev + 1, Math.max(0, filteredConvertJobCards.length - 1))
+                      );
+                    } else if (e.key === "ArrowUp") {
+                      e.preventDefault();
+                      setHighlightedJobCardIndex((prev) => Math.max(prev - 1, 0));
+                    } else if (e.key === "Enter") {
+                      if (filteredConvertJobCards.length > 0 && !selectedJobCardId) {
+                        e.preventDefault();
+                        const target = filteredConvertJobCards[highlightedJobCardIndex] || filteredConvertJobCards[0];
+                        if (target) {
+                          setSelectedJobCardId(target.id);
+                        }
+                      }
+                    } else if (e.key === "Escape") {
+                      if (convertSearchQuery) {
+                        e.preventDefault();
+                        setConvertSearchQuery("");
+                      }
+                    }
+                  }}
+                  placeholder="Search Job Card No, Customer, Phone, Vehicle..."
+                  className="pl-9 pr-8 text-xs h-9 rounded-xl border-slate-200 dark:border-slate-800"
+                  autoFocus
+                />
+                {convertSearchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setConvertSearchQuery("")}
+                    className="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
             </div>
 
-            <DialogFooter className="pt-2">
+            {/* Scrollable Results List */}
+            <div className="border border-slate-200 dark:border-slate-800 rounded-xl max-h-60 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800/60 bg-white dark:bg-slate-900 shadow-inner">
+              {loadingJobCards ? (
+                <div className="p-8 text-center text-xs text-muted-foreground flex flex-col items-center justify-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin text-emerald-600" />
+                  <span>Loading Job Cards...</span>
+                </div>
+              ) : filteredConvertJobCards.length === 0 ? (
+                <div className="p-8 text-center text-xs text-muted-foreground">
+                  <Search className="h-5 w-5 mx-auto text-slate-300 dark:text-slate-600 mb-1" />
+                  <span>No matching Job Card found.</span>
+                </div>
+              ) : (
+                filteredConvertJobCards.slice(0, 50).map((jc, idx) => {
+                  const isSelected = jc.id === selectedJobCardId;
+                  const isHighlighted = idx === highlightedJobCardIndex;
+                  const vehDesc = [
+                    [jc.vehicle?.make, jc.vehicle?.model].filter(Boolean).join(" "),
+                    jc.vehicle?.registration_number ? `Plate ${jc.vehicle.registration_number}` : "",
+                  ]
+                    .filter(Boolean)
+                    .join(" • ");
+
+                  return (
+                    <div
+                      key={jc.id}
+                      onClick={() => {
+                        setSelectedJobCardId(jc.id);
+                        setHighlightedJobCardIndex(idx);
+                      }}
+                      onMouseEnter={() => setHighlightedJobCardIndex(idx)}
+                      className={`p-3 text-xs cursor-pointer flex items-center justify-between gap-3 transition-colors ${
+                        isSelected
+                          ? "bg-emerald-50/80 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-100 border-l-4 border-l-emerald-600"
+                          : isHighlighted
+                          ? "bg-slate-50 dark:bg-slate-800/60"
+                          : "hover:bg-slate-50 dark:hover:bg-slate-800/40"
+                      }`}
+                    >
+                      <div className="min-w-0 flex-1">
+                        {/* Primary line: Job Card No + Customer Name */}
+                        <div className="flex items-center gap-1.5 font-bold truncate">
+                          <span className="font-mono text-emerald-700 dark:text-emerald-400">
+                            {jc.job_card_number}
+                          </span>
+                          <span className="text-slate-400">—</span>
+                          <span className="truncate text-slate-900 dark:text-slate-100">
+                            {jc.customer?.name || "Customer"}
+                            {jc.customer?.company_name ? ` (${jc.customer.company_name})` : ""}
+                          </span>
+                        </div>
+
+                        {/* Secondary line: Vehicle / Registration */}
+                        <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 truncate flex items-center gap-1">
+                          {vehDesc ? <span>{vehDesc}</span> : <span className="italic">No vehicle linked</span>}
+                          {jc.customer?.mobile && (
+                            <span className="text-slate-400 dark:text-slate-500">• {jc.customer.mobile}</span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Right side: Amount and Selection Indicator */}
+                      <div className="text-right shrink-0">
+                        <div className="font-mono font-bold text-xs text-slate-800 dark:text-slate-200">
+                          {formatCurrency(jc.total)}
+                        </div>
+                        {isSelected && (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-600 dark:text-emerald-400 mt-0.5">
+                            <CheckCircle2 className="h-3 w-3" /> Selected
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            <DialogFooter className="pt-2 flex items-center justify-between sm:justify-between">
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
                 onClick={() => setConvertModalOpen(false)}
                 disabled={converting}
-                className="text-xs"
+                className="text-xs rounded-xl"
               >
                 Cancel
               </Button>
@@ -1603,9 +1830,13 @@ export function InvoicesView() {
                 type="submit"
                 size="sm"
                 disabled={converting || !selectedJobCardId}
-                className="text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white"
+                className="text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl shadow-xs"
               >
-                {converting ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : <FileText className="h-3.5 w-3.5 mr-1" />}
+                {converting ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" />
+                ) : (
+                  <FileText className="h-3.5 w-3.5 mr-1" />
+                )}
                 Generate Invoice
               </Button>
             </DialogFooter>
