@@ -198,14 +198,31 @@ export async function createUploadedJobCard(
 /**
  * Fetch list of uploaded paper job cards with search & pagination
  */
-export async function getUploadedJobCards(query?: string, page = 1, limit = 20) {
+export async function getUploadedJobCards(
+  query?: string,
+  page = 1,
+  limit = 20,
+  startDate?: string,
+  endDate?: string,
+  dateFilter?: string
+) {
   const supabase = createClient();
   const offset = (page - 1) * limit;
+
+  const { computeJobCardDateRange } = await import("./job-card-service");
+  const { start, end } = computeJobCardDateRange(dateFilter, startDate, endDate);
 
   try {
     let dbQuery = supabase
       .from("uploaded_job_cards")
       .select("*, customer:customers(*), vehicle:vehicles(*)", { count: "exact" });
+
+    if (start) {
+      dbQuery = dbQuery.gte("date", start);
+    }
+    if (end) {
+      dbQuery = dbQuery.lte("date", end);
+    }
 
     if (query && query.trim()) {
       const q = query.trim();
@@ -249,6 +266,16 @@ export async function getUploadedJobCards(query?: string, page = 1, limit = 20) 
   } catch (err: any) {
     console.warn("Using local uploaded job cards store fallback:", err.message || err);
     let local = getLocalDocs();
+
+    if (start || end) {
+      local = local.filter((d) => {
+        const dStr = (d.date || d.created_at || "").slice(0, 10);
+        if (!dStr) return false;
+        if (start && dStr < start) return false;
+        if (end && dStr > end) return false;
+        return true;
+      });
+    }
 
     if (query && query.trim()) {
       const q = query.trim().toLowerCase();

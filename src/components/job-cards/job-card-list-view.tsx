@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import Link from "next/link";
-import { getJobCards, deleteJobCard } from "@/lib/services/job-card-service";
+import { getJobCards, deleteJobCard, type JobCardDateFilter } from "@/lib/services/job-card-service";
 import { getUploadedJobCards, deleteUploadedJobCard } from "@/lib/services/document-service";
 import type { JobCardWithRelations, JobCardStatus, UploadedJobCardWithRelations } from "@/types/database";
 import { UploadJobCardDialog } from "@/components/job-cards/upload-job-card-dialog";
@@ -13,6 +13,17 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useWorkspace } from "@/lib/context/workspace-context";
+import { DEFAULT_WORKSPACE_ID } from "@/lib/constants";
 import {
   Plus,
   Eye,
@@ -51,6 +62,9 @@ import {
 
 export function JobCardListView() {
   const { isViewer, canEdit, canDelete } = usePermissions();
+  const { currentWorkspace } = useWorkspace();
+  const activeWorkspaceId = currentWorkspace?.id || DEFAULT_WORKSPACE_ID;
+
   const [activeTab, setActiveTab] = useState<"all" | "digital" | "uploaded">("all");
   const [jobCards, setJobCards] = useState<JobCardWithRelations[]>([]);
   const [uploadedJobCards, setUploadedJobCards] = useState<UploadedJobCardWithRelations[]>([]);
@@ -59,6 +73,14 @@ export function JobCardListView() {
   const [page, setPage] = useState(1);
   const [query, setQuery] = useState<string>("");
   const [statusFilter, setStatusFilter] = useState<JobCardStatus | "all">("all");
+
+  // Date Filter State
+  const [dateFilter, setDateFilter] = useState<JobCardDateFilter>("all");
+  const [customStartDate, setCustomStartDate] = useState("");
+  const [customEndDate, setCustomEndDate] = useState("");
+  const [appliedStartDate, setAppliedStartDate] = useState("");
+  const [appliedEndDate, setAppliedEndDate] = useState("");
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
@@ -192,13 +214,26 @@ export function JobCardListView() {
       const cleanSearch = typeof query === "string" ? query.trim() : "";
 
       const [jcRes, upldRes] = await Promise.all([
-        getJobCards({
-          status: statusFilter,
-          search: cleanSearch,
+        getJobCards(
+          {
+            status: statusFilter,
+            search: cleanSearch,
+            dateFilter,
+            startDate: dateFilter === "custom" ? appliedStartDate : undefined,
+            endDate: dateFilter === "custom" ? appliedEndDate : undefined,
+            page,
+            limit: 50,
+          },
+          activeWorkspaceId
+        ),
+        getUploadedJobCards(
+          cleanSearch,
           page,
-          limit: 50,
-        }),
-        getUploadedJobCards(cleanSearch, page, 50),
+          50,
+          dateFilter === "custom" ? appliedStartDate : undefined,
+          dateFilter === "custom" ? appliedEndDate : undefined,
+          dateFilter
+        ),
       ]);
 
       if (seq === requestSeqRef.current) {
@@ -217,7 +252,7 @@ export function JobCardListView() {
         setLoading(false);
       }
     }
-  }, [statusFilter, query, page]);
+  }, [statusFilter, query, page, dateFilter, appliedStartDate, appliedEndDate, activeWorkspaceId]);
 
   useEffect(() => {
     loadData();
@@ -413,7 +448,9 @@ export function JobCardListView() {
 
       {/* Main Mode Tabs & Filter Bar */}
       <div className="space-y-3">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        {/* ROW 1: Record Type Tabs + Date Filter + Status Tabs */}
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 flex-wrap">
+          {/* Left: Record Types */}
           <Tabs
             value={activeTab}
             onValueChange={(val) => {
@@ -434,27 +471,133 @@ export function JobCardListView() {
             </TabsList>
           </Tabs>
 
-          {activeTab !== "uploaded" && (
-            <Tabs
-              value={statusFilter}
+          {/* Right: Date Filter & Status Filters */}
+          <div className="flex items-center gap-2.5 flex-wrap">
+            {/* Date Filter Dropdown */}
+            <Select
+              value={dateFilter}
               onValueChange={(val) => {
-                setStatusFilter(val as any);
-                setPage(1);
+                const df = val as JobCardDateFilter;
+                setDateFilter(df);
+                if (df !== "custom") {
+                  setAppliedStartDate("");
+                  setAppliedEndDate("");
+                  setPage(1);
+                }
               }}
             >
-              <TabsList className="bg-slate-100/90 border border-slate-200/80 p-1 rounded-xl overflow-x-auto">
-                <TabsTrigger value="all" className="text-xs px-2.5 py-1 font-medium rounded-lg data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-2xs">All Statuses</TabsTrigger>
-                <TabsTrigger value="new" className="text-xs px-2.5 py-1 font-medium rounded-lg data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-2xs">New</TabsTrigger>
-                <TabsTrigger value="in_progress" className="text-xs px-2.5 py-1 font-medium rounded-lg data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-2xs">In Progress</TabsTrigger>
-                <TabsTrigger value="waiting" className="text-xs px-2.5 py-1 font-medium rounded-lg data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-2xs">Waiting</TabsTrigger>
-                <TabsTrigger value="completed" className="text-xs px-2.5 py-1 font-medium rounded-lg data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-2xs">Completed</TabsTrigger>
-                <TabsTrigger value="cancelled" className="text-xs px-2.5 py-1 font-medium rounded-lg data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-2xs">Cancelled</TabsTrigger>
-              </TabsList>
-            </Tabs>
-          )}
+              <SelectTrigger className="h-9 min-w-[155px] text-xs font-semibold rounded-xl border border-slate-200/90 bg-white text-slate-700 shadow-2xs hover:bg-slate-50 focus:ring-1 focus:ring-blue-500">
+                <div className="flex items-center gap-2 truncate">
+                  <Calendar className="h-3.5 w-3.5 text-slate-500 shrink-0" />
+                  <span className="truncate">
+                    {dateFilter === "all" && "Date: All Dates"}
+                    {dateFilter === "today" && "Date: Today"}
+                    {dateFilter === "yesterday" && "Date: Yesterday"}
+                    {dateFilter === "last_7_days" && "Date: Last 7 Days"}
+                    {dateFilter === "last_30_days" && "Date: Last 30 Days"}
+                    {dateFilter === "this_month" && "Date: This Month"}
+                    {dateFilter === "last_month" && "Date: Last Month"}
+                    {dateFilter === "custom" && (appliedStartDate && appliedEndDate ? `${appliedStartDate} to ${appliedEndDate}` : "Date: Custom Range")}
+                  </span>
+                </div>
+              </SelectTrigger>
+              <SelectContent className="rounded-xl border border-slate-200 text-xs shadow-md">
+                <SelectItem value="all">All Dates</SelectItem>
+                <SelectItem value="today">Today</SelectItem>
+                <SelectItem value="yesterday">Yesterday</SelectItem>
+                <SelectItem value="last_7_days">Last 7 Days</SelectItem>
+                <SelectItem value="last_30_days">Last 30 Days</SelectItem>
+                <SelectItem value="this_month">This Month</SelectItem>
+                <SelectItem value="last_month">Last Month</SelectItem>
+                <SelectItem value="custom">Custom Range...</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {/* Status Filter Tabs (when not in uploaded view) */}
+            {activeTab !== "uploaded" && (
+              <Tabs
+                value={statusFilter}
+                onValueChange={(val) => {
+                  setStatusFilter(val as any);
+                  setPage(1);
+                }}
+              >
+                <TabsList className="bg-slate-100/90 border border-slate-200/80 p-1 rounded-xl overflow-x-auto">
+                  <TabsTrigger value="all" className="text-xs px-2.5 py-1 font-medium rounded-lg data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-2xs">All Statuses</TabsTrigger>
+                  <TabsTrigger value="new" className="text-xs px-2.5 py-1 font-medium rounded-lg data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-2xs">New</TabsTrigger>
+                  <TabsTrigger value="in_progress" className="text-xs px-2.5 py-1 font-medium rounded-lg data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-2xs">In Progress</TabsTrigger>
+                  <TabsTrigger value="waiting" className="text-xs px-2.5 py-1 font-medium rounded-lg data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-2xs">Waiting</TabsTrigger>
+                  <TabsTrigger value="completed" className="text-xs px-2.5 py-1 font-medium rounded-lg data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-2xs">Completed</TabsTrigger>
+                  <TabsTrigger value="cancelled" className="text-xs px-2.5 py-1 font-medium rounded-lg data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-2xs">Cancelled</TabsTrigger>
+                </TabsList>
+              </Tabs>
+            )}
+          </div>
         </div>
 
-        {/* Search Bar */}
+        {/* Custom Date Range Controls (shown when Custom Range is selected) */}
+        {dateFilter === "custom" && (
+          <div className="p-3 bg-slate-50/80 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-xl flex flex-wrap items-center justify-between gap-3 text-xs animate-in fade-in-50">
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                <Calendar className="h-3.5 w-3.5 text-blue-600" /> Custom Date Range:
+              </span>
+              <div className="flex items-center gap-1.5">
+                <Label className="text-[11px] text-slate-500 font-medium">From:</Label>
+                <Input
+                  type="date"
+                  value={customStartDate}
+                  onChange={(e) => setCustomStartDate(e.target.value)}
+                  className="h-8 text-xs w-36 rounded-lg border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 font-mono"
+                />
+              </div>
+              <div className="flex items-center gap-1.5">
+                <Label className="text-[11px] text-slate-500 font-medium">To:</Label>
+                <Input
+                  type="date"
+                  value={customEndDate}
+                  onChange={(e) => setCustomEndDate(e.target.value)}
+                  className="h-8 text-xs w-36 rounded-lg border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 font-mono"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 ml-auto">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setCustomStartDate("");
+                  setCustomEndDate("");
+                  setAppliedStartDate("");
+                  setAppliedEndDate("");
+                  setDateFilter("all");
+                  setPage(1);
+                }}
+                className="h-8 px-3 text-xs rounded-lg border-slate-200 text-slate-600 hover:text-slate-900"
+              >
+                Clear
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => {
+                  if (customStartDate || customEndDate) {
+                    setAppliedStartDate(customStartDate);
+                    setAppliedEndDate(customEndDate);
+                    setPage(1);
+                  }
+                }}
+                className="h-8 px-3.5 text-xs font-semibold rounded-lg bg-blue-600 hover:bg-blue-700 text-white shadow-xs"
+              >
+                Apply
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* ROW 2: Search Bar */}
         <div className="w-full">
           <SearchInput
             placeholder="Search by JC # (e.g. JC-1065), Customer Name, Mobile, Plate #, or Chassis/VIN..."
@@ -798,9 +941,13 @@ export function JobCardListView() {
               ) : (
                 <div className="py-14 text-center text-slate-500 flex flex-col items-center justify-center px-4">
                   <ClipboardList className="h-10 w-10 mx-auto text-slate-300 stroke-1 mb-2" />
-                  <h3 className="text-sm font-semibold text-slate-900">No job cards found</h3>
+                  <h3 className="text-sm font-semibold text-slate-900">
+                    {query || statusFilter !== "all" || dateFilter !== "all"
+                      ? "No Job Cards found for the selected filters."
+                      : "No job cards found"}
+                  </h3>
                   <p className="text-xs text-slate-500 mt-1 mb-4 max-w-sm">
-                    {query || statusFilter !== "all"
+                    {query || statusFilter !== "all" || dateFilter !== "all"
                       ? "No repair orders match your current filter and search query."
                       : "Open a repair job card for a customer vehicle to start tracking services, parts and labour."}
                   </p>

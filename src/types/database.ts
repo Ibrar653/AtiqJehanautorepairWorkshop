@@ -783,6 +783,9 @@ export interface JobCardQueryOptions {
   type?: "all" | "digital" | "uploaded";
   assigned_mechanic?: string;
   data_scope?: DataAccessScope;
+  dateFilter?: "all" | "today" | "yesterday" | "last_7_days" | "last_30_days" | "this_month" | "last_month" | "custom" | string;
+  startDate?: string;
+  endDate?: string;
   page?: number;
   limit?: number;
 }

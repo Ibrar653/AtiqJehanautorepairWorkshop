@@ -331,6 +331,73 @@ export async function isInvoiceNumberAvailable(num: number, excludeJobCardId?: s
   }
 }
 
+export type JobCardDateFilter =
+  | "all"
+  | "today"
+  | "yesterday"
+  | "last_7_days"
+  | "last_30_days"
+  | "this_month"
+  | "last_month"
+  | "custom";
+
+export function computeJobCardDateRange(
+  filter?: JobCardDateFilter | string,
+  customStart?: string,
+  customEnd?: string
+): { start?: string; end?: string } {
+  if (filter === "custom") {
+    return {
+      start: customStart || undefined,
+      end: customEnd || undefined,
+    };
+  }
+
+  const now = new Date();
+  const formatYMD = (d: Date) => {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
+  };
+
+  const todayStr = formatYMD(now);
+
+  switch (filter) {
+    case "today":
+      return { start: todayStr, end: todayStr };
+    case "yesterday": {
+      const yesterday = new Date(now);
+      yesterday.setDate(yesterday.getDate() - 1);
+      const yStr = formatYMD(yesterday);
+      return { start: yStr, end: yStr };
+    }
+    case "last_7_days": {
+      const d7 = new Date(now);
+      d7.setDate(d7.getDate() - 6);
+      return { start: formatYMD(d7), end: todayStr };
+    }
+    case "last_30_days": {
+      const d30 = new Date(now);
+      d30.setDate(d30.getDate() - 29);
+      return { start: formatYMD(d30), end: todayStr };
+    }
+    case "this_month": {
+      const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+      const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+      return { start: formatYMD(firstDay), end: formatYMD(lastDay) };
+    }
+    case "last_month": {
+      const firstDay = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      const lastDay = new Date(now.getFullYear(), now.getMonth(), 0);
+      return { start: formatYMD(firstDay), end: formatYMD(lastDay) };
+    }
+    case "all":
+    default:
+      return {};
+  }
+}
+
 export async function getJobCards(
   options: JobCardQueryOptions = {},
   workspaceId?: string
@@ -346,6 +413,9 @@ export async function getJobCards(
     typeof options?.status === "string" && options.status !== "all"
       ? options.status
       : undefined;
+
+  const { startDate, endDate, dateFilter } = options;
+  const { start, end } = computeJobCardDateRange(dateFilter, startDate, endDate);
 
   const page = typeof options?.page === "number" && options.page > 0 ? options.page : 1;
   const limit = typeof options?.limit === "number" && options.limit > 0 ? options.limit : 20;
@@ -370,6 +440,13 @@ export async function getJobCards(
 
       if (options.assigned_mechanic) {
         query = query.ilike("assigned_mechanic", `%${options.assigned_mechanic}%`);
+      }
+
+      if (start) {
+        query = query.gte("date", start);
+      }
+      if (end) {
+        query = query.lte("date", end);
       }
 
       if (search) {
@@ -407,6 +484,16 @@ export async function getJobCards(
     if (options.assigned_mechanic) {
       const mech = options.assigned_mechanic.toLowerCase();
       list = list.filter((jc) => jc.assigned_mechanic && jc.assigned_mechanic.toLowerCase().includes(mech));
+    }
+
+    if (start || end) {
+      list = list.filter((jc) => {
+        const dStr = (jc.date || jc.created_at || "").slice(0, 10);
+        if (!dStr) return false;
+        if (start && dStr < start) return false;
+        if (end && dStr > end) return false;
+        return true;
+      });
     }
 
     if (search) {
