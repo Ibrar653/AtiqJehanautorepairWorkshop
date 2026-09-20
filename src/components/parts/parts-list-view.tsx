@@ -239,13 +239,13 @@ export function PartsListView() {
     setFormBrand(part.brand || "");
     setFormDescription(part.description || "");
     setFormUnit(part.unit || "piece");
-    setFormPurchasePrice(part.purchase_price.toString());
-    setFormSellingPrice(part.selling_price.toString());
-    setFormCurrentStock(part.current_stock.toString());
-    setFormMinimumStock(part.minimum_stock.toString());
+    setFormPurchasePrice(part.purchase_price !== undefined && part.purchase_price !== null ? part.purchase_price.toString() : "0");
+    setFormSellingPrice(part.selling_price !== undefined && part.selling_price !== null ? part.selling_price.toString() : "0");
+    setFormCurrentStock(part.current_stock !== undefined && part.current_stock !== null ? part.current_stock.toString() : "0");
+    setFormMinimumStock(part.minimum_stock !== undefined && part.minimum_stock !== null ? part.minimum_stock.toString() : "5");
     setFormSupplierId(part.supplier_id || "");
     setFormLocation(part.location || "");
-    setFormActive(part.is_active);
+    setFormActive(part.is_active !== false);
     setFormError(null);
     setFormDialogOpen(true);
   };
@@ -343,14 +343,19 @@ export function PartsListView() {
     }
 
     const sPrice = parseFloat(formSellingPrice);
-    if (isNaN(sPrice) || sPrice < 0) {
-      setFormError("Please enter a valid selling price.");
+    if (!Number.isFinite(sPrice) || sPrice < 0) {
+      setFormError("Please enter a valid selling price (0 or more).");
       return;
     }
 
-    const pPrice = parseFloat(formPurchasePrice) || 0;
-    const cStock = parseInt(formCurrentStock, 10) || 0;
-    const mStock = parseInt(formMinimumStock, 10) || 0;
+    const pPrice = parseFloat(formPurchasePrice);
+    if (!Number.isFinite(pPrice) || pPrice < 0) {
+      setFormError("Please enter a valid purchase cost price (0 or more).");
+      return;
+    }
+
+    const mStock = parseInt(formMinimumStock, 10);
+    const validMinStock = isNaN(mStock) ? 0 : Math.max(0, mStock);
 
     // Check duplicate part number if provided
     if (formPartNumber.trim()) {
@@ -366,6 +371,7 @@ export function PartsListView() {
 
     try {
       if (editingPart) {
+        // Price & master data edit - does not change stock quantity or create stock transactions
         await updatePart(editingPart.id, {
           name: formName.trim(),
           part_number: formPartNumber.trim() || null,
@@ -374,8 +380,7 @@ export function PartsListView() {
           unit: formUnit.trim() || "piece",
           purchase_price: pPrice,
           selling_price: sPrice,
-          current_stock: cStock,
-          minimum_stock: mStock,
+          minimum_stock: validMinStock,
           supplier_id: formSupplierId || null,
           location: formLocation.trim() || null,
           is_active: formActive,
@@ -386,6 +391,9 @@ export function PartsListView() {
           text: `Spare part "${formName}" updated successfully.`,
         });
       } else {
+        const cStock = parseInt(formCurrentStock, 10);
+        const validCurrentStock = isNaN(cStock) ? 0 : Math.max(0, cStock);
+
         await createPart({
           name: formName.trim(),
           part_number: formPartNumber.trim() || null,
@@ -394,8 +402,8 @@ export function PartsListView() {
           unit: formUnit.trim() || "piece",
           purchase_price: pPrice,
           selling_price: sPrice,
-          current_stock: cStock,
-          minimum_stock: mStock,
+          current_stock: validCurrentStock,
+          minimum_stock: validMinStock,
           supplier_id: formSupplierId || null,
           location: formLocation.trim() || null,
           is_active: formActive,

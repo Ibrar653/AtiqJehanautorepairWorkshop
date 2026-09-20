@@ -456,6 +456,21 @@ export function InventoryView() {
       return;
     }
 
+    const pPrice = parseFloat(String(editPurchasePrice));
+    if (!Number.isFinite(pPrice) || pPrice < 0) {
+      setEditPartError("Please enter a valid purchase cost price (0 or more).");
+      return;
+    }
+
+    const sPrice = parseFloat(String(editSellingPrice));
+    if (!Number.isFinite(sPrice) || sPrice < 0) {
+      setEditPartError("Please enter a valid selling price (0 or more).");
+      return;
+    }
+
+    const minStock = parseInt(String(editMinStock), 10);
+    const validMinStock = isNaN(minStock) ? 0 : Math.max(0, minStock);
+
     setSavingEditPart(true);
     setEditPartError(null);
 
@@ -466,9 +481,9 @@ export function InventoryView() {
         brand: editBrand.trim() || null,
         description: editDescription.trim() || null,
         unit: editUnit.trim() || "piece",
-        purchase_price: Number(editPurchasePrice) || 0,
-        selling_price: Number(editSellingPrice) || 0,
-        minimum_stock: Number(editMinStock) || 0,
+        purchase_price: pPrice,
+        selling_price: sPrice,
+        minimum_stock: validMinStock,
         supplier_id: editSupplierId || null,
         location: editLocation.trim() || null,
         is_active: editIsActive,

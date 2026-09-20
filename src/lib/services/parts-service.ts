@@ -267,7 +267,7 @@ export function saveLocalParts(parts: Part[], workspaceId?: string) {
   }
 }
 
-function withTimeout<T>(promise: PromiseLike<T>, timeoutMs = 2000): Promise<T> {
+function withTimeout<T>(promise: PromiseLike<T>, timeoutMs = 4000): Promise<T> {
   return Promise.race([
     Promise.resolve(promise),
     new Promise<T>((_, reject) =>
@@ -595,7 +595,8 @@ export async function createPart(payload: PartInsert, workspaceId?: string): Pro
 /**
  * Update an existing spare part
  */
-export async function updatePart(id: string, payload: PartUpdate): Promise<Part> {
+export async function updatePart(id: string, payload: PartUpdate, workspaceId?: string): Promise<Part> {
+  const targetWsId = workspaceId || getActiveWorkspaceId();
   const supabase = createClient();
   const now = new Date().toISOString();
 
@@ -607,12 +608,72 @@ export async function updatePart(id: string, payload: PartUpdate): Promise<Part>
     }
   }
 
+  // Parse and sanitize fields to prevent invalid conversions or NaN
+  const cleanPayload: PartUpdate = { ...payload };
+  if (cleanPayload.name !== undefined) {
+    cleanPayload.name = cleanPayload.name.trim();
+  }
+  if (cleanPayload.part_number !== undefined) {
+    cleanPayload.part_number = cleanPayload.part_number?.trim() || null;
+  }
+  if (cleanPayload.brand !== undefined) {
+    cleanPayload.brand = cleanPayload.brand?.trim() || null;
+  }
+  if (cleanPayload.description !== undefined) {
+    cleanPayload.description = cleanPayload.description?.trim() || null;
+  }
+  if (cleanPayload.location !== undefined) {
+    cleanPayload.location = cleanPayload.location?.trim() || null;
+  }
+  if (cleanPayload.unit !== undefined) {
+    cleanPayload.unit = cleanPayload.unit?.trim() || "piece";
+  }
+  if (cleanPayload.purchase_price !== undefined) {
+    const parsedPurchase = typeof cleanPayload.purchase_price === "string" ? parseFloat(cleanPayload.purchase_price) : Number(cleanPayload.purchase_price);
+    cleanPayload.purchase_price = isNaN(parsedPurchase) ? 0 : Math.max(0, parsedPurchase);
+  }
+  if (cleanPayload.selling_price !== undefined) {
+    const parsedSelling = typeof cleanPayload.selling_price === "string" ? parseFloat(cleanPayload.selling_price) : Number(cleanPayload.selling_price);
+    cleanPayload.selling_price = isNaN(parsedSelling) ? 0 : Math.max(0, parsedSelling);
+  }
+  if (cleanPayload.minimum_stock !== undefined) {
+    const parsedMin = typeof cleanPayload.minimum_stock === "string" ? parseInt(cleanPayload.minimum_stock, 10) : Number(cleanPayload.minimum_stock);
+    cleanPayload.minimum_stock = isNaN(parsedMin) ? 0 : Math.max(0, parsedMin);
+  }
+  if (cleanPayload.current_stock !== undefined) {
+    const parsedStock = typeof cleanPayload.current_stock === "string" ? parseInt(cleanPayload.current_stock, 10) : Number(cleanPayload.current_stock);
+    cleanPayload.current_stock = isNaN(parsedStock) ? 0 : Math.max(0, parsedStock);
+  }
+
+  const updateLocalCache = (item: Part) => {
+    let all: Part[] = [];
+    if (typeof window !== "undefined") {
+      try {
+        const raw = localStorage.getItem(LOCAL_PARTS_KEY);
+        if (raw) all = JSON.parse(raw);
+      } catch {}
+    }
+    if (!all || all.length === 0) all = [...inMemoryParts];
+    const idx = all.findIndex((p) => p.id === id);
+    if (idx !== -1) {
+      all[idx] = { ...all[idx], ...item, updated_at: now };
+    } else {
+      all.unshift(item);
+    }
+    inMemoryParts = all;
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem(LOCAL_PARTS_KEY, JSON.stringify(all));
+      } catch {}
+    }
+  };
+
   try {
     const fetchWithTimeout = async () => {
       const { data, error } = await supabase
         .from("parts")
         .update({
-          ...payload,
+          ...cleanPayload,
           updated_at: now,
         })
         .eq("id", id)
@@ -623,32 +684,36 @@ export async function updatePart(id: string, payload: PartUpdate): Promise<Part>
       return data as Part;
     };
 
-    const updated = await withTimeout(fetchWithTimeout(), 2000);
-    const list = getLocalParts();
-    const idx = list.findIndex((p) => p.id === id);
-    if (idx !== -1) {
-      list[idx] = updated;
-      saveLocalParts(list);
-    }
+    const updated = await withTimeout(fetchWithTimeout(), 4000);
+    updateLocalCache(updated);
     return updated;
   } catch (err: any) {
     console.warn("Updating part in local catalog fallback:", err.message || err);
-    let all = inMemoryParts;
+    let all: Part[] = [];
     if (typeof window !== "undefined") {
       try {
         const raw = localStorage.getItem(LOCAL_PARTS_KEY);
         if (raw) all = JSON.parse(raw);
       } catch {}
     }
+    if (!all || all.length === 0) all = [...inMemoryParts];
     const idx = all.findIndex((p) => p.id === id);
     if (idx !== -1) {
-      all[idx] = {
+      const updatedItem: Part = {
         ...all[idx],
-        ...payload,
+        ...cleanPayload,
         updated_at: now,
       };
-      saveLocalParts(all, all[idx].workspace_id);
-      return all[idx];
+      all[idx] = updatedItem;
+      inMemoryParts = all;
+      if (typeof window !== "undefined") {
+        try {
+          localStorage.setItem(LOCAL_PARTS_KEY, JSON.stringify(all));
+        } catch (e) {
+          console.error("Failed to save updated local part", e);
+        }
+      }
+      return updatedItem;
     }
     throw err;
   }
