@@ -475,6 +475,11 @@ export function JobCardPrintView({ jobCard }: JobCardPrintViewProps) {
                   {paymentStatus}
                 </span>
               </div>
+              {((jobCard as any).payment_method || (jobCard as any).advance_payment_method) && (
+                <div className="text-[8px] text-gray-700 mt-1 font-semibold">
+                  Method: <span className="uppercase font-mono text-black">{((jobCard as any).payment_method || (jobCard as any).advance_payment_method).replace(/_/g, " ")}</span>
+                </div>
+              )}
               {sparePartItems.length > 0 && (
                 <div className="text-[8px] text-gray-600 mt-1 font-medium space-y-0.5">
                   <div>Services Total: <span className="font-mono font-bold text-black">{formatAmount(servicesTotal)} AED</span></div>
@@ -483,7 +488,7 @@ export function JobCardPrintView({ jobCard }: JobCardPrintViewProps) {
               )}
             </div>
 
-            {/* Right: Subtotal, VAT, Grand Total */}
+            {/* Right: Subtotal, VAT, Grand Total, Advance & Balance */}
             <div className="col-span-6 text-[9px] divide-y divide-gray-300 font-medium">
               <div className="flex justify-between py-1 px-2.5 bg-gray-50">
                 <span className="font-bold text-gray-800">Sub Total:</span>
@@ -508,6 +513,20 @@ export function JobCardPrintView({ jobCard }: JobCardPrintViewProps) {
                   AED {formatAmount(grandTotal)}
                 </span>
               </div>
+              {Number((jobCard as any).paid) > 0 && (
+                <>
+                  <div className="flex justify-between py-1 px-2.5 bg-emerald-50/50">
+                    <span className="font-bold text-emerald-800">Advance / Paid:</span>
+                    <span className="font-mono font-bold text-emerald-700">{formatAmount(Number((jobCard as any).paid))} AED</span>
+                  </div>
+                  <div className="flex justify-between py-1 px-2.5 bg-rose-50/50">
+                    <span className="font-bold text-rose-800">Pending Balance:</span>
+                    <span className="font-mono font-black text-rose-700">
+                      {formatAmount(Math.max(0, (jobCard as any).balance !== undefined ? Number((jobCard as any).balance) : grandTotal - Number((jobCard as any).paid)))} AED
+                    </span>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>

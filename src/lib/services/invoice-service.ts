@@ -487,7 +487,13 @@ export async function generateInvoiceFromJobCard(
   const vatAmount = Number(jobCard.vat_amount) || Math.round(subtotal * (vatRate / 100) * 100) / 100;
   const total = Number(jobCard.total) || Math.round((subtotal + vatAmount - discount) * 100) / 100;
 
-  const paid = Math.min(total, Math.max(0, Number(jobCard.paid) || 0));
+  // Fetch all existing real payment records for this Job Card
+  const { getPaymentsByJobCard, getLocalPayments, saveLocalPayments } = await import("./payment-service");
+  const existingJobPayments = await getPaymentsByJobCard(jobCard.id, jobCard.workspace_id || targetWsId);
+  const existingPaidSum = existingJobPayments.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+
+  // Determine actual paid amount and balance
+  const paid = existingPaidSum > 0 ? existingPaidSum : Math.min(total, Math.max(0, Number(jobCard.paid) || 0));
   const balance = Math.max(0, total - paid);
 
   let payment_status: PaymentStatus = "credit";
@@ -558,8 +564,18 @@ export async function generateInvoiceFromJobCard(
       );
     }
 
-    // If initial payment was made on Job Card, record payment
-    if (paid > 0) {
+    // Carry forward existing payments without creating duplicates
+    if (existingJobPayments.length > 0) {
+      try {
+        await supabase
+          .from("payments")
+          .update({ invoice_id: invoiceId })
+          .eq("job_card_id", jobCard.id);
+      } catch (carryErr) {
+        console.warn("Updating carried forward payment invoice_id notice:", carryErr);
+      }
+    } else if (paid > 0) {
+      // Legacy fallback: if jobCard.paid was set without payment row
       try {
         await supabase.from("payments").insert({
           invoice_id: invoiceId,
@@ -582,6 +598,19 @@ export async function generateInvoiceFromJobCard(
       }
     }
 
+    // Update local payments store with invoice_id link
+    const localPayments = getLocalPayments();
+    let localUpdated = false;
+    localPayments.forEach((p) => {
+      if (p.job_card_id === jobCard.id && !p.invoice_id) {
+        p.invoice_id = invoiceId;
+        localUpdated = true;
+      }
+    });
+    if (localUpdated) {
+      saveLocalPayments(localPayments);
+    }
+
     // Save to local cache
     const list = getLocalInvoices(targetWsId);
     list.unshift({ ...invoicePayload, items: invoiceItemsToInsert });
@@ -590,15 +619,42 @@ export async function generateInvoiceFromJobCard(
     const existingItems = getLocalInvoiceItems();
     saveLocalInvoiceItems([...invoiceItemsToInsert, ...existingItems]);
 
+    // Post customer invoice ledger
+    try {
+      const { postInvoiceLedger } = await import("./ledger-service");
+      await postInvoiceLedger({
+        id: invoiceId,
+        invoice_number: formattedInvoiceNumber,
+        customer_id: jobCard.customer_id,
+        customer_name: jobCard.customer?.name,
+        date: jobCard.date,
+        services_total: servicesTotal,
+        parts_total: sparePartsTotal,
+        subtotal,
+        vat_amount: vatAmount,
+        total,
+        created_by: createdByUserId || "Owner",
+      });
+    } catch (ledErr) {
+      console.warn("Posting invoice ledger on conversion notice:", ledErr);
+    }
+
     invalidateDashboardCache();
     return { ...invoicePayload, items: invoiceItemsToInsert };
   } catch (err: any) {
     console.warn("Generating invoice in local fallback store:", err.message || err);
 
-    // Record initial payment locally if paid > 0
-    if (paid > 0) {
-      const { getLocalPayments, saveLocalPayments } = await import("./payment-service");
-      const localPayments = getLocalPayments();
+    // Update local payments store with invoice_id link
+    const localPayments = getLocalPayments();
+    let localUpdated = false;
+    localPayments.forEach((p) => {
+      if (p.job_card_id === jobCard.id && !p.invoice_id) {
+        p.invoice_id = invoiceId;
+        localUpdated = true;
+      }
+    });
+
+    if (existingJobPayments.length === 0 && paid > 0) {
       localPayments.unshift({
         id: "pay-" + Date.now() + "-" + Math.random().toString(36).substring(2, 6),
         invoice_id: invoiceId,
@@ -616,6 +672,10 @@ export async function generateInvoiceFromJobCard(
         created_by: createdByUserId || "Owner",
         created_at: now,
       });
+      localUpdated = true;
+    }
+
+    if (localUpdated) {
       saveLocalPayments(localPayments);
     }
 

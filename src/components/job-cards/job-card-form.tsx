@@ -56,6 +56,8 @@ import {
   Image as ImageIcon,
   Sparkles,
   Upload,
+  DollarSign,
+  CreditCard,
 } from "lucide-react";
 import { formatCurrency, formatAmount } from "@/lib/utils";
 
@@ -211,6 +213,14 @@ export function JobCardForm({ jobCardId }: JobCardFormProps) {
   const [discount, setDiscount] = useState<string>("0");
   const [vatRate, setVatRate] = useState<string>("5");
 
+  // Advance / Payment Details State
+  const [paymentOption, setPaymentOption] = useState<"no_payment" | "advance" | "paid_full">("no_payment");
+  const [advanceAmount, setAdvanceAmount] = useState<string>("");
+  const [paymentMethod, setPaymentMethod] = useState<string>("cash");
+  const [paymentDate, setPaymentDate] = useState<string>(new Date().toISOString().slice(0, 10));
+  const [paymentReference, setPaymentReference] = useState<string>("");
+  const [paymentNotes, setPaymentNotes] = useState<string>("");
+
   // Inline Add Service Modal
   const [newServiceModalOpen, setNewServiceModalOpen] = useState(false);
   const [newSrvName, setNewSrvName] = useState("");
@@ -356,6 +366,19 @@ export function JobCardForm({ jobCardId }: JobCardFormProps) {
         setNotes(jc.notes || "");
         setDiscount(jc.discount !== undefined ? jc.discount.toString() : "0");
 
+        const existingPaid = Number(jc.paid) || 0;
+        const jcTotal = Number(jc.total) || 0;
+        if (existingPaid >= jcTotal && jcTotal > 0) {
+          setPaymentOption("paid_full");
+          setAdvanceAmount(String(existingPaid));
+        } else if (existingPaid > 0) {
+          setPaymentOption("advance");
+          setAdvanceAmount(String(existingPaid));
+        } else {
+          setPaymentOption("no_payment");
+          setAdvanceAmount("");
+        }
+
         // Load attachments if any
         getAttachmentsByJobCard(jobCardId).then(setExistingAttachments).catch(console.error);
 
@@ -446,6 +469,18 @@ export function JobCardForm({ jobCardId }: JobCardFormProps) {
   const numVatRate = Math.max(0, parseFloat(vatRate) || 0);
   const vatAmount = Math.round(taxableAmount * numVatRate) / 100;
   const grandTotal = Math.round((taxableAmount + vatAmount) * 100) / 100;
+
+  const effectivePaid = paymentOption === "paid_full"
+    ? grandTotal
+    : paymentOption === "advance"
+    ? Math.min(grandTotal, Math.max(0, parseFloat(advanceAmount) || 0))
+    : 0;
+  const pendingAmount = Math.max(0, grandTotal - effectivePaid);
+  const derivedPaymentStatus = pendingAmount === 0 && grandTotal > 0
+    ? "Paid Full"
+    : effectivePaid > 0
+    ? "Advance / Partial"
+    : "No Payment";
 
   // Job / Service Line Management
   const addJobLine = () => {
@@ -802,6 +837,18 @@ export function JobCardForm({ jobCardId }: JobCardFormProps) {
       }
     }
 
+    const effectivePaid = paymentOption === "no_payment"
+      ? 0
+      : paymentOption === "paid_full"
+      ? grandTotal
+      : Math.min(grandTotal, Math.max(0, parseFloat(advanceAmount) || 0));
+
+    const derivedPaymentStatus = effectivePaid >= grandTotal && grandTotal > 0
+      ? "Paid Full"
+      : effectivePaid > 0
+      ? "Partial"
+      : "Pending";
+
     const payload: any = {
       job_card_number: jobCardNumber || undefined,
       customer_id: selectedCustomer.id,
@@ -814,15 +861,19 @@ export function JobCardForm({ jobCardId }: JobCardFormProps) {
       work_details: workDetails.trim() || null,
       assigned_mechanic: assignedMechanic.trim() || null,
       status,
-      payment_status: paymentStatus,
+      payment_status: derivedPaymentStatus,
+      payment_method: paymentMethod,
+      payment_date: paymentDate,
+      payment_reference: paymentReference.trim() || null,
+      payment_notes: paymentNotes.trim() || null,
       notes: notes.trim() || null,
       subtotal,
       discount: numDiscount,
       vat_rate: numVatRate,
       vat_amount: vatAmount,
       total: grandTotal,
-      paid: 0,
-      balance: grandTotal,
+      paid: effectivePaid,
+      balance: Math.max(0, grandTotal - effectivePaid),
     };
 
     // Combine service & part items
@@ -1731,7 +1782,7 @@ export function JobCardForm({ jobCardId }: JobCardFormProps) {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-1">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
               <div className="space-y-1.5">
                 <Label htmlFor="fc-discount" className="text-xs font-semibold">
                   Discount (AED)
@@ -1769,37 +1820,178 @@ export function JobCardForm({ jobCardId }: JobCardFormProps) {
                   className="h-9 font-mono font-bold"
                 />
               </div>
+            </div>
 
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="fc-payment-status" className="text-xs font-semibold">
-                    Payment Status
-                  </Label>
-                  <span
-                    className={`text-[10px] px-2 py-0.5 rounded font-bold border ${
-                      /cash|bank\s*transfer|credit\s*card|paid/i.test(paymentStatus)
-                        ? "bg-green-50 text-green-700 border-green-200 dark:bg-green-950/40 dark:text-green-300 dark:border-green-800"
-                        : "bg-red-50 text-red-700 border-red-200 dark:bg-red-950/40 dark:text-red-300 dark:border-red-800"
-                    }`}
-                  >
-                    {paymentStatus}
-                  </span>
+            {/* ─── PAYMENT / ADVANCE DETAILS SECTION ─── */}
+            <div className="pt-4 border-t border-border space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-foreground flex items-center gap-1.5">
+                    <DollarSign className="h-4 w-4 text-emerald-600" /> Payment / Advance Details
+                  </h4>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">
+                    Record customer advance deposit or initial payment at Job Card creation
+                  </p>
                 </div>
-                <select
-                  id="fc-payment-status"
-                  value={paymentStatus}
-                  onChange={(e) => setPaymentStatus(e.target.value)}
-                  className={`flex h-9 w-full rounded-lg border px-3 py-1 text-sm shadow-sm font-bold ${
-                    /cash|bank\s*transfer|credit\s*card|paid/i.test(paymentStatus)
-                      ? "border-green-500 bg-green-50/50 text-green-700 dark:bg-green-950/30 dark:text-green-300"
-                      : "border-red-500 bg-red-50/50 text-red-700 dark:bg-red-950/30 dark:text-red-300"
+                <span
+                  className={`text-[10px] px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider border ${
+                    effectivePaid >= grandTotal && grandTotal > 0
+                      ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800"
+                      : effectivePaid > 0
+                      ? "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800"
+                      : "bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300"
                   }`}
                 >
-                  <option value="Pending">Pending</option>
-                  <option value="Cash">Cash</option>
-                  <option value="Bank Transfer">Bank Transfer</option>
-                  <option value="Credit Card">Credit Card</option>
-                </select>
+                  {derivedPaymentStatus}
+                </span>
+              </div>
+
+              {/* Payment Mode Selector Pills */}
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPaymentOption("no_payment");
+                    setAdvanceAmount("0");
+                  }}
+                  className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all border ${
+                    paymentOption === "no_payment"
+                      ? "bg-slate-800 text-white border-slate-800 shadow-2xs"
+                      : "bg-background text-muted-foreground border-border hover:bg-muted/50"
+                  }`}
+                >
+                  No Payment (Unpaid)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPaymentOption("advance");
+                    if (!advanceAmount || advanceAmount === "0") {
+                      setAdvanceAmount((grandTotal / 2).toFixed(2));
+                    }
+                  }}
+                  className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all border ${
+                    paymentOption === "advance"
+                      ? "bg-blue-600 text-white border-blue-600 shadow-2xs"
+                      : "bg-background text-muted-foreground border-border hover:bg-muted/50"
+                  }`}
+                >
+                  Advance / Partial Payment
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPaymentOption("paid_full");
+                    setAdvanceAmount(grandTotal.toFixed(2));
+                  }}
+                  className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all border ${
+                    paymentOption === "paid_full"
+                      ? "bg-emerald-600 text-white border-emerald-600 shadow-2xs"
+                      : "bg-background text-muted-foreground border-border hover:bg-muted/50"
+                  }`}
+                >
+                  Paid Full (100%)
+                </button>
+              </div>
+
+              {/* Advance / Partial Payment Form Fields */}
+              {paymentOption !== "no_payment" && (
+                <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-slate-200/80 dark:border-slate-800 space-y-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div className="space-y-1">
+                      <Label htmlFor="fc-advance-amt" className="text-xs font-semibold">
+                        {paymentOption === "paid_full" ? "Total Paid (AED)" : "Advance Amount (AED) *"}
+                      </Label>
+                      <Input
+                        id="fc-advance-amt"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        max={grandTotal}
+                        disabled={paymentOption === "paid_full"}
+                        placeholder="0.00"
+                        value={paymentOption === "paid_full" ? grandTotal.toFixed(2) : advanceAmount}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setAdvanceAmount(val);
+                          const num = parseFloat(val) || 0;
+                          if (num >= grandTotal && grandTotal > 0) {
+                            setPaymentOption("paid_full");
+                          }
+                        }}
+                        className="h-9 font-mono font-bold text-sm bg-white dark:bg-slate-950"
+                        required
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <Label htmlFor="fc-advance-method" className="text-xs font-semibold">
+                        Payment Method *
+                      </Label>
+                      <select
+                        id="fc-advance-method"
+                        value={paymentMethod}
+                        onChange={(e) => setPaymentMethod(e.target.value)}
+                        className="flex h-9 w-full rounded-md border border-input bg-white dark:bg-slate-950 px-3 py-1 text-xs shadow-xs font-semibold"
+                      >
+                        <option value="cash">Cash</option>
+                        <option value="bank_transfer">Bank Transfer</option>
+                        <option value="credit_card">Card / POS Terminal</option>
+                        <option value="cheque">Cheque</option>
+                      </select>
+                    </div>
+
+                    <div className="space-y-1">
+                      <Label htmlFor="fc-advance-date" className="text-xs font-semibold">
+                        Payment Date *
+                      </Label>
+                      <Input
+                        id="fc-advance-date"
+                        type="date"
+                        value={paymentDate}
+                        onChange={(e) => setPaymentDate(e.target.value)}
+                        className="h-9 font-mono text-xs bg-white dark:bg-slate-950"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <Label htmlFor="fc-advance-ref" className="text-xs font-semibold">
+                      Reference / Note (Optional)
+                    </Label>
+                    <Input
+                      id="fc-advance-ref"
+                      placeholder="e.g. Cash advance at counter / ADCB Ref #12345"
+                      value={paymentReference}
+                      onChange={(e) => setPaymentReference(e.target.value)}
+                      className="h-9 text-xs bg-white dark:bg-slate-950"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Real-Time Live Payment Summary Display */}
+              <div className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-muted/20 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+                <div className="flex items-center gap-6 divide-x divide-border">
+                  <div>
+                    <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">Total Amount</span>
+                    <p className="font-mono font-bold text-foreground text-sm mt-0.5">AED {grandTotal.toFixed(2)}</p>
+                  </div>
+                  <div className="pl-6">
+                    <span className="text-[10px] text-emerald-600 uppercase font-bold tracking-wider">Advance Paid</span>
+                    <p className="font-mono font-bold text-emerald-600 text-sm mt-0.5">AED {effectivePaid.toFixed(2)}</p>
+                  </div>
+                  <div className="pl-6">
+                    <span className="text-[10px] text-amber-700 uppercase font-bold tracking-wider">Pending Balance</span>
+                    <p className="font-mono font-black text-amber-700 text-sm mt-0.5">AED {pendingAmount.toFixed(2)}</p>
+                  </div>
+                </div>
+
+                <div className="text-right">
+                  <span className="text-[10px] text-muted-foreground uppercase font-semibold">Status</span>
+                  <p className="font-bold text-xs uppercase tracking-wide">{derivedPaymentStatus}</p>
+                </div>
               </div>
             </div>
           </CardContent>

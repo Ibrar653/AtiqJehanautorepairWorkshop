@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { getJobCardById, updateJobCardStatus } from "@/lib/services/job-card-service";
 import { getInvoiceByJobCardId, generateInvoiceFromJobCard } from "@/lib/services/invoice-service";
+import { getPaymentsByJobCard, recordJobCardPayment } from "@/lib/services/payment-service";
 import {
   getAttachmentsByJobCard,
   addJobCardAttachment,
@@ -19,6 +20,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Printer,
   Pencil,
@@ -39,8 +43,10 @@ import {
   Sparkles,
   DollarSign,
   Calendar,
+  CreditCard,
+  Clock,
 } from "lucide-react";
-import { formatAmount, formatDate } from "@/lib/utils";
+import { formatAmount, formatDate, formatCurrency } from "@/lib/utils";
 
 interface JobCardDetailViewProps {
   id: string;
@@ -52,10 +58,21 @@ export function JobCardDetailView({ id }: JobCardDetailViewProps) {
   const [jobCard, setJobCard] = useState<JobCardWithRelations | null>(null);
   const [attachments, setAttachments] = useState<JobCardAttachment[]>([]);
   const [existingInvoice, setExistingInvoice] = useState<any | null>(null);
+  const [payments, setPayments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [updatingStatus, setUpdatingStatus] = useState(false);
   const [convertingInvoice, setConvertingInvoice] = useState(false);
   const [toastMessage, setToastMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
+  // Add Payment Modal state
+  const [addPaymentOpen, setAddPaymentOpen] = useState(false);
+  const [payAmount, setPayAmount] = useState<number | "">("");
+  const [payMethod, setPayMethod] = useState<string>("cash");
+  const [payDate, setPayDate] = useState<string>(new Date().toISOString().slice(0, 10));
+  const [payRef, setPayRef] = useState<string>("");
+  const [payNotes, setPayNotes] = useState<string>("");
+  const [submittingPayment, setSubmittingPayment] = useState(false);
+  const [paymentError, setPaymentError] = useState<string | null>(null);
 
   // Attachment Modal state
   const [attachmentModalOpen, setAttachmentModalOpen] = useState(false);
@@ -70,14 +87,16 @@ export function JobCardDetailView({ id }: JobCardDetailViewProps) {
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const [data, atts, inv] = await Promise.all([
+      const [data, atts, inv, payList] = await Promise.all([
         getJobCardById(id),
         getAttachmentsByJobCard(id),
         getInvoiceByJobCardId(id),
+        getPaymentsByJobCard(id),
       ]);
       setJobCard(data);
       setAttachments(atts || []);
       setExistingInvoice(inv || null);
+      setPayments(payList || []);
     } catch (err: any) {
       console.error(err);
       setToastMessage({ type: "error", text: err.message || "Failed to load job card" });
@@ -132,6 +151,55 @@ export function JobCardDetailView({ id }: JobCardDetailViewProps) {
       setToastMessage({ type: "error", text: err.message || "Failed to convert job card to invoice" });
     } finally {
       setConvertingInvoice(false);
+    }
+  };
+
+  const handleOpenAddPayment = () => {
+    if (!jobCard) return;
+    const totalPaid = payments.length > 0
+      ? payments.reduce((sum, p) => sum + (Number(p.amount) || 0), 0)
+      : Number(jobCard.paid) || 0;
+    const remaining = Math.max(0, Number(jobCard.total) - totalPaid);
+    setPayAmount(remaining > 0 ? remaining : "");
+    setPayMethod("cash");
+    setPayDate(new Date().toISOString().slice(0, 10));
+    setPayRef("");
+    setPayNotes("");
+    setPaymentError(null);
+    setAddPaymentOpen(true);
+  };
+
+  const handleAddPaymentSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!jobCard) return;
+    const amt = Number(payAmount);
+    if (!amt || amt <= 0) {
+      setPaymentError("Please enter a valid payment amount greater than zero.");
+      return;
+    }
+
+    setSubmittingPayment(true);
+    setPaymentError(null);
+    try {
+      await recordJobCardPayment(
+        id,
+        amt,
+        payMethod,
+        payRef.trim() || null,
+        payNotes.trim() || null,
+        payDate,
+        "Owner"
+      );
+      setToastMessage({
+        type: "success",
+        text: `Payment of ${formatCurrency(amt)} recorded successfully!`,
+      });
+      setAddPaymentOpen(false);
+      loadData();
+    } catch (err: any) {
+      setPaymentError(err.message || "Failed to record payment.");
+    } finally {
+      setSubmittingPayment(false);
     }
   };
 
@@ -410,93 +478,51 @@ export function JobCardDetailView({ id }: JobCardDetailViewProps) {
             </Button>
           </div>
         </div>
-      </div>      {/* Structured Screen Job Sheet (Hidden during browser print) */}
-      <div className="no-print p-8 rounded-2xl border border-slate-200/90 bg-white text-slate-900 shadow-2xs space-y-6">
-        {/* Document Header with Professional Workshop Branding */}
-        <div className="flex flex-col md:flex-row justify-between border-b border-slate-100 pb-6 gap-4">
-          <div>
-            <h2 className="text-lg font-bold tracking-tight text-slate-900 uppercase">
-              ATIQ JEHAN AUTO REPAIR &amp; USED SPARE PARTS L.L.C.
-            </h2>
-            <p className="text-xs text-slate-500 mt-0.5 font-medium">Specialized Auto Repairing, Maintenance &amp; Diagnostic Workshop</p>
-            <p className="text-xs text-slate-500 mt-0.5">Al Dhafra Region, Madinat Zayed, MZE16, ST 04 • Tel: +971-501233517, +971-501517497</p>
-            {((jobCard as any)?.workspace?.trn_number || (jobCard as any)?.workspace?.trn || currentWorkspace?.trn_number || (currentWorkspace as any)?.trn || "").trim() ? (
-              <p className="text-xs font-mono text-blue-700 font-semibold mt-1">
-                TRN: {((jobCard as any)?.workspace?.trn_number || (jobCard as any)?.workspace?.trn || currentWorkspace?.trn_number || (currentWorkspace as any)?.trn || "").trim()}
-              </p>
-            ) : null}
-          </div>
-          <div className="md:text-right">
-            <span className="text-[11px] font-bold text-blue-700 uppercase tracking-wider bg-blue-50 border border-blue-200 px-3 py-1 rounded-full">
-              WORKSHOP JOB CARD
-            </span>
-            <p className="text-2xl font-bold text-blue-600 mt-2 font-mono">{jobCard.job_card_number}</p>
-            {jobCard.invoice_number && (
-              <div className="mt-1 inline-block border border-slate-200 px-2.5 py-0.5 font-bold text-xs bg-slate-50 text-slate-800 rounded-lg font-mono">
-                INVOICE NO: <span className="font-bold text-blue-700 ml-1">{jobCard.invoice_number}</span>
-              </div>
-            )}
-            <p className="text-xs text-slate-500 mt-1">
-              Order Date: <span className="font-semibold text-slate-900">{formatDate(jobCard.date || jobCard.created_at)}</span>
-            </p>
-          </div>
-        </div>
+      </div>
 
-        {/* Section A: Customer & Vehicle Information Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Customer Details Box */}
-          <div className="p-5 rounded-xl border border-slate-200/80 bg-slate-50/60 space-y-2.5 text-xs">
-            <div className="flex items-center justify-between border-b border-slate-200/60 pb-2">
-              <span className="font-bold text-slate-900 text-xs uppercase tracking-wider flex items-center gap-1.5">
-                <User className="h-3.5 w-3.5 text-blue-600" /> Customer Owner Details
-              </span>
-              {jobCard.customer_id && (
-                <Link href={`/customers/${jobCard.customer_id}`} className="text-blue-600 hover:underline text-[11px] font-semibold">
-                  View Profile →
-                </Link>
-              )}
-            </div>
-            <div className="grid grid-cols-2 gap-3 pt-1">
-              <div>
-                <span className="text-slate-400 uppercase text-[10px] font-bold tracking-wider">Customer Name:</span>
-                <p className="font-bold text-slate-900 text-xs mt-0.5">{jobCard.customer?.name || "N/A"}</p>
-                {jobCard.customer?.company_name && (
-                  <p className="text-[11px] text-slate-500 mt-0.5">{jobCard.customer.company_name}</p>
+      {/* Main Clean Printable A4 Job Card View */}
+      <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs p-6 md:p-8 space-y-6 text-slate-800 printable-job-card-view">
+        {/* Section A: Header Details & Metadata */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-6 border-b border-slate-100">
+          {/* Customer Information */}
+          <div className="space-y-3">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+              <User className="h-4 w-4 text-blue-600" /> Customer Information
+            </h3>
+            <div className="bg-slate-50/70 p-4 rounded-xl border border-slate-200/70 space-y-1.5 text-xs">
+              <div className="flex justify-between items-start">
+                <p className="font-bold text-slate-900 text-sm">{jobCard.customer?.name || "Cash Customer"}</p>
+                {jobCard.customer?.trn_number && (
+                  <span className="text-[10px] font-mono font-bold bg-blue-50 text-blue-700 px-2 py-0.5 rounded border border-blue-200">
+                    TRN: {jobCard.customer.trn_number}
+                  </span>
                 )}
               </div>
-              <div>
-                <span className="text-slate-400 uppercase text-[10px] font-bold tracking-wider">TRN Number:</span>
-                <p className="font-mono font-bold text-blue-700 mt-0.5">{jobCard.customer?.trn_number || "—"}</p>
-              </div>
-              <div>
-                <span className="text-slate-400 uppercase text-[10px] font-bold tracking-wider">Mobile Phone:</span>
-                <p className="font-semibold font-mono text-slate-900 mt-0.5">{jobCard.customer?.mobile || "N/A"}</p>
-              </div>
-              <div>
-                <span className="text-slate-400 uppercase text-[10px] font-bold tracking-wider">Address / Emirate:</span>
-                <p className="font-medium text-slate-700 mt-0.5">{jobCard.customer?.address || "UAE"}</p>
-              </div>
+              <p className="text-slate-600">
+                <span className="font-semibold">Phone:</span> {jobCard.customer?.mobile || "N/A"}
+              </p>
+              {jobCard.customer?.email && (
+                <p className="text-slate-600">
+                  <span className="font-semibold">Email:</span> {jobCard.customer.email}
+                </p>
+              )}
+              {jobCard.customer?.address && (
+                <p className="text-slate-600">
+                  <span className="font-semibold">Address:</span> {jobCard.customer.address}
+                </p>
+              )}
             </div>
           </div>
 
-          {/* Vehicle Specifications Box */}
-          <div className="p-5 rounded-xl border border-slate-200/80 bg-slate-50/60 space-y-2.5 text-xs">
-            <div className="flex items-center justify-between border-b border-slate-200/60 pb-2">
-              <span className="font-bold text-slate-900 text-xs uppercase tracking-wider flex items-center gap-1.5">
-                <Car className="h-3.5 w-3.5 text-blue-600" /> Vehicle Specifications
-              </span>
-              {jobCard.vehicle_id && (
-                <Link href={`/vehicles/${jobCard.vehicle_id}`} className="text-blue-600 hover:underline text-[11px] font-semibold">
-                  View Vehicle →
-                </Link>
-              )}
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-1">
+          {/* Vehicle Information */}
+          <div className="space-y-3">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+              <Car className="h-4 w-4 text-blue-600" /> Vehicle Specification
+            </h3>
+            <div className="bg-slate-50/70 p-4 rounded-xl border border-slate-200/70 grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
               <div>
-                <span className="text-slate-400 uppercase text-[10px] font-bold tracking-wider">Vehicle:</span>
-                <p className="font-bold text-slate-900 text-xs mt-0.5">
-                  {jobCard.vehicle?.make} {jobCard.vehicle?.model}
-                </p>
+                <span className="text-slate-400 uppercase text-[10px] font-bold tracking-wider">Make / Model:</span>
+                <p className="font-bold text-slate-900 text-xs mt-0.5">{jobCard.vehicle?.make} {jobCard.vehicle?.model}</p>
               </div>
               <div>
                 <span className="text-slate-400 uppercase text-[10px] font-bold tracking-wider">Year:</span>
@@ -699,19 +725,18 @@ export function JobCardDetailView({ id }: JobCardDetailViewProps) {
                         size="sm"
                         variant="ghost"
                         onClick={() => setPreviewDoc(att)}
-                        className="h-6 px-2 text-[10px] gap-1 text-blue-600 hover:text-blue-700 rounded-lg"
+                        className="h-7 px-2 text-[11px] text-blue-600 hover:text-blue-700"
                       >
-                        <Eye className="h-3 w-3" /> View
+                        <Eye className="h-3.5 w-3.5 mr-1" /> View
                       </Button>
-                      <a
-                        href={att.file_url}
-                        download={att.file_name}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="inline-flex items-center gap-1 font-semibold text-blue-600 hover:underline"
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        render={<a href={att.file_url} target="_blank" rel="noopener noreferrer" download />}
+                        className="h-7 px-2 text-[11px] text-slate-600 hover:text-slate-900"
                       >
-                        <Download className="h-3 w-3" /> Download
-                      </a>
+                        <Download className="h-3.5 w-3.5 mr-1" /> Download
+                      </Button>
                     </div>
                   </div>
                 </div>
@@ -724,56 +749,186 @@ export function JobCardDetailView({ id }: JobCardDetailViewProps) {
           )}
         </div>
 
-        {/* Section F: Financial Summary & Auto-Calculated Totals Panel */}
-        <div className="border-t border-slate-100 pt-6 flex flex-col md:flex-row justify-between items-start gap-6">
-          <div className="text-xs text-slate-500 space-y-1.5 max-w-md">
-            <p className="font-bold text-slate-900 uppercase tracking-wider text-[11px]">Workshop Terms &amp; Conditions:</p>
-            <p>1. Repair estimates are subject to initial mechanical inspection.</p>
-            <p>2. Replaced parts warranty applies for 7 days unless specified otherwise.</p>
-            <p>3. Vehicle release is subject to full settlement of the final tax invoice.</p>
-          </div>
+        {/* Section F: Financial Summary & Payment Details Panel */}
+        {(() => {
+          const totalPaid = payments.length > 0
+            ? payments.reduce((sum, p) => sum + (Number(p.amount) || 0), 0)
+            : Number(jobCard.paid) || 0;
+          const pendingAmount = Math.max(0, Number(jobCard.total) - totalPaid);
+          const paymentStatusDerived = pendingAmount === 0 && Number(jobCard.total) > 0
+            ? "PAID"
+            : totalPaid > 0
+            ? "PARTIAL"
+            : "UNPAID";
+          const latestMethod = payments[0]?.payment_method || (jobCard.payment_status || "Cash");
 
-          <div className="w-full md:w-88 p-5 rounded-2xl border border-slate-200/90 bg-slate-50/70 space-y-2.5 text-xs">
-            <div className="flex justify-between text-slate-600">
-              <span>Services Total:</span>
-              <span className="font-semibold text-slate-900 font-mono tabular-nums">{formatAmount(serviceSubtotal)}</span>
-            </div>
-            <div className="flex justify-between text-slate-600">
-              <span>Labour Total:</span>
-              <span className="font-semibold text-slate-900 font-mono tabular-nums">{formatAmount(labourSubtotal)}</span>
-            </div>
-            <div className="flex justify-between text-slate-600">
-              <span>Parts Total:</span>
-              <span className="font-semibold text-slate-900 font-mono tabular-nums">{formatAmount(partsSubtotal)}</span>
-            </div>
-            <div className="border-t border-slate-200/70 pt-2 flex justify-between font-semibold">
-              <span>Subtotal:</span>
-              <span className="font-bold text-slate-900 font-mono tabular-nums">{formatAmount(jobCard.subtotal)}</span>
-            </div>
-            {Number(jobCard.discount) > 0 && (
-              <div className="flex justify-between text-emerald-600 font-medium">
-                <span>Discount:</span>
-                <span className="font-mono tabular-nums">-{formatAmount(jobCard.discount)}</span>
+          return (
+            <div className="border-t border-slate-100 pt-6 space-y-6">
+              <div className="flex flex-col md:flex-row justify-between items-start gap-6">
+                {/* Left: Terms & Payment Action */}
+                <div className="space-y-4 max-w-md w-full">
+                  <div className="text-xs text-slate-500 space-y-1.5">
+                    <p className="font-bold text-slate-900 uppercase tracking-wider text-[11px]">Workshop Terms &amp; Conditions:</p>
+                    <p>1. Repair estimates are subject to initial mechanical inspection.</p>
+                    <p>2. Replaced parts warranty applies for 7 days unless specified otherwise.</p>
+                    <p>3. Vehicle release is subject to full settlement of the final tax invoice.</p>
+                  </div>
+
+                  {/* Clean Payment Summary Card */}
+                  <div className="p-4 rounded-2xl border border-slate-200/90 bg-white shadow-2xs space-y-3">
+                    <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+                      <span className="text-xs font-bold uppercase tracking-wider text-slate-900 flex items-center gap-1.5">
+                        <CreditCard className="h-4 w-4 text-blue-600" /> Payment Details
+                      </span>
+                      <span
+                        className={`text-[10px] px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider border ${
+                          paymentStatusDerived === "PAID"
+                            ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                            : paymentStatusDerived === "PARTIAL"
+                            ? "bg-amber-50 text-amber-700 border-amber-200"
+                            : "bg-rose-50 text-rose-700 border-rose-200"
+                        }`}
+                      >
+                        {paymentStatusDerived}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      <div>
+                        <span className="text-slate-400 text-[10px] uppercase font-bold">Total Amount</span>
+                        <p className="font-mono font-bold text-slate-900 text-sm">AED {formatAmount(jobCard.total)}</p>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 text-[10px] uppercase font-bold">Advance Received</span>
+                        <p className="font-mono font-bold text-emerald-600 text-sm">AED {formatAmount(totalPaid)}</p>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 text-[10px] uppercase font-bold">Pending Amount</span>
+                        <p className="font-mono font-black text-rose-600 text-sm">AED {formatAmount(pendingAmount)}</p>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 text-[10px] uppercase font-bold">Payment Method</span>
+                        <p className="font-semibold text-slate-800 text-xs uppercase">{latestMethod}</p>
+                      </div>
+                    </div>
+
+                    {pendingAmount > 0 && (
+                      <div className="pt-2 border-t border-slate-100">
+                        <Button
+                          onClick={handleOpenAddPayment}
+                          className="w-full h-9 text-xs font-semibold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white shadow-2xs gap-1.5"
+                        >
+                          <Plus className="h-3.5 w-3.5" /> + Add Payment
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Right: Detailed Totals Column */}
+                <div className="w-full md:w-88 p-5 rounded-2xl border border-slate-200/90 bg-slate-50/70 space-y-2.5 text-xs">
+                  <div className="flex justify-between text-slate-600">
+                    <span>Services Total:</span>
+                    <span className="font-semibold text-slate-900 font-mono tabular-nums">{formatAmount(serviceSubtotal)}</span>
+                  </div>
+                  <div className="flex justify-between text-slate-600">
+                    <span>Labour Total:</span>
+                    <span className="font-semibold text-slate-900 font-mono tabular-nums">{formatAmount(labourSubtotal)}</span>
+                  </div>
+                  <div className="flex justify-between text-slate-600">
+                    <span>Parts Total:</span>
+                    <span className="font-semibold text-slate-900 font-mono tabular-nums">{formatAmount(partsSubtotal)}</span>
+                  </div>
+                  <div className="border-t border-slate-200/70 pt-2 flex justify-between font-semibold">
+                    <span>Subtotal:</span>
+                    <span className="font-bold text-slate-900 font-mono tabular-nums">{formatAmount(jobCard.subtotal)}</span>
+                  </div>
+                  {Number(jobCard.discount) > 0 && (
+                    <div className="flex justify-between text-emerald-600 font-medium">
+                      <span>Discount:</span>
+                      <span className="font-mono tabular-nums">-{formatAmount(jobCard.discount)}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between text-slate-600">
+                    <span>VAT ({jobCard.vat_rate}%):</span>
+                    <span className="font-semibold text-slate-900 font-mono tabular-nums">{formatAmount(jobCard.vat_amount)}</span>
+                  </div>
+                  <div className="border-t border-slate-200/80 pt-2.5 bg-blue-50 border border-blue-200/80 p-3.5 rounded-xl flex justify-between items-center text-sm font-bold text-blue-900">
+                    <span className="uppercase tracking-wider text-xs">Total Amount:</span>
+                    <span className="font-mono font-bold text-base text-blue-700">AED {formatAmount(jobCard.total)}</span>
+                  </div>
+                  <div className="flex justify-between text-xs text-slate-600 pt-1">
+                    <span>Advance / Paid:</span>
+                    <span className="font-semibold text-emerald-600 font-mono tabular-nums">AED {formatAmount(totalPaid)}</span>
+                  </div>
+                  <div className="flex justify-between text-xs font-bold text-rose-600">
+                    <span>Pending Balance:</span>
+                    <span className="font-mono tabular-nums">AED {formatAmount(pendingAmount)}</span>
+                  </div>
+                </div>
               </div>
-            )}
-            <div className="flex justify-between text-slate-600">
-              <span>VAT ({jobCard.vat_rate}%):</span>
-              <span className="font-semibold text-slate-900 font-mono tabular-nums">{formatAmount(jobCard.vat_amount)}</span>
+
+              {/* Payment History Table */}
+              <div className="space-y-3 pt-2">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-bold text-xs uppercase tracking-wider text-slate-900 flex items-center gap-2">
+                    <Clock className="h-4 w-4 text-emerald-600" /> Payment History ({payments.length})
+                  </h4>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handleOpenAddPayment}
+                    className="h-8 px-3 text-xs font-semibold rounded-xl border-slate-200 bg-white hover:bg-slate-50 text-slate-700 shadow-2xs gap-1"
+                  >
+                    <Plus className="h-3.5 w-3.5 text-slate-500" /> Record Payment
+                  </Button>
+                </div>
+
+                {payments.length > 0 ? (
+                  <div className="border border-slate-200/90 rounded-xl overflow-hidden shadow-2xs bg-white">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="bg-slate-50/80 hover:bg-slate-50/80 border-b border-slate-200/80 h-10">
+                          <TableHead className="font-bold text-slate-500 text-[11px] uppercase tracking-wider">Date</TableHead>
+                          <TableHead className="font-bold text-slate-500 text-[11px] uppercase tracking-wider">Method</TableHead>
+                          <TableHead className="font-bold text-slate-500 text-[11px] uppercase tracking-wider">Reference / Note</TableHead>
+                          <TableHead className="text-right font-bold text-slate-500 text-[11px] uppercase tracking-wider pr-4">Amount (AED)</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody className="divide-y divide-slate-100">
+                        {payments.map((p) => (
+                          <TableRow key={p.id} className="h-11 hover:bg-slate-50/60 transition-colors">
+                            <TableCell className="font-medium text-slate-900 text-xs font-mono">
+                              {formatDate(p.payment_date || p.created_at)}
+                            </TableCell>
+                            <TableCell className="text-xs uppercase font-semibold text-slate-700">
+                              <span className="inline-block px-2 py-0.5 rounded-md bg-slate-100 border border-slate-200 text-[10px]">
+                                {p.payment_method?.replace("_", " ") || "Cash"}
+                              </span>
+                            </TableCell>
+                            <TableCell className="text-xs text-slate-600">
+                              {p.reference_number ? (
+                                <span className="font-mono font-medium mr-2">{p.reference_number}</span>
+                              ) : null}
+                              {p.notes || "—"}
+                            </TableCell>
+                            <TableCell className="text-right font-mono font-bold text-emerald-600 text-xs tabular-nums pr-4">
+                              {formatCurrency(Number(p.amount) || 0)}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                ) : (
+                  <div className="p-4 text-center rounded-xl border border-dashed border-slate-200 text-xs text-slate-500 bg-slate-50/50">
+                    No payment transactions recorded for this Job Card yet.
+                  </div>
+                )}
+              </div>
             </div>
-            <div className="border-t border-slate-200/80 pt-2.5 bg-blue-50 border border-blue-200/80 p-3.5 rounded-xl flex justify-between items-center text-sm font-bold text-blue-900">
-              <span className="uppercase tracking-wider text-xs">Total Amount:</span>
-              <span className="font-mono font-bold text-base text-blue-700">AED {formatAmount(jobCard.total)}</span>
-            </div>
-            <div className="flex justify-between text-xs text-slate-600 pt-1">
-              <span>Paid Amount:</span>
-              <span className="font-semibold text-emerald-600 font-mono tabular-nums">{formatAmount(jobCard.paid || 0)}</span>
-            </div>
-            <div className="flex justify-between text-xs font-bold text-amber-700">
-              <span>Outstanding Balance:</span>
-              <span className="font-mono tabular-nums">{formatAmount(jobCard.balance)}</span>
-            </div>
-          </div>
-        </div>
+          );
+        })()}
 
         {/* Section G: Signatures Section */}
         <div className="pt-6 border-t border-slate-100">
@@ -817,6 +972,112 @@ export function JobCardDetailView({ id }: JobCardDetailViewProps) {
 
       {/* Clean A4 Printable Template (Visible only when printing) */}
       <JobCardPrintView jobCard={jobCard} />
+
+      {/* Add Payment Modal Dialog */}
+      <Dialog open={addPaymentOpen} onOpenChange={setAddPaymentOpen}>
+        <DialogContent className="sm:max-w-md bg-white border border-slate-200 shadow-xl rounded-2xl p-6">
+          <DialogTitle className="flex items-center gap-2 text-base font-bold text-slate-900">
+            <CreditCard className="h-5 w-5 text-emerald-600" /> Add Payment / Advance
+          </DialogTitle>
+          <DialogDescription className="text-xs text-slate-500">
+            Record a cash, bank transfer, or card payment against Job Card #{jobCard.job_card_number}
+          </DialogDescription>
+
+          <form onSubmit={handleAddPaymentSubmit} className="space-y-4 mt-2">
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold text-slate-700">Amount (AED) *</Label>
+              <Input
+                type="number"
+                step="0.01"
+                min="0.01"
+                placeholder="0.00"
+                value={payAmount}
+                onChange={(e) => setPayAmount(e.target.value === "" ? "" : parseFloat(e.target.value) || 0)}
+                className="h-10 text-sm font-bold font-mono rounded-xl border-slate-200"
+                required
+                autoFocus
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold text-slate-700">Payment Method *</Label>
+                <select
+                  value={payMethod}
+                  onChange={(e) => setPayMethod(e.target.value)}
+                  className="flex h-10 w-full rounded-xl border border-slate-200 bg-white px-3 py-1 text-xs shadow-2xs font-semibold"
+                >
+                  <option value="cash">Cash</option>
+                  <option value="bank_transfer">Bank Transfer</option>
+                  <option value="credit_card">Card / POS Terminal</option>
+                  <option value="cheque">Cheque</option>
+                </select>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold text-slate-700">Payment Date *</Label>
+                <Input
+                  type="date"
+                  value={payDate}
+                  onChange={(e) => setPayDate(e.target.value)}
+                  className="h-10 text-xs font-mono rounded-xl border-slate-200"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold text-slate-700">Reference / Transaction # (Optional)</Label>
+              <Input
+                placeholder="e.g. ADCB Ref 12345 / Counter Receipt 89"
+                value={payRef}
+                onChange={(e) => setPayRef(e.target.value)}
+                className="h-10 text-xs rounded-xl border-slate-200"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold text-slate-700">Payment Notes (Optional)</Label>
+              <Textarea
+                rows={2}
+                placeholder="Additional details regarding this settlement..."
+                value={payNotes}
+                onChange={(e) => setPayNotes(e.target.value)}
+                className="text-xs rounded-xl border-slate-200 resize-none"
+              />
+            </div>
+
+            {paymentError && (
+              <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-700 flex items-center gap-2">
+                <AlertCircle className="h-4 w-4 shrink-0 text-rose-600" />
+                <span>{paymentError}</span>
+              </div>
+            )}
+
+            <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setAddPaymentOpen(false)}
+                className="h-9 px-4 text-xs font-medium rounded-xl border-slate-200"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={submittingPayment}
+                className="h-9 px-5 text-xs font-semibold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white shadow-2xs gap-1.5"
+              >
+                {submittingPayment ? (
+                  <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Saving...</>
+                ) : (
+                  "Save Payment"
+                )}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       {/* Upload Attachment Dialog */}
       <Dialog open={attachmentModalOpen} onOpenChange={setAttachmentModalOpen}>

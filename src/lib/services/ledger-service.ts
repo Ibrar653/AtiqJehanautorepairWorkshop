@@ -1332,7 +1332,10 @@ export async function postCustomerPaymentLedger(payment: {
   id: string;
   customer_id?: string;
   customer_name?: string;
+  invoice_id?: string;
   invoice_number?: string;
+  job_card_id?: string;
+  is_advance?: boolean;
   amount: number;
   payment_method: string;
   reference_number?: string;
@@ -1342,6 +1345,11 @@ export async function postCustomerPaymentLedger(payment: {
 }) {
   const accounts = getLocalAccounts();
   const receivableAcc = accounts.find((a) => a.account_code === "1100") || accounts[2];
+  const advanceAcc =
+    accounts.find((a) => a.account_code === "2300") ||
+    accounts.find((a) => a.account_sub_type === "Customer Advance") ||
+    accounts.find((a) => a.account_name?.toLowerCase().includes("customer advance")) ||
+    receivableAcc;
   const cashAcc = accounts.find((a) => a.account_code === "1001") || accounts[0];
   const bankAcc = accounts.find((a) => a.account_code === "1002") || accounts[1];
 
@@ -1355,13 +1363,17 @@ export async function postCustomerPaymentLedger(payment: {
     payment.payment_method === "card";
 
   const targetAssetAcc = isBank ? bankAcc : cashAcc;
+  const isAdvancePayment = payment.is_advance || (!!payment.job_card_id && !payment.invoice_id);
+  const targetCreditAcc = isAdvancePayment ? advanceAcc : receivableAcc;
 
   const pDate = payment.payment_date || (payment as any).date;
   return await postTransaction({
     transaction_date: pDate ? pDate.slice(0, 10) : new Date().toISOString().slice(0, 10),
-    reference_type: "payment",
+    reference_type: isAdvancePayment ? "customer_advance" : "payment",
     reference_id: payment.id,
-    description: `Customer Payment from ${payment.customer_name || "Customer"}${payment.invoice_number ? ` for Inv ${payment.invoice_number}` : ""}`,
+    description: isAdvancePayment
+      ? `Customer Advance from ${payment.customer_name || "Customer"}${payment.job_card_id ? ` (Job Card Deposit)` : ""}`
+      : `Customer Payment from ${payment.customer_name || "Customer"}${payment.invoice_number ? ` for Inv ${payment.invoice_number}` : ""}`,
     created_by: payment.created_by,
     entries: [
       {
@@ -1371,10 +1383,10 @@ export async function postCustomerPaymentLedger(payment: {
         notes: `Received via ${isBank ? "Bank / Card" : "Cash"}`,
       },
       {
-        account_id: receivableAcc.id,
+        account_id: targetCreditAcc.id,
         debit: 0,
         credit: amt,
-        notes: `Credit Customer Receivable`,
+        notes: isAdvancePayment ? "Credit Customer Advance Liability" : "Credit Customer Receivable",
       },
     ],
   });

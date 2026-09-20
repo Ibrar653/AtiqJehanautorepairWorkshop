@@ -6,6 +6,7 @@ import { getCustomerById, updateCustomer } from "@/lib/services/customer-service
 import { getVehiclesByCustomer, createVehicle, updateVehicle } from "@/lib/services/vehicle-service";
 import { softDeleteVehicle } from "@/lib/services/recycle-bin-service";
 import { getDocumentsByCustomer, deleteUploadedJobCard } from "@/lib/services/document-service";
+import { getInvoices } from "@/lib/services/invoice-service";
 import { UploadJobCardDialog } from "@/components/job-cards/upload-job-card-dialog";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
@@ -36,6 +37,8 @@ import {
   DollarSign,
   ArrowLeft,
   Wrench,
+  Receipt,
+  CreditCard,
 } from "lucide-react";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import type { Vehicle, UploadedJobCardWithRelations } from "@/types/database";
@@ -50,6 +53,7 @@ export function CustomerDetailView({ id }: CustomerDetailViewProps) {
   const [customer, setCustomer] = useState<any>(null);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [documents, setDocuments] = useState<UploadedJobCardWithRelations[]>([]);
+  const [invoices, setInvoices] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [toastMessage, setToastMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
@@ -90,14 +94,16 @@ export function CustomerDetailView({ id }: CustomerDetailViewProps) {
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const [custData, vList, docList] = await Promise.all([
+      const [custData, vList, docList, invRes] = await Promise.all([
         getCustomerById(id),
         getVehiclesByCustomer(id),
         getDocumentsByCustomer(id),
+        getInvoices({ customerId: id, limit: 100 }),
       ]);
       setCustomer(custData);
       setVehicles((vList || []).filter((v) => !v.is_deleted));
       setDocuments(docList || []);
+      setInvoices(invRes.invoices || []);
     } catch (err: any) {
       console.error(err);
       setToastMessage({ type: "error", text: err.message || "Failed to load customer details" });
@@ -645,6 +651,124 @@ export function CustomerDetailView({ id }: CustomerDetailViewProps) {
             <div className="py-10 text-center text-slate-500 flex flex-col items-center justify-center">
               <FileText className="h-8 w-8 mx-auto text-slate-300 stroke-1 mb-2" />
               <p className="text-xs text-slate-500">No scanned worksheets or paper job cards uploaded yet.</p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* CUSTOMER BILLING & PAYMENT HISTORY SECTION */}
+      <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs overflow-hidden">
+        <div className="flex flex-row items-center justify-between border-b border-slate-100 bg-slate-50/50 px-6 py-4">
+          <div>
+            <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+              <Receipt className="h-4 w-4 text-blue-600" />
+              Invoices &amp; Payment History ({invoices.length})
+            </h3>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Financial ledger, advance payments, and settlement history for {customer.name}
+            </p>
+          </div>
+          <Button
+            size="sm"
+            variant="outline"
+            render={<Link href="/invoices" />}
+            className="h-9 px-3.5 text-xs font-semibold rounded-xl border-slate-200 bg-white hover:bg-slate-50 text-slate-700 shadow-2xs gap-1.5"
+          >
+            <CreditCard className="h-3.5 w-3.5 text-slate-500" /> All Invoices
+          </Button>
+        </div>
+        <div>
+          {invoices.length > 0 ? (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-slate-50/80 hover:bg-slate-50/80 border-b border-slate-200/80 h-11">
+                    <TableHead className="font-bold text-slate-500 text-[11px] uppercase tracking-wider">Invoice #</TableHead>
+                    <TableHead className="font-bold text-slate-500 text-[11px] uppercase tracking-wider">Job Card #</TableHead>
+                    <TableHead className="font-bold text-slate-500 text-[11px] uppercase tracking-wider">Date</TableHead>
+                    <TableHead className="font-bold text-slate-500 text-[11px] uppercase tracking-wider">Vehicle</TableHead>
+                    <TableHead className="text-right font-bold text-slate-500 text-[11px] uppercase tracking-wider">Total (AED)</TableHead>
+                    <TableHead className="text-right font-bold text-slate-500 text-[11px] uppercase tracking-wider">Advance Paid (AED)</TableHead>
+                    <TableHead className="text-right font-bold text-slate-500 text-[11px] uppercase tracking-wider">Additional Paid (AED)</TableHead>
+                    <TableHead className="text-right font-bold text-slate-500 text-[11px] uppercase tracking-wider">Total Paid (AED)</TableHead>
+                    <TableHead className="text-right font-bold text-slate-500 text-[11px] uppercase tracking-wider">Pending Balance (AED)</TableHead>
+                    <TableHead className="text-center font-bold text-slate-500 text-[11px] uppercase tracking-wider">Status</TableHead>
+                    <TableHead className="text-right font-bold text-slate-500 text-[11px] uppercase tracking-wider pr-4">Action</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody className="divide-y divide-slate-100">
+                  {invoices.map((inv) => {
+                    const totalAmt = Number(inv.total) || 0;
+                    const paidAmt = Number(inv.paid) || 0;
+                    const balAmt = Number(inv.balance !== undefined ? inv.balance : Math.max(0, totalAmt - paidAmt));
+                    const paymentsList: any[] = inv.payments || [];
+                    const advanceAmt = paymentsList.length > 0 && paymentsList[0]?.amount !== undefined
+                      ? (paymentsList.length > 1 ? Number(paymentsList[0].amount) || 0 : (inv.job_card_id ? paidAmt : 0))
+                      : 0;
+                    const additionalAmt = Math.max(0, paidAmt - advanceAmt);
+
+                    return (
+                      <TableRow key={inv.id} className="h-12 hover:bg-slate-50/60 transition-colors border-b border-slate-100 text-xs">
+                        <TableCell className="font-mono font-bold text-slate-900">
+                          {inv.invoice_number}
+                        </TableCell>
+                        <TableCell className="font-mono text-slate-600">
+                          {inv.job_card?.job_card_number || (inv.job_card_id ? "Linked" : "—")}
+                        </TableCell>
+                        <TableCell className="text-slate-500 font-mono">
+                          {formatDate(inv.created_at || inv.date)}
+                        </TableCell>
+                        <TableCell className="text-slate-700">
+                          {inv.vehicle ? `${inv.vehicle.make} ${inv.vehicle.model}` : "—"}
+                        </TableCell>
+                        <TableCell className="text-right font-mono font-bold text-slate-900 tabular-nums">
+                          {formatCurrency(totalAmt)}
+                        </TableCell>
+                        <TableCell className="text-right font-mono font-semibold text-blue-600 tabular-nums">
+                          {advanceAmt > 0 ? formatCurrency(advanceAmt) : "—"}
+                        </TableCell>
+                        <TableCell className="text-right font-mono font-semibold text-emerald-600 tabular-nums">
+                          {additionalAmt > 0 ? formatCurrency(additionalAmt) : "—"}
+                        </TableCell>
+                        <TableCell className="text-right font-mono font-bold text-emerald-700 tabular-nums">
+                          {formatCurrency(paidAmt)}
+                        </TableCell>
+                        <TableCell className="text-right font-mono font-black text-rose-600 tabular-nums">
+                          {formatCurrency(balAmt)}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <span
+                            className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${
+                              balAmt === 0 && totalAmt > 0
+                                ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                : paidAmt > 0
+                                ? "bg-amber-50 text-amber-700 border-amber-200"
+                                : "bg-rose-50 text-rose-700 border-rose-200"
+                            }`}
+                          >
+                            {balAmt === 0 && totalAmt > 0 ? "PAID" : paidAmt > 0 ? "PARTIAL" : "PENDING"}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-right pr-4">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            render={<Link href={`/invoices?invoice_id=${inv.id}`} />}
+                            className="h-8 px-2 text-xs font-semibold text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg gap-1"
+                          >
+                            <Eye className="h-3.5 w-3.5" /> View
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          ) : (
+            <div className="py-10 text-center text-slate-500 flex flex-col items-center justify-center">
+              <Receipt className="h-8 w-8 mx-auto text-slate-300 stroke-1 mb-2" />
+              <p className="text-xs text-slate-500">No invoices generated for this customer yet.</p>
             </div>
           )}
         </div>

@@ -726,6 +726,28 @@ export async function createJobCard(
       }
     }
 
+    // 5. Record Initial Advance / Partial Payment if paid > 0
+    const initialPaid = Number(payload.paid) || 0;
+    if (initialPaid > 0) {
+      try {
+        const { recordPayment } = await import("./payment-service");
+        await recordPayment({
+          workspace_id: targetWsId,
+          job_card_id: jobCard.id,
+          invoice_id: null,
+          customer_id: jobCard.customer_id,
+          amount: initialPaid,
+          payment_method: ((payload as any).payment_method || (payload.payment_status?.toLowerCase().includes("bank") ? "bank_transfer" : payload.payment_status?.toLowerCase().includes("card") ? "credit_card" : "cash")) as any,
+          payment_date: (payload as any).payment_date || payload.date || new Date().toISOString().slice(0, 10),
+          reference_number: (payload as any).payment_reference || assignedJobCardNumber,
+          notes: (payload as any).payment_notes || "Advance / Initial Payment on Job Card",
+          created_by: payload.created_by || "Owner",
+        });
+      } catch (payErr) {
+        console.warn("Initial Job Card payment recording notice:", payErr);
+      }
+    }
+
     const createdRecord = await getJobCardById(jobCard.id);
     return createdRecord;
   } catch (err: any) {
@@ -784,13 +806,22 @@ export async function createJobCard(
     const vatAmount = Math.round(taxable * vatRate) / 100;
     const total = taxable + vatAmount;
 
+    const initialPaid = Number(payload.paid) || 0;
+    const balance = Math.max(0, total - initialPaid);
+    let finalPaymentStatus = payload.payment_status || "Pending";
+    if (balance === 0 && total > 0) {
+      finalPaymentStatus = "Paid Full";
+    } else if (initialPaid > 0) {
+      finalPaymentStatus = "Partial";
+    }
+
     const newJobCard: any = {
       id: jobCardId,
       workspace_id: targetWsId,
       job_card_number: jcNumber,
       invoice_number: invNumber || assignedInvoiceNumber,
       invoice_number_mode: payload.invoice_number_mode || "auto",
-      payment_status: payload.payment_status || "Pending",
+      payment_status: finalPaymentStatus,
       date: payload.date || new Date().toISOString().slice(0, 10),
       customer_id: payload.customer_id,
       vehicle_id: payload.vehicle_id,
@@ -802,8 +833,8 @@ export async function createJobCard(
       vat_rate: vatRate,
       vat_amount: vatAmount,
       total,
-      paid: 0,
-      balance: total,
+      paid: initialPaid,
+      balance,
       status: payload.status || "new",
       assigned_mechanic: payload.assigned_mechanic || null,
       notes: payload.notes || null,
@@ -833,6 +864,26 @@ export async function createJobCard(
           }
         }
       }
+    }
+
+    // Record local payment if advance > 0
+    if (initialPaid > 0) {
+      const { getLocalPayments, saveLocalPayments } = await import("./payment-service");
+      const localPayments = getLocalPayments();
+      localPayments.unshift({
+        id: "pay-" + Date.now() + "-" + Math.random().toString(36).substring(2, 6),
+        workspace_id: targetWsId,
+        job_card_id: jobCardId,
+        customer_id: payload.customer_id,
+        amount: initialPaid,
+        payment_method: ((payload as any).payment_method || (finalPaymentStatus.toLowerCase().includes("bank") ? "bank_transfer" : finalPaymentStatus.toLowerCase().includes("card") ? "credit_card" : "cash")),
+        payment_date: (payload as any).payment_date || payload.date || new Date().toISOString().slice(0, 10),
+        reference_number: (payload as any).payment_reference || jcNumber,
+        notes: (payload as any).payment_notes || "Advance / Initial Payment on Job Card",
+        created_by: payload.created_by || "Owner",
+        created_at: new Date().toISOString(),
+      });
+      saveLocalPayments(localPayments);
     }
 
     local.unshift(newJobCard);
