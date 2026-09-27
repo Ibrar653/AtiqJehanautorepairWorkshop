@@ -108,7 +108,7 @@ export function DirectInvoiceModal({
 
   // 2. CUSTOMER STATE
   const [customerMode, setCustomerMode] = useState<"walk_in" | "existing" | "new">("walk_in");
-  const [customerName, setCustomerName] = useState("Walk-in Customer");
+  const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [companyName, setCompanyName] = useState("");
   const [trnNumber, setTrnNumber] = useState("");
@@ -698,7 +698,7 @@ export function DirectInvoiceModal({
   const handleResetForm = () => {
     setInvoiceTypeMode("mixed");
     setCustomerMode("walk_in");
-    setCustomerName("Walk-in Customer");
+    setCustomerName("");
     setCustomerPhone("");
     setCompanyName("");
     setTrnNumber("");
@@ -779,11 +779,26 @@ export function DirectInvoiceModal({
     setIsSubmitting(true);
 
     try {
+      const trimmedName = customerName.trim();
+      const isGenericWalkIn =
+        !trimmedName ||
+        trimmedName.toLowerCase() === "walk-in customer" ||
+        trimmedName.toLowerCase() === "walk in customer" ||
+        trimmedName.toLowerCase() === "walk-in" ||
+        trimmedName.toLowerCase() === "walk in";
+
+      const effectiveCustomerType =
+        customerMode === "existing"
+          ? "existing"
+          : isGenericWalkIn
+          ? "walk_in"
+          : "new";
+
       const payload: CreateDirectInvoicePayload = {
         invoice_type_mode: invoiceTypeMode,
-        customer_type: customerMode,
+        customer_type: effectiveCustomerType,
         customer_id: customerMode === "existing" ? selectedCustomerId : undefined,
-        customer_name: customerName.trim() || "Walk-in Customer",
+        customer_name: isGenericWalkIn ? "Walk-in Customer" : trimmedName,
         customer_phone: customerPhone.trim() || undefined,
         company_name: companyName.trim() || undefined,
         trn_number: trnNumber.trim() || undefined,
@@ -975,8 +990,10 @@ export function DirectInvoiceModal({
                     type="button"
                     onClick={() => {
                       setCustomerMode("walk_in");
-                      setCustomerName("Walk-in Customer");
-                      setSelectedCustomerId("");
+                      if (selectedCustomerId) {
+                        setSelectedCustomerId("");
+                        setCustomerName("");
+                      }
                     }}
                     className={`px-3 py-1 rounded-md font-semibold transition-all ${
                       customerMode === "walk_in"

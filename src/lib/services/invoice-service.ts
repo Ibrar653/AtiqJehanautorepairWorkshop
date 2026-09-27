@@ -933,14 +933,57 @@ export async function createDirectInvoice(
   }
 
   // 3. Resolve Customer
-  const { getCustomers, createCustomer } = await import("./customer-service");
+  const { getCustomers, getCustomerById, createCustomer } = await import("./customer-service");
   let resolvedCustomerId = payload.customer_id;
-  let resolvedCustomerName = payload.customer_name?.trim() || "Walk-in Customer";
+  const rawInputName = payload.customer_name?.trim() || "";
+  let resolvedCustomerName = rawInputName || "Walk-in Customer";
   let resolvedCustomerPhone = payload.customer_phone?.trim() || null;
   let resolvedCompany = payload.company_name?.trim() || null;
   let resolvedTrn = payload.trn_number?.trim() || null;
 
-  if (payload.customer_type === "walk_in") {
+  const isExplicitNameProvided =
+    rawInputName !== "" &&
+    rawInputName.toLowerCase() !== "walk-in customer" &&
+    rawInputName.toLowerCase() !== "walk in customer" &&
+    rawInputName.toLowerCase() !== "walk-in" &&
+    rawInputName.toLowerCase() !== "walk in";
+
+  if (resolvedCustomerId) {
+    // Existing customer selected
+    try {
+      const existingCust = await getCustomerById(resolvedCustomerId, targetWsId);
+      if (existingCust) {
+        resolvedCustomerName = rawInputName || existingCust.name;
+        if (!resolvedCustomerPhone) resolvedCustomerPhone = existingCust.mobile || null;
+        if (!resolvedCompany) resolvedCompany = existingCust.company_name || null;
+        if (!resolvedTrn) resolvedTrn = existingCust.trn_number || null;
+      }
+    } catch {}
+  } else if (isExplicitNameProvided) {
+    // Manually entered / new customer name (e.g. "FARMAN KHAN", "Ali Ahmad")
+    try {
+      const created = await createCustomer(
+        {
+          name: rawInputName,
+          mobile: resolvedCustomerPhone,
+          email: null,
+          address: null,
+          company_name: resolvedCompany,
+          trn_number: resolvedTrn,
+          notes: "Direct invoice customer",
+        },
+        targetWsId
+      );
+      resolvedCustomerId = created.id;
+      resolvedCustomerName = created.name;
+    } catch (e: any) {
+      console.warn("Could not create customer record for direct invoice:", e);
+      resolvedCustomerId = "cust-" + Date.now() + "-" + Math.random().toString(36).substring(2, 6);
+      resolvedCustomerName = rawInputName;
+    }
+  } else {
+    // True Walk-in (no name entered or generic placeholder)
+    resolvedCustomerName = "Walk-in Customer";
     try {
       const res = await getCustomers("Walk-in", 1, 10, targetWsId);
       const found = (res.customers || []).find((c: any) =>
@@ -951,33 +994,24 @@ export async function createDirectInvoice(
         resolvedCustomerName = found.name;
         if (!resolvedCustomerPhone) resolvedCustomerPhone = found.mobile;
       } else {
-        const created = await createCustomer({
-          name: "Walk-in Customer",
-          mobile: resolvedCustomerPhone,
-          email: null,
-          address: null,
-          company_name: resolvedCompany,
-          trn_number: resolvedTrn,
-          notes: "Walk-in counter customer",
-        }, targetWsId);
+        const created = await createCustomer(
+          {
+            name: "Walk-in Customer",
+            mobile: resolvedCustomerPhone,
+            email: null,
+            address: null,
+            company_name: resolvedCompany,
+            trn_number: resolvedTrn,
+            notes: "Walk-in counter customer",
+          },
+          targetWsId
+        );
         resolvedCustomerId = created.id;
         resolvedCustomerName = created.name;
       }
     } catch {
       resolvedCustomerId = "cust-walkin-" + targetWsId;
     }
-  } else if (payload.customer_type === "new" || !resolvedCustomerId) {
-    const created = await createCustomer({
-      name: resolvedCustomerName,
-      mobile: resolvedCustomerPhone,
-      email: null,
-      address: null,
-      company_name: resolvedCompany,
-      trn_number: resolvedTrn,
-      notes: "Direct invoice customer",
-    }, targetWsId);
-    resolvedCustomerId = created.id;
-    resolvedCustomerName = created.name;
   }
 
   // 4. Optional Vehicle Resolution

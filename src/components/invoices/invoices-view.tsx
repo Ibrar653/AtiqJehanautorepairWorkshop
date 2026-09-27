@@ -938,11 +938,11 @@ export function InvoicesView() {
 
                         <TableCell className="py-2.5">
                           <div className="font-semibold text-slate-900 leading-tight">
-                            {inv.customer?.name || "Cash Customer"}
+                            {inv.customer?.name || inv.customer_name || "Walk-in Customer"}
                           </div>
-                          {(inv.customer?.mobile || inv.customer?.company_name) && (
+                          {(inv.customer?.mobile || inv.customer?.phone || inv.customer_phone || inv.customer?.company_name || inv.company_name) && (
                             <div className="text-[11px] text-slate-500 font-mono leading-tight mt-0.5">
-                              {inv.customer?.mobile || inv.customer?.company_name}
+                              {inv.customer?.mobile || inv.customer?.phone || inv.customer_phone || inv.customer?.company_name || inv.company_name}
                             </div>
                           )}
                         </TableCell>
@@ -1192,19 +1192,19 @@ export function InvoicesView() {
                     Customer Information
                   </span>
                   <div className="font-bold text-foreground text-sm">
-                    {selectedInvoice.customer?.name || "Cash Customer"}
+                    {selectedInvoice.customer?.name || selectedInvoice.customer_name || "Walk-in Customer"}
                   </div>
-                  {selectedInvoice.customer?.company_name && (
+                  {(selectedInvoice.customer?.company_name || selectedInvoice.company_name) && (
                     <div className="text-[11px] text-muted-foreground font-medium mt-0.5">
-                      {selectedInvoice.customer.company_name}
+                      {selectedInvoice.customer?.company_name || selectedInvoice.company_name}
                     </div>
                   )}
                   <div className="text-xs text-muted-foreground font-mono mt-1">
-                    Phone: {selectedInvoice.customer?.mobile || "—"}
+                    Phone: {selectedInvoice.customer?.mobile || selectedInvoice.customer?.phone || selectedInvoice.customer_phone || "—"}
                   </div>
-                  {selectedInvoice.customer?.trn && (
+                  {(selectedInvoice.customer?.trn_number || selectedInvoice.customer?.trn || selectedInvoice.trn_number) && (
                     <div className="text-[11px] font-mono text-blue-600 font-bold mt-1">
-                      TRN: {selectedInvoice.customer.trn}
+                      TRN: {selectedInvoice.customer?.trn_number || selectedInvoice.customer?.trn || selectedInvoice.trn_number}
                     </div>
                   )}
                 </div>

@@ -258,7 +258,7 @@ export function InvoicePrintView({ invoice }: InvoicePrintViewProps) {
               <tr className="border-b border-gray-300">
                 <td className="bg-gray-100 font-bold px-2 py-0.5 text-gray-800 border-r border-gray-300">Customer:</td>
                 <td className="px-2 py-0.5 font-bold text-black border-r border-black truncate">
-                  {invoice.customer?.name || "Counter Customer"}
+                  {invoice.customer?.name || invoice.customer_name || "Walk-in Customer"}
                 </td>
                 <td className="bg-gray-100 font-bold px-2 py-0.5 text-gray-800 border-r border-gray-300">Vehicle:</td>
                 <td className="px-2 py-0.5 font-bold text-black truncate">
@@ -270,7 +270,7 @@ export function InvoicePrintView({ invoice }: InvoicePrintViewProps) {
               <tr className="border-b border-gray-300">
                 <td className="bg-gray-100 font-bold px-2 py-0.5 text-gray-800 border-r border-gray-300">Company:</td>
                 <td className="px-2 py-0.5 text-black border-r border-black truncate">
-                  {invoice.customer?.company_name || "Individual"}
+                  {invoice.customer?.company_name || invoice.company_name || "—"}
                 </td>
                 <td className="bg-gray-100 font-bold px-2 py-0.5 text-gray-800 border-r border-gray-300">Model:</td>
                 <td className="px-2 py-0.5 font-bold text-black truncate">
@@ -282,7 +282,7 @@ export function InvoicePrintView({ invoice }: InvoicePrintViewProps) {
               <tr className="border-b border-gray-300">
                 <td className="bg-gray-100 font-bold px-2 py-0.5 text-gray-800 border-r border-gray-300">Customer TRN:</td>
                 <td className="px-2 py-0.5 font-mono text-black border-r border-black truncate">
-                  {invoice.customer?.trn_number || "—"}
+                  {invoice.customer?.trn_number || invoice.customer?.trn || invoice.trn_number || "—"}
                 </td>
                 <td className="bg-gray-100 font-bold px-2 py-0.5 text-gray-800 border-r border-gray-300">Year:</td>
                 <td className="px-2 py-0.5 font-mono text-black truncate">
@@ -294,7 +294,7 @@ export function InvoicePrintView({ invoice }: InvoicePrintViewProps) {
               <tr className="border-b border-gray-300">
                 <td className="bg-gray-100 font-bold px-2 py-0.5 text-gray-800 border-r border-gray-300">Phone:</td>
                 <td className="px-2 py-0.5 font-mono text-black border-r border-black truncate">
-                  {invoice.customer?.mobile || "—"}
+                  {invoice.customer?.mobile || invoice.customer?.phone || invoice.customer_phone || "—"}
                 </td>
                 <td className="bg-gray-100 font-bold px-2 py-0.5 text-gray-800 border-r border-gray-300">Color:</td>
                 <td className="px-2 py-0.5 text-black truncate">
