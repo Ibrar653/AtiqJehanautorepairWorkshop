@@ -1559,3 +1559,351 @@ export async function voidInvoice(invoiceId: string, voidReason: string, voidedB
     throw err;
   }
 }
+
+export interface SyncInvoiceResult {
+  updated: boolean;
+  invoice: any;
+  message: string;
+  diff?: {
+    oldTotal: number;
+    newTotal: number;
+    oldSubtotal: number;
+    newSubtotal: number;
+    oldItemsCount: number;
+    newItemsCount: number;
+    oldBalance: number;
+    newBalance: number;
+    itemsChanged: boolean;
+  };
+}
+
+/**
+ * Synchronize an Invoice with its linked Job Card
+ * - Idempotent
+ * - Preserves existing invoice number & invoice ID
+ * - Preserves all existing payment records & recalculates balance from actual valid payments
+ * - Updates line items (services and spare parts) to match latest Job Card
+ * - Updates customer & vehicle links if changed on Job Card
+ * - Recalculates subtotal, VAT, total, and balance
+ * - Safe for inventory: does NOT double-deduct stock
+ * - Workspace-isolated
+ */
+export async function syncInvoiceFromJobCard(
+  invoiceId: string,
+  updatedByUserId?: string,
+  workspaceId?: string
+): Promise<SyncInvoiceResult> {
+  const targetWsId = workspaceId || getActiveWorkspaceId();
+  const supabase = createClient();
+  const { getJobCardById } = await import("./job-card-service");
+  const { getPaymentsByInvoice } = await import("./payment-service");
+
+  // 1. Fetch the invoice
+  const invoice = await getInvoiceById(invoiceId, targetWsId);
+  if (!invoice) {
+    throw new Error("Invoice not found.");
+  }
+
+  // 2. Validate linked job card
+  if (!invoice.job_card_id) {
+    throw new Error("This invoice is not linked to any Job Card.");
+  }
+
+  // 3. Security: Check workspace
+  if (invoice.workspace_id && targetWsId && invoice.workspace_id !== targetWsId) {
+    throw new Error("Cannot sync invoice from another workspace.");
+  }
+
+  // 4. Check if invoice is voided
+  if (invoice.payment_status === "void" || invoice.is_void) {
+    throw new Error("Cannot sync a voided invoice.");
+  }
+
+  // 5. Fetch latest Job Card
+  const jobCard = await getJobCardById(invoice.job_card_id, invoice.workspace_id || targetWsId);
+  if (!jobCard) {
+    throw new Error("Linked Job Card not found or has been removed.");
+  }
+
+  if (jobCard.workspace_id && invoice.workspace_id && jobCard.workspace_id !== invoice.workspace_id) {
+    throw new Error("Workspace mismatch between Job Card and Invoice.");
+  }
+
+  // 6. Build latest line items from Job Card
+  const rawItems = jobCard.items || [];
+
+  const serviceItems = rawItems
+    .filter((it: any) => it.item_type === "service" || !it.item_type)
+    .map((it: any) => {
+      const q = Number(it.quantity) || 1;
+      const p = Number(it.unit_price) || 0;
+      const l = Number(it.labour_charge) || 0;
+      const tot = Number(it.total_price) || (q * p + l);
+      return {
+        item_type: "service" as const,
+        service_id: it.service_id || null,
+        part_id: null,
+        description: it.description || "Service",
+        quantity: q,
+        unit_price: p,
+        total_price: tot,
+      };
+    });
+
+  const sparePartItems = rawItems
+    .filter((it: any) => it.item_type === "part")
+    .map((it: any) => {
+      const q = Number(it.quantity) || 1;
+      const p = Number(it.unit_price) || 0;
+      const tot = Number(it.total_price) || (q * p);
+      return {
+        item_type: "part" as const,
+        service_id: null,
+        part_id: it.part_id || null,
+        description: it.description || "Spare Part",
+        quantity: q,
+        unit_price: p,
+        total_price: tot,
+      };
+    });
+
+  const allItems = [...serviceItems, ...sparePartItems];
+
+  const servicesTotal = serviceItems.reduce((acc, s) => acc + s.total_price, 0);
+  const sparePartsTotal = sparePartItems.reduce((acc, p) => acc + p.total_price, 0);
+  const calculatedSubtotal = servicesTotal + sparePartsTotal;
+
+  const subtotal = Number(jobCard.subtotal) || calculatedSubtotal;
+  const discount = Number(jobCard.discount) || 0;
+  const taxableAmount = Math.max(0, subtotal - discount);
+  const vatRate = jobCard.vat_rate !== undefined && jobCard.vat_rate !== null && Number.isFinite(Number(jobCard.vat_rate))
+    ? Number(jobCard.vat_rate)
+    : 5;
+  const vatAmount = Number(jobCard.vat_amount) || Math.round(taxableAmount * (vatRate / 100) * 100) / 100;
+  const total = Number(jobCard.total) || Math.round((taxableAmount + vatAmount) * 100) / 100;
+
+  // 7. Calculate payments and balance strictly from actual existing valid payments
+  const existingPayments = await getPaymentsByInvoice(invoice.id, invoice.workspace_id || targetWsId);
+  const totalPaid = existingPayments.length > 0
+    ? existingPayments.reduce((sum: number, p: any) => sum + (Number(p.amount) || 0), 0)
+    : Number(invoice.paid) || 0;
+
+  const balance = Math.max(0, total - totalPaid);
+
+  let payment_status: PaymentStatus = "credit";
+  if (balance === 0 && total > 0) {
+    payment_status = "paid";
+  } else if (totalPaid > 0 && balance > 0) {
+    payment_status = "partially_paid";
+  } else if (totalPaid > total) {
+    payment_status = "paid"; // Overpayment situation
+  }
+
+  // 8. Check for differences (Idempotency check)
+  const oldItems = invoice.items || [];
+  const itemsChanged =
+    oldItems.length !== allItems.length ||
+    allItems.some((newItem, idx) => {
+      const oldItem = oldItems[idx];
+      if (!oldItem) return true;
+      return (
+        oldItem.item_type !== newItem.item_type ||
+        oldItem.description !== newItem.description ||
+        Number(oldItem.quantity) !== Number(newItem.quantity) ||
+        Number(oldItem.unit_price) !== Number(newItem.unit_price) ||
+        Number(oldItem.total_price) !== Number(newItem.total_price) ||
+        (oldItem.part_id || null) !== (newItem.part_id || null) ||
+        (oldItem.service_id || null) !== (newItem.service_id || null)
+      );
+    });
+
+  const headersChanged =
+    Number(invoice.subtotal) !== subtotal ||
+    Number(invoice.discount) !== discount ||
+    Number(invoice.vat_rate) !== vatRate ||
+    Number(invoice.vat_amount) !== vatAmount ||
+    Number(invoice.total) !== total ||
+    Number(invoice.paid) !== totalPaid ||
+    Number(invoice.balance) !== balance ||
+    invoice.customer_id !== jobCard.customer_id ||
+    invoice.vehicle_id !== jobCard.vehicle_id;
+
+  if (!itemsChanged && !headersChanged) {
+    return {
+      updated: false,
+      invoice,
+      message: "No changes found. Invoice is already up to date.",
+    };
+  }
+
+  const now = new Date().toISOString();
+
+  // 9. Prepare new items with stable IDs
+  const invoiceItemsToInsert = allItems.map((it) => ({
+    id: "invi-" + Date.now() + "-" + Math.random().toString(36).substring(2, 6),
+    invoice_id: invoice.id,
+    item_type: it.item_type,
+    service_id: it.service_id,
+    part_id: it.part_id,
+    description: it.description,
+    quantity: it.quantity,
+    unit_price: it.unit_price,
+    total_price: it.total_price,
+    created_at: now,
+  }));
+
+  const invoiceUpdatePayload = {
+    customer_id: jobCard.customer_id,
+    vehicle_id: jobCard.vehicle_id,
+    subtotal,
+    discount,
+    vat_rate: vatRate,
+    vat_amount: vatAmount,
+    total,
+    paid: totalPaid,
+    balance,
+    payment_status,
+    notes: jobCard.notes || invoice.notes || null,
+    updated_at: now,
+  };
+
+  // 10. Persist changes
+  try {
+    // A. Update invoice header in Supabase
+    const { data: updatedInv, error: invUpdateErr } = await withTimeout(
+      supabase
+        .from("invoices")
+        .update(invoiceUpdatePayload)
+        .eq("id", invoice.id)
+        .select()
+        .single(),
+      2000
+    );
+
+    if (invUpdateErr) throw invUpdateErr;
+
+    // B. Replace invoice items in Supabase
+    await withTimeout(
+      supabase.from("invoice_items").delete().eq("invoice_id", invoice.id),
+      2000
+    );
+
+    if (invoiceItemsToInsert.length > 0) {
+      await withTimeout(
+        supabase.from("invoice_items").insert(invoiceItemsToInsert),
+        2000
+      );
+    }
+
+    // C. Update Ledger
+    try {
+      const { postInvoiceLedger } = await import("./ledger-service");
+      await postInvoiceLedger({
+        id: invoice.id,
+        invoice_number: invoice.invoice_number,
+        customer_id: jobCard.customer_id,
+        customer_name: jobCard.customer?.name,
+        date: invoice.created_at || jobCard.date,
+        services_total: servicesTotal,
+        parts_total: sparePartsTotal,
+        subtotal,
+        vat_amount: vatAmount,
+        total,
+        created_by: updatedByUserId || invoice.created_by || "Owner",
+      });
+    } catch (ledErr) {
+      console.warn("Ledger post update on invoice sync notice:", ledErr);
+    }
+
+    // D. Update Local Fallback Cache
+    const list = getLocalInvoices(invoice.workspace_id || targetWsId);
+    const idx = list.findIndex((i) => i.id === invoice.id);
+    const fullUpdatedInvoice = {
+      ...invoice,
+      ...invoiceUpdatePayload,
+      customer: jobCard.customer,
+      vehicle: jobCard.vehicle,
+      job_card: jobCard,
+      items: invoiceItemsToInsert,
+      payments: existingPayments,
+    };
+
+    if (idx >= 0) {
+      list[idx] = fullUpdatedInvoice;
+    } else {
+      list.unshift(fullUpdatedInvoice);
+    }
+    saveLocalInvoices(list, invoice.workspace_id || targetWsId);
+
+    const localItems = getLocalInvoiceItems().filter((it) => it.invoice_id !== invoice.id);
+    saveLocalInvoiceItems([...invoiceItemsToInsert, ...localItems]);
+
+    // E. Audit Log
+    console.info(
+      `[Invoice Sync Audit] Invoice ${invoice.invoice_number || invoice.id} synced from Job Card ${jobCard.job_card_number || jobCard.id} by ${updatedByUserId || "Owner"}. Old Total: AED ${invoice.total} -> New Total: AED ${total}`
+    );
+
+    invalidateDashboardCache();
+
+    return {
+      updated: true,
+      invoice: fullUpdatedInvoice,
+      message: "Invoice updated from Job Card.",
+      diff: {
+        oldTotal: Number(invoice.total),
+        newTotal: total,
+        oldSubtotal: Number(invoice.subtotal),
+        newSubtotal: subtotal,
+        oldItemsCount: oldItems.length,
+        newItemsCount: invoiceItemsToInsert.length,
+        oldBalance: Number(invoice.balance),
+        newBalance: balance,
+        itemsChanged,
+      },
+    };
+  } catch (err: any) {
+    console.warn("Syncing invoice in local fallback store:", err.message || err);
+
+    // Local fallback update
+    const list = getLocalInvoices(invoice.workspace_id || targetWsId);
+    const idx = list.findIndex((i) => i.id === invoice.id);
+    const fullUpdatedInvoice = {
+      ...invoice,
+      ...invoiceUpdatePayload,
+      customer: jobCard.customer,
+      vehicle: jobCard.vehicle,
+      job_card: jobCard,
+      items: invoiceItemsToInsert,
+      payments: existingPayments,
+    };
+
+    if (idx >= 0) {
+      list[idx] = fullUpdatedInvoice;
+    } else {
+      list.unshift(fullUpdatedInvoice);
+    }
+    saveLocalInvoices(list, invoice.workspace_id || targetWsId);
+
+    const localItems = getLocalInvoiceItems().filter((it) => it.invoice_id !== invoice.id);
+    saveLocalInvoiceItems([...invoiceItemsToInsert, ...localItems]);
+
+    invalidateDashboardCache();
+
+    return {
+      updated: true,
+      invoice: fullUpdatedInvoice,
+      message: "Invoice updated from Job Card.",
+      diff: {
+        oldTotal: Number(invoice.total),
+        newTotal: total,
+        oldSubtotal: Number(invoice.subtotal),
+        newSubtotal: subtotal,
+        oldItemsCount: oldItems.length,
+        newItemsCount: invoiceItemsToInsert.length,
+        oldBalance: Number(invoice.balance),
+        newBalance: balance,
+        itemsChanged,
+      },
+    };
+  }
+}

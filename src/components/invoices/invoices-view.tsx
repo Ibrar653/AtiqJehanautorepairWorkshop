@@ -9,6 +9,7 @@ import {
   recordInvoicePayment,
   voidInvoice,
   generateInvoiceFromJobCard,
+  syncInvoiceFromJobCard,
 } from "@/lib/services/invoice-service";
 import { getJobCards } from "@/lib/services/job-card-service";
 import type { Invoice, Payment, PaymentStatus, PaymentMethod } from "@/types/database";
@@ -72,6 +73,7 @@ import {
   MessageSquare,
   X,
   Edit3,
+  ClipboardList,
 } from "lucide-react";
 import { formatCurrency, formatDate, formatAmount } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -125,6 +127,11 @@ export function InvoicesView() {
   const [detailsModalOpen, setDetailsModalOpen] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState<any | null>(null);
   const [loadingDetails, setLoadingDetails] = useState(false);
+
+  // ─── Sync From Job Card State ───
+  const [syncConfirmInvoice, setSyncConfirmInvoice] = useState<any | null>(null);
+  const [syncingInvoice, setSyncingInvoice] = useState(false);
+  const [syncError, setSyncError] = useState<string | null>(null);
 
   // ─── Record Payment Modal ───
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
@@ -233,6 +240,52 @@ export function InvoicesView() {
       console.error("Error loading invoice details:", e);
     } finally {
       setLoadingDetails(false);
+    }
+  };
+
+  // Request Sync from Job Card
+  const handleRequestSync = (inv: any) => {
+    setSyncError(null);
+    setSyncConfirmInvoice(inv);
+  };
+
+  // Execute Sync from Job Card
+  const handleExecuteSync = async () => {
+    if (!syncConfirmInvoice) return;
+    setSyncingInvoice(true);
+    setSyncError(null);
+    try {
+      const res = await syncInvoiceFromJobCard(
+        syncConfirmInvoice.id,
+        user?.full_name || "Owner",
+        activeWorkspaceId
+      );
+
+      if (res.updated) {
+        setToastMessage({
+          type: "success",
+          text: `Invoice #${syncConfirmInvoice.invoice_number} successfully updated from latest Job Card changes.`,
+        });
+      } else {
+        setToastMessage({
+          type: "success",
+          text: "No changes found. Invoice is already up to date.",
+        });
+      }
+
+      await loadInvoicesList();
+
+      if (detailsModalOpen && selectedInvoice?.id === syncConfirmInvoice.id) {
+        const refreshed = await getInvoiceById(syncConfirmInvoice.id);
+        setSelectedInvoice(refreshed);
+        setPrintInvoice(refreshed);
+      }
+
+      setSyncConfirmInvoice(null);
+    } catch (err: any) {
+      setSyncError(err.message || "Failed to sync invoice from Job Card.");
+    } finally {
+      setSyncingInvoice(false);
     }
   };
 
@@ -1039,6 +1092,11 @@ export function InvoicesView() {
                                 <DropdownMenuItem onClick={() => handleWhatsAppShare(inv)}>
                                   <MessageSquare className="h-3.5 w-3.5 mr-2 text-emerald-600" /> WhatsApp
                                 </DropdownMenuItem>
+                                {inv.job_card_id && !isVoid && canEdit && (
+                                  <DropdownMenuItem onClick={() => handleRequestSync(inv)}>
+                                    <RefreshCw className="h-3.5 w-3.5 mr-2 text-blue-600" /> Sync from Job Card
+                                  </DropdownMenuItem>
+                                )}
 
                                 {bal > 0 && !isVoid && canEdit && (
                                   <DropdownMenuItem onClick={() => handleOpenRecordPayment(inv)}>
@@ -1184,6 +1242,45 @@ export function InvoicesView() {
             </div>
           ) : selectedInvoice ? (
             <div className="space-y-4 pt-1">
+              {/* Linked Job Card Action Strip (If converted/linked from a Job Card) */}
+              {selectedInvoice.job_card_id && (
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 p-3 rounded-xl bg-blue-50/80 dark:bg-blue-950/40 border border-blue-200/80 dark:border-blue-900/60 text-xs">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <ClipboardList className="h-4 w-4 text-blue-600 dark:text-blue-400 shrink-0" />
+                    <span className="text-slate-700 dark:text-slate-300">
+                      Linked Job Card:{" "}
+                      <strong className="font-mono text-blue-700 dark:text-blue-300">
+                        {selectedInvoice.job_card?.job_card_number || (selectedInvoice.invoice_number ? `JC-${selectedInvoice.invoice_number}` : selectedInvoice.job_card_id.slice(0, 8))}
+                      </strong>
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      render={<Link href={`/job-cards/${selectedInvoice.job_card_id}`} />}
+                      className="h-8 px-2.5 text-xs font-semibold rounded-lg bg-white dark:bg-slate-900 border-blue-200 text-blue-700 hover:bg-blue-50 gap-1.5 shadow-2xs"
+                    >
+                      <Eye className="h-3.5 w-3.5" /> Open Job Card
+                    </Button>
+                    {canEdit && !selectedInvoice.is_void && selectedInvoice.payment_status !== "void" && (
+                      <Button
+                        size="sm"
+                        disabled={syncingInvoice}
+                        onClick={() => handleRequestSync(selectedInvoice)}
+                        className="h-8 px-3 text-xs font-semibold rounded-lg bg-blue-600 hover:bg-blue-700 text-white gap-1.5 shadow-xs"
+                      >
+                        {syncingInvoice ? (
+                          <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Syncing...</>
+                        ) : (
+                          <><RefreshCw className="h-3.5 w-3.5" /> Sync from Job Card</>
+                        )}
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              )}
+
               {/* Customer & Vehicle Panels */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                 {/* CUSTOMER */}
@@ -1422,6 +1519,69 @@ export function InvoicesView() {
             </div>
             <Button variant="outline" size="sm" onClick={() => setDetailsModalOpen(false)} className="h-8.5 text-xs font-medium border-border/80">
               Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ========================================================================= */}
+      {/* 1B. SYNC FROM JOB CARD CONFIRMATION MODAL                                 */}
+      {/* ========================================================================= */}
+      <Dialog open={!!syncConfirmInvoice} onOpenChange={(open) => !open && setSyncConfirmInvoice(null)}>
+        <DialogContent className="max-w-md bg-card text-foreground">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-base font-bold text-foreground">
+              <RefreshCw className="h-5 w-5 text-blue-600" /> Sync Invoice from Job Card
+            </DialogTitle>
+            <DialogDescription className="text-xs text-muted-foreground">
+              Update Invoice #{syncConfirmInvoice?.invoice_number} with the latest items and calculations from Job Card.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3 py-2 text-xs">
+            <div className="p-3.5 rounded-xl bg-blue-50/80 dark:bg-blue-950/40 border border-blue-200/80 dark:border-blue-900/60 text-blue-900 dark:text-blue-200 space-y-1.5">
+              <p className="font-bold text-sm">Update this invoice from the latest Job Card changes?</p>
+              <ul className="text-xs text-blue-800 dark:text-blue-300 space-y-1 list-disc pl-4 pt-1">
+                <li>All services, labour, and spare parts will update to match the current Job Card.</li>
+                <li>Invoice number <strong>#{syncConfirmInvoice?.invoice_number}</strong> and Job Card link are preserved.</li>
+                {Number(syncConfirmInvoice?.paid) > 0 && (
+                  <li>
+                    Existing recorded payment(s) of <strong>AED {formatAmount(syncConfirmInvoice?.paid)}</strong> will be safely preserved.
+                  </li>
+                )}
+                <li>Invoice subtotal, VAT, and balance due will be recalculated automatically.</li>
+              </ul>
+            </div>
+
+            {syncError && (
+              <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs font-semibold text-rose-700 flex items-center gap-2">
+                <AlertCircle className="h-4 w-4 shrink-0" />
+                <span>{syncError}</span>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={syncingInvoice}
+              onClick={() => setSyncConfirmInvoice(null)}
+              className="h-9 text-xs"
+            >
+              Cancel
+            </Button>
+            <Button
+              size="sm"
+              disabled={syncingInvoice}
+              onClick={handleExecuteSync}
+              className="h-9 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs gap-1.5 shadow-xs"
+            >
+              {syncingInvoice ? (
+                <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Syncing...</>
+              ) : (
+                "Update Invoice"
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
