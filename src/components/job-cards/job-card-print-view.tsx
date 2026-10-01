@@ -27,6 +27,7 @@ export function JobCardPrintView({ jobCard }: JobCardPrintViewProps) {
         id: it.id,
         title: it.description || "Service",
         unitPrice: p,
+        labourCharge: l,
         amount: amount,
       };
     });
@@ -51,11 +52,19 @@ export function JobCardPrintView({ jobCard }: JobCardPrintViewProps) {
   const sparePartsTotal = sparePartItems.reduce((sum, p) => sum + p.amount, 0);
   const calculatedSubtotal = servicesTotal + sparePartsTotal;
   const subtotal = Number(jobCard.subtotal) || calculatedSubtotal;
+  const discount = Number(jobCard.discount) || 0;
+  const taxableAmount = Math.max(0, subtotal - discount);
   const vatRate = jobCard.vat_rate !== undefined && jobCard.vat_rate !== null && Number.isFinite(Number(jobCard.vat_rate))
     ? Number(jobCard.vat_rate)
     : 5;
-  const vatAmount = Number(jobCard.vat_amount) || Math.round(subtotal * (vatRate / 100) * 100) / 100;
-  const grandTotal = Number(jobCard.total) || Math.round((subtotal + vatAmount) * 100) / 100;
+  const vatAmount = Number(jobCard.vat_amount) || Math.round(taxableAmount * (vatRate / 100) * 100) / 100;
+  const grandTotal = Number(jobCard.total) || Math.round((taxableAmount + vatAmount) * 100) / 100;
+
+  // Paid & Balance calculation
+  const totalPaid = (jobCard as any).payments && Array.isArray((jobCard as any).payments) && (jobCard as any).payments.length > 0
+    ? (jobCard as any).payments.reduce((sum: number, p: any) => sum + (Number(p.amount) || 0), 0)
+    : Number((jobCard as any).paid) || 0;
+  const pendingBalance = Math.max(0, (jobCard as any).balance !== undefined ? Number((jobCard as any).balance) : grandTotal - totalPaid);
 
   // Invoice Number (starting from 1066 sequence)
   const invoiceNumber = jobCard.invoice_number
@@ -63,8 +72,8 @@ export function JobCardPrintView({ jobCard }: JobCardPrintViewProps) {
     : (jobCard.job_card_number || "").replace(/^JC-/, "") || "1066";
 
   // Payment Status & Color Logic
-  const paymentStatus = jobCard.payment_status || "Pending";
-  const isPaid = /cash|bank\s*transfer|credit\s*card|paid/i.test(paymentStatus);
+  const paymentStatus = jobCard.payment_status || (pendingBalance === 0 && grandTotal > 0 ? "Paid" : totalPaid > 0 ? "Partial" : "Pending");
+  const isPaid = /cash|bank\s*transfer|credit\s*card|paid/i.test(paymentStatus) || pendingBalance === 0;
   const paymentColorHex = isPaid ? "#16a34a" : "#dc2626";
   const paymentBgHex = isPaid ? "#f0fdf4" : "#fef2f2";
 
@@ -76,13 +85,12 @@ export function JobCardPrintView({ jobCard }: JobCardPrintViewProps) {
 
   // Dynamic density scaling based on item count
   const totalItemCount = serviceItems.length + sparePartItems.length;
-  const isHighDensity = totalItemCount >= 10;
-  const isMediumDensity = totalItemCount >= 6 && totalItemCount < 10;
+  const isHighDensity = totalItemCount >= 8;
+  const isMediumDensity = totalItemCount >= 4 && totalItemCount < 8;
 
-  const rootTextClass = isHighDensity ? "text-[8px]" : isMediumDensity ? "text-[8.5px]" : "text-[9.5px]";
-  const cellPadding = isHighDensity ? "py-0.5 px-1.5" : isMediumDensity ? "py-1 px-2" : "py-1.5 px-2.5";
-  const sectionGap = isHighDensity ? "mb-1.5" : isMediumDensity ? "mb-2" : "mb-2.5";
-  const termsTextClass = isHighDensity ? "text-[6.5px] leading-[1.15]" : isMediumDensity ? "text-[7px] leading-[1.2]" : "text-[7.5px] leading-[1.25]";
+  const rootTextClass = isHighDensity ? "text-[7.5px]" : isMediumDensity ? "text-[8px]" : "text-[8.5px]";
+  const sectionGap = isHighDensity ? "mb-1" : isMediumDensity ? "mb-1.5" : "mb-2";
+  const termsTextClass = isHighDensity ? "text-[6px] leading-[1.1]" : isMediumDensity ? "text-[6.5px] leading-[1.15]" : "text-[7px] leading-[1.2]";
 
   return (
     <div
@@ -366,7 +374,7 @@ export function JobCardPrintView({ jobCard }: JobCardPrintViewProps) {
               </tr>
 
               {/* Row 8: Customer Address & Date */}
-              <tr>
+              <tr className={jobCard.customer_complaint ? "border-b border-gray-300" : ""}>
                 <td className="bg-gray-100 font-bold px-2 py-0.5 text-gray-800 border-r border-gray-300">Address / City:</td>
                 <td className="px-2 py-0.5 text-black border-r border-black truncate">
                   {jobCard.customer?.address || "UAE"}
@@ -376,6 +384,16 @@ export function JobCardPrintView({ jobCard }: JobCardPrintViewProps) {
                   {formatDate(jobCard.date || jobCard.created_at)}
                 </td>
               </tr>
+
+              {/* Row 9: Customer Complaint (If documented) */}
+              {jobCard.customer_complaint ? (
+                <tr>
+                  <td className="bg-gray-100 font-bold px-2 py-0.5 text-gray-800 border-r border-gray-300">Complaint:</td>
+                  <td colSpan={3} className="px-2 py-0.5 text-black truncate">
+                    {jobCard.customer_complaint}
+                  </td>
+                </tr>
+              ) : null}
             </tbody>
           </table>
         </div>
@@ -488,12 +506,18 @@ export function JobCardPrintView({ jobCard }: JobCardPrintViewProps) {
               )}
             </div>
 
-            {/* Right: Subtotal, VAT, Grand Total, Advance & Balance */}
+            {/* Right: Subtotal, Discount, VAT, Grand Total, Advance & Balance */}
             <div className="col-span-6 text-[9px] divide-y divide-gray-300 font-medium">
               <div className="flex justify-between py-1 px-2.5 bg-gray-50">
                 <span className="font-bold text-gray-800">Sub Total:</span>
                 <span className="font-mono font-bold text-black">{formatAmount(subtotal)} AED</span>
               </div>
+              {discount > 0 && (
+                <div className="flex justify-between py-1 px-2.5 bg-emerald-50/60 text-emerald-800">
+                  <span className="font-bold">Discount:</span>
+                  <span className="font-mono font-bold">-{formatAmount(discount)} AED</span>
+                </div>
+              )}
               <div className="flex justify-between py-1 px-2.5 bg-gray-50">
                 <span className="font-bold text-gray-800">VAT ({vatRate}%):</span>
                 <span className="font-mono font-bold text-black">{formatAmount(vatAmount)} AED</span>
@@ -513,20 +537,18 @@ export function JobCardPrintView({ jobCard }: JobCardPrintViewProps) {
                   AED {formatAmount(grandTotal)}
                 </span>
               </div>
-              {Number((jobCard as any).paid) > 0 && (
-                <>
-                  <div className="flex justify-between py-1 px-2.5 bg-emerald-50/50">
-                    <span className="font-bold text-emerald-800">Advance / Paid:</span>
-                    <span className="font-mono font-bold text-emerald-700">{formatAmount(Number((jobCard as any).paid))} AED</span>
-                  </div>
-                  <div className="flex justify-between py-1 px-2.5 bg-rose-50/50">
-                    <span className="font-bold text-rose-800">Pending Balance:</span>
-                    <span className="font-mono font-black text-rose-700">
-                      {formatAmount(Math.max(0, (jobCard as any).balance !== undefined ? Number((jobCard as any).balance) : grandTotal - Number((jobCard as any).paid)))} AED
-                    </span>
-                  </div>
-                </>
+              {totalPaid > 0 && (
+                <div className="flex justify-between py-1 px-2.5 bg-emerald-50/50">
+                  <span className="font-bold text-emerald-800">Advance / Paid:</span>
+                  <span className="font-mono font-bold text-emerald-700">{formatAmount(totalPaid)} AED</span>
+                </div>
               )}
+              <div className="flex justify-between py-1 px-2.5 bg-rose-50/50">
+                <span className="font-bold text-rose-800">Pending Balance:</span>
+                <span className="font-mono font-black text-rose-700">
+                  {formatAmount(pendingBalance)} AED
+                </span>
+              </div>
             </div>
           </div>
         </div>

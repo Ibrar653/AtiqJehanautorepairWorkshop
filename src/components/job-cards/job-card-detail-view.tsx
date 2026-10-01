@@ -324,9 +324,11 @@ export function JobCardDetailView({ id }: JobCardDetailViewProps) {
   };
 
   return (
-    <div className="space-y-6 max-w-5xl mx-auto pb-12">
-      {/* Top Action Bar (hidden during browser print) */}
-      <div className="no-print space-y-4">
+    <div className="max-w-5xl mx-auto pb-12">
+      {/* ─── Screen UI (Hidden during browser print) ─── */}
+      <div className="no-print space-y-6">
+        {/* Top Action Bar (hidden during browser print) */}
+        <div className="space-y-4">
         <PageHeader
           title={`Job Card: ${jobCard.job_card_number}`}
           description={`Order Date: ${formatDate(jobCard.date || jobCard.created_at)} • Order ID: ${jobCard.id.slice(0, 8)}`}
@@ -478,7 +480,7 @@ export function JobCardDetailView({ id }: JobCardDetailViewProps) {
             </Button>
           </div>
         </div>
-      </div>
+        </div>
 
       {/* Main Clean Printable A4 Job Card View */}
       <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs p-6 md:p-8 space-y-6 text-slate-800 printable-job-card-view">
@@ -968,6 +970,7 @@ export function JobCardDetailView({ id }: JobCardDetailViewProps) {
             </div>
           </div>
         </div>
+      </div>
       </div>
 
       {/* Clean A4 Printable Template (Visible only when printing) */}

@@ -357,7 +357,10 @@
   nav,
   [role="navigation"],
   button,
-  .print-hidden {
+  .print-hidden,
+  .printable-job-card-view,
+  [role="dialog"],
+  [data-radix-portal] {
     display: none !important;
   }
 
