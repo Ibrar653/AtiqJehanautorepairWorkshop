@@ -3,12 +3,14 @@
  * 
  * Provides:
  * 1. Complete local browser data backup export (.json)
- * 2. Pre-migration Dry Run validation (raw vs unique count, duplicate detection, conflicting record detection, FK integrity checks)
- * 3. Exact-duplicate deduplication by original source ID without modifying local storage or backup
- * 4. Deterministic UUID mapping for unique client string IDs
- * 5. Idempotent Supabase batch insertion following strict FK hierarchy
- * 6. Automated post-import verification (unique record counts + relationship checks)
- * 7. Zero-deletion guarantee: localStorage is NEVER cleared, mutated, or deleted.
+ * 2. In-memory parsing of JSON backup files (without modifying original file or localStorage)
+ * 3. Pre-migration Dry Run validation (raw vs unique count, duplicate detection, conflicting record detection, FK integrity checks)
+ * 4. Exact-duplicate deduplication by original source ID without modifying local storage or backup
+ * 5. Deterministic UUID mapping for unique client string IDs
+ * 6. Idempotent Supabase batch insertion following strict FK hierarchy
+ * 7. Automated post-import verification (unique record counts + relationship checks)
+ * 8. Zero-deletion guarantee: localStorage and backup JSON are NEVER cleared, mutated, or deleted.
+ * 9. Workspace isolation: All business records map to existing active workspace UUID (workspaces/members are never created from backup).
  */
 
 import { createClient } from "@/lib/supabase/client";
@@ -39,6 +41,38 @@ export const LOCAL_DATA_KEYS = {
   WORKSPACE_MEMBERS: "atiq_local_workspace_members",
 } as const;
 
+// ─── Migration Data Set Abstraction ───────────────────────────────────────────
+export interface MigrationDataSet {
+  sourceType: "local_storage" | "uploaded_backup";
+  backupMetadata?: {
+    filename?: string;
+    exportedAt?: string;
+    originalWorkspaceId?: string;
+    version?: string;
+    totalRawRecords?: number;
+  };
+  customers: any[];
+  vehicles: any[];
+  services: any[];
+  suppliers: any[];
+  parts: any[];
+  inventory_transactions: any[];
+  job_cards: any[];
+  job_card_items: any[];
+  invoices: any[];
+  invoice_items: any[];
+  payments: any[];
+  purchases: any[];
+  purchase_items: any[];
+  supplier_payments: any[];
+  expenses: any[];
+  workers: any[];
+  bank_accounts: any[];
+  ledger_accounts: any[];
+  ledger_transactions: any[];
+  ledger_entries: any[];
+}
+
 // ─── Local Storage Reader Helper ──────────────────────────────────────────────
 export function getRawLocalArray<T = any>(key: string): T[] {
   if (typeof window === "undefined") return [];
@@ -50,6 +84,269 @@ export function getRawLocalArray<T = any>(key: string): T[] {
   } catch (err) {
     console.warn(`Failed to read local data for key: ${key}`, err);
     return [];
+  }
+}
+
+/**
+ * Builds a MigrationDataSet from current browser localStorage
+ */
+export function getLocalStorageDataSet(workspaceId?: string): MigrationDataSet {
+  const customers = getRawLocalArray(LOCAL_DATA_KEYS.CUSTOMERS);
+  const vehicles = getRawLocalArray(LOCAL_DATA_KEYS.VEHICLES);
+  const services = getRawLocalArray(LOCAL_DATA_KEYS.SERVICES);
+  const suppliers = getRawLocalArray(LOCAL_DATA_KEYS.SUPPLIERS);
+  const parts = getRawLocalArray(LOCAL_DATA_KEYS.PARTS);
+  const inventory_transactions = getRawLocalArray(LOCAL_DATA_KEYS.INVENTORY_TRANSACTIONS);
+  const job_cards = getRawLocalArray(LOCAL_DATA_KEYS.JOB_CARDS);
+  const rawInvoiceItems = getRawLocalArray(LOCAL_DATA_KEYS.INVOICE_ITEMS);
+  const invoices = getRawLocalArray(LOCAL_DATA_KEYS.INVOICES);
+  const payments = getRawLocalArray(LOCAL_DATA_KEYS.PAYMENTS);
+  const purchases = getRawLocalArray(LOCAL_DATA_KEYS.PURCHASES);
+  const supplier_payments = getRawLocalArray(LOCAL_DATA_KEYS.SUPPLIER_PAYMENTS);
+  const expenses = getRawLocalArray(LOCAL_DATA_KEYS.EXPENSES);
+  const workers = getRawLocalArray(LOCAL_DATA_KEYS.WORKERS);
+  const bank_accounts = getRawLocalArray(LOCAL_DATA_KEYS.BANK_ACCOUNTS);
+  const ledger_accounts = getRawLocalArray(LOCAL_DATA_KEYS.LEDGER_ACCOUNTS);
+  const ledger_transactions = getRawLocalArray(LOCAL_DATA_KEYS.LEDGER_TRANSACTIONS);
+  const ledger_entries = getRawLocalArray(LOCAL_DATA_KEYS.LEDGER_ENTRIES);
+
+  // Extract nested Job Card Items
+  const job_card_items: any[] = [];
+  job_cards.forEach((jc: any) => {
+    if (Array.isArray(jc.items)) {
+      jc.items.forEach((it: any, idx: number) => {
+        job_card_items.push({
+          ...it,
+          id: it.id || `${jc.id}-item-${idx}`,
+          job_card_id: jc.id,
+        });
+      });
+    }
+  });
+
+  // Extract nested Purchase Items
+  const purchase_items: any[] = [];
+  purchases.forEach((po: any) => {
+    if (Array.isArray(po.items)) {
+      po.items.forEach((it: any, idx: number) => {
+        purchase_items.push({
+          ...it,
+          id: it.id || `${po.id}-item-${idx}`,
+          purchase_id: po.id,
+        });
+      });
+    }
+  });
+
+  // Invoice Items (use raw array or extract from invoices)
+  const invoice_items: any[] = [...rawInvoiceItems];
+  if (invoice_items.length === 0) {
+    invoices.forEach((inv: any) => {
+      if (Array.isArray(inv.items)) {
+        inv.items.forEach((it: any, idx: number) => {
+          invoice_items.push({
+            ...it,
+            id: it.id || `${inv.id}-item-${idx}`,
+            invoice_id: inv.id,
+          });
+        });
+      }
+    });
+  }
+
+  return {
+    sourceType: "local_storage",
+    customers,
+    vehicles,
+    services,
+    suppliers,
+    parts,
+    inventory_transactions,
+    job_cards,
+    job_card_items,
+    invoices,
+    invoice_items,
+    payments,
+    purchases,
+    purchase_items,
+    supplier_payments,
+    expenses,
+    workers,
+    bank_accounts,
+    ledger_accounts,
+    ledger_transactions,
+    ledger_entries,
+  };
+}
+
+/**
+ * Parses a downloaded/exported JSON backup in memory into a MigrationDataSet.
+ * Does NOT write to localStorage and does NOT alter the input.
+ */
+export function parseBackupJson(
+  jsonInput: string | Record<string, any>,
+  filename = "backup.json"
+): { success: boolean; dataSet?: MigrationDataSet; error?: string } {
+  try {
+    let parsed: any;
+    if (typeof jsonInput === "string") {
+      parsed = JSON.parse(jsonInput);
+    } else if (typeof jsonInput === "object" && jsonInput !== null) {
+      parsed = jsonInput;
+    } else {
+      return { success: false, error: "Invalid backup format: Input must be a JSON object or string." };
+    }
+
+    // Determine container for records: either parsed.data, parsed, or parsed.backup
+    const dataContainer = parsed.data || parsed.backup || parsed;
+    if (!dataContainer || typeof dataContainer !== "object") {
+      return { success: false, error: "Invalid backup structure: No data object found in backup file." };
+    }
+
+    // Helper to safely extract arrays case-insensitively
+    const getArray = (keys: string[]): any[] => {
+      for (const k of keys) {
+        if (Array.isArray(dataContainer[k])) return dataContainer[k];
+        if (Array.isArray(dataContainer[k.toLowerCase()])) return dataContainer[k.toLowerCase()];
+        if (Array.isArray(dataContainer[k.toUpperCase()])) return dataContainer[k.toUpperCase()];
+        // Also check if keys are prefixed with atiq_local_
+        const prefixed = `atiq_local_${k.toLowerCase()}`;
+        if (Array.isArray(dataContainer[prefixed])) return dataContainer[prefixed];
+      }
+      return [];
+    };
+
+    const customers = getArray(["customers", "customer"]);
+    const vehicles = getArray(["vehicles", "vehicle"]);
+    const services = getArray(["services", "service"]);
+    const suppliers = getArray(["suppliers", "supplier"]);
+    const parts = getArray(["parts", "part"]);
+    const inventory_transactions = getArray(["inventory_transactions", "inventoryTransactions", "inventory_tx"]);
+    const job_cards = getArray(["job_cards", "jobCards", "job_card"]);
+    let rawJobCardItems = getArray(["job_card_items", "jobCardItems", "job_card_item"]);
+    const invoices = getArray(["invoices", "invoice"]);
+    let rawInvoiceItems = getArray(["invoice_items", "invoiceItems", "invoice_item"]);
+    const payments = getArray(["payments", "payment"]);
+    const purchases = getArray(["purchases", "purchase"]);
+    let rawPurchaseItems = getArray(["purchase_items", "purchaseItems", "purchase_item"]);
+    const supplier_payments = getArray(["supplier_payments", "supplierPayments", "supplier_payment"]);
+    const expenses = getArray(["expenses", "expense"]);
+    const workers = getArray(["workers", "worker"]);
+    const bank_accounts = getArray(["bank_accounts", "bankAccounts", "bank_account"]);
+    const ledger_accounts = getArray(["ledger_accounts", "ledgerAccounts", "ledger_account"]);
+    const ledger_transactions = getArray(["ledger_transactions", "ledgerTransactions", "ledger_transaction"]);
+    const ledger_entries = getArray(["ledger_entries", "ledgerEntries", "ledger_entry"]);
+
+    // Extract nested items from Job Cards if not present in separate list
+    const job_card_items: any[] = [...rawJobCardItems];
+    job_cards.forEach((jc: any) => {
+      if (Array.isArray(jc.items)) {
+        jc.items.forEach((it: any, idx: number) => {
+          const itemWithParent = {
+            ...it,
+            id: it.id || `${jc.id}-item-${idx}`,
+            job_card_id: it.job_card_id || jc.id,
+          };
+          const alreadyExists = job_card_items.some((existing) => existing.id === itemWithParent.id);
+          if (!alreadyExists) {
+            job_card_items.push(itemWithParent);
+          }
+        });
+      }
+    });
+
+    // Extract nested items from Purchases
+    const purchase_items: any[] = [...rawPurchaseItems];
+    purchases.forEach((po: any) => {
+      if (Array.isArray(po.items)) {
+        po.items.forEach((it: any, idx: number) => {
+          const itemWithParent = {
+            ...it,
+            id: it.id || `${po.id}-item-${idx}`,
+            purchase_id: it.purchase_id || po.id,
+          };
+          const alreadyExists = purchase_items.some((existing) => existing.id === itemWithParent.id);
+          if (!alreadyExists) {
+            purchase_items.push(itemWithParent);
+          }
+        });
+      }
+    });
+
+    // Extract nested items from Invoices
+    const invoice_items: any[] = [...rawInvoiceItems];
+    invoices.forEach((inv: any) => {
+      if (Array.isArray(inv.items)) {
+        inv.items.forEach((it: any, idx: number) => {
+          const itemWithParent = {
+            ...it,
+            id: it.id || `${inv.id}-item-${idx}`,
+            invoice_id: it.invoice_id || inv.id,
+          };
+          const alreadyExists = invoice_items.some((existing) => existing.id === itemWithParent.id);
+          if (!alreadyExists) {
+            invoice_items.push(itemWithParent);
+          }
+        });
+      }
+    });
+
+    const totalRawRecords =
+      customers.length +
+      vehicles.length +
+      services.length +
+      suppliers.length +
+      parts.length +
+      inventory_transactions.length +
+      job_cards.length +
+      job_card_items.length +
+      invoices.length +
+      invoice_items.length +
+      payments.length +
+      purchases.length +
+      purchase_items.length +
+      supplier_payments.length +
+      expenses.length +
+      workers.length +
+      bank_accounts.length +
+      ledger_accounts.length +
+      ledger_transactions.length +
+      ledger_entries.length;
+
+    const dataSet: MigrationDataSet = {
+      sourceType: "uploaded_backup",
+      backupMetadata: {
+        filename,
+        exportedAt: parsed.exportedAt || parsed.exported_at || new Date().toISOString(),
+        originalWorkspaceId: parsed.workspaceId || parsed.workspace_id || "ws-atiq-default-001",
+        version: parsed.version || "1.0",
+        totalRawRecords,
+      },
+      customers,
+      vehicles,
+      services,
+      suppliers,
+      parts,
+      inventory_transactions,
+      job_cards,
+      job_card_items,
+      invoices,
+      invoice_items,
+      payments,
+      purchases,
+      purchase_items,
+      supplier_payments,
+      expenses,
+      workers,
+      bank_accounts,
+      ledger_accounts,
+      ledger_transactions,
+      ledger_entries,
+    };
+
+    return { success: true, dataSet };
+  } catch (err: any) {
+    return { success: false, error: `Failed to parse backup JSON: ${err.message || err}` };
   }
 }
 
@@ -69,12 +366,10 @@ export interface DeduplicationResult<T = any> {
 function normalizeForComparison(obj: any): string {
   if (!obj || typeof obj !== "object") return String(obj);
   const clone = { ...obj };
-  // Omit timestamp fields that may vary between repeat saves of the same record
   delete clone.updated_at;
   delete clone.last_modified;
   delete clone._temp_id;
 
-  // Sort keys deterministically
   const sortedKeys = Object.keys(clone).sort();
   const sortedObj: Record<string, any> = {};
   for (const k of sortedKeys) {
@@ -124,7 +419,6 @@ export function deduplicateBySourceId<T extends { id?: string | number }>(
     if (group.length === 1) {
       unique.push(group[0]);
     } else {
-      // Check if all instances are identical
       const firstNormalized = normalizeForComparison(group[0]);
       let isIdentical = true;
       for (let i = 1; i < group.length; i++) {
@@ -138,15 +432,13 @@ export function deduplicateBySourceId<T extends { id?: string | number }>(
         unique.push(group[0]);
         duplicateCount += group.length - 1;
       } else {
-        // Conflicting versions for the same ID!
         conflicts.push({ id, versions: group });
-        unique.push(group[0]); // Keep first for dry run inspection, but conflict count > 0 will block migration
+        unique.push(group[0]);
         duplicateCount += group.length - 1;
       }
     }
   }
 
-  // Include non-id records as unique
   for (const rec of nonIdRecords) {
     unique.push(rec);
   }
@@ -189,80 +481,52 @@ export interface LocalDataSummary {
 
 export function getLocalDataSummary(workspaceId?: string): LocalDataSummary {
   const targetWsId = workspaceId || getActiveWorkspaceId();
-  
-  const customers = getRawLocalArray(LOCAL_DATA_KEYS.CUSTOMERS);
-  const vehicles = getRawLocalArray(LOCAL_DATA_KEYS.VEHICLES);
-  const services = getRawLocalArray(LOCAL_DATA_KEYS.SERVICES);
-  const suppliers = getRawLocalArray(LOCAL_DATA_KEYS.SUPPLIERS);
-  const parts = getRawLocalArray(LOCAL_DATA_KEYS.PARTS);
-  const inventoryTransactions = getRawLocalArray(LOCAL_DATA_KEYS.INVENTORY_TRANSACTIONS);
-  const jobCards = getRawLocalArray(LOCAL_DATA_KEYS.JOB_CARDS);
-  const invoices = getRawLocalArray(LOCAL_DATA_KEYS.INVOICES);
-  const invoiceItems = getRawLocalArray(LOCAL_DATA_KEYS.INVOICE_ITEMS);
-  const payments = getRawLocalArray(LOCAL_DATA_KEYS.PAYMENTS);
-  const purchases = getRawLocalArray(LOCAL_DATA_KEYS.PURCHASES);
-  const supplierPayments = getRawLocalArray(LOCAL_DATA_KEYS.SUPPLIER_PAYMENTS);
-  const expenses = getRawLocalArray(LOCAL_DATA_KEYS.EXPENSES);
-  const workers = getRawLocalArray(LOCAL_DATA_KEYS.WORKERS);
-  const bankAccounts = getRawLocalArray(LOCAL_DATA_KEYS.BANK_ACCOUNTS);
-  const ledgerAccounts = getRawLocalArray(LOCAL_DATA_KEYS.LEDGER_ACCOUNTS);
-  const ledgerTransactions = getRawLocalArray(LOCAL_DATA_KEYS.LEDGER_TRANSACTIONS);
-  const ledgerEntries = getRawLocalArray(LOCAL_DATA_KEYS.LEDGER_ENTRIES);
-
-  let jobCardItemsCount = 0;
-  jobCards.forEach((jc: any) => {
-    if (Array.isArray(jc.items)) jobCardItemsCount += jc.items.length;
-  });
-
-  let purchaseItemsCount = 0;
-  purchases.forEach((po: any) => {
-    if (Array.isArray(po.items)) purchaseItemsCount += po.items.length;
-  });
+  const ds = getLocalStorageDataSet(targetWsId);
 
   const total =
-    customers.length +
-    vehicles.length +
-    services.length +
-    suppliers.length +
-    parts.length +
-    inventoryTransactions.length +
-    jobCards.length +
-    jobCardItemsCount +
-    invoices.length +
-    invoiceItems.length +
-    payments.length +
-    purchases.length +
-    purchaseItemsCount +
-    supplierPayments.length +
-    expenses.length +
-    workers.length +
-    bankAccounts.length +
-    ledgerAccounts.length +
-    ledgerTransactions.length +
-    ledgerEntries.length;
+    ds.customers.length +
+    ds.vehicles.length +
+    ds.services.length +
+    ds.suppliers.length +
+    ds.parts.length +
+    ds.inventory_transactions.length +
+    ds.job_cards.length +
+    ds.job_card_items.length +
+    ds.invoices.length +
+    ds.invoice_items.length +
+    ds.payments.length +
+    ds.purchases.length +
+    ds.purchase_items.length +
+    ds.supplier_payments.length +
+    ds.expenses.length +
+    ds.workers.length +
+    ds.bank_accounts.length +
+    ds.ledger_accounts.length +
+    ds.ledger_transactions.length +
+    ds.ledger_entries.length;
 
   return {
     workspaceId: targetWsId,
-    customers: customers.length,
-    vehicles: vehicles.length,
-    services: services.length,
-    suppliers: suppliers.length,
-    parts: parts.length,
-    inventoryTransactions: inventoryTransactions.length,
-    jobCards: jobCards.length,
-    jobCardItems: jobCardItemsCount,
-    invoices: invoices.length,
-    invoiceItems: invoiceItems.length,
-    payments: payments.length,
-    purchases: purchases.length,
-    purchaseItems: purchaseItemsCount,
-    supplierPayments: supplierPayments.length,
-    expenses: expenses.length,
-    workers: workers.length,
-    bankAccounts: bankAccounts.length,
-    ledgerAccounts: ledgerAccounts.length,
-    ledgerTransactions: ledgerTransactions.length,
-    ledgerEntries: ledgerEntries.length,
+    customers: ds.customers.length,
+    vehicles: ds.vehicles.length,
+    services: ds.services.length,
+    suppliers: ds.suppliers.length,
+    parts: ds.parts.length,
+    inventoryTransactions: ds.inventory_transactions.length,
+    jobCards: ds.job_cards.length,
+    jobCardItems: ds.job_card_items.length,
+    invoices: ds.invoices.length,
+    invoiceItems: ds.invoice_items.length,
+    payments: ds.payments.length,
+    purchases: ds.purchases.length,
+    purchaseItems: ds.purchase_items.length,
+    supplierPayments: ds.supplier_payments.length,
+    expenses: ds.expenses.length,
+    workers: ds.workers.length,
+    bankAccounts: ds.bank_accounts.length,
+    ledgerAccounts: ds.ledger_accounts.length,
+    ledgerTransactions: ds.ledger_transactions.length,
+    ledgerEntries: ds.ledger_entries.length,
     totalRecords: total,
   };
 }
@@ -280,6 +544,8 @@ export interface EntityDryRunReport {
 }
 
 export interface PreMigrationDryRunResult {
+  sourceType: "local_storage" | "uploaded_backup";
+  backupMetadata?: MigrationDataSet["backupMetadata"];
   workspaceId: string;
   validatedAt: string;
   totalRaw: number;
@@ -292,93 +558,38 @@ export interface PreMigrationDryRunResult {
   entities: EntityDryRunReport[];
 }
 
-export function runPreMigrationDryRun(workspaceId?: string): PreMigrationDryRunResult {
+/**
+ * Executes dry run validation on a MigrationDataSet (either from localStorage or uploaded JSON backup)
+ */
+export function runPreMigrationDryRun(
+  dataSetInput?: MigrationDataSet,
+  workspaceId?: string
+): PreMigrationDryRunResult {
   const targetWsId = workspaceId || getActiveWorkspaceId();
+  const ds = dataSetInput || getLocalStorageDataSet(targetWsId);
   const entities: EntityDryRunReport[] = [];
 
-  // 1. Load & Deduplicate all entities
-  const rawCust = getRawLocalArray(LOCAL_DATA_KEYS.CUSTOMERS).filter((c) => !c.is_deleted);
-  const dedupCust = deduplicateBySourceId(rawCust, "Customers");
-
-  const rawVeh = getRawLocalArray(LOCAL_DATA_KEYS.VEHICLES).filter((v) => !v.is_deleted);
-  const dedupVeh = deduplicateBySourceId(rawVeh, "Vehicles");
-
-  const rawSrv = getRawLocalArray(LOCAL_DATA_KEYS.SERVICES).filter((s) => !s.is_deleted);
-  const dedupSrv = deduplicateBySourceId(rawSrv, "Services");
-
-  const rawSup = getRawLocalArray(LOCAL_DATA_KEYS.SUPPLIERS).filter((s) => !s.is_deleted);
-  const dedupSup = deduplicateBySourceId(rawSup, "Suppliers");
-
-  const rawParts = getRawLocalArray(LOCAL_DATA_KEYS.PARTS).filter((p) => !p.is_deleted);
-  const dedupParts = deduplicateBySourceId(rawParts, "Parts");
-
-  const rawTx = getRawLocalArray(LOCAL_DATA_KEYS.INVENTORY_TRANSACTIONS);
-  const dedupTx = deduplicateBySourceId(rawTx, "Inventory Transactions");
-
-  const rawJc = getRawLocalArray(LOCAL_DATA_KEYS.JOB_CARDS).filter((j) => !j.is_deleted);
-  const dedupJc = deduplicateBySourceId(rawJc, "Job Cards");
-
-  // Flatten & dedup JC items
-  const rawJcItems: any[] = [];
-  rawJc.forEach((jc: any) => {
-    if (Array.isArray(jc.items)) {
-      jc.items.forEach((it: any, idx: number) => {
-        rawJcItems.push({
-          ...it,
-          id: it.id || `${jc.id}-item-${idx}`,
-          job_card_id: jc.id,
-        });
-      });
-    }
-  });
-  const dedupJcItems = deduplicateBySourceId(rawJcItems, "Job Card Items");
-
-  const rawInv = getRawLocalArray(LOCAL_DATA_KEYS.INVOICES).filter((i) => !i.is_deleted);
-  const dedupInv = deduplicateBySourceId(rawInv, "Invoices");
-
-  const rawInvItems = getRawLocalArray(LOCAL_DATA_KEYS.INVOICE_ITEMS);
-  const dedupInvItems = deduplicateBySourceId(rawInvItems, "Invoice Items");
-
-  const rawPayments = getRawLocalArray(LOCAL_DATA_KEYS.PAYMENTS).filter((p) => !p.is_deleted);
-  const dedupPayments = deduplicateBySourceId(rawPayments, "Payments");
-
-  const rawPurchases = getRawLocalArray(LOCAL_DATA_KEYS.PURCHASES).filter((po) => !po.is_deleted);
-  const dedupPurchases = deduplicateBySourceId(rawPurchases, "Purchases");
-
-  const rawPoItems: any[] = [];
-  rawPurchases.forEach((po: any) => {
-    if (Array.isArray(po.items)) {
-      po.items.forEach((it: any, idx: number) => {
-        rawPoItems.push({
-          ...it,
-          id: it.id || `${po.id}-item-${idx}`,
-          purchase_id: po.id,
-        });
-      });
-    }
-  });
-  const dedupPoItems = deduplicateBySourceId(rawPoItems, "Purchase Items");
-
-  const rawSupPayments = getRawLocalArray(LOCAL_DATA_KEYS.SUPPLIER_PAYMENTS);
-  const dedupSupPayments = deduplicateBySourceId(rawSupPayments, "Supplier Payments");
-
-  const rawExpenses = getRawLocalArray(LOCAL_DATA_KEYS.EXPENSES).filter((e) => !e.is_deleted);
-  const dedupExpenses = deduplicateBySourceId(rawExpenses, "Expenses");
-
-  const rawWorkers = getRawLocalArray(LOCAL_DATA_KEYS.WORKERS);
-  const dedupWorkers = deduplicateBySourceId(rawWorkers, "Workers");
-
-  const rawBank = getRawLocalArray(LOCAL_DATA_KEYS.BANK_ACCOUNTS);
-  const dedupBank = deduplicateBySourceId(rawBank, "Bank Accounts");
-
-  const rawLedgerAcc = getRawLocalArray(LOCAL_DATA_KEYS.LEDGER_ACCOUNTS).filter((a) => !a.is_deleted);
-  const dedupLedgerAcc = deduplicateBySourceId(rawLedgerAcc, "Ledger Accounts");
-
-  const rawLedgerTxn = getRawLocalArray(LOCAL_DATA_KEYS.LEDGER_TRANSACTIONS);
-  const dedupLedgerTxn = deduplicateBySourceId(rawLedgerTxn, "Ledger Transactions");
-
-  const rawLedgerEntries = getRawLocalArray(LOCAL_DATA_KEYS.LEDGER_ENTRIES);
-  const dedupLedgerEntries = deduplicateBySourceId(rawLedgerEntries, "Ledger Entries");
+  // 1. Deduplicate each entity
+  const dedupCust = deduplicateBySourceId(ds.customers.filter((c) => !c.is_deleted), "Customers");
+  const dedupVeh = deduplicateBySourceId(ds.vehicles.filter((v) => !v.is_deleted), "Vehicles");
+  const dedupSrv = deduplicateBySourceId(ds.services.filter((s) => !s.is_deleted), "Services");
+  const dedupSup = deduplicateBySourceId(ds.suppliers.filter((s) => !s.is_deleted), "Suppliers");
+  const dedupParts = deduplicateBySourceId(ds.parts.filter((p) => !p.is_deleted), "Parts");
+  const dedupTx = deduplicateBySourceId(ds.inventory_transactions, "Inventory Transactions");
+  const dedupJc = deduplicateBySourceId(ds.job_cards.filter((j) => !j.is_deleted), "Job Cards");
+  const dedupJcItems = deduplicateBySourceId(ds.job_card_items, "Job Card Items");
+  const dedupInv = deduplicateBySourceId(ds.invoices.filter((i) => !i.is_deleted), "Invoices");
+  const dedupInvItems = deduplicateBySourceId(ds.invoice_items, "Invoice Items");
+  const dedupPayments = deduplicateBySourceId(ds.payments.filter((p) => !p.is_deleted), "Payments");
+  const dedupPurchases = deduplicateBySourceId(ds.purchases.filter((po) => !po.is_deleted), "Purchases");
+  const dedupPoItems = deduplicateBySourceId(ds.purchase_items, "Purchase Items");
+  const dedupSupPayments = deduplicateBySourceId(ds.supplier_payments, "Supplier Payments");
+  const dedupExpenses = deduplicateBySourceId(ds.expenses.filter((e) => !e.is_deleted), "Expenses");
+  const dedupWorkers = deduplicateBySourceId(ds.workers, "Workers");
+  const dedupBank = deduplicateBySourceId(ds.bank_accounts, "Bank Accounts");
+  const dedupLedgerAcc = deduplicateBySourceId(ds.ledger_accounts.filter((a) => !a.is_deleted), "Ledger Accounts");
+  const dedupLedgerTxn = deduplicateBySourceId(ds.ledger_transactions, "Ledger Transactions");
+  const dedupLedgerEntries = deduplicateBySourceId(ds.ledger_entries, "Ledger Entries");
 
   // 2. Build ID Sets for FK Integrity Verification
   const custIdSet = new Set(dedupCust.unique.map((c) => String(c.id)));
@@ -392,7 +603,6 @@ export function runPreMigrationDryRun(workspaceId?: string): PreMigrationDryRunR
   const ledgerAccIdSet = new Set(dedupLedgerAcc.unique.map((a) => String(a.id)));
   const ledgerTxnIdSet = new Set(dedupLedgerTxn.unique.map((t) => String(t.id)));
 
-  // Helper to add entity report
   function addReport(
     entity: string,
     table: string,
@@ -468,11 +678,17 @@ export function runPreMigrationDryRun(workspaceId?: string): PreMigrationDryRunR
   });
   addReport("Job Cards", "job_cards", dedupJc, brokenJcFk.length, brokenJcFk);
 
-  // Job Card Items (FK: job_card_id, part_id, service_id)
+  // Job Card Items (FK: job_card_id, part_id optional, service_id optional)
   const brokenJcItemFk: string[] = [];
   dedupJcItems.unique.forEach((it: any) => {
     if (it.job_card_id && !jcIdSet.has(String(it.job_card_id))) {
       brokenJcItemFk.push(`Job Card Item ${it.id} references missing job card ${it.job_card_id}`);
+    }
+    if (it.part_id && !partIdSet.has(String(it.part_id))) {
+      brokenJcItemFk.push(`Job Card Item ${it.id} references missing part ${it.part_id}`);
+    }
+    if (it.service_id && !srvIdSet.has(String(it.service_id))) {
+      brokenJcItemFk.push(`Job Card Item ${it.id} references missing service ${it.service_id}`);
     }
   });
   addReport("Job Card Items", "job_card_items", dedupJcItems, brokenJcItemFk.length, brokenJcItemFk);
@@ -489,14 +705,20 @@ export function runPreMigrationDryRun(workspaceId?: string): PreMigrationDryRunR
   });
   addReport("Invoices", "invoices", dedupInv, brokenInvFk.length, brokenInvFk);
 
-  // Invoice Items (FK: invoice_id)
+  // Invoice Items (FK: invoice_id, part_id optional, service_id optional)
   const brokenInvItemFk: string[] = [];
   dedupInvItems.unique.forEach((it: any) => {
     if (it.invoice_id && !invIdSet.has(String(it.invoice_id))) {
       brokenInvItemFk.push(`Invoice Item ${it.id} references missing invoice ${it.invoice_id}`);
     }
+    if (it.part_id && !partIdSet.has(String(it.part_id))) {
+      brokenInvItemFk.push(`Invoice Item ${it.id} references missing part ${it.part_id}`);
+    }
+    if (it.service_id && !srvIdSet.has(String(it.service_id))) {
+      brokenInvItemFk.push(`Invoice Item ${it.id} references missing service ${it.service_id}`);
+    }
   });
-  addReport("Invoice Items", "invoice_items", dedupInvItems, brokenInvItemFk.length, brokenInvFk);
+  addReport("Invoice Items", "invoice_items", dedupInvItems, brokenInvItemFk.length, brokenInvItemFk);
 
   // Payments (FK: customer_id, invoice_id optional, job_card_id optional)
   const brokenPayFk: string[] = [];
@@ -574,15 +796,19 @@ export function runPreMigrationDryRun(workspaceId?: string): PreMigrationDryRunR
   const totalConflicting = entities.reduce((sum, e) => sum + e.conflictingCount, 0);
   const totalBrokenFk = entities.reduce((sum, e) => sum + e.brokenFkCount, 0);
 
-  const canMigrate = totalConflicting === 0 && totalBrokenFk === 0;
+  const canMigrate = totalConflicting === 0 && totalBrokenFk === 0 && totalUnique > 0;
   let blockingReason: string | null = null;
-  if (totalConflicting > 0) {
+  if (totalUnique === 0) {
+    blockingReason = "Migration blocked: No business records found in selected dataset.";
+  } else if (totalConflicting > 0) {
     blockingReason = `Migration blocked: ${totalConflicting} conflicting records found sharing identical IDs with divergent business data.`;
   } else if (totalBrokenFk > 0) {
     blockingReason = `Migration blocked: ${totalBrokenFk} records reference missing parent records (broken foreign keys).`;
   }
 
   return {
+    sourceType: ds.sourceType,
+    backupMetadata: ds.backupMetadata,
     workspaceId: targetWsId,
     validatedAt: new Date().toISOString(),
     totalRaw,
@@ -633,8 +859,8 @@ export function toDeterministicUuid(entityType: string, rawId: string | null | u
   // Format into 8-4-4-4-12 with version 4 variant 1 bits
   const part1 = raw32.slice(0, 8);
   const part2 = raw32.slice(8, 12);
-  const part3 = "4" + raw32.slice(13, 16); // version 4
-  const part4 = "a" + raw32.slice(17, 20); // variant 1
+  const part3 = "4" + raw32.slice(13, 16);
+  const part4 = "a" + raw32.slice(17, 20);
   const part5 = raw32.slice(20, 32);
 
   return `${part1}-${part2}-${part3}-${part4}-${part5}`.toLowerCase();
@@ -715,6 +941,7 @@ export interface MigrationVerificationReport {
 
 export interface MigrationExecutionResult {
   success: boolean;
+  sourceType: "local_storage" | "uploaded_backup";
   workspaceId: string;
   startedAt: string;
   completedAt: string;
@@ -727,19 +954,23 @@ export interface MigrationExecutionResult {
 // ─── Main Data Migration Importer ─────────────────────────────────────────────
 export async function executeLocalDataMigrationToSupabase(
   onProgress?: (progress: MigrationStepProgress) => void,
-  targetWorkspaceUuid?: string
+  targetWorkspaceUuid?: string,
+  dataSetInput?: MigrationDataSet
 ): Promise<MigrationExecutionResult> {
   const startedAt = new Date().toISOString();
   const errors: string[] = [];
   const importedCounts: Record<string, number> = {};
 
+  const ds = dataSetInput || getLocalStorageDataSet(targetWorkspaceUuid);
+
   // 1. Run Pre-Migration Dry Run First
-  const dryRun = runPreMigrationDryRun(targetWorkspaceUuid);
+  const dryRun = runPreMigrationDryRun(ds, targetWorkspaceUuid);
   if (!dryRun.canMigrate) {
     const errorMsg = dryRun.blockingReason || "Pre-migration dry run validation failed. Migration blocked.";
     errors.push(errorMsg);
     return {
       success: false,
+      sourceType: ds.sourceType,
       workspaceId: dryRun.workspaceId,
       startedAt,
       completedAt: new Date().toISOString(),
@@ -758,7 +989,9 @@ export async function executeLocalDataMigrationToSupabase(
     const { data: wsRows } = await supabase.from("workspaces").select("id, name").limit(5);
     if (wsRows && wsRows.length > 0) {
       const match = wsRows.find((w: any) => w.id === resolvedWorkspaceId);
-      if (!match) {
+      if (match) {
+        resolvedWorkspaceId = match.id;
+      } else {
         resolvedWorkspaceId = wsRows[0].id;
       }
     }
@@ -810,8 +1043,7 @@ export async function executeLocalDataMigrationToSupabase(
 
   try {
     // ─── STEP 1: CUSTOMERS (DEDUPLICATED) ─────────────────────────────────────
-    const rawCustomers = getRawLocalArray(LOCAL_DATA_KEYS.CUSTOMERS).filter((c: any) => !c.is_deleted);
-    const dedupCust = deduplicateBySourceId(rawCustomers, "Customers");
+    const dedupCust = deduplicateBySourceId(ds.customers.filter((c: any) => !c.is_deleted), "Customers");
     const customerPayloads = dedupCust.unique.map((c: any) => ({
       id: toDeterministicUuid("customer", c.id, wsUuid),
       workspace_id: wsUuid,
@@ -829,8 +1061,7 @@ export async function executeLocalDataMigrationToSupabase(
     await upsertBatch("customers", customerPayloads, "Customers");
 
     // ─── STEP 2: VEHICLES (DEDUPLICATED) ──────────────────────────────────────
-    const rawVehicles = getRawLocalArray(LOCAL_DATA_KEYS.VEHICLES).filter((v: any) => !v.is_deleted);
-    const dedupVeh = deduplicateBySourceId(rawVehicles, "Vehicles");
+    const dedupVeh = deduplicateBySourceId(ds.vehicles.filter((v: any) => !v.is_deleted), "Vehicles");
     const vehiclePayloads = dedupVeh.unique.map((v: any) => ({
       id: toDeterministicUuid("vehicle", v.id, wsUuid),
       workspace_id: wsUuid,
@@ -850,8 +1081,7 @@ export async function executeLocalDataMigrationToSupabase(
     await upsertBatch("vehicles", vehiclePayloads, "Vehicles");
 
     // ─── STEP 3: SERVICES (DEDUPLICATED) ──────────────────────────────────────
-    const rawServices = getRawLocalArray(LOCAL_DATA_KEYS.SERVICES).filter((s: any) => !s.is_deleted);
-    const dedupSrv = deduplicateBySourceId(rawServices, "Services");
+    const dedupSrv = deduplicateBySourceId(ds.services.filter((s: any) => !s.is_deleted), "Services");
     const servicePayloads = dedupSrv.unique.map((s: any) => ({
       id: toDeterministicUuid("service", s.id, wsUuid),
       workspace_id: wsUuid,
@@ -869,8 +1099,7 @@ export async function executeLocalDataMigrationToSupabase(
     await upsertBatch("services", servicePayloads, "Services Catalog");
 
     // ─── STEP 4: SUPPLIERS (DEDUPLICATED) ─────────────────────────────────────
-    const rawSuppliers = getRawLocalArray(LOCAL_DATA_KEYS.SUPPLIERS).filter((sup: any) => !sup.is_deleted);
-    const dedupSup = deduplicateBySourceId(rawSuppliers, "Suppliers");
+    const dedupSup = deduplicateBySourceId(ds.suppliers.filter((sup: any) => !sup.is_deleted), "Suppliers");
     const supplierPayloads = dedupSup.unique.map((sup: any) => ({
       id: toDeterministicUuid("supplier", sup.id, wsUuid),
       workspace_id: wsUuid,
@@ -891,9 +1120,8 @@ export async function executeLocalDataMigrationToSupabase(
     }));
     await upsertBatch("suppliers", supplierPayloads, "Suppliers");
 
-    // ─── STEP 5: PARTS (DEDUPLICATED — 6,132 DUPLICATES SAFELY FILTERED) ───────
-    const rawParts = getRawLocalArray(LOCAL_DATA_KEYS.PARTS).filter((p: any) => !p.is_deleted);
-    const dedupParts = deduplicateBySourceId(rawParts, "Parts");
+    // ─── STEP 5: PARTS (DEDUPLICATED — EXACT DUPLICATES FILTERED) ─────────────
+    const dedupParts = deduplicateBySourceId(ds.parts.filter((p: any) => !p.is_deleted), "Parts");
     const partPayloads = dedupParts.unique.map((p: any) => ({
       id: toDeterministicUuid("part", p.id, wsUuid),
       workspace_id: wsUuid,
@@ -916,8 +1144,7 @@ export async function executeLocalDataMigrationToSupabase(
     await upsertBatch("parts", partPayloads, "Spare Parts Catalog");
 
     // ─── STEP 6: INVENTORY TRANSACTIONS (DEDUPLICATED) ────────────────────────
-    const rawTx = getRawLocalArray(LOCAL_DATA_KEYS.INVENTORY_TRANSACTIONS);
-    const dedupTx = deduplicateBySourceId(rawTx, "Inventory Transactions");
+    const dedupTx = deduplicateBySourceId(ds.inventory_transactions, "Inventory Transactions");
     const txPayloads = dedupTx.unique.map((tx: any) => ({
       id: toDeterministicUuid("inv_tx", tx.id, wsUuid),
       workspace_id: wsUuid,
@@ -936,8 +1163,7 @@ export async function executeLocalDataMigrationToSupabase(
     await upsertBatch("inventory_transactions", txPayloads, "Inventory Ledger");
 
     // ─── STEP 7: JOB CARDS & JOB CARD ITEMS (DEDUPLICATED) ────────────────────
-    const rawJobCards = getRawLocalArray(LOCAL_DATA_KEYS.JOB_CARDS).filter((jc: any) => !jc.is_deleted);
-    const dedupJc = deduplicateBySourceId(rawJobCards, "Job Cards");
+    const dedupJc = deduplicateBySourceId(ds.job_cards.filter((jc: any) => !jc.is_deleted), "Job Cards");
     const jcPayloads = dedupJc.unique.map((jc: any) => ({
       id: toDeterministicUuid("job_card", jc.id, wsUuid),
       workspace_id: wsUuid,
@@ -968,50 +1194,26 @@ export async function executeLocalDataMigrationToSupabase(
     }));
     await upsertBatch("job_cards", jcPayloads, "Job Cards");
 
-    // Flatten Job Card Items
-    const rawJcItems: any[] = [];
-    dedupJc.unique.forEach((jc: any) => {
-      const parentJcUuid = toDeterministicUuid("job_card", jc.id, wsUuid);
-      if (Array.isArray(jc.items)) {
-        jc.items.forEach((item: any, idx: number) => {
-          rawJcItems.push({
-            id: item.id || `${jc.id}-item-${idx}`,
-            job_card_id: parentJcUuid,
-            item_type: item.item_type === "spare_part" ? "part" : (item.item_type || "service"),
-            service_id: item.service_id ? toDeterministicUuid("service", item.service_id, wsUuid) : null,
-            part_id: item.part_id ? toDeterministicUuid("part", item.part_id, wsUuid) : null,
-            description: item.description || "Service Item",
-            quantity: Number(item.quantity) || 1,
-            unit_price: Number(item.unit_price) || 0,
-            cost_price: Number(item.cost_price) || 0,
-            labour_charge: Number(item.labour_charge) || 0,
-            total_price: Number(item.total_price) || 0,
-            created_at: item.created_at || new Date().toISOString(),
-          });
-        });
-      }
-    });
-    const dedupJcItems = deduplicateBySourceId(rawJcItems, "Job Card Items");
+    const dedupJcItems = deduplicateBySourceId(ds.job_card_items, "Job Card Items");
     const jcItemPayloads = dedupJcItems.unique.map((item: any) => ({
       id: toDeterministicUuid("jc_item", item.id, wsUuid),
       workspace_id: wsUuid,
-      job_card_id: item.job_card_id,
-      item_type: item.item_type,
-      service_id: item.service_id,
-      part_id: item.part_id,
-      description: item.description,
-      quantity: item.quantity,
-      unit_price: item.unit_price,
-      cost_price: item.cost_price,
-      labour_charge: item.labour_charge,
-      total_price: item.total_price,
-      created_at: item.created_at,
+      job_card_id: toDeterministicUuid("job_card", item.job_card_id, wsUuid),
+      item_type: item.item_type === "spare_part" ? "part" : (item.item_type || "service"),
+      service_id: item.service_id ? toDeterministicUuid("service", item.service_id, wsUuid) : null,
+      part_id: item.part_id ? toDeterministicUuid("part", item.part_id, wsUuid) : null,
+      description: item.description || "Service Item",
+      quantity: Number(item.quantity) || 1,
+      unit_price: Number(item.unit_price) || 0,
+      cost_price: Number(item.cost_price) || 0,
+      labour_charge: Number(item.labour_charge) || 0,
+      total_price: Number(item.total_price) || 0,
+      created_at: item.created_at || new Date().toISOString(),
     }));
     await upsertBatch("job_card_items", jcItemPayloads, "Job Card Items");
 
     // ─── STEP 8: INVOICES & INVOICE ITEMS (DEDUPLICATED) ───────────────────────
-    const rawInvoices = getRawLocalArray(LOCAL_DATA_KEYS.INVOICES).filter((inv: any) => !inv.is_deleted);
-    const dedupInv = deduplicateBySourceId(rawInvoices, "Invoices");
+    const dedupInv = deduplicateBySourceId(ds.invoices.filter((inv: any) => !inv.is_deleted), "Invoices");
     const invoicePayloads = dedupInv.unique.map((inv: any) => ({
       id: toDeterministicUuid("invoice", inv.id, wsUuid),
       workspace_id: wsUuid,
@@ -1038,8 +1240,7 @@ export async function executeLocalDataMigrationToSupabase(
     }));
     await upsertBatch("invoices", invoicePayloads, "Invoices");
 
-    const rawInvoiceItems = getRawLocalArray(LOCAL_DATA_KEYS.INVOICE_ITEMS);
-    const dedupInvItems = deduplicateBySourceId(rawInvoiceItems, "Invoice Items");
+    const dedupInvItems = deduplicateBySourceId(ds.invoice_items, "Invoice Items");
     const invoiceItemPayloads = dedupInvItems.unique.map((item: any, idx: number) => ({
       id: toDeterministicUuid("inv_item", item.id || `inv-item-${idx}`, wsUuid),
       workspace_id: wsUuid,
@@ -1058,8 +1259,7 @@ export async function executeLocalDataMigrationToSupabase(
     await upsertBatch("invoice_items", invoiceItemPayloads, "Invoice Items");
 
     // ─── STEP 9: PAYMENTS (DEDUPLICATED) ──────────────────────────────────────
-    const rawPayments = getRawLocalArray(LOCAL_DATA_KEYS.PAYMENTS).filter((p: any) => !p.is_deleted);
-    const dedupPayments = deduplicateBySourceId(rawPayments, "Payments");
+    const dedupPayments = deduplicateBySourceId(ds.payments.filter((p: any) => !p.is_deleted), "Payments");
     const paymentPayloads = dedupPayments.unique.map((p: any) => ({
       id: toDeterministicUuid("payment", p.id, wsUuid),
       workspace_id: wsUuid,
@@ -1078,8 +1278,7 @@ export async function executeLocalDataMigrationToSupabase(
     await upsertBatch("payments", paymentPayloads, "Payments");
 
     // ─── STEP 10: PURCHASES, ITEMS, SUPPLIER PAYMENTS (DEDUPLICATED) ───────────
-    const rawPurchases = getRawLocalArray(LOCAL_DATA_KEYS.PURCHASES).filter((po: any) => !po.is_deleted);
-    const dedupPurchases = deduplicateBySourceId(rawPurchases, "Purchases");
+    const dedupPurchases = deduplicateBySourceId(ds.purchases.filter((po: any) => !po.is_deleted), "Purchases");
     const purchasePayloads = dedupPurchases.unique.map((po: any) => ({
       id: toDeterministicUuid("purchase", po.id, wsUuid),
       workspace_id: wsUuid,
@@ -1099,38 +1298,20 @@ export async function executeLocalDataMigrationToSupabase(
     }));
     await upsertBatch("purchases", purchasePayloads, "Purchases");
 
-    const rawPoItems: any[] = [];
-    dedupPurchases.unique.forEach((po: any) => {
-      const parentPoUuid = toDeterministicUuid("purchase", po.id, wsUuid);
-      if (Array.isArray(po.items)) {
-        po.items.forEach((item: any, idx: number) => {
-          rawPoItems.push({
-            id: item.id || `${po.id}-item-${idx}`,
-            purchase_id: parentPoUuid,
-            part_id: toDeterministicUuid("part", item.part_id, wsUuid),
-            quantity: Number(item.quantity) || 1,
-            purchase_price: Number(item.purchase_price) || 0,
-            total_price: Number(item.total_price) || 0,
-            created_at: item.created_at || new Date().toISOString(),
-          });
-        });
-      }
-    });
-    const dedupPoItems = deduplicateBySourceId(rawPoItems, "Purchase Items");
+    const dedupPoItems = deduplicateBySourceId(ds.purchase_items, "Purchase Items");
     const purchaseItemPayloads = dedupPoItems.unique.map((item: any) => ({
       id: toDeterministicUuid("po_item", item.id, wsUuid),
       workspace_id: wsUuid,
-      purchase_id: item.purchase_id,
-      part_id: item.part_id,
-      quantity: item.quantity,
-      purchase_price: item.purchase_price,
-      total_price: item.total_price,
-      created_at: item.created_at,
+      purchase_id: toDeterministicUuid("purchase", item.purchase_id, wsUuid),
+      part_id: toDeterministicUuid("part", item.part_id, wsUuid),
+      quantity: Number(item.quantity) || 1,
+      purchase_price: Number(item.purchase_price) || 0,
+      total_price: Number(item.total_price) || 0,
+      created_at: item.created_at || new Date().toISOString(),
     }));
     await upsertBatch("purchase_items", purchaseItemPayloads, "Purchase Items");
 
-    const rawSupPayments = getRawLocalArray(LOCAL_DATA_KEYS.SUPPLIER_PAYMENTS);
-    const dedupSupPayments = deduplicateBySourceId(rawSupPayments, "Supplier Payments");
+    const dedupSupPayments = deduplicateBySourceId(ds.supplier_payments, "Supplier Payments");
     const supPayPayloads = dedupSupPayments.unique.map((sp: any) => ({
       id: toDeterministicUuid("sup_pay", sp.id, wsUuid),
       workspace_id: wsUuid,
@@ -1147,8 +1328,7 @@ export async function executeLocalDataMigrationToSupabase(
     await upsertBatch("supplier_payments", supPayPayloads, "Supplier Payments");
 
     // ─── STEP 11: EXPENSES (DEDUPLICATED) ─────────────────────────────────────
-    const rawExpenses = getRawLocalArray(LOCAL_DATA_KEYS.EXPENSES).filter((exp: any) => !exp.is_deleted);
-    const dedupExpenses = deduplicateBySourceId(rawExpenses, "Expenses");
+    const dedupExpenses = deduplicateBySourceId(ds.expenses.filter((exp: any) => !exp.is_deleted), "Expenses");
     const expensePayloads = dedupExpenses.unique.map((exp: any) => ({
       id: toDeterministicUuid("expense", exp.id, wsUuid),
       workspace_id: wsUuid,
@@ -1169,8 +1349,7 @@ export async function executeLocalDataMigrationToSupabase(
     await upsertBatch("expenses", expensePayloads, "Expenses");
 
     // ─── STEP 12: WORKERS & BANK ACCOUNTS (DEDUPLICATED) ──────────────────────
-    const rawWorkers = getRawLocalArray(LOCAL_DATA_KEYS.WORKERS);
-    const dedupWorkers = deduplicateBySourceId(rawWorkers, "Workers");
+    const dedupWorkers = deduplicateBySourceId(ds.workers, "Workers");
     const workerPayloads = dedupWorkers.unique.map((w: any) => ({
       id: toDeterministicUuid("worker", w.id, wsUuid),
       workspace_id: wsUuid,
@@ -1187,8 +1366,7 @@ export async function executeLocalDataMigrationToSupabase(
     }));
     await upsertBatch("workers", workerPayloads, "Workers");
 
-    const rawBankAccs = getRawLocalArray(LOCAL_DATA_KEYS.BANK_ACCOUNTS);
-    const dedupBank = deduplicateBySourceId(rawBankAccs, "Bank Accounts");
+    const dedupBank = deduplicateBySourceId(ds.bank_accounts, "Bank Accounts");
     const bankPayloads = dedupBank.unique.map((b: any) => ({
       id: toDeterministicUuid("bank_acc", b.id, wsUuid),
       workspace_id: wsUuid,
@@ -1205,8 +1383,7 @@ export async function executeLocalDataMigrationToSupabase(
     await upsertBatch("bank_accounts", bankPayloads, "Bank Accounts");
 
     // ─── STEP 13: LEDGER ACCOUNTS, TRANSACTIONS, ENTRIES (DEDUPLICATED) ───────
-    const rawLedgerAccs = getRawLocalArray(LOCAL_DATA_KEYS.LEDGER_ACCOUNTS).filter((a: any) => !a.is_deleted);
-    const dedupLedgerAcc = deduplicateBySourceId(rawLedgerAccs, "Ledger Accounts");
+    const dedupLedgerAcc = deduplicateBySourceId(ds.ledger_accounts.filter((a: any) => !a.is_deleted), "Ledger Accounts");
     const ledgerAccPayloads = dedupLedgerAcc.unique.map((a: any) => ({
       id: toDeterministicUuid("ledger_acc", a.id, wsUuid),
       workspace_id: wsUuid,
@@ -1226,8 +1403,7 @@ export async function executeLocalDataMigrationToSupabase(
     }));
     await upsertBatch("ledger_accounts", ledgerAccPayloads, "Ledger Accounts");
 
-    const rawLedgerTxns = getRawLocalArray(LOCAL_DATA_KEYS.LEDGER_TRANSACTIONS);
-    const dedupLedgerTxn = deduplicateBySourceId(rawLedgerTxns, "Ledger Transactions");
+    const dedupLedgerTxn = deduplicateBySourceId(ds.ledger_transactions, "Ledger Transactions");
     const ledgerTxnPayloads = dedupLedgerTxn.unique.map((txn: any) => ({
       id: toDeterministicUuid("ledger_txn", txn.id, wsUuid),
       workspace_id: wsUuid,
@@ -1242,8 +1418,7 @@ export async function executeLocalDataMigrationToSupabase(
     }));
     await upsertBatch("ledger_transactions", ledgerTxnPayloads, "Ledger Transactions");
 
-    const rawLedgerEntries = getRawLocalArray(LOCAL_DATA_KEYS.LEDGER_ENTRIES);
-    const dedupLedgerEntries = deduplicateBySourceId(rawLedgerEntries, "Ledger Entries");
+    const dedupLedgerEntries = deduplicateBySourceId(ds.ledger_entries, "Ledger Entries");
     const ledgerEntryPayloads = dedupLedgerEntries.unique.map((e: any, idx: number) => ({
       id: toDeterministicUuid("ledger_entry", e.id || `entry-${idx}`, wsUuid),
       workspace_id: wsUuid,
@@ -1318,6 +1493,7 @@ export async function executeLocalDataMigrationToSupabase(
 
   return {
     success: overallSuccess,
+    sourceType: ds.sourceType,
     workspaceId: wsUuid,
     startedAt,
     completedAt,

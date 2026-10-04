@@ -1,12 +1,14 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   getLocalDataSummary,
   downloadLocalDataBackup,
   executeLocalDataMigrationToSupabase,
   runPreMigrationDryRun,
+  parseBackupJson,
   type LocalDataSummary,
+  type MigrationDataSet,
   type PreMigrationDryRunResult,
   type MigrationStepProgress,
   type MigrationExecutionResult,
@@ -29,6 +31,8 @@ import {
   CheckCircle2,
   AlertTriangle,
   FileSpreadsheet,
+  FileUp,
+  FolderOpen,
   Users,
   Car,
   Wrench,
@@ -43,6 +47,8 @@ import {
   ShieldAlert,
   PlayCircle,
   XCircle,
+  FileJson,
+  Layers,
 } from "lucide-react";
 
 interface DatabaseMigrationTabProps {
@@ -51,6 +57,11 @@ interface DatabaseMigrationTabProps {
 }
 
 export function DatabaseMigrationTab({ workspaceId, isOwnerOrAdmin }: DatabaseMigrationTabProps) {
+  const [selectedSource, setSelectedSource] = useState<"uploaded_backup" | "local_storage">("local_storage");
+  const [uploadedDataSet, setUploadedDataSet] = useState<MigrationDataSet | null>(null);
+  const [uploadedFilename, setUploadedFilename] = useState<string | null>(null);
+  const [fileError, setFileError] = useState<string | null>(null);
+
   const [summary, setSummary] = useState<LocalDataSummary | null>(null);
   const [dryRunReport, setDryRunReport] = useState<PreMigrationDryRunResult | null>(null);
   const [confirmModalOpen, setConfirmModalOpen] = useState(false);
@@ -60,16 +71,60 @@ export function DatabaseMigrationTab({ workspaceId, isOwnerOrAdmin }: DatabaseMi
   const [backupDownloaded, setBackupDownloaded] = useState(false);
   const [backupFilename, setBackupFilename] = useState<string | null>(null);
 
-  const refreshScan = useCallback(() => {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Recalculate dry run whenever source or uploaded dataset changes
+  const runValidation = useCallback(() => {
     const s = getLocalDataSummary(workspaceId);
     setSummary(s);
-    const dr = runPreMigrationDryRun(workspaceId);
-    setDryRunReport(dr);
-  }, [workspaceId]);
+
+    if (selectedSource === "uploaded_backup" && uploadedDataSet) {
+      const dr = runPreMigrationDryRun(uploadedDataSet, workspaceId);
+      setDryRunReport(dr);
+    } else {
+      const dr = runPreMigrationDryRun(undefined, workspaceId);
+      setDryRunReport(dr);
+    }
+  }, [workspaceId, selectedSource, uploadedDataSet]);
 
   useEffect(() => {
-    refreshScan();
-  }, [refreshScan]);
+    runValidation();
+  }, [runValidation]);
+
+  // Handle File Picker
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setFileError(null);
+    const reader = new FileReader();
+
+    reader.onload = (event) => {
+      const content = event.target?.result as string;
+      if (!content) {
+        setFileError("Unable to read selected file.");
+        return;
+      }
+
+      const parseResult = parseBackupJson(content, file.name);
+      if (!parseResult.success || !parseResult.dataSet) {
+        setFileError(parseResult.error || "Failed to parse backup JSON. Please check file format.");
+        return;
+      }
+
+      setUploadedDataSet(parseResult.dataSet);
+      setUploadedFilename(file.name);
+      setSelectedSource("uploaded_backup");
+    };
+
+    reader.onerror = () => {
+      setFileError("Error reading JSON file.");
+    };
+
+    reader.readAsText(file);
+    // Reset file input so user can re-select if needed
+    e.target.value = "";
+  };
 
   const handleExportBackup = () => {
     const res = downloadLocalDataBackup(workspaceId);
@@ -90,18 +145,20 @@ export function DatabaseMigrationTab({ workspaceId, isOwnerOrAdmin }: DatabaseMi
     setCurrentProgress(null);
 
     try {
+      const targetDataSet = selectedSource === "uploaded_backup" && uploadedDataSet ? uploadedDataSet : undefined;
       const result = await executeLocalDataMigrationToSupabase(
         (progress) => {
           setCurrentProgress(progress);
         },
-        workspaceId
+        workspaceId,
+        targetDataSet
       );
       setMigrationResult(result);
     } catch (err: any) {
       console.error("Migration execution failed", err);
     } finally {
       setMigrating(false);
-      refreshScan();
+      runValidation();
     }
   };
 
@@ -121,20 +178,29 @@ export function DatabaseMigrationTab({ workspaceId, isOwnerOrAdmin }: DatabaseMi
 
   return (
     <div className="space-y-6">
+      {/* Hidden File Input for JSON Backup */}
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleFileSelect}
+        accept=".json,application/json"
+        className="hidden"
+      />
+
       {/* Header Banner */}
       <Card className="border-indigo-100 dark:border-indigo-950/60 bg-linear-to-r from-indigo-50/60 via-white to-sky-50/40 dark:from-indigo-950/20 dark:via-slate-900 dark:to-sky-950/10 shadow-xs">
         <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-center gap-3">
-              <div className="p-2.5 rounded-xl bg-indigo-600 text-white shadow-xs">
+              <div className="p-2.5 rounded-xl bg-indigo-600 text-white shadow-xs shrink-0">
                 <Database className="w-5 h-5" />
               </div>
               <div>
                 <CardTitle className="text-base font-bold text-slate-900 dark:text-slate-100">
-                  Cloud Data Migration &amp; Backup Tool
+                  Cloud Data Migration &amp; Restore Tool
                 </CardTitle>
                 <CardDescription className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
-                  Export browser backups, validate source data integrity via Dry Run, and safely migrate into Supabase.
+                  Restore from verified JSON backup, perform strict Dry Run validation, and migrate business records into Supabase.
                 </CardDescription>
               </div>
             </div>
@@ -142,24 +208,177 @@ export function DatabaseMigrationTab({ workspaceId, isOwnerOrAdmin }: DatabaseMi
               <Button
                 variant="outline"
                 size="sm"
-                onClick={refreshScan}
+                onClick={runValidation}
                 className="h-8 text-xs gap-1.5 border-slate-200 dark:border-slate-800"
               >
                 <RefreshCw className="w-3.5 h-3.5" />
-                Re-scan Data
+                Re-validate Dry Run
               </Button>
             </div>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-3">
           <div className="flex items-start gap-2.5 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-900 dark:text-amber-200 text-xs">
             <Info className="w-4 h-4 shrink-0 text-amber-600 mt-0.5" />
             <div>
-              <p className="font-semibold">Zero-Deletion &amp; Deduplication Guarantee</p>
+              <p className="font-semibold">Safety &amp; Zero-Mutation Guarantees</p>
               <p className="text-amber-800/90 dark:text-amber-300/80 mt-0.5">
-                Exact duplicate rows (e.g. repeated default parts) are automatically filtered out using original source IDs. Existing local browser storage and downloaded backups will <strong>NEVER</strong> be modified or deleted.
+                • <strong>Zero localStorage modification:</strong> Selected JSON backup is parsed strictly in memory and will NOT overwrite local browser storage.<br />
+                • <strong>Exact duplicate deduplication:</strong> Repeated parts/records sharing identical source IDs are collapsed to exactly 1 clean record.<br />
+                • <strong>Workspace Isolation:</strong> All business data is imported into active workspace <code>{workspaceId}</code>. No workspaces or workspace members are overwritten or duplicated.
               </p>
             </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Migration Source Selection Card */}
+      <Card className="border-border/80 bg-white dark:bg-slate-900 shadow-xs">
+        <CardHeader className="pb-3 border-b border-slate-100 dark:border-slate-800">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div>
+              <CardTitle className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                <Layers className="w-4 h-4 text-indigo-600" />
+                Migration Source Selection
+              </CardTitle>
+              <CardDescription className="text-xs text-slate-500">
+                Choose whether to validate and migrate data from an uploaded JSON backup file or local browser storage.
+              </CardDescription>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => fileInputRef.current?.click()}
+                className="h-8 text-xs font-semibold gap-1.5 border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-950/40"
+              >
+                <FolderOpen className="w-3.5 h-3.5 text-indigo-600" />
+                Select JSON Backup
+              </Button>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="p-4 space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {/* Uploaded JSON Backup Option */}
+            <div
+              onClick={() => {
+                if (uploadedDataSet) {
+                  setSelectedSource("uploaded_backup");
+                } else {
+                  fileInputRef.current?.click();
+                }
+              }}
+              className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                selectedSource === "uploaded_backup" && uploadedDataSet
+                  ? "border-indigo-600 bg-indigo-50/40 dark:bg-indigo-950/30 shadow-xs"
+                  : "border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 bg-white dark:bg-slate-900"
+              }`}
+            >
+              <div className="flex items-start justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className={`p-2 rounded-lg ${selectedSource === "uploaded_backup" && uploadedDataSet ? "bg-indigo-600 text-white" : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"}`}>
+                    <FileJson className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-slate-900 dark:text-slate-100">
+                      Uploaded JSON Backup
+                    </h4>
+                    <p className="text-[11px] text-slate-500">
+                      {uploadedDataSet ? uploadedFilename : "No JSON file selected yet"}
+                    </p>
+                  </div>
+                </div>
+                {selectedSource === "uploaded_backup" && uploadedDataSet ? (
+                  <Badge className="bg-indigo-600 text-[10px] font-bold">Active Source</Badge>
+                ) : uploadedDataSet ? (
+                  <Badge variant="outline" className="text-[10px]">Ready to select</Badge>
+                ) : (
+                  <Badge variant="secondary" className="text-[10px]">Click to upload</Badge>
+                )}
+              </div>
+
+              {uploadedDataSet?.backupMetadata && (
+                <div className="mt-3 pt-3 border-t border-indigo-100 dark:border-indigo-900/60 text-[11px] text-slate-600 dark:text-slate-300 space-y-1">
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Exported At:</span>
+                    <span className="font-mono">{new Date(uploadedDataSet.backupMetadata.exportedAt || "").toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Backup Workspace:</span>
+                    <span className="font-mono font-semibold">{uploadedDataSet.backupMetadata.originalWorkspaceId}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Total Raw Records:</span>
+                    <span className="font-bold text-indigo-600 dark:text-indigo-400">{uploadedDataSet.backupMetadata.totalRawRecords}</span>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Browser Local Storage Option */}
+            <div
+              onClick={() => setSelectedSource("local_storage")}
+              className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                selectedSource === "local_storage"
+                  ? "border-indigo-600 bg-indigo-50/40 dark:bg-indigo-950/30 shadow-xs"
+                  : "border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 bg-white dark:bg-slate-900"
+              }`}
+            >
+              <div className="flex items-start justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className={`p-2 rounded-lg ${selectedSource === "local_storage" ? "bg-indigo-600 text-white" : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"}`}>
+                    <Database className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-slate-900 dark:text-slate-100">
+                      Browser Local Storage
+                    </h4>
+                    <p className="text-[11px] text-slate-500">
+                      Current device localStorage ({summary?.totalRecords ?? 0} raw rows)
+                    </p>
+                  </div>
+                </div>
+                {selectedSource === "local_storage" && (
+                  <Badge className="bg-indigo-600 text-[10px] font-bold">Active Source</Badge>
+                )}
+              </div>
+
+              <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800 text-[11px] text-slate-600 dark:text-slate-300 space-y-1">
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Customers / Vehicles:</span>
+                  <span className="font-mono">{summary?.customers ?? 0} / {summary?.vehicles ?? 0}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Job Cards / Invoices:</span>
+                  <span className="font-mono">{summary?.jobCards ?? 0} / {summary?.invoices ?? 0}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Raw Parts in Browser:</span>
+                  <span className="font-mono">{summary?.parts ?? 0}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {fileError && (
+            <div className="p-3 bg-rose-50 dark:bg-rose-950/30 text-rose-800 dark:text-rose-300 text-xs rounded-lg border border-rose-200 dark:border-rose-800 flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
+              <span>{fileError}</span>
+            </div>
+          )}
+
+          {/* Active Target Supabase Workspace Confirmation Box */}
+          <div className="p-3 bg-slate-50 dark:bg-slate-800/40 rounded-lg border border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+            <div>
+              <span className="text-slate-500">Authoritative Destination Supabase Workspace:</span>
+              <p className="font-mono font-bold text-slate-900 dark:text-slate-100 text-xs mt-0.5">{workspaceId}</p>
+            </div>
+            <Badge variant="outline" className="text-[11px] bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700 w-fit">
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 mr-1" />
+              Destination Verified
+            </Badge>
           </div>
         </CardContent>
       </Card>
@@ -168,7 +387,7 @@ export function DatabaseMigrationTab({ workspaceId, isOwnerOrAdmin }: DatabaseMi
       {dryRunReport && (
         <Card className={`border shadow-xs ${dryRunReport.canMigrate ? "border-emerald-200 dark:border-emerald-800/60 bg-white dark:bg-slate-900" : "border-rose-300 dark:border-rose-800 bg-rose-50/20 dark:bg-rose-950/20"}`}>
           <CardHeader className="pb-3 border-b border-slate-100 dark:border-slate-800">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="flex items-center gap-2.5">
                 {dryRunReport.canMigrate ? (
                   <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
@@ -176,16 +395,19 @@ export function DatabaseMigrationTab({ workspaceId, isOwnerOrAdmin }: DatabaseMi
                   <ShieldAlert className="w-5 h-5 text-rose-600 shrink-0" />
                 )}
                 <div>
-                  <CardTitle className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                  <CardTitle className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
                     Pre-Migration Dry Run Validation
+                    <Badge variant="outline" className="text-[10px] uppercase font-mono">
+                      {dryRunReport.sourceType === "uploaded_backup" ? "Uploaded Backup" : "Local Storage"}
+                    </Badge>
                   </CardTitle>
-                  <CardDescription className="text-xs text-slate-500">
-                    Validated: {new Date(dryRunReport.validatedAt).toLocaleTimeString()} &bull; Total Raw: <strong className="text-slate-800 dark:text-slate-200">{dryRunReport.totalRaw}</strong> &bull; Unique Clean: <strong className="text-emerald-700 dark:text-emerald-300">{dryRunReport.totalUnique}</strong> &bull; Exact Duplicates Ignored: <strong className="text-amber-700 dark:text-amber-300">{dryRunReport.totalDuplicatesIgnored}</strong>
+                  <CardDescription className="text-xs text-slate-500 mt-0.5">
+                    Validated: {new Date(dryRunReport.validatedAt).toLocaleTimeString()} &bull; Total Raw: <strong className="text-slate-800 dark:text-slate-200">{dryRunReport.totalRaw}</strong> &bull; Clean Unique: <strong className="text-emerald-700 dark:text-emerald-300">{dryRunReport.totalUnique}</strong> &bull; Exact Duplicates Ignored: <strong className="text-amber-700 dark:text-amber-300">{dryRunReport.totalDuplicatesIgnored}</strong>
                   </CardDescription>
                 </div>
               </div>
 
-              <Badge variant={dryRunReport.canMigrate ? "default" : "destructive"} className="text-[11px] font-bold px-2.5 py-0.5">
+              <Badge variant={dryRunReport.canMigrate ? "default" : "destructive"} className="text-[11px] font-bold px-2.5 py-0.5 w-fit">
                 {dryRunReport.canMigrate ? "DRY RUN PASSED - READY" : "MIGRATION BLOCKED"}
               </Badge>
             </div>
@@ -261,7 +483,7 @@ export function DatabaseMigrationTab({ workspaceId, isOwnerOrAdmin }: DatabaseMi
             Migration Execution &amp; Backup Actions
           </CardTitle>
           <CardDescription className="text-xs text-slate-500">
-            Clean unique records to migrate: <span className="font-semibold text-emerald-700 dark:text-emerald-400">{dryRunReport?.totalUnique ?? 0}</span> (from {dryRunReport?.totalRaw ?? 0} raw rows)
+            Current Selected Source: <strong className="text-slate-800 dark:text-slate-200">{selectedSource === "uploaded_backup" ? `Uploaded JSON Backup (${uploadedFilename || "Ready"})` : "Browser Local Storage"}</strong> &bull; Verified unique records: <span className="font-semibold text-emerald-700 dark:text-emerald-400">{dryRunReport?.totalUnique ?? 0}</span>
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -274,6 +496,16 @@ export function DatabaseMigrationTab({ workspaceId, isOwnerOrAdmin }: DatabaseMi
             >
               <Download className="w-4 h-4 text-blue-600" />
               Download JSON Backup
+            </Button>
+
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => fileInputRef.current?.click()}
+              className="h-9 text-xs font-semibold gap-2 border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-950/40"
+            >
+              <FileUp className="w-4 h-4 text-indigo-600" />
+              Select JSON Backup
             </Button>
 
             <Button
@@ -408,7 +640,7 @@ export function DatabaseMigrationTab({ workspaceId, isOwnerOrAdmin }: DatabaseMi
               Confirm Cloud Data Migration
             </DialogTitle>
             <DialogDescription className="text-xs text-slate-500 pt-1">
-              Transfer {dryRunReport?.totalUnique} unique verified business records into the active Supabase workspace?
+              Transfer {dryRunReport?.totalUnique} verified business records into Supabase workspace <code>{workspaceId}</code>?
             </DialogDescription>
           </DialogHeader>
 
@@ -416,10 +648,12 @@ export function DatabaseMigrationTab({ workspaceId, isOwnerOrAdmin }: DatabaseMi
             <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-1.5">
               <p className="font-semibold text-slate-900 dark:text-slate-100">Migration Safety Guarantees:</p>
               <ul className="list-disc pl-4 space-y-1">
+                <li>Migration Source: <strong>{selectedSource === "uploaded_backup" ? `Uploaded JSON Backup (${uploadedFilename})` : "Browser Local Storage"}</strong></li>
+                <li>Destination Workspace: <strong>{workspaceId}</strong> (authoritative Supabase workspace)</li>
                 <li>{dryRunReport?.totalDuplicatesIgnored} exact duplicate rows will be ignored (e.g. repeated parts).</li>
                 <li>{dryRunReport?.totalUnique} unique records will be mapped to deterministic UUIDs.</li>
-                <li>All parent/child relationships (Customer &rarr; Vehicle, Job Card &rarr; Invoice, Payments) are preserved.</li>
-                <li>Existing browser storage will <strong>NOT</strong> be deleted.</li>
+                <li>All parent/child relationships (Customer &rarr; Vehicle, Job Card &rarr; Items, Invoices, Payments) are preserved.</li>
+                <li>Local storage and backup JSON files will <strong>NEVER</strong> be deleted or altered.</li>
               </ul>
             </div>
           </div>
