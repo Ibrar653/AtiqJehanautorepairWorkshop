@@ -569,25 +569,25 @@ export function runPreMigrationDryRun(
   const ds = dataSetInput || getLocalStorageDataSet(targetWsId);
   const entities: EntityDryRunReport[] = [];
 
-  // 1. Deduplicate each entity
-  const dedupCust = deduplicateBySourceId(ds.customers.filter((c) => !c.is_deleted), "Customers");
-  const dedupVeh = deduplicateBySourceId(ds.vehicles.filter((v) => !v.is_deleted), "Vehicles");
-  const dedupSrv = deduplicateBySourceId(ds.services.filter((s) => !s.is_deleted), "Services");
-  const dedupSup = deduplicateBySourceId(ds.suppliers.filter((s) => !s.is_deleted), "Suppliers");
-  const dedupParts = deduplicateBySourceId(ds.parts.filter((p) => !p.is_deleted), "Parts");
+  // 1. Deduplicate each entity (preserving soft-deleted records for historical/referential integrity)
+  const dedupCust = deduplicateBySourceId(ds.customers, "Customers");
+  const dedupVeh = deduplicateBySourceId(ds.vehicles, "Vehicles");
+  const dedupSrv = deduplicateBySourceId(ds.services, "Services");
+  const dedupSup = deduplicateBySourceId(ds.suppliers, "Suppliers");
+  const dedupParts = deduplicateBySourceId(ds.parts, "Parts");
   const dedupTx = deduplicateBySourceId(ds.inventory_transactions, "Inventory Transactions");
-  const dedupJc = deduplicateBySourceId(ds.job_cards.filter((j) => !j.is_deleted), "Job Cards");
+  const dedupJc = deduplicateBySourceId(ds.job_cards, "Job Cards");
   const dedupJcItems = deduplicateBySourceId(ds.job_card_items, "Job Card Items");
-  const dedupInv = deduplicateBySourceId(ds.invoices.filter((i) => !i.is_deleted), "Invoices");
+  const dedupInv = deduplicateBySourceId(ds.invoices, "Invoices");
   const dedupInvItems = deduplicateBySourceId(ds.invoice_items, "Invoice Items");
-  const dedupPayments = deduplicateBySourceId(ds.payments.filter((p) => !p.is_deleted), "Payments");
-  const dedupPurchases = deduplicateBySourceId(ds.purchases.filter((po) => !po.is_deleted), "Purchases");
+  const dedupPayments = deduplicateBySourceId(ds.payments, "Payments");
+  const dedupPurchases = deduplicateBySourceId(ds.purchases, "Purchases");
   const dedupPoItems = deduplicateBySourceId(ds.purchase_items, "Purchase Items");
   const dedupSupPayments = deduplicateBySourceId(ds.supplier_payments, "Supplier Payments");
-  const dedupExpenses = deduplicateBySourceId(ds.expenses.filter((e) => !e.is_deleted), "Expenses");
+  const dedupExpenses = deduplicateBySourceId(ds.expenses, "Expenses");
   const dedupWorkers = deduplicateBySourceId(ds.workers, "Workers");
   const dedupBank = deduplicateBySourceId(ds.bank_accounts, "Bank Accounts");
-  const dedupLedgerAcc = deduplicateBySourceId(ds.ledger_accounts.filter((a) => !a.is_deleted), "Ledger Accounts");
+  const dedupLedgerAcc = deduplicateBySourceId(ds.ledger_accounts, "Ledger Accounts");
   const dedupLedgerTxn = deduplicateBySourceId(ds.ledger_transactions, "Ledger Transactions");
   const dedupLedgerEntries = deduplicateBySourceId(ds.ledger_entries, "Ledger Entries");
 
@@ -1043,7 +1043,7 @@ export async function executeLocalDataMigrationToSupabase(
 
   try {
     // ─── STEP 1: CUSTOMERS (DEDUPLICATED) ─────────────────────────────────────
-    const dedupCust = deduplicateBySourceId(ds.customers.filter((c: any) => !c.is_deleted), "Customers");
+    const dedupCust = deduplicateBySourceId(ds.customers, "Customers");
     const customerPayloads = dedupCust.unique.map((c: any) => ({
       id: toDeterministicUuid("customer", c.id, wsUuid),
       workspace_id: wsUuid,
@@ -1054,14 +1054,16 @@ export async function executeLocalDataMigrationToSupabase(
       company_name: c.company_name || null,
       trn_number: c.trn_number || null,
       notes: c.notes || null,
-      is_deleted: false,
+      is_deleted: Boolean(c.is_deleted),
+      deleted_at: c.deleted_at || (c.is_deleted ? (c.updated_at || new Date().toISOString()) : null),
+      deleted_by: c.deleted_by || null,
       created_at: c.created_at || new Date().toISOString(),
       updated_at: c.updated_at || new Date().toISOString(),
     }));
     await upsertBatch("customers", customerPayloads, "Customers");
 
     // ─── STEP 2: VEHICLES (DEDUPLICATED) ──────────────────────────────────────
-    const dedupVeh = deduplicateBySourceId(ds.vehicles.filter((v: any) => !v.is_deleted), "Vehicles");
+    const dedupVeh = deduplicateBySourceId(ds.vehicles, "Vehicles");
     const vehiclePayloads = dedupVeh.unique.map((v: any) => ({
       id: toDeterministicUuid("vehicle", v.id, wsUuid),
       workspace_id: wsUuid,
@@ -1074,14 +1076,16 @@ export async function executeLocalDataMigrationToSupabase(
       mileage: Number(v.mileage) || null,
       registration_number: v.registration_number || null,
       notes: v.notes || null,
-      is_deleted: false,
+      is_deleted: Boolean(v.is_deleted),
+      deleted_at: v.deleted_at || (v.is_deleted ? (v.updated_at || new Date().toISOString()) : null),
+      deleted_by: v.deleted_by || null,
       created_at: v.created_at || new Date().toISOString(),
       updated_at: v.updated_at || new Date().toISOString(),
     }));
     await upsertBatch("vehicles", vehiclePayloads, "Vehicles");
 
     // ─── STEP 3: SERVICES (DEDUPLICATED) ──────────────────────────────────────
-    const dedupSrv = deduplicateBySourceId(ds.services.filter((s: any) => !s.is_deleted), "Services");
+    const dedupSrv = deduplicateBySourceId(ds.services, "Services");
     const servicePayloads = dedupSrv.unique.map((s: any) => ({
       id: toDeterministicUuid("service", s.id, wsUuid),
       workspace_id: wsUuid,
@@ -1092,14 +1096,16 @@ export async function executeLocalDataMigrationToSupabase(
       default_price: Number(s.default_price) || 0,
       estimated_time: s.estimated_time || "45 mins",
       is_active: s.is_active !== false,
-      is_deleted: false,
+      is_deleted: Boolean(s.is_deleted),
+      deleted_at: s.deleted_at || (s.is_deleted ? (s.updated_at || new Date().toISOString()) : null),
+      deleted_by: s.deleted_by || null,
       created_at: s.created_at || new Date().toISOString(),
       updated_at: s.updated_at || new Date().toISOString(),
     }));
     await upsertBatch("services", servicePayloads, "Services Catalog");
 
     // ─── STEP 4: SUPPLIERS (DEDUPLICATED) ─────────────────────────────────────
-    const dedupSup = deduplicateBySourceId(ds.suppliers.filter((sup: any) => !sup.is_deleted), "Suppliers");
+    const dedupSup = deduplicateBySourceId(ds.suppliers, "Suppliers");
     const supplierPayloads = dedupSup.unique.map((sup: any) => ({
       id: toDeterministicUuid("supplier", sup.id, wsUuid),
       workspace_id: wsUuid,
@@ -1114,14 +1120,16 @@ export async function executeLocalDataMigrationToSupabase(
       trn_number: sup.trn_number || null,
       notes: sup.notes || null,
       is_active: sup.is_active !== false,
-      is_deleted: false,
+      is_deleted: Boolean(sup.is_deleted),
+      deleted_at: sup.deleted_at || (sup.is_deleted ? (sup.updated_at || new Date().toISOString()) : null),
+      deleted_by: sup.deleted_by || null,
       created_at: sup.created_at || new Date().toISOString(),
       updated_at: sup.updated_at || new Date().toISOString(),
     }));
     await upsertBatch("suppliers", supplierPayloads, "Suppliers");
 
     // ─── STEP 5: PARTS (DEDUPLICATED — EXACT DUPLICATES FILTERED) ─────────────
-    const dedupParts = deduplicateBySourceId(ds.parts.filter((p: any) => !p.is_deleted), "Parts");
+    const dedupParts = deduplicateBySourceId(ds.parts, "Parts");
     const partPayloads = dedupParts.unique.map((p: any) => ({
       id: toDeterministicUuid("part", p.id, wsUuid),
       workspace_id: wsUuid,
@@ -1137,7 +1145,9 @@ export async function executeLocalDataMigrationToSupabase(
       supplier_id: p.supplier_id ? toDeterministicUuid("supplier", p.supplier_id, wsUuid) : null,
       location: p.location || null,
       is_active: p.is_active !== false,
-      is_deleted: false,
+      is_deleted: Boolean(p.is_deleted),
+      deleted_at: p.deleted_at || (p.is_deleted ? (p.updated_at || new Date().toISOString()) : null),
+      deleted_by: p.deleted_by || null,
       created_at: p.created_at || new Date().toISOString(),
       updated_at: p.updated_at || new Date().toISOString(),
     }));
@@ -1163,7 +1173,7 @@ export async function executeLocalDataMigrationToSupabase(
     await upsertBatch("inventory_transactions", txPayloads, "Inventory Ledger");
 
     // ─── STEP 7: JOB CARDS & JOB CARD ITEMS (DEDUPLICATED) ────────────────────
-    const dedupJc = deduplicateBySourceId(ds.job_cards.filter((jc: any) => !jc.is_deleted), "Job Cards");
+    const dedupJc = deduplicateBySourceId(ds.job_cards, "Job Cards");
     const jcPayloads = dedupJc.unique.map((jc: any) => ({
       id: toDeterministicUuid("job_card", jc.id, wsUuid),
       workspace_id: wsUuid,
@@ -1188,7 +1198,9 @@ export async function executeLocalDataMigrationToSupabase(
       assigned_mechanic: jc.assigned_mechanic || null,
       notes: jc.notes || null,
       created_by: jc.created_by || null,
-      is_deleted: false,
+      is_deleted: Boolean(jc.is_deleted),
+      deleted_at: jc.deleted_at || (jc.is_deleted ? (jc.updated_at || new Date().toISOString()) : null),
+      deleted_by: jc.deleted_by || null,
       created_at: jc.created_at || new Date().toISOString(),
       updated_at: jc.updated_at || new Date().toISOString(),
     }));
@@ -1213,7 +1225,7 @@ export async function executeLocalDataMigrationToSupabase(
     await upsertBatch("job_card_items", jcItemPayloads, "Job Card Items");
 
     // ─── STEP 8: INVOICES & INVOICE ITEMS (DEDUPLICATED) ───────────────────────
-    const dedupInv = deduplicateBySourceId(ds.invoices.filter((inv: any) => !inv.is_deleted), "Invoices");
+    const dedupInv = deduplicateBySourceId(ds.invoices, "Invoices");
     const invoicePayloads = dedupInv.unique.map((inv: any) => ({
       id: toDeterministicUuid("invoice", inv.id, wsUuid),
       workspace_id: wsUuid,
@@ -1233,7 +1245,9 @@ export async function executeLocalDataMigrationToSupabase(
       notes: inv.notes || null,
       is_void: Boolean(inv.is_void),
       void_reason: inv.void_reason || null,
-      is_deleted: false,
+      is_deleted: Boolean(inv.is_deleted),
+      deleted_at: inv.deleted_at || (inv.is_deleted ? (inv.updated_at || new Date().toISOString()) : null),
+      deleted_by: inv.deleted_by || null,
       created_by: inv.created_by || null,
       created_at: inv.created_at || new Date().toISOString(),
       updated_at: inv.updated_at || new Date().toISOString(),
@@ -1259,7 +1273,7 @@ export async function executeLocalDataMigrationToSupabase(
     await upsertBatch("invoice_items", invoiceItemPayloads, "Invoice Items");
 
     // ─── STEP 9: PAYMENTS (DEDUPLICATED) ──────────────────────────────────────
-    const dedupPayments = deduplicateBySourceId(ds.payments.filter((p: any) => !p.is_deleted), "Payments");
+    const dedupPayments = deduplicateBySourceId(ds.payments, "Payments");
     const paymentPayloads = dedupPayments.unique.map((p: any) => ({
       id: toDeterministicUuid("payment", p.id, wsUuid),
       workspace_id: wsUuid,
@@ -1272,13 +1286,15 @@ export async function executeLocalDataMigrationToSupabase(
       notes: p.notes || null,
       payment_date: p.payment_date || new Date().toISOString().slice(0, 10),
       created_by: p.created_by || "Owner",
-      is_deleted: false,
+      is_deleted: Boolean(p.is_deleted),
+      deleted_at: p.deleted_at || (p.is_deleted ? (p.updated_at || new Date().toISOString()) : null),
+      deleted_by: p.deleted_by || null,
       created_at: p.created_at || new Date().toISOString(),
     }));
     await upsertBatch("payments", paymentPayloads, "Payments");
 
     // ─── STEP 10: PURCHASES, ITEMS, SUPPLIER PAYMENTS (DEDUPLICATED) ───────────
-    const dedupPurchases = deduplicateBySourceId(ds.purchases.filter((po: any) => !po.is_deleted), "Purchases");
+    const dedupPurchases = deduplicateBySourceId(ds.purchases, "Purchases");
     const purchasePayloads = dedupPurchases.unique.map((po: any) => ({
       id: toDeterministicUuid("purchase", po.id, wsUuid),
       workspace_id: wsUuid,
@@ -1292,7 +1308,9 @@ export async function executeLocalDataMigrationToSupabase(
       payment_method: po.payment_method || null,
       notes: po.notes || null,
       created_by: po.created_by || "Owner",
-      is_deleted: false,
+      is_deleted: Boolean(po.is_deleted),
+      deleted_at: po.deleted_at || (po.is_deleted ? (po.updated_at || new Date().toISOString()) : null),
+      deleted_by: po.deleted_by || null,
       created_at: po.created_at || new Date().toISOString(),
       updated_at: po.updated_at || new Date().toISOString(),
     }));
@@ -1328,7 +1346,7 @@ export async function executeLocalDataMigrationToSupabase(
     await upsertBatch("supplier_payments", supPayPayloads, "Supplier Payments");
 
     // ─── STEP 11: EXPENSES (DEDUPLICATED) ─────────────────────────────────────
-    const dedupExpenses = deduplicateBySourceId(ds.expenses.filter((exp: any) => !exp.is_deleted), "Expenses");
+    const dedupExpenses = deduplicateBySourceId(ds.expenses, "Expenses");
     const expensePayloads = dedupExpenses.unique.map((exp: any) => ({
       id: toDeterministicUuid("expense", exp.id, wsUuid),
       workspace_id: wsUuid,
@@ -1342,7 +1360,9 @@ export async function executeLocalDataMigrationToSupabase(
       notes: exp.notes || null,
       attachment_path: exp.attachment_path || null,
       created_by: exp.created_by || "Owner",
-      is_deleted: false,
+      is_deleted: Boolean(exp.is_deleted),
+      deleted_at: exp.deleted_at || (exp.is_deleted ? (exp.updated_at || new Date().toISOString()) : null),
+      deleted_by: exp.deleted_by || null,
       created_at: exp.created_at || new Date().toISOString(),
       updated_at: exp.updated_at || new Date().toISOString(),
     }));
@@ -1383,7 +1403,7 @@ export async function executeLocalDataMigrationToSupabase(
     await upsertBatch("bank_accounts", bankPayloads, "Bank Accounts");
 
     // ─── STEP 13: LEDGER ACCOUNTS, TRANSACTIONS, ENTRIES (DEDUPLICATED) ───────
-    const dedupLedgerAcc = deduplicateBySourceId(ds.ledger_accounts.filter((a: any) => !a.is_deleted), "Ledger Accounts");
+    const dedupLedgerAcc = deduplicateBySourceId(ds.ledger_accounts, "Ledger Accounts");
     const ledgerAccPayloads = dedupLedgerAcc.unique.map((a: any) => ({
       id: toDeterministicUuid("ledger_acc", a.id, wsUuid),
       workspace_id: wsUuid,
@@ -1396,7 +1416,9 @@ export async function executeLocalDataMigrationToSupabase(
       opening_balance: Number(a.opening_balance) || 0,
       opening_balance_date: a.opening_balance_date || "2026-01-01",
       is_active: a.is_active !== false,
-      is_deleted: false,
+      is_deleted: Boolean(a.is_deleted),
+      deleted_at: a.deleted_at || (a.is_deleted ? (a.updated_at || new Date().toISOString()) : null),
+      deleted_by: a.deleted_by || null,
       notes: a.notes || null,
       created_at: a.created_at || new Date().toISOString(),
       updated_at: a.updated_at || new Date().toISOString(),
