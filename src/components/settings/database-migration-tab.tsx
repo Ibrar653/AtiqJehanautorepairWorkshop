@@ -5,7 +5,9 @@ import {
   getLocalDataSummary,
   downloadLocalDataBackup,
   executeLocalDataMigrationToSupabase,
+  runPreMigrationDryRun,
   type LocalDataSummary,
+  type PreMigrationDryRunResult,
   type MigrationStepProgress,
   type MigrationExecutionResult,
 } from "@/lib/services/data-migration-service";
@@ -38,6 +40,9 @@ import {
   ShieldCheck,
   RefreshCw,
   Info,
+  ShieldAlert,
+  PlayCircle,
+  XCircle,
 } from "lucide-react";
 
 interface DatabaseMigrationTabProps {
@@ -47,6 +52,7 @@ interface DatabaseMigrationTabProps {
 
 export function DatabaseMigrationTab({ workspaceId, isOwnerOrAdmin }: DatabaseMigrationTabProps) {
   const [summary, setSummary] = useState<LocalDataSummary | null>(null);
+  const [dryRunReport, setDryRunReport] = useState<PreMigrationDryRunResult | null>(null);
   const [confirmModalOpen, setConfirmModalOpen] = useState(false);
   const [migrating, setMigrating] = useState(false);
   const [currentProgress, setCurrentProgress] = useState<MigrationStepProgress | null>(null);
@@ -54,14 +60,16 @@ export function DatabaseMigrationTab({ workspaceId, isOwnerOrAdmin }: DatabaseMi
   const [backupDownloaded, setBackupDownloaded] = useState(false);
   const [backupFilename, setBackupFilename] = useState<string | null>(null);
 
-  const refreshSummary = useCallback(() => {
+  const refreshScan = useCallback(() => {
     const s = getLocalDataSummary(workspaceId);
     setSummary(s);
+    const dr = runPreMigrationDryRun(workspaceId);
+    setDryRunReport(dr);
   }, [workspaceId]);
 
   useEffect(() => {
-    refreshSummary();
-  }, [refreshSummary]);
+    refreshScan();
+  }, [refreshScan]);
 
   const handleExportBackup = () => {
     const res = downloadLocalDataBackup(workspaceId);
@@ -72,6 +80,10 @@ export function DatabaseMigrationTab({ workspaceId, isOwnerOrAdmin }: DatabaseMi
   };
 
   const handleStartMigration = async () => {
+    if (!dryRunReport?.canMigrate) {
+      return;
+    }
+
     setConfirmModalOpen(false);
     setMigrating(true);
     setMigrationResult(null);
@@ -89,7 +101,7 @@ export function DatabaseMigrationTab({ workspaceId, isOwnerOrAdmin }: DatabaseMi
       console.error("Migration execution failed", err);
     } finally {
       setMigrating(false);
-      refreshSummary();
+      refreshScan();
     }
   };
 
@@ -122,108 +134,125 @@ export function DatabaseMigrationTab({ workspaceId, isOwnerOrAdmin }: DatabaseMi
                   Cloud Data Migration &amp; Backup Tool
                 </CardTitle>
                 <CardDescription className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
-                  Export browser backups and migrate local browser records into the Supabase database.
+                  Export browser backups, validate source data integrity via Dry Run, and safely migrate into Supabase.
                 </CardDescription>
               </div>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={refreshSummary}
-              className="h-8 text-xs gap-1.5 border-slate-200 dark:border-slate-800"
-            >
-              <RefreshCw className="w-3.5 h-3.5" />
-              Refresh Scan
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={refreshScan}
+                className="h-8 text-xs gap-1.5 border-slate-200 dark:border-slate-800"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+                Re-scan Data
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
           <div className="flex items-start gap-2.5 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-900 dark:text-amber-200 text-xs">
             <Info className="w-4 h-4 shrink-0 text-amber-600 mt-0.5" />
             <div>
-              <p className="font-semibold">Zero-Deletion Guarantee</p>
+              <p className="font-semibold">Zero-Deletion &amp; Deduplication Guarantee</p>
               <p className="text-amber-800/90 dark:text-amber-300/80 mt-0.5">
-                Starting this migration copies and maps all local browser records into Supabase. Your existing browser storage will <strong>NEVER</strong> be cleared or deleted.
+                Exact duplicate rows (e.g. repeated default parts) are automatically filtered out using original source IDs. Existing local browser storage and downloaded backups will <strong>NEVER</strong> be modified or deleted.
               </p>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Local Records Summary Grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-        <Card className="border-border/60 bg-white dark:bg-slate-900 shadow-2xs">
-          <CardContent className="p-3.5 flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-blue-50 dark:bg-blue-950/50 text-blue-600">
-              <Users className="w-4 h-4" />
-            </div>
-            <div>
-              <p className="text-[11px] font-medium text-slate-500">Customers</p>
-              <p className="text-lg font-bold text-slate-900 dark:text-slate-100">{summary?.customers ?? 0}</p>
-            </div>
-          </CardContent>
-        </Card>
+      {/* Pre-Migration Dry Run Validation Card */}
+      {dryRunReport && (
+        <Card className={`border shadow-xs ${dryRunReport.canMigrate ? "border-emerald-200 dark:border-emerald-800/60 bg-white dark:bg-slate-900" : "border-rose-300 dark:border-rose-800 bg-rose-50/20 dark:bg-rose-950/20"}`}>
+          <CardHeader className="pb-3 border-b border-slate-100 dark:border-slate-800">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                {dryRunReport.canMigrate ? (
+                  <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+                ) : (
+                  <ShieldAlert className="w-5 h-5 text-rose-600 shrink-0" />
+                )}
+                <div>
+                  <CardTitle className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                    Pre-Migration Dry Run Validation
+                  </CardTitle>
+                  <CardDescription className="text-xs text-slate-500">
+                    Validated: {new Date(dryRunReport.validatedAt).toLocaleTimeString()} &bull; Total Raw: <strong className="text-slate-800 dark:text-slate-200">{dryRunReport.totalRaw}</strong> &bull; Unique Clean: <strong className="text-emerald-700 dark:text-emerald-300">{dryRunReport.totalUnique}</strong> &bull; Exact Duplicates Ignored: <strong className="text-amber-700 dark:text-amber-300">{dryRunReport.totalDuplicatesIgnored}</strong>
+                  </CardDescription>
+                </div>
+              </div>
 
-        <Card className="border-border/60 bg-white dark:bg-slate-900 shadow-2xs">
-          <CardContent className="p-3.5 flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600">
-              <Car className="w-4 h-4" />
+              <Badge variant={dryRunReport.canMigrate ? "default" : "destructive"} className="text-[11px] font-bold px-2.5 py-0.5">
+                {dryRunReport.canMigrate ? "DRY RUN PASSED - READY" : "MIGRATION BLOCKED"}
+              </Badge>
             </div>
-            <div>
-              <p className="text-[11px] font-medium text-slate-500">Vehicles</p>
-              <p className="text-lg font-bold text-slate-900 dark:text-slate-100">{summary?.vehicles ?? 0}</p>
-            </div>
-          </CardContent>
-        </Card>
+          </CardHeader>
+          <CardContent className="p-0">
+            {dryRunReport.blockingReason && (
+              <div className="p-3 bg-rose-100/60 dark:bg-rose-950/40 text-rose-900 dark:text-rose-200 text-xs font-semibold flex items-center gap-2 border-b border-rose-200 dark:border-rose-800">
+                <XCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                <span>{dryRunReport.blockingReason}</span>
+              </div>
+            )}
 
-        <Card className="border-border/60 bg-white dark:bg-slate-900 shadow-2xs">
-          <CardContent className="p-3.5 flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600">
-              <Wrench className="w-4 h-4" />
-            </div>
-            <div>
-              <p className="text-[11px] font-medium text-slate-500">Job Cards</p>
-              <p className="text-lg font-bold text-slate-900 dark:text-slate-100">{summary?.jobCards ?? 0}</p>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-slate-50 dark:bg-slate-800/70 border-b border-slate-200 dark:border-slate-800 font-semibold text-slate-600 dark:text-slate-300">
+                  <tr>
+                    <th className="p-2.5">Entity</th>
+                    <th className="p-2.5">Raw Rows</th>
+                    <th className="p-2.5">Unique IDs</th>
+                    <th className="p-2.5">Duplicates Ignored</th>
+                    <th className="p-2.5">Conflicting IDs</th>
+                    <th className="p-2.5">Broken Foreign Keys</th>
+                    <th className="p-2.5">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                  {dryRunReport.entities.map((e) => (
+                    <tr key={e.table} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/40">
+                      <td className="p-2.5 font-semibold text-slate-900 dark:text-slate-100">{e.entity}</td>
+                      <td className="p-2.5 font-mono text-slate-600 dark:text-slate-400">{e.rawCount}</td>
+                      <td className="p-2.5 font-mono font-bold text-emerald-700 dark:text-emerald-400">{e.uniqueCount}</td>
+                      <td className="p-2.5 font-mono text-amber-700 dark:text-amber-400">
+                        {e.duplicateCount > 0 ? `-${e.duplicateCount}` : "0"}
+                      </td>
+                      <td className="p-2.5 font-mono">
+                        {e.conflictingCount > 0 ? (
+                          <span className="font-bold text-rose-600 dark:text-rose-400">{e.conflictingCount}</span>
+                        ) : (
+                          <span className="text-slate-400">0</span>
+                        )}
+                      </td>
+                      <td className="p-2.5 font-mono">
+                        {e.brokenFkCount > 0 ? (
+                          <span className="font-bold text-rose-600 dark:text-rose-400">{e.brokenFkCount}</span>
+                        ) : (
+                          <span className="text-slate-400">0</span>
+                        )}
+                      </td>
+                      <td className="p-2.5">
+                        {e.conflictingCount === 0 && e.brokenFkCount === 0 ? (
+                          <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-medium">
+                            <CheckCircle2 className="w-3.5 h-3.5" /> Clean
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 text-rose-600 dark:text-rose-400 font-medium">
+                            <AlertTriangle className="w-3.5 h-3.5" /> Issues Found
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </CardContent>
         </Card>
-
-        <Card className="border-border/60 bg-white dark:bg-slate-900 shadow-2xs">
-          <CardContent className="p-3.5 flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-purple-50 dark:bg-purple-950/50 text-purple-600">
-              <Receipt className="w-4 h-4" />
-            </div>
-            <div>
-              <p className="text-[11px] font-medium text-slate-500">Invoices</p>
-              <p className="text-lg font-bold text-slate-900 dark:text-slate-100">{summary?.invoices ?? 0}</p>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-border/60 bg-white dark:bg-slate-900 shadow-2xs">
-          <CardContent className="p-3.5 flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-teal-50 dark:bg-teal-950/50 text-teal-600">
-              <CreditCard className="w-4 h-4" />
-            </div>
-            <div>
-              <p className="text-[11px] font-medium text-slate-500">Payments</p>
-              <p className="text-lg font-bold text-slate-900 dark:text-slate-100">{summary?.payments ?? 0}</p>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-border/60 bg-white dark:bg-slate-900 shadow-2xs">
-          <CardContent className="p-3.5 flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-amber-50 dark:bg-amber-950/50 text-amber-600">
-              <Package className="w-4 h-4" />
-            </div>
-            <div>
-              <p className="text-[11px] font-medium text-slate-500">Parts &amp; Stock</p>
-              <p className="text-lg font-bold text-slate-900 dark:text-slate-100">{summary?.parts ?? 0}</p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      )}
 
       {/* Main Action Card */}
       <Card className="border-border/80 bg-white dark:bg-slate-900 shadow-xs">
@@ -232,7 +261,7 @@ export function DatabaseMigrationTab({ workspaceId, isOwnerOrAdmin }: DatabaseMi
             Migration Execution &amp; Backup Actions
           </CardTitle>
           <CardDescription className="text-xs text-slate-500">
-            Total records detected in this browser: <span className="font-semibold text-slate-900 dark:text-slate-100">{summary?.totalRecords ?? 0}</span>
+            Clean unique records to migrate: <span className="font-semibold text-emerald-700 dark:text-emerald-400">{dryRunReport?.totalUnique ?? 0}</span> (from {dryRunReport?.totalRaw ?? 0} raw rows)
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -250,8 +279,8 @@ export function DatabaseMigrationTab({ workspaceId, isOwnerOrAdmin }: DatabaseMi
             <Button
               type="button"
               onClick={() => setConfirmModalOpen(true)}
-              disabled={migrating}
-              className="h-9 text-xs font-semibold gap-2 bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs"
+              disabled={migrating || !dryRunReport?.canMigrate}
+              className={`h-9 text-xs font-semibold gap-2 text-white shadow-xs ${dryRunReport?.canMigrate ? "bg-indigo-600 hover:bg-indigo-700" : "bg-slate-400 cursor-not-allowed"}`}
             >
               {migrating ? (
                 <>
@@ -284,7 +313,7 @@ export function DatabaseMigrationTab({ workspaceId, isOwnerOrAdmin }: DatabaseMi
                   Processing: {currentProgress.step}
                 </span>
                 <span className="text-slate-600 dark:text-slate-300">
-                  {currentProgress.processed} / {currentProgress.total} records
+                  {currentProgress.processed} / {currentProgress.total} unique records
                 </span>
               </div>
               <div className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
@@ -325,7 +354,7 @@ export function DatabaseMigrationTab({ workspaceId, isOwnerOrAdmin }: DatabaseMi
                   <thead className="bg-slate-50 dark:bg-slate-800/70 border-b border-slate-200 dark:border-slate-800 font-semibold text-slate-600 dark:text-slate-300">
                     <tr>
                       <th className="p-2.5">Table</th>
-                      <th className="p-2.5">Local Count</th>
+                      <th className="p-2.5">Unique Clean Count</th>
                       <th className="p-2.5">Supabase Count</th>
                       <th className="p-2.5">Integrity Status</th>
                     </tr>
@@ -334,7 +363,7 @@ export function DatabaseMigrationTab({ workspaceId, isOwnerOrAdmin }: DatabaseMi
                     {migrationResult.verification.map((v) => (
                       <tr key={v.table} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/40">
                         <td className="p-2.5 font-mono capitalize">{v.table.replace(/_/g, " ")}</td>
-                        <td className="p-2.5">{v.localCount}</td>
+                        <td className="p-2.5">{v.uniqueCount}</td>
                         <td className="p-2.5 font-semibold text-slate-800 dark:text-slate-200">
                           {v.supabaseCount}
                         </td>
@@ -379,17 +408,17 @@ export function DatabaseMigrationTab({ workspaceId, isOwnerOrAdmin }: DatabaseMi
               Confirm Cloud Data Migration
             </DialogTitle>
             <DialogDescription className="text-xs text-slate-500 pt-1">
-              Are you sure you want to transfer all browser business records into the active Supabase workspace?
+              Transfer {dryRunReport?.totalUnique} unique verified business records into the active Supabase workspace?
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-3 py-2 text-xs text-slate-600 dark:text-slate-300">
             <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-1.5">
-              <p className="font-semibold text-slate-900 dark:text-slate-100">What will happen:</p>
+              <p className="font-semibold text-slate-900 dark:text-slate-100">Migration Safety Guarantees:</p>
               <ul className="list-disc pl-4 space-y-1">
-                <li>Deterministic UUIDs will be generated for all string IDs.</li>
-                <li>All parent/child relationships (Customer &rarr; Vehicle, Job Card &rarr; Invoice, Payments) will be preserved.</li>
-                <li>Data will be securely inserted into Supabase tables under this workspace.</li>
+                <li>{dryRunReport?.totalDuplicatesIgnored} exact duplicate rows will be ignored (e.g. repeated parts).</li>
+                <li>{dryRunReport?.totalUnique} unique records will be mapped to deterministic UUIDs.</li>
+                <li>All parent/child relationships (Customer &rarr; Vehicle, Job Card &rarr; Invoice, Payments) are preserved.</li>
                 <li>Existing browser storage will <strong>NOT</strong> be deleted.</li>
               </ul>
             </div>
