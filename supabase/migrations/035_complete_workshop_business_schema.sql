@@ -1,7 +1,7 @@
 -- ==============================================================================
--- Migration 034: Complete Workshop Business Schema & Multi-Tenant RLS
+-- Migration 035: Complete Workshop Business Schema & Multi-Tenant RLS
 -- ==============================================================================
--- Aligned with Migration 033 Workspaces & Security Foundation
+-- Aligned with Migration 033 & 034 Workspaces & Security Foundation
 -- Tables included:
 --   1. customers
 --   2. vehicles

@@ -58,6 +58,8 @@ import {
   Crown,
   UserPlus,
   Palette,
+  Database,
+  UploadCloud,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -103,6 +105,7 @@ import { UserAccessTab } from "@/components/settings/user-access-tab";
 import { WorkspacesTab } from "@/components/settings/workspaces-tab";
 import { TestDataResetTab } from "@/components/settings/test-data-reset-tab";
 import { AppearanceThemeTab } from "@/components/settings/appearance-theme-tab";
+import { DatabaseMigrationTab } from "@/components/settings/database-migration-tab";
 import { useWorkspace } from "@/lib/context/workspace-context";
 
 
@@ -581,9 +584,28 @@ export default function SettingsPage() {
           </TabsList>
         </div>
 
-        {/* Administration Action Area (Test Data Reset) — Right aligned below navigation, above KPI cards */}
+        {/* Administration Action Area (Test Data Reset & Cloud Migration) — Right aligned below navigation */}
         {isPlatformOwner && (
-          <div className="flex items-center justify-end -mt-1 mb-2">
+          <div className="flex items-center justify-end -mt-1 mb-2 gap-2">
+            <button
+              type="button"
+              onClick={() => setActiveTab("cloud_migration")}
+              className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-all cursor-pointer ${
+                activeTab === "cloud_migration"
+                  ? "bg-indigo-50 dark:bg-indigo-950/40 border-indigo-300 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 shadow-xs"
+                  : "bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50/70 dark:hover:bg-indigo-950/30 hover:border-indigo-300 shadow-2xs"
+              }`}
+              title="Cloud Data Migration & Backup Tool (Owner Only)"
+            >
+              <Database className="w-3.5 h-3.5 shrink-0 text-indigo-600 dark:text-indigo-400" aria-hidden="true" />
+              <span className="text-[12px] font-semibold text-indigo-600 dark:text-indigo-400">
+                Cloud Migration
+              </span>
+              <span className="inline-flex items-center text-[9px] font-bold uppercase tracking-[0.03em] px-2 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
+                OWNER
+              </span>
+            </button>
+
             <button
               type="button"
               onClick={() => setActiveTab("test_reset")}
@@ -757,6 +779,14 @@ export default function SettingsPage() {
         {isPlatformOwner && (
           <TabsContent value="test_reset">
             <TestDataResetTab />
+          </TabsContent>
+        )}
+        {isPlatformOwner && (
+          <TabsContent value="cloud_migration">
+            <DatabaseMigrationTab
+              workspaceId={currentWorkspace?.id || "ws-atiq-default-001"}
+              isOwnerOrAdmin={isPlatformOwner || isOwner}
+            />
           </TabsContent>
         )}
       </Tabs>
