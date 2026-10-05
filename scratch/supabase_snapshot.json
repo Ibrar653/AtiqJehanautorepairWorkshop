@@ -1,0 +1,23 @@
+{
+  "workspaces": [],
+  "customers": [],
+  "vehicles": [],
+  "services": [],
+  "suppliers": [],
+  "parts": [],
+  "inventory_transactions": [],
+  "job_cards": [],
+  "job_card_items": [],
+  "invoices": [],
+  "invoice_items": [],
+  "payments": [],
+  "purchases": [],
+  "purchase_items": [],
+  "supplier_payments": [],
+  "expenses": [],
+  "workers": [],
+  "bank_accounts": [],
+  "ledger_accounts": [],
+  "ledger_transactions": [],
+  "ledger_entries": []
+}
