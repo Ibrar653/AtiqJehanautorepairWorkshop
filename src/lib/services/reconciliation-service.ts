@@ -27,6 +27,15 @@ export interface ReconciledRecord {
   supabaseData?: any;
   diffs?: EntityFieldDiff[];
   brokenReason?: string;
+  brokenField?: string;
+  referencedSourceId?: string;
+  missingParentEntity?: string;
+  suggestedCanonicalParent?: {
+    id: string;
+    label: string;
+    existsInSupabase: boolean;
+  };
+  recommendedAction?: string;
   parentInfo?: {
     parentId?: string;
     parentType?: string;
@@ -606,52 +615,116 @@ export async function generateDetailedReconciliationReport(
         // Not in Supabase -> Check parent relationships to classify LOCAL_ONLY vs BROKEN
         let isBroken = false;
         let brokenReason = "";
+        let brokenField: string | undefined = undefined;
+        let referencedSourceId: string | undefined = undefined;
+        let missingParentEntity: string | undefined = undefined;
+        let suggestedCanonicalParent: { id: string; label: string; existsInSupabase: boolean } | undefined = undefined;
+        let recommendedAction: string | undefined = undefined;
 
         if (meta.entityType === "vehicle") {
           const custRef = checkParentRef("customer", item.customer_id);
           if (!custRef.existsInSupabase && !custRef.existsInLocal) {
             isBroken = true;
+            brokenField = "customer_id";
+            referencedSourceId = String(item.customer_id);
+            missingParentEntity = "Customer";
             brokenReason = `Parent customer [${item.customer_id}] not found in Supabase or local cache`;
+            recommendedAction = "PARENT_RECORD_MISSING";
           }
         } else if (meta.entityType === "job_card") {
           const custRef = checkParentRef("customer", item.customer_id);
           const vehRef = checkParentRef("vehicle", item.vehicle_id);
           if (!custRef.existsInSupabase && !custRef.existsInLocal) {
             isBroken = true;
-            brokenReason = `Referenced customer [${item.customer_id}] does not exist`;
+            brokenField = "customer_id";
+            referencedSourceId = String(item.customer_id);
+            missingParentEntity = "Customer";
+            brokenReason = `Referenced customer [${item.customer_id}] does not exist in Supabase or local cache`;
+            recommendedAction = "PARENT_RECORD_MISSING";
           } else if (!vehRef.existsInSupabase && !vehRef.existsInLocal) {
             isBroken = true;
-            brokenReason = `Referenced vehicle [${item.vehicle_id}] does not exist`;
+            brokenField = "vehicle_id";
+            referencedSourceId = String(item.vehicle_id);
+            missingParentEntity = "Vehicle";
+            brokenReason = `Referenced vehicle [${item.vehicle_id}] does not exist in Supabase or local cache`;
+
+            // Check if there are other candidate vehicles for this customer (e.g. duplicate local vehicles or cloud vehicles)
+            const customerVehiclesInCloud = (cloudDataMap["vehicles"] || []).filter(
+              (v: any) => v.customer_id === custRef.targetUuid || v.customer_id === item.customer_id
+            );
+            const customerVehiclesInLocal = localDataSet.vehicles.filter(
+              (v: any) => v.customer_id === item.customer_id
+            );
+
+            if (customerVehiclesInCloud.length > 0) {
+              const cv = customerVehiclesInCloud[0];
+              suggestedCanonicalParent = {
+                id: cv.id,
+                label: `${cv.make || ""} ${cv.model || ""} (${cv.plate_number || cv.registration_number || cv.plate || "Unknown Plate"})`.trim(),
+                existsInSupabase: true,
+              };
+              recommendedAction = "DUPLICATE_VEHICLE_MAPPING_REQUIRED";
+            } else if (customerVehiclesInLocal.length > 0) {
+              const lv = customerVehiclesInLocal[0];
+              suggestedCanonicalParent = {
+                id: lv.id || lv.source_id,
+                label: `${lv.make || ""} ${lv.model || ""} (${lv.plate_number || lv.registration_number || lv.plate || "Unknown Plate"})`.trim(),
+                existsInSupabase: false,
+              };
+              recommendedAction = "DUPLICATE_VEHICLE_MAPPING_REQUIRED";
+            } else {
+              recommendedAction = "PARENT_RECORD_MISSING";
+            }
           }
         } else if (meta.entityType === "jc_item") {
           const jcRef = checkParentRef("job_card", item.job_card_id);
           if (!jcRef.existsInSupabase && !jcRef.existsInLocal) {
             isBroken = true;
+            brokenField = "job_card_id";
+            referencedSourceId = String(item.job_card_id);
+            missingParentEntity = "Job Card";
             brokenReason = `Parent job card [${item.job_card_id}] does not exist`;
+            recommendedAction = "PARENT_RECORD_MISSING";
           }
         } else if (meta.entityType === "invoice") {
           const custRef = checkParentRef("customer", item.customer_id);
           if (!custRef.existsInSupabase && !custRef.existsInLocal) {
             isBroken = true;
+            brokenField = "customer_id";
+            referencedSourceId = String(item.customer_id);
+            missingParentEntity = "Customer";
             brokenReason = `Referenced customer [${item.customer_id}] does not exist`;
+            recommendedAction = "PARENT_RECORD_MISSING";
           }
         } else if (meta.entityType === "inv_item") {
           const invRef = checkParentRef("invoice", item.invoice_id);
           if (!invRef.existsInSupabase && !invRef.existsInLocal) {
             isBroken = true;
+            brokenField = "invoice_id";
+            referencedSourceId = String(item.invoice_id);
+            missingParentEntity = "Invoice";
             brokenReason = `Parent invoice [${item.invoice_id}] does not exist`;
+            recommendedAction = "PARENT_RECORD_MISSING";
           }
         } else if (meta.entityType === "payment") {
           const custRef = checkParentRef("customer", item.customer_id);
           if (!custRef.existsInSupabase && !custRef.existsInLocal) {
             isBroken = true;
+            brokenField = "customer_id";
+            referencedSourceId = String(item.customer_id);
+            missingParentEntity = "Customer";
             brokenReason = `Customer [${item.customer_id}] does not exist`;
+            recommendedAction = "PARENT_RECORD_MISSING";
           }
         } else if (meta.entityType === "inv_tx") {
           const partRef = checkParentRef("part", item.part_id);
           if (!partRef.existsInSupabase && !partRef.existsInLocal) {
             isBroken = true;
+            brokenField = "part_id";
+            referencedSourceId = String(item.part_id);
+            missingParentEntity = "Part";
             brokenReason = `Part [${item.part_id}] does not exist`;
+            recommendedAction = "PARENT_RECORD_MISSING";
           }
         }
 
@@ -664,6 +737,11 @@ export async function generateDetailedReconciliationReport(
           summary: meta.getSummary(item),
           localData: item,
           brokenReason: isBroken ? brokenReason : undefined,
+          brokenField,
+          referencedSourceId,
+          missingParentEntity,
+          suggestedCanonicalParent,
+          recommendedAction,
         };
 
         if (isBroken) {

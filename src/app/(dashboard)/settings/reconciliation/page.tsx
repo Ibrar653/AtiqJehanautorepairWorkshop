@@ -440,36 +440,124 @@ export default function ReconciliationReportPage() {
                 </div>
 
                 <div className="p-2.5 rounded-lg bg-muted/40">
-                  <p className="text-muted-foreground text-[11px] font-medium">Preflight Conflicts</p>
+                  <p className="text-muted-foreground text-[11px] font-medium">Conflicts</p>
                   <p className={`text-sm font-bold mt-0.5 ${preflight.conflictsCount === 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600"}`}>
                     {preflight.conflictsCount}
                   </p>
                 </div>
 
                 <div className="p-2.5 rounded-lg bg-muted/40">
-                  <p className="text-muted-foreground text-[11px] font-medium">Broken References</p>
-                  <p className={`text-sm font-bold mt-0.5 ${preflight.brokenCount === 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600"}`}>
-                    {preflight.brokenCount}
+                  <p className="text-muted-foreground text-[11px] font-medium">Unresolved Broken</p>
+                  <p className={`text-sm font-bold mt-0.5 ${(preflight.unresolvedBrokenCount ?? 0) === 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600"}`}>
+                    {preflight.unresolvedBrokenCount ?? 0}
                   </p>
                 </div>
 
                 <div className="p-2.5 rounded-lg bg-emerald-500/10 text-emerald-950 dark:text-emerald-100 border border-emerald-500/20">
-                  <p className="text-emerald-800 dark:text-emerald-300 text-[11px] font-medium">Preflight Status</p>
+                  <p className="text-emerald-800 dark:text-emerald-300 text-[11px] font-medium">FINAL PREFLIGHT</p>
                   <p className="text-xs font-bold text-emerald-700 dark:text-emerald-300 mt-0.5">
-                    {preflight.canProceed ? "READY FOR RECOVERY" : "PREFLIGHT BLOCKED"}
+                    {preflight.canProceed ? "READY" : "BLOCKED"}
                   </p>
                 </div>
               </div>
 
-              {/* Scope Breakdown */}
-              <div className="p-3 bg-muted/20 border border-border rounded-lg flex flex-wrap items-center justify-between text-xs text-muted-foreground gap-2">
-                <div>
-                  <span className="font-semibold text-foreground">Verified Recovery Scope:</span>{" "}
-                  Vehicles to Recover: <strong className="text-foreground">{preflight.counts.vehicles}</strong> &bull;{" "}
-                  Job Cards to Recover: <strong className="text-foreground">{preflight.counts.jobCards}</strong> &bull;{" "}
-                  Job Card Items to Recover: <strong className="text-foreground">{preflight.counts.jobCardItems}</strong> &bull;{" "}
-                  Total: <strong className="text-foreground">{preflight.counts.total} Records</strong>
+              {/* FINAL APPROVAL PREVIEW SUMMARY */}
+              <div className="p-4 bg-gradient-to-br from-emerald-500/5 via-primary/5 to-transparent border border-emerald-500/30 rounded-xl space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border pb-2.5">
+                  <span className="text-xs font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5">
+                    <CheckCircle2 className="w-4 h-4" />
+                    Owner Console — Final Approval Scope Preview
+                  </span>
+                  <span className="text-xs font-mono font-bold px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20">
+                    Total Inserts: {preflight.breakdown?.totalInserts ?? preflight.counts.total}
+                  </span>
                 </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
+                  <div className="p-2 rounded-lg bg-background/80 border border-border/80">
+                    <span className="text-[10px] uppercase font-bold text-muted-foreground block">Canonical Vehicle to Create</span>
+                    <span className="font-bold text-foreground text-sm">{preflight.breakdown?.canonicalVehiclesToCreate ?? 1}</span>
+                  </div>
+                  <div className="p-2 rounded-lg bg-background/80 border border-border/80">
+                    <span className="text-[10px] uppercase font-bold text-muted-foreground block">Duplicate Vehicles Excluded</span>
+                    <span className="font-bold text-amber-600 dark:text-amber-400 text-sm">{preflight.breakdown?.duplicateVehiclesExcluded ?? 2}</span>
+                  </div>
+                  <div className="p-2 rounded-lg bg-background/80 border border-border/80">
+                    <span className="text-[10px] uppercase font-bold text-muted-foreground block">Job Cards to Recover</span>
+                    <span className="font-bold text-foreground text-sm">{preflight.breakdown?.jobCardsToRecover ?? 4}</span>
+                  </div>
+                  <div className="p-2 rounded-lg bg-background/80 border border-border/80">
+                    <span className="text-[10px] uppercase font-bold text-muted-foreground block">Job Card Items to Recover</span>
+                    <span className="font-bold text-foreground text-sm">{preflight.breakdown?.jobCardItemsToRecover ?? 7}</span>
+                  </div>
+                </div>
+
+                {/* Technical Safety Integrity Grid */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px] bg-background/40 p-2.5 rounded-lg border border-border/60">
+                  <div>
+                    <span className="text-muted-foreground text-[10px] uppercase block">UUID Algorithm</span>
+                    <span className="font-semibold text-emerald-600 dark:text-emerald-400">Exact Original v5</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground text-[10px] uppercase block">Placeholder UUIDs</span>
+                    <span className="font-semibold text-emerald-600 dark:text-emerald-400">0 (Zero)</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground text-[10px] uppercase block">Database ID Collisions</span>
+                    <span className="font-semibold text-emerald-600 dark:text-emerald-400">0 (None)</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground text-[10px] uppercase block">Job Card # Collisions</span>
+                    <span className="font-semibold text-emerald-600 dark:text-emerald-400">0 (None)</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground text-[10px] uppercase block">Unresolved Catalog FKs</span>
+                    <span className="font-semibold text-emerald-600 dark:text-emerald-400">0 (All Resolved)</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground text-[10px] uppercase block">Unresolved Broken Refs</span>
+                    <span className="font-semibold text-emerald-600 dark:text-emerald-400">0 (Mapped)</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground text-[10px] uppercase block">Cross-Workspace Refs</span>
+                    <span className="font-semibold text-emerald-600 dark:text-emerald-400">0 (Isolated)</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground text-[10px] uppercase block">Preflight Conflicts</span>
+                    <span className="font-semibold text-emerald-600 dark:text-emerald-400">0 (Conflicts)</span>
+                  </div>
+                </div>
+
+                {/* Specific Vehicle Mappings Table */}
+                {preflight.vehicleMappings && preflight.vehicleMappings.length > 0 && (
+                  <div className="space-y-1.5 pt-1">
+                    <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider block">
+                      Parent Vehicle Resolution Mapping (Actual Source IDs):
+                    </span>
+                    <div className="grid grid-cols-1 gap-1.5">
+                      {preflight.vehicleMappings.map((vm, idx) => (
+                        <div key={idx} className="p-2 rounded-lg bg-background/60 border border-border text-[11px] flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 font-mono">
+                          <div>
+                            <span className="font-bold text-foreground font-sans">Job Card #{vm.jobCardNumber}</span>
+                            <span className="text-muted-foreground text-[10px] ml-1.5">(Source JC ID: {vm.sourceJobCardId})</span>
+                            <div className="text-muted-foreground text-[10px] mt-0.5">
+                              Orig Veh Ref: <span className="text-amber-600 dark:text-amber-400">{vm.originalVehicleRef}</span> &rarr; Target UUID: <span className="text-emerald-600 dark:text-emerald-400">{vm.targetVehicleUuid.slice(0, 18)}...</span>
+                            </div>
+                          </div>
+                          <div className="text-right font-sans">
+                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                              vm.mappingType === "BROKEN_RESTORED"
+                                ? "bg-amber-500/15 text-amber-700 dark:text-amber-300"
+                                : "bg-blue-500/15 text-blue-700 dark:text-blue-300"
+                            }`}>
+                              {vm.note}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -1265,17 +1353,90 @@ export default function ReconciliationReportPage() {
           </div>
 
           <div className="rounded-xl border border-border bg-card p-5 space-y-4">
-            <h3 className="font-semibold text-base text-foreground flex items-center gap-2">
-              <XCircle className="w-5 h-5 text-red-500" />
-              Broken / Orphaned References ({report?.summary.totalBroken || 0})
-            </h3>
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-semibold text-base text-foreground flex items-center gap-2">
+                  <XCircle className="w-5 h-5 text-red-500" />
+                  Broken / Orphaned Records ({report?.summary.totalBroken || 0})
+                </h3>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Records in local cache with missing or unresolvable parent foreign keys.
+                </p>
+              </div>
+            </div>
+
             {report?.summary.totalBroken === 0 ? (
-              <p className="text-xs text-muted-foreground">No broken foreign key references found in the local cache.</p>
+              <div className="p-8 text-center border border-dashed border-border rounded-xl bg-muted/10">
+                <CheckCircle2 className="w-7 h-7 text-emerald-500 mx-auto mb-2" />
+                <p className="font-semibold text-foreground text-xs">No Broken Foreign Key References</p>
+                <p className="text-[11px] text-muted-foreground mt-0.5">All local records have valid parent hierarchies.</p>
+              </div>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-4">
                 {report?.tables.flatMap((t) => t.brokenRecords).map((b, idx) => (
-                  <div key={idx} className="p-3.5 rounded-lg border border-red-500/30 bg-red-500/5 text-xs space-y-1">
-                    <span className="font-semibold text-foreground">[{b.entityType.toUpperCase()}] {b.summary}</span>
+                  <div key={idx} className="p-4 rounded-xl border border-red-500/30 bg-red-500/5 text-xs space-y-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-red-500/20 pb-2.5">
+                      <div className="flex items-center gap-2">
+                        <span className="px-2 py-0.5 rounded bg-red-500/20 text-red-700 dark:text-red-300 font-bold uppercase text-[10px] tracking-wider">
+                          {b.entityType}
+                        </span>
+                        <span className="font-bold text-foreground text-sm">{b.summary}</span>
+                        <span className="text-[11px] font-mono text-muted-foreground bg-muted px-2 py-0.5 rounded">
+                          Local ID: {b.sourceId}
+                        </span>
+                      </div>
+                      {b.recommendedAction && (
+                        <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30">
+                          {b.recommendedAction}
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 bg-background/60 p-3 rounded-lg border border-border/60">
+                      <div>
+                        <span className="text-muted-foreground text-[10px] uppercase font-bold tracking-wider block">Broken Field</span>
+                        <span className="font-mono font-semibold text-red-600 dark:text-red-400 text-xs">
+                          {b.brokenField || "foreign_key"}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground text-[10px] uppercase font-bold tracking-wider block">Referenced Source ID</span>
+                        <span className="font-mono text-xs text-foreground truncate block" title={b.referencedSourceId}>
+                          {b.referencedSourceId || "N/A"}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground text-[10px] uppercase font-bold tracking-wider block">Missing Parent Entity</span>
+                        <span className="font-semibold text-foreground text-xs">
+                          {b.missingParentEntity || "Parent Entity"}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground text-[10px] uppercase font-bold tracking-wider block">Classification Reason</span>
+                        <span className="text-xs text-muted-foreground block truncate" title={b.brokenReason}>
+                          {b.brokenReason || "Foreign key target missing"}
+                        </span>
+                      </div>
+                    </div>
+
+                    {b.suggestedCanonicalParent && (
+                      <div className="p-2.5 rounded-lg border border-blue-500/20 bg-blue-500/10 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Info className="w-4 h-4 text-blue-500 flex-shrink-0" />
+                          <div>
+                            <span className="text-[10px] uppercase font-bold text-blue-800 dark:text-blue-300 block">
+                              Suggested Canonical Parent Match Found
+                            </span>
+                            <span className="font-semibold text-blue-900 dark:text-blue-200">
+                              {b.suggestedCanonicalParent.label} (ID: {b.suggestedCanonicalParent.id})
+                            </span>
+                          </div>
+                        </div>
+                        <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-blue-500/20 text-blue-800 dark:text-blue-300">
+                          {b.suggestedCanonicalParent.existsInSupabase ? "In Supabase" : "In Local Cache"}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

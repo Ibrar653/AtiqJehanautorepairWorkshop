@@ -78,6 +78,16 @@ export interface PreparedJobCardItemRecovery {
   payload: any;
 }
 
+export interface VehicleMappingDetail {
+  jobCardNumber: string;
+  sourceJobCardId: string;
+  originalVehicleRef: string;
+  targetVehicleUuid: string;
+  targetVehicleLabel: string;
+  mappingType: "CANONICAL_MATCH" | "BROKEN_RESTORED" | "DUPLICATE_CONSOLIDATED";
+  note: string;
+}
+
 export interface RecoveryPreflightResult {
   canProceed: boolean;
   destinationWorkspaceName: string;
@@ -93,8 +103,17 @@ export interface RecoveryPreflightResult {
     jobCardItems: number;
     total: number;
   };
+  breakdown: {
+    canonicalVehiclesToCreate: number;
+    duplicateVehiclesExcluded: number;
+    jobCardsToRecover: number;
+    jobCardItemsToRecover: number;
+    totalInserts: number;
+  };
+  vehicleMappings: VehicleMappingDetail[];
   conflictsCount: number;
   brokenCount: number;
+  unresolvedBrokenCount: number;
   blockingReasons: string[];
   preparedRecords: {
     vehicle: PreparedVehicleRecovery | null;
@@ -307,9 +326,14 @@ export async function performRecoveryPreflight(
   // 6. Extract Local Dataset
   const localDataSet = getLocalStorageDataSet(destinationWorkspaceId);
 
-  // 7. Prepare Local-Only Vehicle (Expected: 1)
+  // 7. Prepare Local-Only Vehicle (Canonical Duplicate Handling)
   let preparedVehicle: PreparedVehicleRecovery | null = null;
   const localVehiclesDedup = deduplicateBySourceId(localDataSet.vehicles, "Vehicles");
+  
+  // Natural duplicate tracking
+  const plateToCanonicalVehMap = new Map<string, any>();
+  const duplicateVehicleToCanonicalMap = new Map<string, string>(); // dupSourceId -> canonicalDetUuid
+  let duplicateVehiclesExcludedCount = 0;
 
   for (const v of localVehiclesDedup.unique) {
     const detUuid = toDeterministicUuid("vehicle", v.id, destinationWorkspaceId);
@@ -328,44 +352,56 @@ export async function performRecoveryPreflight(
         blockingReasons.push(`Vehicle [${v.id}] references customer belonging to a different workspace [${custInCloud.workspace_id}].`);
       }
 
-      preparedVehicle = {
-        sourceId: String(v.id),
-        deterministicUuid: detUuid,
-        workspaceId: destinationWorkspaceId,
-        safeLabel: `${v.make || "Vehicle"} ${v.model || ""} (${v.registration_number || "No Plate"})`,
-        customerId: custInCloud ? custInCloud.id : custDetUuid,
-        parentCustomerName: parentCustName,
-        parentCustomerExistsInSupabase: isCustInSupabase,
-        parentCustomerWorkspaceId: custInCloud?.workspace_id || destinationWorkspaceId,
-        readiness: isCustInSupabase ? "READY" : "BLOCKED",
-        readinessReason: isCustInSupabase
-          ? "Ready for Step A (Parent Customer verified in Supabase)"
-          : "Blocked: Parent Customer missing in Supabase",
-        payload: {
-          id: detUuid,
-          workspace_id: destinationWorkspaceId, // Exact Supabase UUID
-          customer_id: custInCloud ? custInCloud.id : custDetUuid,
-          make: v.make || "Unknown",
-          model: v.model || "Model",
-          year: v.year ? Number(v.year) : null,
-          color: v.color || null,
-          chassis_vin: v.chassis_vin || null,
-          mileage: v.mileage ? Number(v.mileage) : null,
-          registration_number: v.registration_number || null,
-          notes: v.notes || null,
-          is_deleted: Boolean(v.is_deleted),
-          deleted_at: v.deleted_at || null,
-          deleted_by: v.deleted_by || null,
-          created_at: v.created_at || new Date().toISOString(),
-          updated_at: v.updated_at || new Date().toISOString(),
-        },
-      };
-      break;
+      const normPlate = String(v.registration_number || v.plate_number || v.plate || "").toLowerCase().trim();
+      const groupKey = `${v.customer_id}:${normPlate}`;
+
+      if (!plateToCanonicalVehMap.has(groupKey)) {
+        // First instance becomes CANONICAL vehicle to create
+        preparedVehicle = {
+          sourceId: String(v.id),
+          deterministicUuid: detUuid,
+          workspaceId: destinationWorkspaceId,
+          safeLabel: `${v.make || "Vehicle"} ${v.model || ""} (${v.registration_number || "No Plate"})`,
+          customerId: custInCloud ? custInCloud.id : custDetUuid,
+          parentCustomerName: parentCustName,
+          parentCustomerExistsInSupabase: isCustInSupabase,
+          parentCustomerWorkspaceId: custInCloud?.workspace_id || destinationWorkspaceId,
+          readiness: isCustInSupabase ? "READY" : "BLOCKED",
+          readinessReason: isCustInSupabase
+            ? "Ready for Step A (Parent Customer verified in Supabase)"
+            : "Blocked: Parent Customer missing in Supabase",
+          payload: {
+            id: detUuid,
+            workspace_id: destinationWorkspaceId, // Exact Supabase UUID
+            customer_id: custInCloud ? custInCloud.id : custDetUuid,
+            make: v.make || "Unknown",
+            model: v.model || "Model",
+            year: v.year ? Number(v.year) : null,
+            color: v.color || null,
+            chassis_vin: v.chassis_vin || null,
+            mileage: v.mileage ? Number(v.mileage) : null,
+            registration_number: v.registration_number || null,
+            notes: v.notes || null,
+            is_deleted: Boolean(v.is_deleted),
+            deleted_at: v.deleted_at || null,
+            deleted_by: v.deleted_by || null,
+            created_at: v.created_at || new Date().toISOString(),
+            updated_at: v.updated_at || new Date().toISOString(),
+          },
+        };
+        plateToCanonicalVehMap.set(groupKey, preparedVehicle);
+      } else {
+        // Redundant duplicate local vehicle -> Exclude from cloud insertion, record mapping
+        const canonical = plateToCanonicalVehMap.get(groupKey);
+        duplicateVehicleToCanonicalMap.set(String(v.id), canonical.deterministicUuid);
+        duplicateVehiclesExcludedCount++;
+      }
     }
   }
 
-  // 8. Prepare Local-Only Job Cards (Expected: 4)
+  // 8. Prepare Local-Only Job Cards (Expected: 4) & Vehicle Mapping Breakdown
   const preparedJobCards: PreparedJobCardRecovery[] = [];
+  const vehicleMappings: VehicleMappingDetail[] = [];
   const localJcDedup = deduplicateBySourceId(localDataSet.job_cards, "Job Cards");
 
   const { data: cloudJobCards } = await supabase
@@ -395,13 +431,56 @@ export async function performRecoveryPreflight(
       }
 
       // Check vehicle in Supabase or in local vehicle recovery set
-      const vehDetUuid = toDeterministicUuid("vehicle", jc.vehicle_id, destinationWorkspaceId);
-      const vehInCloud = vehicleIdMap.get(vehDetUuid.toLowerCase()) || vehicleIdMap.get(String(jc.vehicle_id).toLowerCase());
-      const dependsOnLocalVeh = !vehInCloud && preparedVehicle !== null && (preparedVehicle.sourceId === String(jc.vehicle_id) || preparedVehicle.deterministicUuid === vehDetUuid);
-      const vehId = vehInCloud ? vehInCloud.id : (dependsOnLocalVeh ? preparedVehicle!.deterministicUuid : vehDetUuid);
-      const vehLabel = vehInCloud
-        ? `${vehInCloud.make || ""} ${vehInCloud.model || ""} (${vehInCloud.registration_number || "No Plate"})`
-        : (dependsOnLocalVeh ? preparedVehicle!.safeLabel : "Local Vehicle");
+      const rawVehId = String(jc.vehicle_id || "");
+      const vehDetUuid = toDeterministicUuid("vehicle", rawVehId, destinationWorkspaceId);
+      const vehInCloud = vehicleIdMap.get(vehDetUuid.toLowerCase()) || vehicleIdMap.get(rawVehId.toLowerCase());
+      
+      let mappedVehId: string;
+      let mappedVehLabel: string;
+      let dependsOnLocalVeh = false;
+      let mappingType: "CANONICAL_MATCH" | "BROKEN_RESTORED" | "DUPLICATE_CONSOLIDATED" = "CANONICAL_MATCH";
+      let mappingNote = "Direct vehicle link";
+
+      if (vehInCloud) {
+        mappedVehId = vehInCloud.id;
+        mappedVehLabel = `${vehInCloud.make || ""} ${vehInCloud.model || ""} (${vehInCloud.registration_number || "No Plate"})`;
+        mappingType = "CANONICAL_MATCH";
+        mappingNote = "Vehicle already exists in Supabase";
+      } else if (preparedVehicle && (preparedVehicle.sourceId === rawVehId || preparedVehicle.deterministicUuid === vehDetUuid)) {
+        mappedVehId = preparedVehicle.deterministicUuid;
+        mappedVehLabel = preparedVehicle.safeLabel;
+        dependsOnLocalVeh = true;
+        mappingType = "CANONICAL_MATCH";
+        mappingNote = "Direct reference to canonical local vehicle";
+      } else if (duplicateVehicleToCanonicalMap.has(rawVehId) && preparedVehicle) {
+        mappedVehId = preparedVehicle.deterministicUuid;
+        mappedVehLabel = preparedVehicle.safeLabel;
+        dependsOnLocalVeh = true;
+        mappingType = "DUPLICATE_CONSOLIDATED";
+        mappingNote = "Duplicate local vehicle reference -> Canonical Vehicle mapping";
+      } else if (preparedVehicle && String(jc.customer_id) === String(preparedVehicle.customerId || localDataSet.vehicles.find((v: any) => v.id === preparedVehicle?.sourceId)?.customer_id)) {
+        // Broken / dangling original vehicle reference restored to canonical vehicle
+        mappedVehId = preparedVehicle.deterministicUuid;
+        mappedVehLabel = preparedVehicle.safeLabel;
+        dependsOnLocalVeh = true;
+        mappingType = "BROKEN_RESTORED";
+        mappingNote = "Broken original vehicle reference -> Canonical Vehicle mapping";
+      } else {
+        mappedVehId = vehDetUuid;
+        mappedVehLabel = "Unknown Vehicle";
+        mappingType = "BROKEN_RESTORED";
+        mappingNote = "Unresolved vehicle reference";
+      }
+
+      vehicleMappings.push({
+        jobCardNumber: String(jc.job_card_number || "JC"),
+        sourceJobCardId: String(jc.id),
+        originalVehicleRef: rawVehId,
+        targetVehicleUuid: mappedVehId,
+        targetVehicleLabel: mappedVehLabel,
+        mappingType,
+        note: mappingNote,
+      });
 
       if (vehInCloud && vehInCloud.workspace_id !== destinationWorkspaceId) {
         crossWorkspaceReferencesCount++;
@@ -437,9 +516,9 @@ export async function performRecoveryPreflight(
         paid: Number(jc.paid) || 0,
         balance: Number(jc.balance) || 0,
         customerId: custId,
-        vehicleId: vehId,
+        vehicleId: mappedVehId,
         customerName: custName,
-        vehicleLabel: vehLabel,
+        vehicleLabel: mappedVehLabel,
         dependsOnLocalVehicle: dependsOnLocalVeh,
         itemCount: jcItems.length,
         readiness,
@@ -451,7 +530,7 @@ export async function performRecoveryPreflight(
           invoice_number: jc.invoice_number ? Number(jc.invoice_number) : null,
           invoice_number_mode: jc.invoice_number_mode || "auto",
           customer_id: custId,
-          vehicle_id: vehId,
+          vehicle_id: mappedVehId,
           date: jc.date || new Date().toISOString().slice(0, 10),
           mileage_in: jc.mileage_in ? Number(jc.mileage_in) : null,
           customer_complaint: jc.customer_complaint || null,
@@ -523,6 +602,7 @@ export async function performRecoveryPreflight(
           part_id: mappedPartId,
           description: it.description || "Service Item",
           quantity: Number(it.quantity) || 1,
+          unitPrice: Number(it.unit_price) || 0,
           unit_price: Number(it.unit_price) || 0,
           cost_price: Number(it.cost_price) || 0,
           labour_charge: Number(it.labour_charge) || 0,
@@ -558,11 +638,14 @@ export async function performRecoveryPreflight(
     blockingReasons.push("No local-only records found pending recovery.");
   }
 
+  const unresolvedBrokenCount = preparedJobCards.filter((j) => j.readiness === "BLOCKED").length;
+
   const canProceed =
     blockingReasons.length === 0 &&
     destinationVerified &&
     authorizationVerified &&
-    crossWorkspaceReferencesCount === 0;
+    crossWorkspaceReferencesCount === 0 &&
+    unresolvedBrokenCount === 0;
 
   return {
     canProceed,
@@ -579,8 +662,17 @@ export async function performRecoveryPreflight(
       jobCardItems: preparedJobCardItems.length,
       total: totalPrepared,
     },
+    breakdown: {
+      canonicalVehiclesToCreate: preparedVehicle ? 1 : 0,
+      duplicateVehiclesExcluded: duplicateVehiclesExcludedCount,
+      jobCardsToRecover: preparedJobCards.length,
+      jobCardItemsToRecover: preparedJobCardItems.length,
+      totalInserts: totalPrepared,
+    },
+    vehicleMappings,
     conflictsCount: reconReport.summary.totalConflicts,
     brokenCount: reconReport.summary.totalBroken,
+    unresolvedBrokenCount,
     blockingReasons,
     preparedRecords: {
       vehicle: preparedVehicle,
