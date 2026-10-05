@@ -20,6 +20,7 @@ import { getLocalPayments } from "./payment-service";
 import { getLocalPurchases, getLocalSupplierPayments } from "./purchase-service";
 import { getLocalCustomers } from "./customer-service";
 import { getLocalSuppliers } from "./supplier-service";
+import { generateUUID } from "@/lib/utils";
 
 const LOCAL_ACCOUNTS_KEY = "atiq_local_ledger_accounts";
 const LOCAL_TXNS_KEY = "atiq_local_ledger_transactions";
@@ -976,7 +977,7 @@ export async function createLedgerAccount(payload: LedgerAccountInsert, workspac
   const newAccount: LedgerAccount = {
     ...payload,
     workspace_id: payload.workspace_id || targetWsId,
-    id: payload.id || "acc-" + payload.account_code + "-" + Math.random().toString(36).substring(2, 6),
+    id: payload.id || generateUUID(),
     opening_balance: Number(payload.opening_balance) || 0,
     opening_balance_date: payload.opening_balance_date || now.slice(0, 10),
     is_active: payload.is_active !== undefined ? payload.is_active : true,
@@ -1158,7 +1159,7 @@ export async function postTransaction(
   }
 
   const targetWsId = params.workspace_id || getActiveWorkspaceId();
-  const txnId = "txn-" + Date.now() + "-" + Math.random().toString(36).substring(2, 6);
+  const txnId = generateUUID();
   const txnNumber = params.transaction_number || generateTransactionNumber();
 
   const newTxn: LedgerTransaction = {
@@ -1177,7 +1178,8 @@ export async function postTransaction(
   };
 
   const createdEntries: LedgerEntry[] = validEntries.map((entry, idx) => ({
-    id: "entry-" + txnId + "-" + (idx + 1),
+    id: generateUUID(),
+    workspace_id: targetWsId,
     transaction_id: txnId,
     account_id: entry.account_id,
     debit: entry.debit,
@@ -1206,11 +1208,15 @@ export async function postTransaction(
       .from("ledger_transactions")
       .insert({
         id: newTxn.id,
+        workspace_id: targetWsId,
         transaction_number: newTxn.transaction_number,
         transaction_date: newTxn.transaction_date,
         reference_type: newTxn.reference_type,
         reference_id: newTxn.reference_id,
         description: newTxn.description,
+        total_debit: newTxn.total_debit,
+        total_credit: newTxn.total_credit,
+        cash_flow_type: newTxn.cash_flow_type,
         created_by: newTxn.created_by,
         created_at: newTxn.created_at,
       })
@@ -1221,6 +1227,7 @@ export async function postTransaction(
       await supabase.from("ledger_entries").insert(
         createdEntries.map((e) => ({
           id: e.id,
+          workspace_id: targetWsId,
           transaction_id: e.transaction_id,
           account_id: e.account_id,
           debit: e.debit,
@@ -1588,8 +1595,9 @@ export async function postPurchaseLedger(purchase: {
   date?: string;
   total: number;
   created_by?: string | null;
+  workspace_id?: string;
 }) {
-  const accounts = getLocalAccounts();
+  const accounts = getLocalAccounts(purchase.workspace_id);
   const inventoryAcc = accounts.find((a) => a.account_code === "1200") || accounts[3];
   const payableAcc = accounts.find((a) => a.account_code === "2001") || accounts[5];
 
@@ -1597,6 +1605,7 @@ export async function postPurchaseLedger(purchase: {
   if (total <= 0) return null;
 
   return await postTransaction({
+    workspace_id: purchase.workspace_id,
     transaction_date: purchase.date || new Date().toISOString().slice(0, 10),
     reference_type: "purchase",
     reference_id: purchase.id,
@@ -1632,8 +1641,9 @@ export async function postSupplierPaymentLedger(payment: {
   payment_method: string;
   date?: string;
   created_by?: string | null;
+  workspace_id?: string;
 }) {
-  const accounts = getLocalAccounts();
+  const accounts = getLocalAccounts(payment.workspace_id);
   const payableAcc = accounts.find((a) => a.account_code === "2001") || accounts[5];
   const cashAcc = accounts.find((a) => a.account_code === "1001") || accounts[0];
   const bankAcc = accounts.find((a) => a.account_code === "1002") || accounts[1];
@@ -1647,26 +1657,27 @@ export async function postSupplierPaymentLedger(payment: {
     payment.payment_method === "credit_card" ||
     payment.payment_method === "card";
 
-  const sourceAssetAcc = isBank ? bankAcc : cashAcc;
+  const targetAssetAcc = isBank ? bankAcc : cashAcc;
 
   return await postTransaction({
+    workspace_id: payment.workspace_id,
     transaction_date: payment.date || new Date().toISOString().slice(0, 10),
     reference_type: "supplier_payment",
     reference_id: payment.id,
-    description: `Disbursement to Supplier: ${payment.supplier_name || "Supplier"}`,
+    description: `Supplier Payment to ${payment.supplier_name || "Supplier"}`,
     created_by: payment.created_by,
     entries: [
       {
         account_id: payableAcc.id,
         debit: amt,
         credit: 0,
-        notes: `Reduce Supplier Payable`,
+        notes: `Debit Supplier Payable`,
       },
       {
-        account_id: sourceAssetAcc.id,
+        account_id: targetAssetAcc.id,
         debit: 0,
         credit: amt,
-        notes: `Paid out from ${isBank ? "Bank" : "Cash Drawer"}`,
+        notes: `Paid via ${isBank ? "Bank" : "Cash"}`,
       },
     ],
   });

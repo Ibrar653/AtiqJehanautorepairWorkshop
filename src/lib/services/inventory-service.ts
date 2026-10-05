@@ -1,4 +1,6 @@
 import { createClient } from "@/lib/supabase/client";
+import { generateUUID } from "@/lib/utils";
+import { getActiveWorkspaceId } from "./workspace-service";
 import type { InventoryTransaction, InventoryTransactionType, Part } from "@/types/database";
 import { getPartById, updatePart, getLocalParts, saveLocalParts } from "./parts-service";
 
@@ -91,15 +93,6 @@ export function saveLocalTransactions(txs: InventoryTransaction[]) {
   }
 }
 
-function withTimeout<T>(promise: PromiseLike<T>, timeoutMs = 2000): Promise<T> {
-  return Promise.race([
-    Promise.resolve(promise),
-    new Promise<T>((_, reject) =>
-      setTimeout(() => reject(new Error("Inventory query timed out")), timeoutMs)
-    ),
-  ]);
-}
-
 /**
  * Fetch inventory transactions ledger with resilient fallback
  */
@@ -107,65 +100,36 @@ export async function getInventoryTransactions(
   partId?: string,
   transactionType?: string,
   page = 1,
-  limit = 50
+  limit = 50,
+  workspaceId?: string
 ): Promise<{ transactions: InventoryTransaction[]; total: number }> {
+  const targetWsId = workspaceId || await getActiveWorkspaceId();
   const supabase = createClient();
   const offset = (page - 1) * limit;
 
-  try {
-    const fetchWithTimeout = async () => {
-      let query = supabase
-        .from("inventory_transactions")
-        .select("*, part:parts(name, part_number, unit, brand)", { count: "exact" });
+  let query = supabase
+    .from("inventory_transactions")
+    .select("*, part:parts(name, part_number, unit, brand)", { count: "exact" })
+    .eq("workspace_id", targetWsId);
 
-      if (partId) {
-        query = query.eq("part_id", partId);
-      }
-
-      if (transactionType && transactionType !== "all") {
-        query = query.eq("transaction_type", transactionType.toLowerCase());
-      }
-
-      const { data, count, error } = await query
-        .order("created_at", { ascending: false })
-        .range(offset, offset + limit - 1);
-
-      if (error) throw error;
-      return { data: data as InventoryTransaction[], count: count || 0 };
-    };
-
-    const result = await withTimeout(fetchWithTimeout(), 2000);
-    return { transactions: result.data || [], total: result.count || 0 };
-  } catch (err: any) {
-    console.warn("Using local inventory transactions ledger fallback:", err.message || err);
-
-    let list = getLocalTransactions();
-    const parts = getLocalParts();
-    const partsMap = new Map(parts.map((p) => [p.id, p]));
-
-    // Attach part relation
-    let enriched = list.map((tx) => ({
-      ...tx,
-      part: tx.part || partsMap.get(tx.part_id) || null,
-    }));
-
-    if (partId) {
-      enriched = enriched.filter((tx) => tx.part_id === partId);
-    }
-
-    if (transactionType && transactionType !== "all") {
-      const qType = transactionType.toLowerCase();
-      enriched = enriched.filter((tx) => (tx.transaction_type || "").toLowerCase() === qType);
-    }
-
-    // Sort by created_at DESC
-    enriched.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-
-    const total = enriched.length;
-    const paginated = enriched.slice(offset, offset + limit);
-
-    return { transactions: paginated, total };
+  if (partId) {
+    query = query.eq("part_id", partId);
   }
+
+  if (transactionType && transactionType !== "all") {
+    query = query.eq("transaction_type", transactionType.toLowerCase());
+  }
+
+  const { data, count, error } = await query
+    .order("created_at", { ascending: false })
+    .range(offset, offset + limit - 1);
+
+  if (error) {
+    console.error("Failed to fetch inventory transactions from Supabase:", error);
+    throw new Error(`Failed to fetch inventory transactions: ${error.message}`);
+  }
+
+  return { transactions: data as InventoryTransaction[] || [], total: count || 0 };
 }
 
 export interface RecordTransactionParams {
@@ -177,6 +141,8 @@ export interface RecordTransactionParams {
   referenceId?: string | null;
   notes?: string | null;
   createdBy?: string | null;
+  workspaceId?: string;
+  workspace_id?: string;
 }
 
 /**
@@ -194,11 +160,12 @@ export async function recordStockTransaction(params: RecordTransactionParams): P
     createdBy = null,
   } = params;
 
+  const targetWsId = params.workspace_id || params.workspaceId || getActiveWorkspaceId();
   const supabase = createClient();
   const now = new Date().toISOString();
 
   // 1. Fetch current stock
-  const part = await getPartById(partId);
+  const part = await getPartById(partId, targetWsId);
   if (!part) {
     throw new Error("Spare part not found in inventory catalog.");
   }
@@ -214,56 +181,38 @@ export async function recordStockTransaction(params: RecordTransactionParams): P
   }
 
   // 3. Update part stock in Master table
-  await updatePart(partId, { current_stock: newStock });
+  await updatePart(partId, { current_stock: newStock }, targetWsId);
 
   const effectiveCost = unitCost !== undefined ? Number(unitCost) : Number(part.purchase_price) || 0;
+  const txId = generateUUID();
 
-  // 4. Create Ledger Record
-  const newTx: InventoryTransaction = {
-    id: "tx-" + Date.now() + "-" + Math.random().toString(36).substring(2, 6),
-    part_id: partId,
-    transaction_type: transactionType.toLowerCase(),
-    quantity: quantityChange,
-    quantity_before: currentStock,
-    quantity_after: newStock,
-    unit_cost: effectiveCost,
-    reference_type: referenceType,
-    reference_id: referenceId,
-    notes: notes || `${transactionType.toUpperCase()} of ${Math.abs(quantityChange)} ${part.unit || "unit(s)"}`,
-    created_by: createdBy,
-    created_at: now,
-    part,
-  };
+  // 4. Create Ledger Record in Supabase
+  const { data, error } = await supabase
+    .from("inventory_transactions")
+    .insert({
+      id: txId,
+      workspace_id: targetWsId,
+      part_id: partId,
+      transaction_type: transactionType.toLowerCase(),
+      quantity: quantityChange,
+      quantity_before: currentStock,
+      quantity_after: newStock,
+      unit_cost: effectiveCost,
+      reference_type: referenceType,
+      reference_id: referenceId,
+      notes: notes || `${transactionType.toUpperCase()} of ${Math.abs(quantityChange)} ${part.unit || "unit(s)"}`,
+      created_by: createdBy,
+      created_at: now,
+    })
+    .select("*, part:parts(name, part_number, unit, brand)")
+    .single();
 
-  // Attempt to write to Supabase
-  try {
-    await withTimeout(
-      supabase.from("inventory_transactions").insert({
-        id: newTx.id,
-        part_id: partId,
-        transaction_type: newTx.transaction_type,
-        quantity: quantityChange,
-        quantity_before: currentStock,
-        quantity_after: newStock,
-        unit_cost: effectiveCost,
-        reference_type: referenceType,
-        reference_id: referenceId,
-        notes: newTx.notes,
-        created_by: createdBy,
-        created_at: now,
-      }),
-      1500
-    );
-  } catch (err: any) {
-    console.warn("Writing inventory transaction to local fallback:", err.message || err);
+  if (error) {
+    console.error("Failed to insert inventory transaction in Supabase:", error);
+    throw new Error(`Failed to record stock transaction: ${error.message}`);
   }
 
-  // Update local cache
-  const localList = getLocalTransactions();
-  localList.unshift(newTx);
-  saveLocalTransactions(localList);
-
-  return newTx;
+  return data as InventoryTransaction;
 }
 
 /**
@@ -274,7 +223,8 @@ export async function recordStockAdjustment(
   adjustmentQty: number,
   reason = "Physical Count Reconciled",
   notes = "",
-  createdBy = "Owner"
+  createdBy = "Owner",
+  workspaceId?: string
 ): Promise<InventoryTransaction> {
   const txType = adjustmentQty >= 0 ? "adjustment_in" : "adjustment_out";
   const formattedNotes = reason
@@ -289,5 +239,6 @@ export async function recordStockAdjustment(
     referenceId: "ADJ-" + Date.now().toString().slice(-6),
     notes: formattedNotes,
     createdBy,
+    workspace_id: workspaceId,
   });
 }

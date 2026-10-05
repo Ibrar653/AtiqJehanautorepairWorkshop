@@ -17,6 +17,8 @@ import { getPartById, getLocalParts } from "./parts-service";
 import { recordStockTransaction } from "./inventory-service";
 import { getActiveWorkspaceId } from "./workspace-service";
 import { DEFAULT_WORKSPACE_ID } from "@/lib/constants";
+import { generateUUID } from "@/lib/utils";
+
 
 const LOCAL_JOB_CARDS_KEY = "atiq_local_job_cards";
 
@@ -403,7 +405,6 @@ export async function getJobCards(
   workspaceId?: string
 ): Promise<{ jobCards: JobCardWithRelations[]; total: number }> {
   const targetWsId = workspaceId || getActiveWorkspaceId();
-  // Safe search normalization - NEVER call options.search.trim() without validating string type
   const search =
     typeof options?.search === "string"
       ? options.search.trim()
@@ -423,104 +424,57 @@ export async function getJobCards(
 
   const supabase = createClient();
 
-  try {
-    const fetchWithTimeout = async () => {
-      let query = supabase
-        .from("job_cards")
-        .select(
-          "id, invoice_number, payment_status, job_card_number, date, status, total, balance, customer_id, vehicle_id, customer_complaint, assigned_mechanic, workspace_id, is_deleted, created_at, customer:customers(id, name, mobile, email, company_name, trn_number, address), vehicle:vehicles(id, make, model, registration_number, chassis_vin, color, year, mileage), items:job_card_items(id, item_type, description, quantity, unit_price, cost_price, total_price)",
-          { count: "exact" }
-        )
-        .eq("is_deleted", false)
-        .eq("workspace_id", targetWsId);
+  let query = supabase
+    .from("job_cards")
+    .select(
+      "id, invoice_number, payment_status, job_card_number, date, status, total, balance, customer_id, vehicle_id, customer_complaint, assigned_mechanic, workspace_id, is_deleted, created_at, customer:customers(id, name, mobile, email, company_name, trn_number, address), vehicle:vehicles(id, make, model, registration_number, chassis_vin, color, year, mileage), items:job_card_items(id, item_type, description, quantity, unit_price, cost_price, total_price)",
+      { count: "exact" }
+    )
+    .eq("is_deleted", false)
+    .eq("workspace_id", targetWsId);
 
-      if (status) {
-        query = query.eq("status", status);
-      }
-
-      if (options.assigned_mechanic) {
-        query = query.ilike("assigned_mechanic", `%${options.assigned_mechanic}%`);
-      }
-
-      if (start) {
-        query = query.gte("date", start);
-      }
-      if (end) {
-        query = query.lte("date", end);
-      }
-
-      if (search) {
-        const orClauses = [
-          `job_card_number.ilike.%${search}%`,
-          `assigned_mechanic.ilike.%${search}%`,
-          `customer_complaint.ilike.%${search}%`,
-        ];
-        if (!isNaN(Number(search))) {
-          orClauses.push(`invoice_number.eq.${Number(search)}`);
-        }
-        query = query.or(orClauses.join(","));
-      }
-
-      const { data, count, error } = await query
-        .order("date", { ascending: false })
-        .order("created_at", { ascending: false })
-        .range(offset, offset + limit - 1);
-
-      if (error) throw error;
-      return { data: (data || []) as unknown as JobCardWithRelations[], count: count || 0 };
-    };
-
-    const result = await withTimeout(fetchWithTimeout(), 2000);
-    return { jobCards: result.data, total: result.count };
-  } catch (err: any) {
-    console.warn("Using local job cards store fallback:", err.message || err);
-
-    let list = getLocalJobCards(targetWsId).filter((jc) => !jc.is_deleted);
-
-    if (status) {
-      list = list.filter((jc) => jc.status === status);
-    }
-
-    if (options.assigned_mechanic) {
-      const mech = options.assigned_mechanic.toLowerCase();
-      list = list.filter((jc) => jc.assigned_mechanic && jc.assigned_mechanic.toLowerCase().includes(mech));
-    }
-
-    if (start || end) {
-      list = list.filter((jc) => {
-        const dStr = (jc.date || jc.created_at || "").slice(0, 10);
-        if (!dStr) return false;
-        if (start && dStr < start) return false;
-        if (end && dStr > end) return false;
-        return true;
-      });
-    }
-
-    if (search) {
-      const q = search.toLowerCase();
-      const qNum = Number(q);
-      list = list.filter(
-        (jc) =>
-          (jc.job_card_number && jc.job_card_number.toLowerCase().includes(q)) ||
-          (jc.customer?.name && jc.customer.name.toLowerCase().includes(q)) ||
-          (jc.customer?.mobile && jc.customer.mobile.toLowerCase().includes(q)) ||
-          (jc.vehicle?.registration_number && jc.vehicle.registration_number.toLowerCase().includes(q)) ||
-          (jc.vehicle?.chassis_vin && jc.vehicle.chassis_vin.toLowerCase().includes(q)) ||
-          (jc.assigned_mechanic && jc.assigned_mechanic.toLowerCase().includes(q)) ||
-          (!isNaN(qNum) && Number(jc.invoice_number) === qNum)
-      );
-    }
-
-    list.sort((a, b) => new Date(b.date || b.created_at).getTime() - new Date(a.date || a.created_at).getTime());
-
-    const total = list.length;
-    const paginated = list.slice(offset, offset + limit);
-
-    return { jobCards: paginated, total };
+  if (status) {
+    query = query.eq("status", status);
   }
+
+  if (options.assigned_mechanic) {
+    query = query.ilike("assigned_mechanic", `%${options.assigned_mechanic}%`);
+  }
+
+  if (start) {
+    query = query.gte("date", start);
+  }
+  if (end) {
+    query = query.lte("date", end);
+  }
+
+  if (search) {
+    const orClauses = [
+      `job_card_number.ilike.%${search}%`,
+      `assigned_mechanic.ilike.%${search}%`,
+      `customer_complaint.ilike.%${search}%`,
+    ];
+    if (!isNaN(Number(search))) {
+      orClauses.push(`invoice_number.eq.${Number(search)}`);
+    }
+    query = query.or(orClauses.join(","));
+  }
+
+  const { data, count, error } = await query
+    .order("date", { ascending: false })
+    .order("created_at", { ascending: false })
+    .range(offset, offset + limit - 1);
+
+  if (error) {
+    console.error("Failed to fetch job cards from Supabase:", error);
+    throw new Error(`Could not load job cards: ${error.message}`);
+  }
+
+  return { jobCards: (data || []) as unknown as JobCardWithRelations[], total: count || 0 };
 }
 
 export async function getJobCardById(id: string, workspaceId?: string): Promise<JobCardWithRelations | null> {
+  if (!id) return null;
   const targetWsId = workspaceId || getActiveWorkspaceId();
   const supabase = createClient();
 
@@ -531,7 +485,7 @@ export async function getJobCardById(id: string, workspaceId?: string): Promise<
       const l = Number(item.labour_charge) || 0;
       const calcTotal = item.item_type === "service" ? (q * p + l) : (q * p);
       return {
-        id: item.id || `item-${Math.random()}`,
+        id: item.id || generateUUID(),
         job_card_id: id,
         item_type: item.item_type || "service",
         service_id: item.service_id || null,
@@ -547,59 +501,28 @@ export async function getJobCardById(id: string, workspaceId?: string): Promise<
     });
   };
 
-  try {
-    const fetchWithTimeout = async () => {
-      const { data, error } = await supabase
-        .from("job_cards")
-        .select(
-          "*, customer:customers(*), vehicle:vehicles(*), items:job_card_items(*)"
-        )
-        .eq("id", id)
-        .eq("workspace_id", targetWsId)
-        .single();
+  const { data, error } = await supabase
+    .from("job_cards")
+    .select(
+      "*, customer:customers(*), vehicle:vehicles(*), items:job_card_items(*)"
+    )
+    .eq("id", id)
+    .eq("workspace_id", targetWsId)
+    .maybeSingle();
 
-      if (error) throw error;
-      if (data) {
-        data.items = normalizeJobCardItems(data.items);
-      }
-      return data as JobCardWithRelations;
-    };
-
-    return await withTimeout(fetchWithTimeout(), 2000);
-  } catch (err: any) {
-    console.warn(`Reading job card ${id} from local fallback:`, err.message || err);
-    const local = getLocalJobCards(targetWsId);
-    let found = local.find((j) => j.id === id);
-    if (!found) {
-      if (typeof window !== "undefined") {
-        try {
-          const raw = localStorage.getItem(LOCAL_JOB_CARDS_KEY);
-          if (raw) {
-            const parsed = JSON.parse(raw);
-            if (Array.isArray(parsed)) found = parsed.find((j: any) => j.id === id);
-          }
-        } catch {}
-      }
-      if (!found) found = inMemoryJobCards.find((j) => j.id === id);
-    }
-
-    if (found) {
-      const allCustomers = getLocalCustomers(targetWsId);
-      const allVehicles = getLocalVehicles();
-      const realCust = allCustomers.find((c) => c.id === found.customer_id) || found.customer;
-      const realVeh = allVehicles.find((v) => v.id === found.vehicle_id) || found.vehicle;
-
-      return {
-        ...found,
-        customer: realCust,
-        vehicle: realVeh,
-        items: normalizeJobCardItems(found.items),
-      } as JobCardWithRelations;
-    }
-
-    return null;
+  if (error) {
+    console.error(`Failed to fetch job card ${id} from Supabase:`, error);
+    throw new Error(`Could not load job card: ${error.message}`);
   }
+
+  if (data) {
+    data.items = normalizeJobCardItems(data.items);
+    return data as JobCardWithRelations;
+  }
+
+  return null;
 }
+
 
 export type JobCardItemInput = {
   id?: string;
@@ -655,243 +578,110 @@ export async function createJobCard(
     }
   }
 
-  const jobCardId = "jc-" + Date.now() + "-" + Math.random().toString(36).substring(2, 7);
+  const payloadId = (payload as any).id;
+  const jobCardId = payloadId && !payloadId.startsWith("jc-") ? payloadId : generateUUID();
 
-  try {
-    // 2. Insert job card
-    const { data: jobCard, error: jcError } = await withTimeout<any>(
-      supabase
-        .from("job_cards")
-        .insert({
-          ...finalPayload,
-          id: jobCardId,
-          is_deleted: false,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        })
-        .select()
-        .single(),
-      2000
-    );
+  // 2. Insert job card header
+  const { data: jobCard, error: jcError } = await supabase
+    .from("job_cards")
+    .insert({
+      ...finalPayload,
+      id: jobCardId,
+      is_deleted: false,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    })
+    .select()
+    .single();
 
-    if (jcError) throw jcError;
+  if (jcError) {
+    console.error("Supabase job_cards insertion error:", jcError);
+    throw new Error(`Could not save Job Card to cloud database: ${jcError.message}. No data was saved. Please retry.`);
+  }
 
-    // 3. Insert items & process inventory transactions
-    if (items && items.length > 0) {
-      const itemsPayload = items.map((it) => {
-        const itemType = ((it.item_type as string) === "spare_part" ? "part" : it.item_type) as any;
-        return {
-          job_card_id: jobCard.id,
-          item_type: itemType,
-          service_id: it.service_id || null,
-          part_id: it.part_id || null,
-          description: it.description,
-          quantity: it.quantity || 1,
-          unit_price: it.unit_price || 0,
-          cost_price: it.cost_price || 0,
-          labour_charge: it.labour_charge || 0,
-          total_price: it.total_price || 0,
-        };
-      });
-
-      const { error: itemsError } = await withTimeout(
-        supabase.from("job_card_items").insert(itemsPayload),
-        2000
-      );
-
-      if (itemsError) throw itemsError;
-    }
-
-    // 4. Record stock usage transactions for parts
-    if (payload.status !== "cancelled") {
-      for (const it of items) {
-        if ((it.item_type === "part" || (it.item_type as string) === "spare_part") && it.part_id) {
-          const qty = Number(it.quantity) || 1;
-          if (qty > 0) {
-            try {
-              await recordStockTransaction({
-                partId: it.part_id,
-                transactionType: "job_card_usage",
-                quantityChange: -qty,
-                unitCost: it.cost_price,
-                referenceType: "job_card",
-                referenceId: jobCard.id,
-                notes: `Job Card #${assignedInvoiceNumber}`,
-              });
-            } catch (stkErr) {
-              console.error("Stock transaction error on JC create:", stkErr);
-            }
-          }
-        }
-      }
-    }
-
-    // 5. Record Initial Advance / Partial Payment if paid > 0
-    const initialPaid = Number(payload.paid) || 0;
-    if (initialPaid > 0) {
-      try {
-        const { recordPayment } = await import("./payment-service");
-        await recordPayment({
-          workspace_id: targetWsId,
-          job_card_id: jobCard.id,
-          invoice_id: null,
-          customer_id: jobCard.customer_id,
-          amount: initialPaid,
-          payment_method: ((payload as any).payment_method || (payload.payment_status?.toLowerCase().includes("bank") ? "bank_transfer" : payload.payment_status?.toLowerCase().includes("card") ? "credit_card" : "cash")) as any,
-          payment_date: (payload as any).payment_date || payload.date || new Date().toISOString().slice(0, 10),
-          reference_number: (payload as any).payment_reference || assignedJobCardNumber,
-          notes: (payload as any).payment_notes || "Advance / Initial Payment on Job Card",
-          created_by: payload.created_by || "Owner",
-        });
-      } catch (payErr) {
-        console.warn("Initial Job Card payment recording notice:", payErr);
-      }
-    }
-
-    const createdRecord = await getJobCardById(jobCard.id);
-    return createdRecord;
-  } catch (err: any) {
-    console.warn("Creating job card in local fallback store:", err.message || err);
-
-    const local = getLocalJobCards(targetWsId);
-    const jcNumber = payload.job_card_number || getNextJobCardNumber(targetWsId);
-    const invNumber = payload.invoice_number || getNextInvoiceNumber(targetWsId);
-
-    const allCustomers = getLocalCustomers(targetWsId);
-    const allVehicles = getLocalVehicles();
-    const realCust = allCustomers.find((c) => c.id === payload.customer_id) || null;
-    const realVeh = allVehicles.find((v) => v.id === payload.vehicle_id) || null;
-
-    let serviceTotal = 0;
-    let labourTotal = 0;
-    let partsTotal = 0;
-
-    const itemRecords = (items || []).map((it) => {
-      const q = Number(it.quantity) || 1;
-      const p = Number(it.unit_price) || 0;
-      const l = Number(it.labour_charge) || 0;
-      const cost = Number(it.cost_price) || 0;
+  // 3. Insert items with workspace_id
+  if (items && items.length > 0) {
+    const itemsPayload = items.map((it) => {
       const itemType = ((it.item_type as string) === "spare_part" ? "part" : it.item_type) as any;
-      const lineTotal = itemType === "service" ? (q * p + l) : (q * p);
-
-      if (itemType === "service") {
-        serviceTotal += (q * p);
-        labourTotal += l;
-      } else if (itemType === "part") {
-        partsTotal += (q * p);
-      }
-
+      const itemId = it.id && !it.id.startsWith("item-") && !it.id.startsWith("jci-") ? it.id : generateUUID();
       return {
-        id: "item-" + Date.now() + "-" + Math.random().toString(36).substring(2, 6),
-        job_card_id: jobCardId,
+        id: itemId,
+        job_card_id: jobCard.id,
+        workspace_id: targetWsId,
         item_type: itemType,
         service_id: it.service_id || null,
         part_id: it.part_id || null,
         description: it.description,
-        quantity: q,
-        unit_price: p,
-        cost_price: cost,
-        labour_charge: l,
-        total_price: lineTotal,
-        created_at: new Date().toISOString(),
+        quantity: it.quantity || 1,
+        unit_price: it.unit_price || 0,
+        cost_price: it.cost_price || 0,
+        labour_charge: it.labour_charge || 0,
+        total_price: it.total_price || 0,
       };
     });
 
-    const subtotal = serviceTotal + labourTotal + partsTotal;
-    const discount = Number(payload.discount) || 0;
-    const vatRate = payload.vat_rate !== undefined && payload.vat_rate !== null && Number.isFinite(Number(payload.vat_rate))
-      ? Number(payload.vat_rate)
-      : 5;
-    const taxable = Math.max(0, subtotal - discount);
-    const vatAmount = Math.round(taxable * vatRate) / 100;
-    const total = taxable + vatAmount;
+    const { error: itemsError } = await supabase
+      .from("job_card_items")
+      .insert(itemsPayload);
 
-    const initialPaid = Number(payload.paid) || 0;
-    const balance = Math.max(0, total - initialPaid);
-    let finalPaymentStatus = payload.payment_status || "Pending";
-    if (balance === 0 && total > 0) {
-      finalPaymentStatus = "Paid Full";
-    } else if (initialPaid > 0) {
-      finalPaymentStatus = "Partial";
+    if (itemsError) {
+      console.error("Supabase job_card_items insertion error:", itemsError);
+      // Clean up orphaned job card
+      await supabase.from("job_cards").delete().eq("id", jobCard.id);
+      throw new Error(`Could not save Job Card items to cloud database: ${itemsError.message}. No data was saved. Please retry.`);
     }
+  }
 
-    const newJobCard: any = {
-      id: jobCardId,
-      workspace_id: targetWsId,
-      job_card_number: jcNumber,
-      invoice_number: invNumber || assignedInvoiceNumber,
-      invoice_number_mode: payload.invoice_number_mode || "auto",
-      payment_status: finalPaymentStatus,
-      date: payload.date || new Date().toISOString().slice(0, 10),
-      customer_id: payload.customer_id,
-      vehicle_id: payload.vehicle_id,
-      mileage_in: payload.mileage_in || null,
-      customer_complaint: payload.customer_complaint || null,
-      work_details: payload.work_details || null,
-      discount,
-      subtotal,
-      vat_rate: vatRate,
-      vat_amount: vatAmount,
-      total,
-      paid: initialPaid,
-      balance,
-      status: payload.status || "new",
-      assigned_mechanic: payload.assigned_mechanic || null,
-      notes: payload.notes || null,
-      created_by: null,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      customer: realCust,
-      vehicle: realVeh,
-      items: itemRecords,
-    };
-
-    // Deduct stock in local inventory ledger
-    if (payload.status !== "cancelled") {
-      for (const it of items) {
-        if ((it.item_type === "part" || (it.item_type as string) === "spare_part") && it.part_id) {
-          const qty = Number(it.quantity) || 1;
-          if (qty > 0) {
+  // 4. Record stock usage transactions for parts
+  if (payload.status !== "cancelled") {
+    for (const it of items) {
+      if ((it.item_type === "part" || (it.item_type as string) === "spare_part") && it.part_id) {
+        const qty = Number(it.quantity) || 1;
+        if (qty > 0) {
+          try {
             await recordStockTransaction({
               partId: it.part_id,
               transactionType: "job_card_usage",
               quantityChange: -qty,
               unitCost: it.cost_price,
               referenceType: "job_card",
-              referenceId: jobCardId,
+              referenceId: jobCard.id,
               notes: `Job Card #${assignedInvoiceNumber}`,
             });
+          } catch (stkErr) {
+            console.error("Stock transaction error on JC create:", stkErr);
           }
         }
       }
     }
+  }
 
-    // Record local payment if advance > 0
-    if (initialPaid > 0) {
-      const { getLocalPayments, saveLocalPayments } = await import("./payment-service");
-      const localPayments = getLocalPayments();
-      localPayments.unshift({
-        id: "pay-" + Date.now() + "-" + Math.random().toString(36).substring(2, 6),
+  // 5. Record Initial Advance / Partial Payment if paid > 0
+  const initialPaid = Number(payload.paid) || 0;
+  if (initialPaid > 0) {
+    try {
+      const { recordPayment } = await import("./payment-service");
+      await recordPayment({
         workspace_id: targetWsId,
-        job_card_id: jobCardId,
-        customer_id: payload.customer_id,
+        job_card_id: jobCard.id,
+        invoice_id: null,
+        customer_id: jobCard.customer_id,
         amount: initialPaid,
-        payment_method: ((payload as any).payment_method || (finalPaymentStatus.toLowerCase().includes("bank") ? "bank_transfer" : finalPaymentStatus.toLowerCase().includes("card") ? "credit_card" : "cash")),
+        payment_method: ((payload as any).payment_method || (payload.payment_status?.toLowerCase().includes("bank") ? "bank_transfer" : payload.payment_status?.toLowerCase().includes("card") ? "credit_card" : "cash")) as any,
         payment_date: (payload as any).payment_date || payload.date || new Date().toISOString().slice(0, 10),
-        reference_number: (payload as any).payment_reference || jcNumber,
+        reference_number: (payload as any).payment_reference || assignedJobCardNumber,
         notes: (payload as any).payment_notes || "Advance / Initial Payment on Job Card",
         created_by: payload.created_by || "Owner",
-        created_at: new Date().toISOString(),
       });
-      saveLocalPayments(localPayments);
+    } catch (payErr) {
+      console.warn("Initial Job Card payment recording notice:", payErr);
     }
-
-    local.unshift(newJobCard);
-    saveLocalJobCards(local, targetWsId);
-
-    return newJobCard as JobCardWithRelations;
   }
+
+  const createdRecord = await getJobCardById(jobCard.id, targetWsId);
+  return createdRecord;
 }
+
 
 export async function updateJobCard(
   id: string,
@@ -899,8 +689,9 @@ export async function updateJobCard(
   items?: JobCardItemInput[]
 ) {
   const supabase = createClient();
+  const targetWsId = await getActiveWorkspaceId();
 
-  const existingRecord = await getJobCardById(id);
+  const existingRecord = await getJobCardById(id, targetWsId);
   if (!existingRecord) {
     throw new Error(`Job Card #${id} not found.`);
   }
@@ -908,6 +699,7 @@ export async function updateJobCard(
   const wasCancelled = existingRecord.status === "cancelled" || !!existingRecord.is_deleted;
   const willBeCancelled = payload.status === "cancelled" || payload.is_deleted === true;
   const invoiceNum = existingRecord.invoice_number || existingRecord.job_card_number || id;
+  const wsId = existingRecord.workspace_id || targetWsId;
 
   // 1. Calculate previously allocated parts usage
   const oldPartQtyMap = new Map<string, number>();
@@ -931,7 +723,7 @@ export async function updateJobCard(
         newPartQtyMap.set(it.part_id, prev + (Number(it.quantity) || 1));
 
         if (it.cost_price === undefined) {
-          const part = await getPartById(it.part_id);
+          const part = await getPartById(it.part_id, wsId);
           it.cost_price = part ? Number(part.purchase_price) || 0 : 0;
         }
       }
@@ -946,7 +738,7 @@ export async function updateJobCard(
     const delta = newQty - oldQty;
 
     if (delta > 0) {
-      const part = await getPartById(partId);
+      const part = await getPartById(partId, wsId);
       if (part && part.current_stock < delta) {
         throw new Error(
           `Insufficient stock for "${part.name}". Available stock is ${part.current_stock}, requested additional ${delta} unit(s).`
@@ -963,7 +755,7 @@ export async function updateJobCard(
 
     if (delta > 0) {
       // Additional units used
-      const part = await getPartById(partId);
+      const part = await getPartById(partId, wsId);
       const unitCost = part ? Number(part.purchase_price) || 0 : undefined;
       await recordStockTransaction({
         partId,
@@ -973,10 +765,11 @@ export async function updateJobCard(
         referenceType: "job_card",
         referenceId: id,
         notes: `Job Card #${invoiceNum} (Used +${delta} unit(s))`,
+        workspace_id: wsId,
       });
     } else if (delta < 0) {
       // Units returned / reduced / cancelled
-      const part = await getPartById(partId);
+      const part = await getPartById(partId, wsId);
       const unitCost = part ? Number(part.purchase_price) || 0 : undefined;
       const returnedQty = Math.abs(delta);
       await recordStockTransaction({
@@ -989,149 +782,72 @@ export async function updateJobCard(
         notes: willBeCancelled
           ? `Job Card #${invoiceNum} Cancelled (Returned ${returnedQty} unit(s))`
           : `Job Card #${invoiceNum} (Returned ${returnedQty} unit(s))`,
+        workspace_id: wsId,
       });
     }
   }
 
-  try {
-    // 5. Update job card header in Supabase
-    const { data: updatedHeader, error: jcError } = await withTimeout<any>(
-      supabase
-        .from("job_cards")
-        .update({
-          ...payload,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", id)
-        .select()
-        .single(),
-      2000
-    );
+  // 5. Update job card header in Supabase
+  const updatePayload: any = {
+    ...payload,
+    updated_at: new Date().toISOString(),
+  };
 
-    if (jcError) throw jcError;
+  const { data: updatedHeader, error: jcError } = await supabase
+    .from("job_cards")
+    .update(updatePayload)
+    .eq("id", id)
+    .select()
+    .single();
 
-    // 6. Update items in Supabase if items array was provided
-    if (items) {
-      await withTimeout<any>(
-        supabase.from("job_card_items").delete().eq("job_card_id", id),
-        2000
-      );
-
-      if (items.length > 0) {
-        const itemsWithJcId = items.map((it) => {
-          const itemType = ((it.item_type as string) === "spare_part" ? "part" : it.item_type) as any;
-          return {
-            job_card_id: id,
-            item_type: itemType,
-            service_id: it.service_id || null,
-            part_id: it.part_id || null,
-            description: it.description,
-            quantity: it.quantity || 1,
-            unit_price: it.unit_price || 0,
-            cost_price: it.cost_price || 0,
-            labour_charge: it.labour_charge || 0,
-            total_price: it.total_price || 0,
-          };
-        });
-
-        await withTimeout<any>(
-          supabase.from("job_card_items").insert(itemsWithJcId),
-          2000
-        );
-      }
-    }
-
-    return await getJobCardById(id);
-  } catch (err: any) {
-    console.warn(`Updating job card ${id} in local fallback store:`, err.message || err);
-
-    let local = getLocalJobCards();
-    const idx = local.findIndex((jc) => jc.id === id);
-
-    if (idx !== -1) {
-      const existing = local[idx];
-      let subtotal = existing.subtotal;
-      let itemRecords = existing.items;
-
-      if (items) {
-        let sTotal = 0;
-        let lTotal = 0;
-        let pTotal = 0;
-
-        itemRecords = items.map((it) => {
-          const q = Number(it.quantity) || 1;
-          const p = Number(it.unit_price) || 0;
-          const l = Number(it.labour_charge) || 0;
-          const cost = Number(it.cost_price) || 0;
-          const itemType = ((it.item_type as string) === "spare_part" ? "part" : it.item_type) as any;
-          const lineTotal = itemType === "service" ? (q * p + l) : (q * p);
-
-          if (itemType === "service") {
-            sTotal += (q * p);
-            lTotal += l;
-          } else if (itemType === "part") {
-            pTotal += (q * p);
-          }
-
-          return {
-            id: it.id || "item-" + Date.now() + "-" + Math.random().toString(36).substring(2, 6),
-            job_card_id: id,
-            item_type: itemType,
-            service_id: it.service_id || null,
-            part_id: it.part_id || null,
-            description: it.description,
-            quantity: q,
-            unit_price: p,
-            cost_price: cost,
-            labour_charge: l,
-            total_price: lineTotal,
-            created_at: new Date().toISOString(),
-          };
-        });
-
-        subtotal = sTotal + lTotal + pTotal;
-      }
-
-      const allCustomers = getLocalCustomers();
-      const allVehicles = getLocalVehicles();
-      const updatedCustId = payload.customer_id !== undefined ? payload.customer_id : existing.customer_id;
-      const updatedVehId = payload.vehicle_id !== undefined ? payload.vehicle_id : existing.vehicle_id;
-      const realCust = allCustomers.find((c) => c.id === updatedCustId) || existing.customer || null;
-      const realVeh = allVehicles.find((v) => v.id === updatedVehId) || existing.vehicle || null;
-
-      const discount = payload.discount !== undefined ? Number(payload.discount) : existing.discount;
-      const vatRate = payload.vat_rate !== undefined ? Number(payload.vat_rate) : existing.vat_rate;
-      const taxable = Math.max(0, subtotal - discount);
-      const vatAmount = Math.round(taxable * vatRate) / 100;
-      const total = taxable + vatAmount;
-
-      const preservedInvoiceNumber = existing.invoice_number || getNextInvoiceNumber();
-      const updatedPaymentStatus = payload.payment_status !== undefined ? payload.payment_status : (existing.payment_status || "Pending");
-
-      local[idx] = {
-        ...existing,
-        ...payload,
-        invoice_number: preservedInvoiceNumber,
-        payment_status: updatedPaymentStatus,
-        customer_id: updatedCustId,
-        vehicle_id: updatedVehId,
-        customer: realCust,
-        vehicle: realVeh,
-        subtotal,
-        discount,
-        vat_rate: vatRate,
-        vat_amount: vatAmount,
-        total,
-        balance: total - (existing.paid || 0),
-        items: itemRecords,
-        updated_at: new Date().toISOString(),
-      };
-
-      saveLocalJobCards(local);
-      return local[idx] as JobCardWithRelations;
-    }
-    throw err;
+  if (jcError) {
+    console.error("Failed to update job card in Supabase:", jcError);
+    throw new Error(`Failed to update job card: ${jcError.message}`);
   }
+
+  // 6. Update items in Supabase if items array was provided
+  if (items) {
+    const { error: delError } = await supabase
+      .from("job_card_items")
+      .delete()
+      .eq("job_card_id", id);
+
+    if (delError) {
+      console.error("Failed to clear old job card items:", delError);
+      throw new Error(`Failed to clear old job card items: ${delError.message}`);
+    }
+
+    if (items.length > 0) {
+      const itemsWithJcId = items.map((it) => {
+        const itemType = ((it.item_type as string) === "spare_part" ? "part" : it.item_type) as any;
+        return {
+          id: it.id && it.id.length === 36 ? it.id : generateUUID(),
+          job_card_id: id,
+          workspace_id: wsId,
+          item_type: itemType,
+          service_id: it.service_id || null,
+          part_id: it.part_id || null,
+          description: it.description || "",
+          quantity: Number(it.quantity) || 1,
+          unit_price: Number(it.unit_price) || 0,
+          cost_price: Number(it.cost_price) || 0,
+          labour_charge: Number(it.labour_charge) || 0,
+          total_price: Number(it.total_price) || 0,
+        };
+      });
+
+      const { error: insertItemsErr } = await supabase
+        .from("job_card_items")
+        .insert(itemsWithJcId);
+
+      if (insertItemsErr) {
+        console.error("Failed to insert updated job card items:", insertItemsErr);
+        throw new Error(`Failed to update job card items: ${insertItemsErr.message}`);
+      }
+    }
+  }
+
+  return await getJobCardById(id, wsId);
 }
 
 export async function updateJobCardStatus(id: string, status: JobCardStatus) {
@@ -1140,10 +856,11 @@ export async function updateJobCardStatus(id: string, status: JobCardStatus) {
 
 export async function deleteJobCard(id: string, softDelete = true) {
   const supabase = createClient();
+  const targetWsId = await getActiveWorkspaceId();
 
   // Return parts back to inventory on cancellation / deletion
   try {
-    const existing = await getJobCardById(id);
+    const existing = await getJobCardById(id, targetWsId);
     if (existing && existing.items && existing.status !== "cancelled" && !existing.is_deleted) {
       for (const it of existing.items) {
         if ((it.item_type === "part" || (it.item_type as string) === "spare_part") && it.part_id) {
@@ -1156,6 +873,7 @@ export async function deleteJobCard(id: string, softDelete = true) {
               referenceType: "job_card",
               referenceId: id,
               notes: `Job Card Void/Delete (Returned ${q} unit(s))`,
+              workspace_id: existing.workspace_id || targetWsId,
             });
           }
         }
@@ -1165,40 +883,25 @@ export async function deleteJobCard(id: string, softDelete = true) {
     console.warn("Returning parts notice on delete:", err);
   }
 
-  try {
-    if (softDelete) {
-      const { error } = await supabase
-        .from("job_cards")
-        .update({
-          is_deleted: true,
-          deleted_at: new Date().toISOString(),
-          status: "cancelled",
-        })
-        .eq("id", id);
-      if (error) throw error;
-    } else {
-      const { error } = await supabase.from("job_cards").delete().eq("id", id);
-      if (error) throw error;
+  if (softDelete) {
+    const { error } = await supabase
+      .from("job_cards")
+      .update({
+        is_deleted: true,
+        deleted_at: new Date().toISOString(),
+        status: "cancelled",
+      })
+      .eq("id", id);
+    if (error) {
+      console.error("Failed to soft-delete job card in Supabase:", error);
+      throw new Error(`Failed to delete job card: ${error.message}`);
     }
-    return true;
-  } catch (err: any) {
-    console.warn("Deleting/voiding job card in local store fallback:", err.message || err);
-    let local = getLocalJobCards();
-    if (softDelete) {
-      local = local.map((jc) =>
-        jc.id === id
-          ? {
-              ...jc,
-              is_deleted: true,
-              deleted_at: new Date().toISOString(),
-              status: "cancelled",
-            }
-          : jc
-      );
-    } else {
-      local = local.filter((jc) => jc.id !== id);
+  } else {
+    const { error } = await supabase.from("job_cards").delete().eq("id", id);
+    if (error) {
+      console.error("Failed to hard-delete job card in Supabase:", error);
+      throw new Error(`Failed to permanently delete job card: ${error.message}`);
     }
-    saveLocalJobCards(local);
-    return true;
   }
+  return true;
 }

@@ -13,6 +13,7 @@ import {
 } from "@/lib/constants";
 import { getLocalUsers } from "./user-service";
 import { isTableMissingInSupabase, markTableMissingInSupabase } from "./supabase-schema-status";
+import { generateUUID } from "@/lib/utils";
 import type {
   Workspace,
   WorkspaceMember,
@@ -853,20 +854,14 @@ export async function createWorkspace(
   const cleanEmail = input.owner_email.trim().toLowerCase();
   const cleanOwnerName = input.owner_name.trim();
 
-  // Generate unique workspace ID
-  const slug = cleanName
-    .toLowerCase()
-    .replace(/[^a-z0-9]/g, "-")
-    .replace(/-+/g, "-")
-    .slice(0, 15);
-  const newWsId = `ws-${slug}-${Date.now().toString(36)}`;
+  const newWsId = generateUUID();
   const now = new Date().toISOString();
 
   const newWorkspace: Workspace = {
     id: newWsId,
     name: cleanName,
     business_name: cleanBusinessName,
-    owner_user_id: `usr-${Date.now().toString(36)}`,
+    owner_user_id: generateUUID(),
     owner_name: cleanOwnerName,
     owner_email: cleanEmail,
     phone: input.phone?.trim() || null,
@@ -883,7 +878,7 @@ export async function createWorkspace(
   };
 
   const newMember: WorkspaceMember = {
-    id: `wm-${Date.now().toString(36)}`,
+    id: generateUUID(),
     workspace_id: newWsId,
     user_id: cleanEmail,
     role: "owner",

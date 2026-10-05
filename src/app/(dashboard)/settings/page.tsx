@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import Link from "next/link";
 import { PageHeader } from "@/components/shared/page-header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -605,6 +606,20 @@ export default function SettingsPage() {
                 OWNER
               </span>
             </button>
+
+            <Link
+              href="/settings/reconciliation"
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50/70 dark:hover:bg-emerald-950/30 hover:border-emerald-300 shadow-2xs transition-all"
+              title="View read-only database reconciliation report"
+            >
+              <ShieldCheck className="w-3.5 h-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" aria-hidden="true" />
+              <span className="text-[12px] font-semibold text-emerald-600 dark:text-emerald-400">
+                DB Reconciliation
+              </span>
+              <span className="inline-flex items-center text-[9px] font-bold uppercase tracking-[0.03em] px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                AUDIT
+              </span>
+            </Link>
 
             <button
               type="button"

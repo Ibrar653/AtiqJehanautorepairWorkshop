@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/client";
+import { generateUUID } from "@/lib/utils";
 import type { Part, PartInsert, PartUpdate } from "@/types/database";
 import { getActiveWorkspaceId } from "./workspace-service";
 import { DEFAULT_WORKSPACE_ID } from "@/lib/constants";
@@ -478,7 +479,7 @@ export async function getPartById(id: string, workspaceId?: string): Promise<Par
  * Create a new spare part
  */
 export async function createPart(payload: PartInsert, workspaceId?: string): Promise<Part> {
-  const targetWsId = workspaceId || getActiveWorkspaceId();
+  const targetWsId = workspaceId || await getActiveWorkspaceId();
   const supabase = createClient();
   const now = new Date().toISOString();
 
@@ -491,112 +492,58 @@ export async function createPart(payload: PartInsert, workspaceId?: string): Pro
   }
 
   const initialStock = Math.max(0, Number(payload.current_stock) || 0);
+  const partId = (payload as any).id && (payload as any).id.length === 36 ? (payload as any).id : generateUUID();
 
-  try {
-    const fetchWithTimeout = async () => {
-      const { data, error } = await supabase
-        .from("parts")
-        .insert({
-          ...payload,
-          workspace_id: payload.workspace_id || targetWsId,
-          current_stock: initialStock,
-          created_at: now,
-          updated_at: now,
-        })
-        .select()
-        .single();
+  const insertData = {
+    ...payload,
+    id: partId,
+    workspace_id: payload.workspace_id || targetWsId,
+    current_stock: initialStock,
+    created_at: now,
+    updated_at: now,
+  };
 
-      if (error) throw error;
-      return data as Part;
-    };
+  const { data: created, error } = await supabase
+    .from("parts")
+    .insert(insertData)
+    .select()
+    .single();
 
-    const created = await withTimeout(fetchWithTimeout(), 2000);
-
-    // If initial stock > 0, record initial stock-in transaction
-    if (initialStock > 0) {
-      try {
-        await supabase.from("inventory_transactions").insert({
-          part_id: created.id,
-          transaction_type: "opening_stock",
-          quantity: initialStock,
-          quantity_before: 0,
-          quantity_after: initialStock,
-          unit_cost: Number(payload.purchase_price) || 0,
-          reference_type: "opening_stock",
-          reference_id: "INIT-" + created.id.slice(-6),
-          notes: "Opening Stock Registration",
-          created_at: now,
-        });
-      } catch {
-        // Non-blocking transaction log
-      }
-    }
-
-    // Update local cache
-    const list = getLocalParts(targetWsId);
-    list.unshift(created);
-    saveLocalParts(list, targetWsId);
-    return created;
-  } catch (err: any) {
-    console.warn("Creating part in local catalog fallback:", err.message || err);
-    const newPart: Part = {
-      id: "prt-" + Date.now() + "-" + Math.random().toString(36).substring(2, 6),
-      workspace_id: payload.workspace_id || targetWsId,
-      name: payload.name.trim(),
-      part_number: payload.part_number?.trim() || null,
-      brand: payload.brand?.trim() || null,
-      description: payload.description?.trim() || null,
-      unit: payload.unit?.trim() || "piece",
-      purchase_price: Number(payload.purchase_price) || 0,
-      selling_price: Number(payload.selling_price) || 0,
-      current_stock: initialStock,
-      minimum_stock: Math.max(0, Number(payload.minimum_stock) || 0),
-      supplier_id: payload.supplier_id || null,
-      location: payload.location?.trim() || null,
-      is_active: payload.is_active !== undefined ? payload.is_active : true,
-      created_at: now,
-      updated_at: now,
-    };
-
-    const list = getLocalParts(targetWsId);
-    list.unshift(newPart);
-    saveLocalParts(list, targetWsId);
-
-    // Record initial stock transaction in local fallback
-    if (initialStock > 0) {
-      try {
-        const { getLocalTransactions, saveLocalTransactions } = require("./inventory-service");
-        const txList = getLocalTransactions();
-        txList.unshift({
-          id: "tx-" + Date.now() + "-" + Math.random().toString(36).substring(2, 6),
-          part_id: newPart.id,
-          transaction_type: "opening_stock",
-          quantity: initialStock,
-          quantity_before: 0,
-          quantity_after: initialStock,
-          unit_cost: Number(payload.purchase_price) || 0,
-          reference_type: "opening_stock",
-          reference_id: "INIT-" + newPart.id.slice(-6),
-          notes: "Opening Stock Registration",
-          created_by: "Owner",
-          created_at: now,
-          part: newPart,
-        });
-        saveLocalTransactions(txList);
-      } catch (txErr) {
-        console.warn("Writing opening stock fallback note:", txErr);
-      }
-    }
-
-    return newPart;
+  if (error) {
+    console.error("Failed to create spare part in Supabase:", error);
+    throw new Error(`Failed to create spare part: ${error.message}`);
   }
+
+  // If initial stock > 0, record initial stock-in transaction
+  if (initialStock > 0) {
+    try {
+      await supabase.from("inventory_transactions").insert({
+        id: generateUUID(),
+        workspace_id: targetWsId,
+        part_id: created.id,
+        transaction_type: "opening_stock",
+        quantity: initialStock,
+        quantity_before: 0,
+        quantity_after: initialStock,
+        unit_cost: Number(payload.purchase_price) || 0,
+        reference_type: "opening_stock",
+        reference_id: "INIT-" + created.id.slice(-6),
+        notes: "Opening Stock Registration",
+        created_at: now,
+      });
+    } catch (txErr) {
+      console.warn("Initial opening stock transaction notice:", txErr);
+    }
+  }
+
+  return created as Part;
 }
 
 /**
  * Update an existing spare part
  */
 export async function updatePart(id: string, payload: PartUpdate, workspaceId?: string): Promise<Part> {
-  const targetWsId = workspaceId || getActiveWorkspaceId();
+  const targetWsId = workspaceId || await getActiveWorkspaceId();
   const supabase = createClient();
   const now = new Date().toISOString();
 
@@ -608,7 +555,7 @@ export async function updatePart(id: string, payload: PartUpdate, workspaceId?: 
     }
   }
 
-  // Parse and sanitize fields to prevent invalid conversions or NaN
+  // Parse and sanitize fields
   const cleanPayload: PartUpdate = { ...payload };
   if (cleanPayload.name !== undefined) {
     cleanPayload.name = cleanPayload.name.trim();
@@ -645,78 +592,22 @@ export async function updatePart(id: string, payload: PartUpdate, workspaceId?: 
     cleanPayload.current_stock = isNaN(parsedStock) ? 0 : Math.max(0, parsedStock);
   }
 
-  const updateLocalCache = (item: Part) => {
-    let all: Part[] = [];
-    if (typeof window !== "undefined") {
-      try {
-        const raw = localStorage.getItem(LOCAL_PARTS_KEY);
-        if (raw) all = JSON.parse(raw);
-      } catch {}
-    }
-    if (!all || all.length === 0) all = [...inMemoryParts];
-    const idx = all.findIndex((p) => p.id === id);
-    if (idx !== -1) {
-      all[idx] = { ...all[idx], ...item, updated_at: now };
-    } else {
-      all.unshift(item);
-    }
-    inMemoryParts = all;
-    if (typeof window !== "undefined") {
-      try {
-        localStorage.setItem(LOCAL_PARTS_KEY, JSON.stringify(all));
-      } catch {}
-    }
-  };
+  const { data, error } = await supabase
+    .from("parts")
+    .update({
+      ...cleanPayload,
+      updated_at: now,
+    })
+    .eq("id", id)
+    .select()
+    .single();
 
-  try {
-    const fetchWithTimeout = async () => {
-      const { data, error } = await supabase
-        .from("parts")
-        .update({
-          ...cleanPayload,
-          updated_at: now,
-        })
-        .eq("id", id)
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data as Part;
-    };
-
-    const updated = await withTimeout(fetchWithTimeout(), 4000);
-    updateLocalCache(updated);
-    return updated;
-  } catch (err: any) {
-    console.warn("Updating part in local catalog fallback:", err.message || err);
-    let all: Part[] = [];
-    if (typeof window !== "undefined") {
-      try {
-        const raw = localStorage.getItem(LOCAL_PARTS_KEY);
-        if (raw) all = JSON.parse(raw);
-      } catch {}
-    }
-    if (!all || all.length === 0) all = [...inMemoryParts];
-    const idx = all.findIndex((p) => p.id === id);
-    if (idx !== -1) {
-      const updatedItem: Part = {
-        ...all[idx],
-        ...cleanPayload,
-        updated_at: now,
-      };
-      all[idx] = updatedItem;
-      inMemoryParts = all;
-      if (typeof window !== "undefined") {
-        try {
-          localStorage.setItem(LOCAL_PARTS_KEY, JSON.stringify(all));
-        } catch (e) {
-          console.error("Failed to save updated local part", e);
-        }
-      }
-      return updatedItem;
-    }
-    throw err;
+  if (error) {
+    console.error(`Failed to update spare part ${id} in Supabase:`, error);
+    throw new Error(`Failed to update spare part: ${error.message}`);
   }
+
+  return data as Part;
 }
 
 /**
@@ -734,7 +625,6 @@ export async function sellSparePartStandalone(
   quantity: number,
   notes = "Standalone Over-The-Counter Sale"
 ): Promise<{ success: boolean; message?: string }> {
-  // Use inventory transaction logic for atomic stock ledger
   const { recordStockTransaction } = await import("./inventory-service");
   await recordStockTransaction({
     partId,
@@ -750,62 +640,20 @@ export async function sellSparePartStandalone(
  * Check if a spare part has historical records across Job Cards, Inventory Transactions, Purchases, or Invoices
  */
 export async function getPartUsageCount(partId: string): Promise<number> {
-  let usageCount = 0;
   const supabase = createClient();
 
   try {
-    const fetchWithTimeout = async () => {
-      const [jcRes, itRes, piRes, invRes] = await Promise.all([
-        supabase.from("job_card_items").select("id", { count: "exact", head: true }).eq("part_id", partId),
-        supabase.from("inventory_transactions").select("id", { count: "exact", head: true }).eq("part_id", partId),
-        supabase.from("purchase_items").select("id", { count: "exact", head: true }).eq("part_id", partId),
-        supabase.from("invoice_items").select("id", { count: "exact", head: true }).eq("part_id", partId),
-      ]);
+    const [jcRes, itRes, piRes, invRes] = await Promise.all([
+      supabase.from("job_card_items").select("id", { count: "exact", head: true }).eq("part_id", partId),
+      supabase.from("inventory_transactions").select("id", { count: "exact", head: true }).eq("part_id", partId),
+      supabase.from("purchase_items").select("id", { count: "exact", head: true }).eq("part_id", partId),
+      supabase.from("invoice_items").select("id", { count: "exact", head: true }).eq("part_id", partId),
+    ]);
 
-      if (jcRes.error || itRes.error || piRes.error || invRes.error) {
-        throw new Error("Supabase usage check error, checking local store");
-      }
-
-      return (jcRes.count || 0) + (itRes.count || 0) + (piRes.count || 0) + (invRes.count || 0);
-    };
-
-    usageCount = await withTimeout(fetchWithTimeout(), 1500);
+    return (jcRes.count || 0) + (itRes.count || 0) + (piRes.count || 0) + (invRes.count || 0);
   } catch {
-    usageCount = 0;
+    return 0;
   }
-
-  // Also check local fallback stores
-  try {
-    const { getLocalJobCards } = require("./job-card-service");
-    const localJobCards = getLocalJobCards();
-    localJobCards.forEach((jc: any) => {
-      if (Array.isArray(jc.items)) {
-        jc.items.forEach((it: any) => {
-          if (it.part_id === partId) usageCount++;
-        });
-      }
-    });
-  } catch {}
-
-  try {
-    const { getLocalTransactions } = require("./inventory-service");
-    const localTx = getLocalTransactions();
-    localTx.forEach((tx: any) => {
-      if (tx.part_id === partId) usageCount++;
-    });
-  } catch {}
-
-  try {
-    const { getLocalPurchases } = require("./purchase-service");
-    const localPurchases = getLocalPurchases();
-    localPurchases.forEach((p: any) => {
-      if (p.part_id === partId || (Array.isArray(p.items) && p.items.some((it: any) => it.part_id === partId))) {
-        usageCount++;
-      }
-    });
-  } catch {}
-
-  return usageCount;
 }
 
 /**
@@ -815,11 +663,11 @@ export async function deletePart(
   id: string,
   workspaceId?: string
 ): Promise<{ success: boolean; deactivated: boolean; message: string }> {
-  const targetWsId = workspaceId || getActiveWorkspaceId();
+  const targetWsId = workspaceId || await getActiveWorkspaceId();
   const usageCount = await getPartUsageCount(id);
 
   if (usageCount > 0) {
-    await updatePart(id, { is_active: false });
+    await updatePart(id, { is_active: false }, targetWsId);
     return {
       success: true,
       deactivated: true,
@@ -828,22 +676,16 @@ export async function deletePart(
   }
 
   const supabase = createClient();
-  try {
-    const fetchWithTimeout = async () => {
-      const { error } = await supabase
-        .from("parts")
-        .delete()
-        .eq("id", id)
-        .eq("workspace_id", targetWsId);
-      if (error) throw error;
-    };
-    await withTimeout(fetchWithTimeout(), 2000);
-  } catch (e: any) {
-    console.warn("Deleting part in local store fallback:", e.message || e);
-  }
+  const { error } = await supabase
+    .from("parts")
+    .delete()
+    .eq("id", id)
+    .eq("workspace_id", targetWsId);
 
-  const list = getLocalParts(targetWsId).filter((p) => p.id !== id);
-  saveLocalParts(list, targetWsId);
+  if (error) {
+    console.error(`Failed to delete part ${id} from Supabase:`, error);
+    throw new Error(`Failed to delete spare part: ${error.message}`);
+  }
 
   return {
     success: true,

@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/client";
 import type { Vehicle, VehicleInsert, VehicleUpdate } from "@/types/database";
-
-const DEFAULT_INITIAL_VEHICLES: Vehicle[] = [];
+import { generateUUID } from "@/lib/utils";
+import { getActiveWorkspaceId } from "./workspace-service";
 
 const LOCAL_STORAGE_KEY = "atiq_local_vehicles";
 let inMemoryVehicles: Vehicle[] = [];
@@ -19,20 +19,14 @@ export function getLocalVehicles(): Vehicle[] {
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed)) {
         const clean = parsed.filter((v: any) => !TEST_VEHICLE_IDS.has(v.id));
-        if (clean.length !== parsed.length) {
-          localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(clean));
-        }
         return clean;
       }
     }
-    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify([]));
     return [];
   } catch {
     return inMemoryVehicles.filter((v) => !TEST_VEHICLE_IDS.has(v.id));
   }
 }
-
-
 
 export function saveLocalVehicles(vehicles: Vehicle[]) {
   inMemoryVehicles = vehicles;
@@ -40,17 +34,19 @@ export function saveLocalVehicles(vehicles: Vehicle[]) {
   try {
     localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(vehicles));
   } catch (e) {
-    console.error("Failed to save local vehicles", e);
+    console.error("Failed to save local vehicles cache", e);
   }
 }
 
-export async function checkDuplicateChassisVin(chassisVin: string, excludeVehicleId?: string) {
+export async function checkDuplicateChassisVin(chassisVin: string, excludeVehicleId?: string, workspaceId?: string) {
   if (!chassisVin || !chassisVin.trim()) return null;
+  const targetWsId = workspaceId || getActiveWorkspaceId();
   const supabase = createClient();
   try {
     let query = supabase
       .from("vehicles")
       .select("id, make, model, registration_number")
+      .eq("workspace_id", targetWsId)
       .eq("is_deleted", false)
       .ilike("chassis_vin", chassisVin.trim());
 
@@ -60,29 +56,23 @@ export async function checkDuplicateChassisVin(chassisVin: string, excludeVehicl
 
     const { data, error } = await query.maybeSingle();
     if (error) throw error;
-    if (data) return data;
-  } catch (e) {
-    const local = getLocalVehicles().filter((v) => !v.is_deleted);
-    const found = local.find(
-      (v) =>
-        v.chassis_vin &&
-        v.chassis_vin.toLowerCase() === chassisVin.trim().toLowerCase() &&
-        v.id !== excludeVehicleId
-    );
-    if (found) return found;
+    return data || null;
+  } catch (e: any) {
+    console.warn("Chassis VIN duplicate check error:", e?.message || e);
+    return null;
   }
-
-  return null;
 }
 
-export async function checkDuplicateRegistration(regNumber: string, excludeVehicleId?: string) {
+export async function checkDuplicateRegistration(regNumber: string, excludeVehicleId?: string, workspaceId?: string) {
   if (!regNumber || !regNumber.trim()) return null;
+  const targetWsId = workspaceId || getActiveWorkspaceId();
   const cleaned = regNumber.trim();
   const supabase = createClient();
   try {
     let query = supabase
       .from("vehicles")
       .select("id, make, model, registration_number, customer:customers(name)")
+      .eq("workspace_id", targetWsId)
       .eq("is_deleted", false)
       .ilike("registration_number", cleaned);
 
@@ -92,191 +82,146 @@ export async function checkDuplicateRegistration(regNumber: string, excludeVehic
 
     const { data, error } = await query.maybeSingle();
     if (error) throw error;
-    if (data) return data;
-  } catch (e) {
-    const local = getLocalVehicles().filter((v) => !v.is_deleted);
-    const found = local.find(
-      (v) =>
-        v.registration_number &&
-        v.registration_number.toLowerCase().trim() === cleaned.toLowerCase() &&
-        v.id !== excludeVehicleId
-    );
-    if (found) return found;
-  }
-
-  return null;
-}
-
-export const checkDuplicateRegistrationNumber = checkDuplicateRegistration;
-
-export async function getVehicles(query?: string, page = 1, limit = 20) {
-  const supabase = createClient();
-  const offset = (page - 1) * limit;
-
-  try {
-    const fetchVehiclesPromise = (async () => {
-      let dbQuery = supabase
-        .from("vehicles")
-        .select("id, customer_id, make, model, year, color, registration_number, chassis_vin, mileage, notes, created_at, is_deleted, customer:customers(name, mobile, email)", { count: "exact" })
-        .eq("is_deleted", false);
-
-      if (query && query.trim()) {
-        const q = query.trim();
-        dbQuery = dbQuery.or(`make.ilike.%${q}%,model.ilike.%${q}%,registration_number.ilike.%${q}%,chassis_vin.ilike.%${q}%`);
-      }
-
-      return await dbQuery
-        .order("created_at", { ascending: false })
-        .range(offset, offset + limit - 1);
-    })();
-
-    const timeoutPromise = new Promise<never>((_, reject) =>
-      setTimeout(() => reject(new Error("Vehicles query timed out")), 2000)
-    );
-
-    const { data, count, error } = await Promise.race([fetchVehiclesPromise, timeoutPromise]);
-
-    if (error) throw error;
-
-    saveLocalVehicles((data || []) as unknown as Vehicle[]);
-    return { vehicles: (data || []) as unknown as Vehicle[], total: count || 0 };
-  } catch (err: any) {
-    console.warn("Using local vehicle store fallback:", err.message || err);
-    let local = getLocalVehicles().filter((v) => !v.is_deleted);
-
-    if (query && query.trim()) {
-      const q = query.trim().toLowerCase();
-      local = local.filter(
-        (v) =>
-          v.make.toLowerCase().includes(q) ||
-          v.model.toLowerCase().includes(q) ||
-          (v.registration_number && v.registration_number.toLowerCase().includes(q)) ||
-          (v.chassis_vin && v.chassis_vin.toLowerCase().includes(q))
-      );
-    }
-
-    const paged = local.slice(offset, offset + limit);
-    return { vehicles: paged, total: local.length };
-  }
-}
-
-export async function getVehicleById(id: string) {
-  const supabase = createClient();
-  try {
-    const { data, error } = await supabase
-      .from("vehicles")
-      .select("*, customer:customers(*)")
-      .eq("id", id)
-      .single();
-
-    if (error) throw error;
-    return data;
-  } catch (err: any) {
-    console.warn(`Reading vehicle ${id} from local fallback:`, err.message || err);
-    const local = getLocalVehicles();
-    const found = local.find((v) => v.id === id);
-    if (found) return found;
-
+    return data || null;
+  } catch (e: any) {
+    console.warn("Registration duplicate check error:", e?.message || e);
     return null;
   }
 }
 
-export async function getVehiclesByCustomer(customerId: string): Promise<Vehicle[]> {
-  const supabase = createClient();
-  try {
-    const { data, error } = await supabase
-      .from("vehicles")
-      .select("*")
-      .eq("customer_id", customerId)
-      .eq("is_deleted", false)
-      .order("created_at", { ascending: false });
+export const checkDuplicateRegistrationNumber = checkDuplicateRegistration;
 
-    if (error) throw error;
-    return data as Vehicle[];
-  } catch (err: any) {
-    console.warn(`Fetching vehicles for customer ${customerId} from local fallback:`, err.message || err);
-    const local = getLocalVehicles();
-    return local.filter((v) => v.customer_id === customerId && !v.is_deleted);
+export async function getVehicles(query?: string, page = 1, limit = 20, workspaceId?: string) {
+  const targetWsId = workspaceId || getActiveWorkspaceId();
+  const supabase = createClient();
+  const offset = (page - 1) * limit;
+
+  let dbQuery = supabase
+    .from("vehicles")
+    .select("id, customer_id, make, model, year, color, registration_number, chassis_vin, mileage, notes, created_at, is_deleted, customer:customers(name, mobile, email)", { count: "exact" })
+    .eq("workspace_id", targetWsId)
+    .eq("is_deleted", false);
+
+  if (query && query.trim()) {
+    const q = query.trim();
+    dbQuery = dbQuery.or(`make.ilike.%${q}%,model.ilike.%${q}%,registration_number.ilike.%${q}%,chassis_vin.ilike.%${q}%`);
   }
+
+  const { data, count, error } = await dbQuery
+    .order("created_at", { ascending: false })
+    .range(offset, offset + limit - 1);
+
+  if (error) {
+    console.error("Failed to fetch vehicles from Supabase:", error);
+    throw new Error(`Could not load vehicles from database: ${error.message}`);
+  }
+
+  return { vehicles: (data || []) as unknown as Vehicle[], total: count || 0 };
 }
 
-export async function createVehicle(payload: VehicleInsert) {
+export async function getVehicleById(id: string, workspaceId?: string) {
+  if (!id) return null;
+  const targetWsId = workspaceId || getActiveWorkspaceId();
   const supabase = createClient();
-  try {
-    const { data, error } = await supabase
-      .from("vehicles")
-      .insert({ ...payload, is_deleted: false })
-      .select()
-      .single();
 
-    if (error) throw error;
-    return data as Vehicle;
-  } catch (err: any) {
-    console.warn("Creating vehicle in local store fallback:", err.message || err);
-    const newVehicle: Vehicle = {
-      id: "veh-" + Date.now() + "-" + Math.random().toString(36).substring(2, 7),
-      customer_id: payload.customer_id,
-      make: payload.make,
-      model: payload.model,
-      year: payload.year || null,
-      color: payload.color || null,
-      chassis_vin: payload.chassis_vin || null,
-      mileage: payload.mileage || null,
-      registration_number: payload.registration_number || null,
-      notes: payload.notes || null,
-      is_deleted: false,
-      deleted_at: null,
-      deleted_by: null,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    };
+  const { data, error } = await supabase
+    .from("vehicles")
+    .select("*, customer:customers(*)")
+    .eq("id", id)
+    .eq("workspace_id", targetWsId)
+    .maybeSingle();
 
-    const local = getLocalVehicles();
-    local.unshift(newVehicle);
-    saveLocalVehicles(local);
-    return newVehicle;
+  if (error) {
+    console.error(`Failed to fetch vehicle ${id} from Supabase:`, error);
+    throw new Error(`Could not load vehicle: ${error.message}`);
   }
+  return data;
 }
 
-export async function updateVehicle(id: string, payload: VehicleUpdate) {
+export async function getVehiclesByCustomer(customerId: string, workspaceId?: string): Promise<Vehicle[]> {
+  if (!customerId) return [];
+  const targetWsId = workspaceId || getActiveWorkspaceId();
   const supabase = createClient();
-  try {
-    const { data, error } = await supabase
-      .from("vehicles")
-      .update(payload)
-      .eq("id", id)
-      .select()
-      .single();
 
-    if (error) throw error;
-    return data as Vehicle;
-  } catch (err: any) {
-    console.warn("Updating vehicle in local store fallback:", err.message || err);
-    const local = getLocalVehicles();
-    const idx = local.findIndex((v) => v.id === id);
-    if (idx !== -1) {
-      local[idx] = {
-        ...local[idx],
-        ...payload,
-        updated_at: new Date().toISOString(),
-      };
-      saveLocalVehicles(local);
-      return local[idx];
-    }
-    throw new Error(`Error updating vehicle ${id}: ${err.message || err}`);
+  const { data, error } = await supabase
+    .from("vehicles")
+    .select("*")
+    .eq("customer_id", customerId)
+    .eq("workspace_id", targetWsId)
+    .eq("is_deleted", false)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error(`Failed to fetch customer vehicles for ${customerId}:`, error);
+    throw new Error(`Could not load vehicles for customer: ${error.message}`);
   }
+  return (data || []) as Vehicle[];
 }
 
-export async function deleteVehicle(id: string) {
+export async function createVehicle(payload: VehicleInsert, workspaceId?: string): Promise<Vehicle> {
+  const targetWsId = payload.workspace_id || workspaceId || getActiveWorkspaceId();
   const supabase = createClient();
-  try {
-    const { error } = await supabase.from("vehicles").delete().eq("id", id);
-    if (error) throw error;
-    return true;
-  } catch (err: any) {
-    console.warn("Deleting vehicle from local store fallback:", err.message || err);
-    const local = getLocalVehicles().filter((v) => v.id !== id);
-    saveLocalVehicles(local);
-    return true;
+  const vehicleId = (payload as any).id && !(payload as any).id.startsWith("veh-") ? (payload as any).id : generateUUID();
+
+  const insertData = {
+    ...payload,
+    id: vehicleId,
+    workspace_id: targetWsId,
+    is_deleted: false,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  };
+
+  const { data, error } = await supabase
+    .from("vehicles")
+    .insert(insertData)
+    .select()
+    .single();
+
+  if (error) {
+    console.error("Supabase vehicle insertion error:", error);
+    throw new Error(`Could not save vehicle to cloud database: ${error.message}. No data was saved. Please retry.`);
   }
+
+  return data as Vehicle;
 }
+
+export async function updateVehicle(id: string, payload: VehicleUpdate): Promise<Vehicle> {
+  const supabase = createClient();
+  const updateData = {
+    ...payload,
+    updated_at: new Date().toISOString(),
+  };
+
+  const { data, error } = await supabase
+    .from("vehicles")
+    .update(updateData)
+    .eq("id", id)
+    .select()
+    .single();
+
+  if (error) {
+    console.error(`Supabase vehicle update error for ${id}:`, error);
+    throw new Error(`Could not update vehicle in database: ${error.message}`);
+  }
+
+  return data as Vehicle;
+}
+
+export async function deleteVehicle(id: string): Promise<boolean> {
+  const supabase = createClient();
+  const { error } = await supabase
+    .from("vehicles")
+    .update({
+      is_deleted: true,
+      deleted_at: new Date().toISOString(),
+    })
+    .eq("id", id);
+
+  if (error) {
+    console.error(`Supabase vehicle deletion error for ${id}:`, error);
+    throw new Error(`Could not delete vehicle in database: ${error.message}`);
+  }
+  return true;
+}
+

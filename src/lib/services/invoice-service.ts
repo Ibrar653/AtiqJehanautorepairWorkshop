@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/client";
+import { generateUUID } from "@/lib/utils";
 import type {
   Invoice,
   InvoiceItem,
@@ -490,7 +491,7 @@ export async function generateInvoiceFromJobCard(
   // Fetch all existing real payment records for this Job Card
   const { getPaymentsByJobCard, getLocalPayments, saveLocalPayments } = await import("./payment-service");
   const existingJobPayments = await getPaymentsByJobCard(jobCard.id, jobCard.workspace_id || targetWsId);
-  const existingPaidSum = existingJobPayments.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+  const existingPaidSum = existingJobPayments.reduce((sum: number, p: any) => sum + (Number(p.amount) || 0), 0);
 
   // Determine actual paid amount and balance
   const paid = existingPaidSum > 0 ? existingPaidSum : Math.min(total, Math.max(0, Number(jobCard.paid) || 0));
@@ -511,12 +512,13 @@ export async function generateInvoiceFromJobCard(
     formattedInvoiceNumber = await generateNextInvoiceNumber(jobCard.workspace_id || targetWsId);
   }
 
-  const invoiceId = "inv-" + Date.now() + "-" + Math.random().toString(36).substring(2, 6);
+  const invoiceId = generateUUID();
   const now = new Date().toISOString();
+  const wsId = jobCard.workspace_id || targetWsId;
 
   const invoicePayload = {
     id: invoiceId,
-    workspace_id: jobCard.workspace_id || targetWsId,
+    workspace_id: wsId,
     invoice_number: formattedInvoiceNumber,
     job_card_id: jobCard.id,
     customer_id: jobCard.customer_id,
@@ -536,8 +538,9 @@ export async function generateInvoiceFromJobCard(
   };
 
   const invoiceItemsToInsert = allItems.map((it) => ({
-    id: "invi-" + Date.now() + "-" + Math.random().toString(36).substring(2, 6),
+    id: generateUUID(),
     invoice_id: invoiceId,
+    workspace_id: wsId,
     item_type: it.item_type,
     service_id: it.service_id,
     part_id: it.part_id,
@@ -548,115 +551,44 @@ export async function generateInvoiceFromJobCard(
     created_at: now,
   }));
 
-  try {
-    // Write to Supabase
-    const { data: created, error: invErr } = await withTimeout(
-      supabase.from("invoices").insert(invoicePayload).select().single(),
-      2000
-    );
+  // Write to Supabase
+  const { data: created, error: invErr } = await supabase
+    .from("invoices")
+    .insert(invoicePayload)
+    .select()
+    .single();
 
-    if (invErr) throw invErr;
+  if (invErr) {
+    console.error("Failed to insert invoice into Supabase:", invErr);
+    throw new Error(`Failed to generate invoice: ${invErr.message}`);
+  }
 
-    if (invoiceItemsToInsert.length > 0) {
-      await withTimeout(
-        supabase.from("invoice_items").insert(invoiceItemsToInsert),
-        2000
-      );
+  if (invoiceItemsToInsert.length > 0) {
+    const { error: itemsErr } = await supabase
+      .from("invoice_items")
+      .insert(invoiceItemsToInsert);
+
+    if (itemsErr) {
+      console.error("Failed to insert invoice items into Supabase:", itemsErr);
+      throw new Error(`Failed to insert invoice items: ${itemsErr.message}`);
     }
+  }
 
-    // Carry forward existing payments without creating duplicates
-    if (existingJobPayments.length > 0) {
-      try {
-        await supabase
-          .from("payments")
-          .update({ invoice_id: invoiceId })
-          .eq("job_card_id", jobCard.id);
-      } catch (carryErr) {
-        console.warn("Updating carried forward payment invoice_id notice:", carryErr);
-      }
-    } else if (paid > 0) {
-      // Legacy fallback: if jobCard.paid was set without payment row
-      try {
-        await supabase.from("payments").insert({
-          invoice_id: invoiceId,
-          job_card_id: jobCard.id,
-          customer_id: jobCard.customer_id,
-          amount: paid,
-          payment_method: (jobCard.payment_status?.toLowerCase().includes("bank")
-            ? "bank_transfer"
-            : jobCard.payment_status?.toLowerCase().includes("card")
-            ? "credit_card"
-            : "cash") as PaymentMethod,
-          payment_date: jobCard.date || now.slice(0, 10),
-          reference_number: formattedInvoiceNumber,
-          notes: "Initial Job Card Settlement Payment",
-          created_by: createdByUserId || "Owner",
-          created_at: now,
-        });
-      } catch {
-        // Non-blocking payment insert
-      }
-    }
-
-    // Update local payments store with invoice_id link
-    const localPayments = getLocalPayments();
-    let localUpdated = false;
-    localPayments.forEach((p) => {
-      if (p.job_card_id === jobCard.id && !p.invoice_id) {
-        p.invoice_id = invoiceId;
-        localUpdated = true;
-      }
-    });
-    if (localUpdated) {
-      saveLocalPayments(localPayments);
-    }
-
-    // Save to local cache
-    const list = getLocalInvoices(targetWsId);
-    list.unshift({ ...invoicePayload, items: invoiceItemsToInsert });
-    saveLocalInvoices(list, targetWsId);
-
-    const existingItems = getLocalInvoiceItems();
-    saveLocalInvoiceItems([...invoiceItemsToInsert, ...existingItems]);
-
-    // Post customer invoice ledger
+  // Carry forward existing payments without creating duplicates
+  if (existingJobPayments.length > 0) {
     try {
-      const { postInvoiceLedger } = await import("./ledger-service");
-      await postInvoiceLedger({
-        id: invoiceId,
-        invoice_number: formattedInvoiceNumber,
-        customer_id: jobCard.customer_id,
-        customer_name: jobCard.customer?.name,
-        date: jobCard.date,
-        services_total: servicesTotal,
-        parts_total: sparePartsTotal,
-        subtotal,
-        vat_amount: vatAmount,
-        total,
-        created_by: createdByUserId || "Owner",
-      });
-    } catch (ledErr) {
-      console.warn("Posting invoice ledger on conversion notice:", ledErr);
+      await supabase
+        .from("payments")
+        .update({ invoice_id: invoiceId })
+        .eq("job_card_id", jobCard.id);
+    } catch (carryErr) {
+      console.warn("Updating carried forward payment invoice_id notice:", carryErr);
     }
-
-    invalidateDashboardCache();
-    return { ...invoicePayload, items: invoiceItemsToInsert };
-  } catch (err: any) {
-    console.warn("Generating invoice in local fallback store:", err.message || err);
-
-    // Update local payments store with invoice_id link
-    const localPayments = getLocalPayments();
-    let localUpdated = false;
-    localPayments.forEach((p) => {
-      if (p.job_card_id === jobCard.id && !p.invoice_id) {
-        p.invoice_id = invoiceId;
-        localUpdated = true;
-      }
-    });
-
-    if (existingJobPayments.length === 0 && paid > 0) {
-      localPayments.unshift({
-        id: "pay-" + Date.now() + "-" + Math.random().toString(36).substring(2, 6),
+  } else if (paid > 0) {
+    try {
+      await supabase.from("payments").insert({
+        id: generateUUID(),
+        workspace_id: wsId,
         invoice_id: invoiceId,
         job_card_id: jobCard.id,
         customer_id: jobCard.customer_id,
@@ -672,24 +604,33 @@ export async function generateInvoiceFromJobCard(
         created_by: createdByUserId || "Owner",
         created_at: now,
       });
-      localUpdated = true;
+    } catch (pErr) {
+      console.warn("Initial job card payment recording note:", pErr);
     }
-
-    if (localUpdated) {
-      saveLocalPayments(localPayments);
-    }
-
-    const list = getLocalInvoices(targetWsId);
-    const createdLocal = { ...invoicePayload, items: invoiceItemsToInsert };
-    list.unshift(createdLocal);
-    saveLocalInvoices(list, targetWsId);
-
-    const existingItems = getLocalInvoiceItems();
-    saveLocalInvoiceItems([...invoiceItemsToInsert, ...existingItems]);
-
-    invalidateDashboardCache();
-    return createdLocal;
   }
+
+  // Post customer invoice ledger
+  try {
+    const { postInvoiceLedger } = await import("./ledger-service");
+    await postInvoiceLedger({
+      id: invoiceId,
+      invoice_number: formattedInvoiceNumber,
+      customer_id: jobCard.customer_id,
+      customer_name: jobCard.customer?.name,
+      date: jobCard.date,
+      services_total: servicesTotal,
+      parts_total: sparePartsTotal,
+      subtotal,
+      vat_amount: vatAmount,
+      total,
+      created_by: createdByUserId || "Owner",
+    });
+  } catch (ledErr) {
+    console.warn("Posting invoice ledger on conversion notice:", ledErr);
+  }
+
+  invalidateDashboardCache();
+  return await getInvoiceById(invoiceId, wsId);
 }
 
 export interface DirectPartsSaleItemPayload {
@@ -1074,7 +1015,7 @@ export async function createDirectInvoice(
   }
 
   const formattedInvoiceNumber = await generateNextInvoiceNumber(targetWsId);
-  const invoiceId = "inv-" + Date.now() + "-" + Math.random().toString(36).substring(2, 6);
+  const invoiceId = generateUUID();
 
   const invoicePayload: any = {
     id: invoiceId,
@@ -1104,8 +1045,9 @@ export async function createDirectInvoice(
   // Service line items
   for (const s of verifiedServices) {
     invoiceItemsToInsert.push({
-      id: "invi-" + Date.now() + "-" + Math.random().toString(36).substring(2, 6),
+      id: generateUUID(),
       invoice_id: invoiceId,
+      workspace_id: targetWsId,
       item_type: "service" as const,
       service_id: s.service_id,
       part_id: null,
@@ -1121,8 +1063,9 @@ export async function createDirectInvoice(
   // Spare part line items
   for (const p of verifiedParts) {
     invoiceItemsToInsert.push({
-      id: "invi-" + Date.now() + "-" + Math.random().toString(36).substring(2, 6),
+      id: generateUUID(),
       invoice_id: invoiceId,
+      workspace_id: targetWsId,
       item_type: "part" as const,
       service_id: null,
       part_id: p.part_id,
@@ -1152,6 +1095,7 @@ export async function createDirectInvoice(
           referenceId: formattedInvoiceNumber,
           notes: `Direct Sale on Invoice #${formattedInvoiceNumber} (${item.quantity} units)`,
           createdBy: payload.created_by || "Owner",
+          workspace_id: targetWsId,
         });
       } catch (err: any) {
         console.error(`Failed to deduct inventory for part ${item.part_id}:`, err);
@@ -1160,50 +1104,34 @@ export async function createDirectInvoice(
     }
   }
 
-  // 8. Persist to Supabase & Local Cache
-  try {
-    await withTimeout(
-      supabase.from("invoices").insert(invoicePayload),
-      2000
-    );
+  // 8. Persist to Supabase
+  const { error: invErr } = await supabase
+    .from("invoices")
+    .insert(invoicePayload);
 
-    if (invoiceItemsToInsert.length > 0) {
-      await withTimeout(
-        supabase.from("invoice_items").insert(invoiceItemsToInsert),
-        2000
-      );
-    }
-  } catch (err: any) {
-    console.warn("Direct invoice written to local fallback store:", err.message || err);
+  if (invErr) {
+    console.error("Failed to create direct invoice in Supabase:", invErr);
+    throw new Error(`Failed to create direct invoice: ${invErr.message}`);
   }
 
-  // Save to local invoice cache
-  const fullCreatedInvoice = {
-    ...invoicePayload,
-    customer: {
-      id: resolvedCustomerId,
-      name: resolvedCustomerName,
-      mobile: resolvedCustomerPhone,
-      company_name: resolvedCompany,
-      trn_number: resolvedTrn,
-    },
-    items: invoiceItemsToInsert,
-    payments: [],
-  };
+  if (invoiceItemsToInsert.length > 0) {
+    const { error: itemsErr } = await supabase
+      .from("invoice_items")
+      .insert(invoiceItemsToInsert);
 
-  const list = getLocalInvoices(targetWsId);
-  list.unshift(fullCreatedInvoice);
-  saveLocalInvoices(list, targetWsId);
-
-  const existingItems = getLocalInvoiceItems();
-  saveLocalInvoiceItems([...invoiceItemsToInsert, ...existingItems]);
+    if (itemsErr) {
+      console.error("Failed to insert direct invoice items in Supabase:", itemsErr);
+      throw new Error(`Failed to create invoice items: ${itemsErr.message}`);
+    }
+  }
 
   // 9. Record Payment if paidAmount > 0
   if (paidAmount > 0) {
-    const paymentId = "pay-" + Date.now() + "-" + Math.random().toString(36).substring(2, 6);
+    const paymentId = generateUUID();
     const methodStr = payload.payment_method === "bank" ? "bank_transfer" : "cash";
     const paymentRecord = {
       id: paymentId,
+      workspace_id: targetWsId,
       invoice_id: invoiceId,
       job_card_id: null,
       customer_id: resolvedCustomerId!,
@@ -1216,15 +1144,10 @@ export async function createDirectInvoice(
       created_at: now,
     };
 
-    try {
-      await supabase.from("payments").insert(paymentRecord);
-    } catch {}
-
-    const { getLocalPayments, saveLocalPayments } = await import("./payment-service");
-    const localPayments = getLocalPayments();
-    localPayments.unshift(paymentRecord);
-    saveLocalPayments(localPayments);
-    fullCreatedInvoice.payments = [paymentRecord];
+    const { error: payErr } = await supabase.from("payments").insert(paymentRecord);
+    if (payErr) {
+      console.warn("Direct invoice payment recording notice:", payErr);
+    }
 
     // Post Payment to Ledger
     try {
@@ -1267,7 +1190,7 @@ export async function createDirectInvoice(
   }
 
   invalidateDashboardCache();
-  return fullCreatedInvoice;
+  return await getInvoiceById(invoiceId, targetWsId);
 }
 
 /**
@@ -1360,9 +1283,11 @@ export async function recordInvoicePayment(
     newStatus = "partially_paid";
   }
 
-  const paymentId = "pay-" + Date.now() + "-" + Math.random().toString(36).substring(2, 6);
+  const targetWsId = invoice.workspace_id || getActiveWorkspaceId();
+  const paymentId = generateUUID();
   const paymentRecord: Payment = {
     id: paymentId,
+    workspace_id: targetWsId,
     invoice_id: invoiceId,
     job_card_id: invoice.job_card_id || null,
     customer_id: invoice.customer_id,
@@ -1375,106 +1300,69 @@ export async function recordInvoicePayment(
     created_at: now,
   };
 
-  try {
-    // 1. Insert Payment in Supabase
-    await withTimeout(
-      supabase.from("payments").insert(paymentRecord),
-      2000
-    );
+  // 1. Insert Payment in Supabase
+  const { error: payErr } = await supabase.from("payments").insert(paymentRecord);
+  if (payErr) {
+    console.error("Failed to insert payment in Supabase:", payErr);
+    throw new Error(`Failed to record payment: ${payErr.message}`);
+  }
 
-    // 2. Update Invoice
-    const { data: updatedInvoice, error: invErr } = await withTimeout(
-      supabase
-        .from("invoices")
+  // 2. Update Invoice
+  const { data: updatedInvoice, error: invErr } = await supabase
+    .from("invoices")
+    .update({
+      paid: newPaid,
+      balance: newBalance,
+      payment_status: newStatus,
+      updated_at: now,
+    })
+    .eq("id", invoiceId)
+    .select()
+    .single();
+
+  if (invErr) {
+    console.error("Failed to update invoice in Supabase:", invErr);
+    throw new Error(`Failed to update invoice: ${invErr.message}`);
+  }
+
+  // 3. Synchronize linked Job Card if any
+  if (invoice.job_card_id) {
+    try {
+      await supabase
+        .from("job_cards")
         .update({
           paid: newPaid,
           balance: newBalance,
-          payment_status: newStatus,
+          payment_status: newStatus === "paid" ? "Paid Full" : newStatus === "partially_paid" ? "Partially Paid" : "Pending",
           updated_at: now,
         })
-        .eq("id", invoiceId)
-        .select()
-        .single(),
-      2000
-    );
-
-    if (invErr) throw invErr;
-
-    // 3. Synchronize linked Job Card if any
-    if (invoice.job_card_id) {
-      try {
-        await supabase
-          .from("job_cards")
-          .update({
-            paid: newPaid,
-            balance: newBalance,
-            payment_status: newStatus === "paid" ? "Paid Full" : newStatus === "partially_paid" ? "Partially Paid" : "Pending",
-            updated_at: now,
-          })
-          .eq("id", invoice.job_card_id);
-      } catch {
-        // Non-blocking
-      }
+        .eq("id", invoice.job_card_id);
+    } catch (jcErr) {
+      console.warn("Synchronizing job card on payment notice:", jcErr);
     }
-
-    // 4. Update Local Stores
-    const { getLocalPayments, saveLocalPayments } = await import("./payment-service");
-    const localPayments = getLocalPayments();
-    localPayments.unshift(paymentRecord);
-    saveLocalPayments(localPayments);
-
-    const localInvoices = getLocalInvoices();
-    const invIdx = localInvoices.findIndex((inv) => inv.id === invoiceId);
-    if (invIdx !== -1) {
-      localInvoices[invIdx] = {
-        ...localInvoices[invIdx],
-        paid: newPaid,
-        balance: newBalance,
-        payment_status: newStatus,
-        updated_at: now,
-      };
-      saveLocalInvoices(localInvoices);
-    }
-
-    invalidateDashboardCache();
-    return { payment: paymentRecord, invoice: updatedInvoice || localInvoices[invIdx] };
-  } catch (err: any) {
-    console.warn("Recording payment in local fallback store:", err.message || err);
-
-    const { getLocalPayments, saveLocalPayments } = await import("./payment-service");
-    const localPayments = getLocalPayments();
-    localPayments.unshift(paymentRecord);
-    saveLocalPayments(localPayments);
-
-    const localInvoices = getLocalInvoices();
-    const invIdx = localInvoices.findIndex((inv) => inv.id === invoiceId);
-    if (invIdx !== -1) {
-      localInvoices[invIdx] = {
-        ...localInvoices[invIdx],
-        paid: newPaid,
-        balance: newBalance,
-        payment_status: newStatus,
-        updated_at: now,
-      };
-      saveLocalInvoices(localInvoices);
-    }
-
-    if (invoice.job_card_id) {
-      const { getLocalJobCards, saveLocalJobCards } = await import("./job-card-service");
-      const localJobCards = getLocalJobCards();
-      const jcIdx = localJobCards.findIndex((j) => j.id === invoice.job_card_id);
-      if (jcIdx !== -1) {
-        localJobCards[jcIdx].paid = newPaid;
-        localJobCards[jcIdx].balance = newBalance;
-        localJobCards[jcIdx].payment_status = newStatus === "paid" ? "Paid Full" : newStatus === "partially_paid" ? "Partially Paid" : "Pending";
-        localJobCards[jcIdx].updated_at = now;
-        saveLocalJobCards(localJobCards);
-      }
-    }
-
-    invalidateDashboardCache();
-    return { payment: paymentRecord, invoice: localInvoices[invIdx] || invoice };
   }
+
+  // 4. Ledger sync
+  try {
+    const { postCustomerPaymentLedger } = await import("./ledger-service");
+    await postCustomerPaymentLedger({
+      id: paymentId,
+      customer_id: invoice.customer_id,
+      invoice_id: invoiceId,
+      job_card_id: invoice.job_card_id || undefined,
+      invoice_number: invoice.invoice_number,
+      amount: cleanAmount,
+      payment_method: paymentMethod as any,
+      reference_number: referenceNumber || invoice.invoice_number,
+      payment_date: paymentDate || now.slice(0, 10),
+      created_by: createdBy || "Owner",
+    });
+  } catch (ledgPayErr) {
+    console.warn("Ledger customer payment posting notice:", ledgPayErr);
+  }
+
+  invalidateDashboardCache();
+  return { payment: paymentRecord, invoice: updatedInvoice };
 }
 
 /**
@@ -1486,8 +1374,9 @@ export async function recordInvoicePayment(
 export async function voidInvoice(invoiceId: string, voidReason: string, voidedBy?: string, workspaceId?: string): Promise<any> {
   const supabase = createClient();
   const now = new Date().toISOString();
+  const targetWsId = workspaceId || getActiveWorkspaceId();
 
-  const invoice = await getInvoiceById(invoiceId, workspaceId);
+  const invoice = await getInvoiceById(invoiceId, targetWsId);
   if (!invoice) throw new Error("Invoice not found.");
 
   const voidData = {
@@ -1515,6 +1404,7 @@ export async function voidInvoice(invoiceId: string, voidReason: string, voidedB
             referenceId: invoice.invoice_number,
             notes: `Stock reversal for voided invoice #${invoice.invoice_number}`,
             createdBy: voidedBy || "Owner",
+            workspace_id: invoice.workspace_id || targetWsId,
           });
         } catch (stockErr) {
           console.warn(`Could not reverse stock for item ${item.part_id}:`, stockErr);
@@ -1523,41 +1413,20 @@ export async function voidInvoice(invoiceId: string, voidReason: string, voidedB
     }
   }
 
-  try {
-    const { data: updated, error } = await withTimeout(
-      supabase.from("invoices").update(voidData).eq("id", invoiceId).select().single(),
-      2000
-    );
+  const { data: updated, error } = await supabase
+    .from("invoices")
+    .update(voidData)
+    .eq("id", invoiceId)
+    .select()
+    .single();
 
-    if (error) throw error;
-
-    const list = getLocalInvoices();
-    const idx = list.findIndex((i) => i.id === invoiceId);
-    if (idx !== -1) {
-      list[idx] = { ...list[idx], ...voidData };
-      saveLocalInvoices(list);
-    }
-
-    invalidateDashboardCache();
-    return updated;
-  } catch (err: any) {
-    console.warn("Voiding invoice in local fallback store:", err.message || err);
-    let allInvs: any[] = inMemoryInvoices;
-    if (typeof window !== "undefined") {
-      try {
-        const raw = localStorage.getItem(LOCAL_INVOICES_KEY);
-        if (raw) allInvs = JSON.parse(raw);
-      } catch {}
-    }
-    const idx = allInvs.findIndex((i) => i.id === invoiceId);
-    if (idx !== -1) {
-      allInvs[idx] = { ...allInvs[idx], ...voidData };
-      saveLocalInvoices(allInvs, allInvs[idx].workspace_id);
-      invalidateDashboardCache();
-      return allInvs[idx];
-    }
-    throw err;
+  if (error) {
+    console.error("Failed to void invoice in Supabase:", error);
+    throw new Error(`Failed to void invoice: ${error.message}`);
   }
+
+  invalidateDashboardCache();
+  return updated;
 }
 
 export interface SyncInvoiceResult {
@@ -1737,11 +1606,13 @@ export async function syncInvoiceFromJobCard(
   }
 
   const now = new Date().toISOString();
+  const wsId = invoice.workspace_id || targetWsId;
 
   // 9. Prepare new items with stable IDs
   const invoiceItemsToInsert = allItems.map((it) => ({
-    id: "invi-" + Date.now() + "-" + Math.random().toString(36).substring(2, 6),
+    id: generateUUID(),
     invoice_id: invoice.id,
+    workspace_id: wsId,
     item_type: it.item_type,
     service_id: it.service_id,
     part_id: it.part_id,
@@ -1767,143 +1638,84 @@ export async function syncInvoiceFromJobCard(
     updated_at: now,
   };
 
-  // 10. Persist changes
-  try {
-    // A. Update invoice header in Supabase
-    const { data: updatedInv, error: invUpdateErr } = await withTimeout(
-      supabase
-        .from("invoices")
-        .update(invoiceUpdatePayload)
-        .eq("id", invoice.id)
-        .select()
-        .single(),
-      2000
-    );
+  // 10. Persist changes in Supabase
+  const { data: updatedInv, error: invUpdateErr } = await supabase
+    .from("invoices")
+    .update(invoiceUpdatePayload)
+    .eq("id", invoice.id)
+    .select()
+    .single();
 
-    if (invUpdateErr) throw invUpdateErr;
-
-    // B. Replace invoice items in Supabase
-    await withTimeout(
-      supabase.from("invoice_items").delete().eq("invoice_id", invoice.id),
-      2000
-    );
-
-    if (invoiceItemsToInsert.length > 0) {
-      await withTimeout(
-        supabase.from("invoice_items").insert(invoiceItemsToInsert),
-        2000
-      );
-    }
-
-    // C. Update Ledger
-    try {
-      const { postInvoiceLedger } = await import("./ledger-service");
-      await postInvoiceLedger({
-        id: invoice.id,
-        invoice_number: invoice.invoice_number,
-        customer_id: jobCard.customer_id,
-        customer_name: jobCard.customer?.name,
-        date: invoice.created_at || jobCard.date,
-        services_total: servicesTotal,
-        parts_total: sparePartsTotal,
-        subtotal,
-        vat_amount: vatAmount,
-        total,
-        created_by: updatedByUserId || invoice.created_by || "Owner",
-      });
-    } catch (ledErr) {
-      console.warn("Ledger post update on invoice sync notice:", ledErr);
-    }
-
-    // D. Update Local Fallback Cache
-    const list = getLocalInvoices(invoice.workspace_id || targetWsId);
-    const idx = list.findIndex((i) => i.id === invoice.id);
-    const fullUpdatedInvoice = {
-      ...invoice,
-      ...invoiceUpdatePayload,
-      customer: jobCard.customer,
-      vehicle: jobCard.vehicle,
-      job_card: jobCard,
-      items: invoiceItemsToInsert,
-      payments: existingPayments,
-    };
-
-    if (idx >= 0) {
-      list[idx] = fullUpdatedInvoice;
-    } else {
-      list.unshift(fullUpdatedInvoice);
-    }
-    saveLocalInvoices(list, invoice.workspace_id || targetWsId);
-
-    const localItems = getLocalInvoiceItems().filter((it) => it.invoice_id !== invoice.id);
-    saveLocalInvoiceItems([...invoiceItemsToInsert, ...localItems]);
-
-    // E. Audit Log
-    console.info(
-      `[Invoice Sync Audit] Invoice ${invoice.invoice_number || invoice.id} synced from Job Card ${jobCard.job_card_number || jobCard.id} by ${updatedByUserId || "Owner"}. Old Total: AED ${invoice.total} -> New Total: AED ${total}`
-    );
-
-    invalidateDashboardCache();
-
-    return {
-      updated: true,
-      invoice: fullUpdatedInvoice,
-      message: "Invoice updated from Job Card.",
-      diff: {
-        oldTotal: Number(invoice.total),
-        newTotal: total,
-        oldSubtotal: Number(invoice.subtotal),
-        newSubtotal: subtotal,
-        oldItemsCount: oldItems.length,
-        newItemsCount: invoiceItemsToInsert.length,
-        oldBalance: Number(invoice.balance),
-        newBalance: balance,
-        itemsChanged,
-      },
-    };
-  } catch (err: any) {
-    console.warn("Syncing invoice in local fallback store:", err.message || err);
-
-    // Local fallback update
-    const list = getLocalInvoices(invoice.workspace_id || targetWsId);
-    const idx = list.findIndex((i) => i.id === invoice.id);
-    const fullUpdatedInvoice = {
-      ...invoice,
-      ...invoiceUpdatePayload,
-      customer: jobCard.customer,
-      vehicle: jobCard.vehicle,
-      job_card: jobCard,
-      items: invoiceItemsToInsert,
-      payments: existingPayments,
-    };
-
-    if (idx >= 0) {
-      list[idx] = fullUpdatedInvoice;
-    } else {
-      list.unshift(fullUpdatedInvoice);
-    }
-    saveLocalInvoices(list, invoice.workspace_id || targetWsId);
-
-    const localItems = getLocalInvoiceItems().filter((it) => it.invoice_id !== invoice.id);
-    saveLocalInvoiceItems([...invoiceItemsToInsert, ...localItems]);
-
-    invalidateDashboardCache();
-
-    return {
-      updated: true,
-      invoice: fullUpdatedInvoice,
-      message: "Invoice updated from Job Card.",
-      diff: {
-        oldTotal: Number(invoice.total),
-        newTotal: total,
-        oldSubtotal: Number(invoice.subtotal),
-        newSubtotal: subtotal,
-        oldItemsCount: oldItems.length,
-        newItemsCount: invoiceItemsToInsert.length,
-        oldBalance: Number(invoice.balance),
-        newBalance: balance,
-        itemsChanged,
-      },
-    };
+  if (invUpdateErr) {
+    console.error("Failed to update synced invoice in Supabase:", invUpdateErr);
+    throw new Error(`Failed to sync invoice: ${invUpdateErr.message}`);
   }
+
+  // Replace invoice items in Supabase
+  const { error: delErr } = await supabase
+    .from("invoice_items")
+    .delete()
+    .eq("invoice_id", invoice.id);
+
+  if (delErr) {
+    console.error("Failed to clear old invoice items in Supabase:", delErr);
+    throw new Error(`Failed to update invoice items: ${delErr.message}`);
+  }
+
+  if (invoiceItemsToInsert.length > 0) {
+    const { error: insertItemsErr } = await supabase
+      .from("invoice_items")
+      .insert(invoiceItemsToInsert);
+
+    if (insertItemsErr) {
+      console.error("Failed to insert synced invoice items in Supabase:", insertItemsErr);
+      throw new Error(`Failed to insert synced invoice items: ${insertItemsErr.message}`);
+    }
+  }
+
+  // Update Ledger
+  try {
+    const { postInvoiceLedger } = await import("./ledger-service");
+    await postInvoiceLedger({
+      id: invoice.id,
+      invoice_number: invoice.invoice_number,
+      customer_id: jobCard.customer_id,
+      customer_name: jobCard.customer?.name,
+      date: invoice.created_at || jobCard.date,
+      services_total: servicesTotal,
+      parts_total: sparePartsTotal,
+      subtotal,
+      vat_amount: vatAmount,
+      total,
+      created_by: updatedByUserId || invoice.created_by || "Owner",
+    });
+  } catch (ledErr) {
+    console.warn("Ledger post update on invoice sync notice:", ledErr);
+  }
+
+  // Audit Log
+  console.info(
+    `[Invoice Sync Audit] Invoice ${invoice.invoice_number || invoice.id} synced from Job Card ${jobCard.job_card_number || jobCard.id} by ${updatedByUserId || "Owner"}. Old Total: AED ${invoice.total} -> New Total: AED ${total}`
+  );
+
+  invalidateDashboardCache();
+
+  const refreshedInvoice = await getInvoiceById(invoice.id, wsId);
+
+  return {
+    updated: true,
+    invoice: refreshedInvoice,
+    message: "Invoice updated from Job Card.",
+    diff: {
+      oldTotal: Number(invoice.total),
+      newTotal: total,
+      oldSubtotal: Number(invoice.subtotal),
+      newSubtotal: subtotal,
+      oldItemsCount: oldItems.length,
+      newItemsCount: invoiceItemsToInsert.length,
+      oldBalance: Number(invoice.balance),
+      newBalance: balance,
+      itemsChanged,
+    },
+  };
 }

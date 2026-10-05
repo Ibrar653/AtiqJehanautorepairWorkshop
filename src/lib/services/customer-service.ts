@@ -1,8 +1,9 @@
 import { createClient } from "@/lib/supabase/client";
 import type { Customer, CustomerInsert, CustomerUpdate, Vehicle } from "@/types/database";
-import { getLocalVehicles } from "./vehicle-service";
 import { getActiveWorkspaceId } from "./workspace-service";
 import { DEFAULT_WORKSPACE_ID } from "@/lib/constants";
+import { generateUUID } from "@/lib/utils";
+import { getLocalVehicles } from "./vehicle-service";
 
 export interface CustomerWithMetrics extends Customer {
   vehicles?: Vehicle[];
@@ -27,15 +28,9 @@ export function clearSearchCache() {
   searchCache.clear();
 }
 
-
-const DEFAULT_INITIAL_CUSTOMERS: CustomerWithMetrics[] = [];
-
-// Local storage fallback key for offline/demo operation
+// Local storage key preserved strictly for Recovery/Migration inspection tools
 const LOCAL_STORAGE_KEY = "atiq_local_customers";
 let inMemoryCustomers: CustomerWithMetrics[] = [];
-
-// Known demo customer IDs to always purge
-const TEST_CUSTOMER_IDS = new Set(["cust-demo-gulkhan", "cust-demo-ahmed", "cust-demo-sultan"]);
 
 export function getLocalCustomers(workspaceId?: string): CustomerWithMetrics[] {
   const targetWsId = workspaceId || getActiveWorkspaceId();
@@ -48,34 +43,18 @@ export function getLocalCustomers(workspaceId?: string): CustomerWithMetrics[] {
       if (raw !== null) {
         const parsed = JSON.parse(raw);
         if (Array.isArray(parsed)) {
-          // Auto-purge any legacy demo records (e.g. Gul Khan)
-          const clean = parsed.filter(
-            (c: any) => !TEST_CUSTOMER_IDS.has(c.id) && c.name !== "Gul Khan"
-          );
-          if (clean.length !== parsed.length) {
-            localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(clean));
-          }
-          all = clean;
+          all = parsed;
         }
-      } else {
-        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify([]));
-        all = [];
       }
     } catch {
       all = inMemoryCustomers;
     }
   }
 
-  // Ensure in-memory is also sanitized
-  inMemoryCustomers = inMemoryCustomers.filter(
-    (c: any) => !TEST_CUSTOMER_IDS.has(c.id) && c.name !== "Gul Khan"
-  );
-
   return all.filter(
     (c) => c.workspace_id === targetWsId || (!c.workspace_id && targetWsId === DEFAULT_WORKSPACE_ID)
   );
 }
-
 
 export function saveLocalCustomers(customers: CustomerWithMetrics[], workspaceId?: string) {
   const targetWsId = workspaceId || getActiveWorkspaceId();
@@ -110,7 +89,6 @@ export function saveLocalCustomers(customers: CustomerWithMetrics[], workspaceId
   }
 }
 
-
 export function formatVehicleSummary(vehicles: Vehicle[] = []): string {
   const activeVehicles = vehicles.filter((v) => !v.is_deleted);
   if (!activeVehicles || activeVehicles.length === 0) return "No Vehicles";
@@ -124,17 +102,21 @@ export function formatVehicleSummary(vehicles: Vehicle[] = []): string {
   return `${firstName} +${activeVehicles.length - 1} more`;
 }
 
-export async function checkDuplicateCustomerPhone(phone: string, excludeCustomerId?: string) {
+export async function checkDuplicateCustomerPhone(phone: string, excludeCustomerId?: string, workspaceId?: string) {
   if (!phone || !phone.trim()) return null;
+  const targetWsId = workspaceId || getActiveWorkspaceId();
   const cleaned = phone.trim();
   const digitsOnly = cleaned.replace(/\D/g, "");
   const supabase = createClient();
   try {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("customers")
       .select("id, name, mobile, email, address, notes")
+      .eq("workspace_id", targetWsId)
       .eq("is_deleted", false)
-      .limit(20);
+      .limit(50);
+
+    if (error) throw error;
 
     if (data && data.length > 0) {
       const match = data.find((c) => {
@@ -148,21 +130,10 @@ export async function checkDuplicateCustomerPhone(phone: string, excludeCustomer
       if (match) return match as Customer;
     }
   } catch (e) {
-    console.warn("Supabase checkDuplicateCustomerPhone fallback to local:", e);
+    console.error("Error checking duplicate phone in Supabase:", e);
   }
 
-  // Check local fallback
-  const local = getLocalCustomers().filter((c) => !c.is_deleted);
-  const found = local.find((c) => {
-    if (c.id === excludeCustomerId || !c.mobile) return false;
-    const cDigits = c.mobile.replace(/\D/g, "");
-    return (
-      c.mobile.trim().toLowerCase() === cleaned.toLowerCase() ||
-      (digitsOnly.length >= 7 && cDigits.endsWith(digitsOnly.slice(-7)))
-    );
-  });
-
-  return found ? (found as Customer) : null;
+  return null;
 }
 
 export async function getCustomers(query?: string, page = 1, limit = 20, workspaceId?: string) {
@@ -170,252 +141,154 @@ export async function getCustomers(query?: string, page = 1, limit = 20, workspa
   const supabase = createClient();
   const offset = (page - 1) * limit;
 
-  try {
-    const fetchCustomersPromise = (async () => {
-      let dbQuery = supabase
-        .from("customers")
-        .select(
-          "id, name, mobile, email, address, company_name, trn_number, notes, workspace_id, is_deleted, created_at, updated_at, vehicles(id, make, model, year, registration_number, chassis_vin, color, mileage, is_deleted), invoices(balance)",
-          { count: "exact" }
-        )
-        .eq("is_deleted", false)
-        .eq("workspace_id", targetWsId);
+  let dbQuery = supabase
+    .from("customers")
+    .select(
+      "id, name, mobile, email, address, company_name, trn_number, notes, workspace_id, is_deleted, created_at, updated_at, vehicles(id, make, model, year, registration_number, chassis_vin, color, mileage, is_deleted), invoices(balance)",
+      { count: "exact" }
+    )
+    .eq("is_deleted", false)
+    .eq("workspace_id", targetWsId);
 
-      if (query && query.trim()) {
-        const q = query.trim();
-        dbQuery = dbQuery.or(`name.ilike.%${q}%,mobile.ilike.%${q}%,email.ilike.%${q}%,trn_number.ilike.%${q}%,company_name.ilike.%${q}%`);
-      }
-
-      return await dbQuery
-        .order("created_at", { ascending: false })
-        .range(offset, offset + limit - 1);
-    })();
-
-    const timeoutPromise = new Promise<never>((_, reject) =>
-      setTimeout(() => reject(new Error("Customer query timed out")), 2000)
-    );
-
-    const { data, count, error } = await Promise.race([fetchCustomersPromise, timeoutPromise]);
-
-    if (error) throw error;
-
-    const customersWithMetrics: CustomerWithMetrics[] = (data || []).map((c: any) => {
-      const activeVehicles = (c.vehicles || []).filter((v: any) => !v.is_deleted);
-      const totalBalance = (c.invoices || []).reduce(
-        (sum: number, inv: any) => sum + (Number(inv.balance) || 0),
-        0
-      );
-      return {
-        ...c,
-        vehicles: activeVehicles,
-        vehicles_count: activeVehicles.length,
-        vehicles_summary: formatVehicleSummary(activeVehicles),
-        primary_vehicle: activeVehicles[0] || null,
-        outstanding_balance: totalBalance,
-      };
-    });
-
-    saveLocalCustomers(customersWithMetrics, targetWsId);
-    return { customers: customersWithMetrics, total: count || customersWithMetrics.length };
-  } catch (err: any) {
-    console.warn("Using local customer store fallback:", err.message || err);
-    let local = getLocalCustomers(targetWsId).filter((c) => !c.is_deleted);
-    const localVehicles = getLocalVehicles().filter((v) => !v.is_deleted);
-
-    const { getLocalInvoices } = await import("./invoice-service");
-    const allInvoices = getLocalInvoices().filter((inv) => !inv.is_void && inv.payment_status !== "void");
-
-    // Attach vehicles and live outstanding balance to local customers
-    local = local.map((c) => {
-      const custVehs = localVehicles.filter((v) => v.customer_id === c.id);
-      const custInvoices = allInvoices.filter((inv) => inv.customer_id === c.id);
-      const outstandingBalance = custInvoices.reduce((sum, inv) => sum + (Number(inv.balance) || 0), 0);
-      return {
-        ...c,
-        vehicles: custVehs,
-        vehicles_count: custVehs.length,
-        vehicles_summary: formatVehicleSummary(custVehs),
-        primary_vehicle: custVehs[0] || null,
-        outstanding_balance: outstandingBalance,
-      };
-    });
-
-    if (query && query.trim()) {
-      const q = query.trim().toLowerCase();
-      local = local.filter((c) => {
-        const matchesCustomer =
-          c.name.toLowerCase().includes(q) ||
-          (c.mobile && c.mobile.toLowerCase().includes(q)) ||
-          (c.email && c.email.toLowerCase().includes(q)) ||
-          (c.trn_number && c.trn_number.toLowerCase().includes(q)) ||
-          (c.company_name && c.company_name.toLowerCase().includes(q));
-
-        const matchesVehicle = (c.vehicles || []).some(
-          (v) =>
-            v.make.toLowerCase().includes(q) ||
-            v.model.toLowerCase().includes(q) ||
-            (v.registration_number && v.registration_number.toLowerCase().includes(q)) ||
-            (v.chassis_vin && v.chassis_vin.toLowerCase().includes(q))
-        );
-
-        return matchesCustomer || matchesVehicle;
-      });
-    }
-
-    const paged = local.slice(offset, offset + limit);
-    return { customers: paged, total: local.length };
+  if (query && query.trim()) {
+    const q = query.trim();
+    dbQuery = dbQuery.or(`name.ilike.%${q}%,mobile.ilike.%${q}%,email.ilike.%${q}%,trn_number.ilike.%${q}%,company_name.ilike.%${q}%`);
   }
-}
 
-export async function getCustomerById(id: string, workspaceId?: string): Promise<CustomerWithMetrics | null> {
-  const targetWsId = workspaceId || getActiveWorkspaceId();
-  const supabase = createClient();
-  try {
-    const fetchPromise = supabase
-      .from("customers")
-      .select("*, vehicles(*), invoices(balance)")
-      .eq("id", id)
-      .eq("workspace_id", targetWsId)
-      .single();
+  const { data, count, error } = await dbQuery
+    .order("created_at", { ascending: false })
+    .range(offset, offset + limit - 1);
 
-    const timeoutPromise = new Promise<never>((_, reject) =>
-      setTimeout(() => reject(new Error("getCustomerById timed out")), 1500)
-    );
+  if (error) {
+    console.error("Failed to query customers from Supabase:", error);
+    throw new Error(`Failed to load customers from cloud database: ${error.message}`);
+  }
 
-    const { data: customer, error } = await Promise.race([fetchPromise, timeoutPromise]);
-
-    if (error) throw error;
-
-    const activeVehicles = (customer.vehicles || []).filter((v: any) => !v.is_deleted);
-    const totalBalance = (customer.invoices || []).reduce(
+  const customersWithMetrics: CustomerWithMetrics[] = (data || []).map((c: any) => {
+    const activeVehicles = (c.vehicles || []).filter((v: any) => !v.is_deleted);
+    const totalBalance = (c.invoices || []).reduce(
       (sum: number, inv: any) => sum + (Number(inv.balance) || 0),
       0
     );
-
     return {
-      ...customer,
+      ...c,
       vehicles: activeVehicles,
       vehicles_count: activeVehicles.length,
       vehicles_summary: formatVehicleSummary(activeVehicles),
       primary_vehicle: activeVehicles[0] || null,
       outstanding_balance: totalBalance,
     };
-  } catch (err: any) {
-    console.warn(`Reading customer ${id} from local fallback:`, err.message || err);
-    const local = getLocalCustomers(targetWsId);
-    const found = local.find((c) => c.id === id);
-    if (found) {
-      const allVehicles = getLocalVehicles().filter((v) => v.customer_id === id && !v.is_deleted);
-      const { getLocalInvoices } = await import("./invoice-service");
-      const allInvoices = getLocalInvoices(targetWsId).filter(
-        (inv) => inv.customer_id === id && !inv.is_void && inv.payment_status !== "void"
-      );
-      const outstandingBalance = allInvoices.reduce((sum, inv) => sum + (Number(inv.balance) || 0), 0);
-      return {
-        ...found,
-        vehicles: allVehicles,
-        vehicles_count: allVehicles.length,
-        vehicles_summary: formatVehicleSummary(allVehicles),
-        primary_vehicle: allVehicles[0] || null,
-        outstanding_balance: outstandingBalance,
-      };
-    }
+  });
 
-    return null;
-  }
+  return { customers: customersWithMetrics, total: count !== null ? count : customersWithMetrics.length };
 }
 
-export async function createCustomer(payload: CustomerInsert, workspaceId?: string) {
+export async function getCustomerById(id: string, workspaceId?: string): Promise<CustomerWithMetrics | null> {
   const targetWsId = workspaceId || getActiveWorkspaceId();
   const supabase = createClient();
-  try {
-    const { data, error } = await supabase
-      .from("customers")
-      .insert({ ...payload, workspace_id: targetWsId, is_deleted: false })
-      .select()
-      .single();
 
-    if (error) throw error;
-    return data as Customer;
-  } catch (err: any) {
-    console.warn("Creating customer in local store fallback:", err.message || err);
-    const newCustomer: CustomerWithMetrics = {
-      id: "cust-" + Date.now() + "-" + Math.random().toString(36).substring(2, 7),
-      workspace_id: targetWsId,
-      name: payload.name,
-      mobile: payload.mobile || null,
-      email: payload.email || null,
-      address: payload.address || null,
-      company_name: payload.company_name || null,
-      trn_number: payload.trn_number || null,
-      notes: payload.notes || null,
-      is_deleted: false,
-      deleted_at: null,
-      deleted_by: null,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      created_by: payload.created_by || null,
-      vehicles: [],
-      vehicles_count: 0,
-      vehicles_summary: "No Vehicles",
-      outstanding_balance: 0,
-    };
+  const { data: customer, error } = await supabase
+    .from("customers")
+    .select("*, vehicles(*), invoices(balance)")
+    .eq("id", id)
+    .eq("workspace_id", targetWsId)
+    .maybeSingle();
 
-    const local = getLocalCustomers(targetWsId);
-    local.unshift(newCustomer);
-    saveLocalCustomers(local, targetWsId);
-    return newCustomer;
+  if (error) {
+    console.error(`Error loading customer ${id} from Supabase:`, error);
+    throw new Error(`Failed to load customer details: ${error.message}`);
   }
+
+  if (!customer || customer.is_deleted) return null;
+
+  const activeVehicles = (customer.vehicles || []).filter((v: any) => !v.is_deleted);
+  const totalBalance = (customer.invoices || []).reduce(
+    (sum: number, inv: any) => sum + (Number(inv.balance) || 0),
+    0
+  );
+
+  return {
+    ...customer,
+    vehicles: activeVehicles,
+    vehicles_count: activeVehicles.length,
+    vehicles_summary: formatVehicleSummary(activeVehicles),
+    primary_vehicle: activeVehicles[0] || null,
+    outstanding_balance: totalBalance,
+  };
 }
 
-export async function updateCustomer(id: string, payload: CustomerUpdate, workspaceId?: string) {
-  const targetWsId = workspaceId || getActiveWorkspaceId();
+export async function createCustomer(payload: CustomerInsert, workspaceId?: string): Promise<Customer> {
+  const targetWsId = payload.workspace_id || workspaceId || getActiveWorkspaceId();
   const supabase = createClient();
-  try {
-    const { data, error } = await supabase
-      .from("customers")
-      .update(payload)
-      .eq("id", id)
-      .eq("workspace_id", targetWsId)
-      .select()
-      .single();
+  const customerId = (payload as any).id && (payload as any).id.length > 20 ? (payload as any).id : generateUUID();
+  const now = new Date().toISOString();
 
-    if (error) throw error;
-    return data as Customer;
-  } catch (err: any) {
-    console.warn("Updating customer in local store fallback:", err.message || err);
-    const local = getLocalCustomers(targetWsId);
-    const idx = local.findIndex((c) => c.id === id);
-    if (idx !== -1) {
-      local[idx] = {
-        ...local[idx],
-        ...payload,
-        updated_at: new Date().toISOString(),
-      };
-      saveLocalCustomers(local, targetWsId);
-      return local[idx];
-    }
-    throw new Error(`Error updating customer ${id}: ${err.message || err}`);
+  const insertPayload = {
+    ...payload,
+    id: customerId,
+    workspace_id: targetWsId,
+    is_deleted: false,
+    deleted_at: null,
+    deleted_by: null,
+    created_at: now,
+    updated_at: now,
+  };
+
+  const { data, error } = await supabase
+    .from("customers")
+    .insert(insertPayload)
+    .select()
+    .single();
+
+  if (error) {
+    console.error("Supabase customer creation failed:", error);
+    throw new Error(`Could not save Customer to cloud database: ${error.message}. No data was saved locally.`);
   }
+
+  clearSearchCache();
+  return data as Customer;
 }
 
-export async function deleteCustomer(id: string, workspaceId?: string) {
+export async function updateCustomer(id: string, payload: CustomerUpdate, workspaceId?: string): Promise<Customer> {
   const targetWsId = workspaceId || getActiveWorkspaceId();
   const supabase = createClient();
-  try {
-    const { error } = await supabase
-      .from("customers")
-      .delete()
-      .eq("id", id)
-      .eq("workspace_id", targetWsId);
-    if (error) throw error;
-    return true;
-  } catch (err: any) {
-    console.warn("Deleting customer from local store fallback:", err.message || err);
-    const local = getLocalCustomers(targetWsId).filter((c) => c.id !== id);
-    saveLocalCustomers(local, targetWsId);
-    return true;
+  const now = new Date().toISOString();
+
+  const { data, error } = await supabase
+    .from("customers")
+    .update({ ...payload, updated_at: now })
+    .eq("id", id)
+    .eq("workspace_id", targetWsId)
+    .select()
+    .single();
+
+  if (error) {
+    console.error(`Supabase customer update failed for ${id}:`, error);
+    throw new Error(`Could not update Customer in cloud database: ${error.message}.`);
   }
+
+  clearSearchCache();
+  return data as Customer;
+}
+
+export async function deleteCustomer(id: string, workspaceId?: string): Promise<boolean> {
+  const targetWsId = workspaceId || getActiveWorkspaceId();
+  const supabase = createClient();
+  const now = new Date().toISOString();
+
+  const { error } = await supabase
+    .from("customers")
+    .update({ is_deleted: true, deleted_at: now })
+    .eq("id", id)
+    .eq("workspace_id", targetWsId);
+
+  if (error) {
+    console.error(`Supabase customer delete failed for ${id}:`, error);
+    throw new Error(`Could not delete Customer from cloud database: ${error.message}.`);
+  }
+
+  clearSearchCache();
+  return true;
 }
 
 export async function searchCustomersAndVehicles(
