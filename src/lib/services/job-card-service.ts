@@ -527,10 +527,10 @@ export async function getJobCardById(id: string, workspaceId?: string): Promise<
 export type JobCardItemInput = {
   id?: string;
   job_card_id?: string;
-  item_type: "service" | "part";
+  item_type: "service" | "part" | "spare_part" | string;
   service_id?: string | null;
   part_id?: string | null;
-  description: string;
+  description?: string;
   quantity?: number;
   unit_price?: number;
   cost_price?: number;
@@ -538,8 +538,170 @@ export type JobCardItemInput = {
   total_price?: number;
 };
 
+export interface JobCardDbInsertRow {
+  id: string;
+  workspace_id: string;
+  job_card_number: string;
+  invoice_number: number | null;
+  invoice_number_mode: string;
+  customer_id: string;
+  vehicle_id: string;
+  date: string;
+  mileage_in: number | null;
+  customer_complaint: string | null;
+  work_details: string | null;
+  discount: number;
+  subtotal: number;
+  vat_rate: number;
+  vat_amount: number;
+  total: number;
+  paid: number;
+  balance: number;
+  status: string;
+  payment_status: string;
+  assigned_mechanic: string | null;
+  notes: string | null;
+  created_by: string | null;
+  is_deleted: boolean;
+  deleted_at: string | null;
+  deleted_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export function buildJobCardDbInsertPayload(
+  payload: any,
+  meta: {
+    id: string;
+    workspaceId: string;
+    jobCardNumber: string;
+    invoiceNumber: number | null;
+    invoiceNumberMode?: string;
+  }
+): JobCardDbInsertRow {
+  const now = new Date().toISOString();
+  return {
+    id: meta.id,
+    workspace_id: meta.workspaceId,
+    job_card_number: meta.jobCardNumber,
+    invoice_number: meta.invoiceNumber != null && !isNaN(Number(meta.invoiceNumber)) ? Number(meta.invoiceNumber) : null,
+    invoice_number_mode: meta.invoiceNumberMode || payload.invoice_number_mode || "auto",
+    customer_id: payload.customer_id,
+    vehicle_id: payload.vehicle_id,
+    date: payload.date || now.slice(0, 10),
+    mileage_in: payload.mileage_in != null && payload.mileage_in !== "" ? Number(payload.mileage_in) : null,
+    customer_complaint: payload.customer_complaint != null ? String(payload.customer_complaint).trim() || null : null,
+    work_details: payload.work_details != null ? String(payload.work_details).trim() || null : null,
+    discount: Number(payload.discount) || 0,
+    subtotal: Number(payload.subtotal) || 0,
+    vat_rate: payload.vat_rate != null ? Number(payload.vat_rate) : 5.0,
+    vat_amount: Number(payload.vat_amount) || 0,
+    total: Number(payload.total) || 0,
+    paid: Number(payload.paid) || 0,
+    balance: Number(payload.balance) || 0,
+    status: payload.status || "new",
+    payment_status: payload.payment_status || "Pending",
+    assigned_mechanic: payload.assigned_mechanic != null ? String(payload.assigned_mechanic).trim() || null : null,
+    notes: payload.notes != null ? String(payload.notes).trim() || null : null,
+    created_by: payload.created_by || "Owner",
+    is_deleted: false,
+    deleted_at: null,
+    deleted_by: null,
+    created_at: payload.created_at || now,
+    updated_at: now,
+  };
+}
+
+export function buildJobCardDbUpdatePayload(payload: any): Partial<JobCardDbInsertRow> {
+  const updateData: Partial<JobCardDbInsertRow> = {
+    updated_at: new Date().toISOString(),
+  };
+
+  if (payload.customer_id !== undefined) updateData.customer_id = payload.customer_id;
+  if (payload.vehicle_id !== undefined) updateData.vehicle_id = payload.vehicle_id;
+  if (payload.date !== undefined) updateData.date = payload.date;
+  if (payload.mileage_in !== undefined) {
+    updateData.mileage_in = payload.mileage_in != null && payload.mileage_in !== "" ? Number(payload.mileage_in) : null;
+  }
+  if (payload.customer_complaint !== undefined) {
+    updateData.customer_complaint = payload.customer_complaint != null ? String(payload.customer_complaint).trim() || null : null;
+  }
+  if (payload.work_details !== undefined) {
+    updateData.work_details = payload.work_details != null ? String(payload.work_details).trim() || null : null;
+  }
+  if (payload.discount !== undefined) updateData.discount = Number(payload.discount) || 0;
+  if (payload.subtotal !== undefined) updateData.subtotal = Number(payload.subtotal) || 0;
+  if (payload.vat_rate !== undefined) updateData.vat_rate = Number(payload.vat_rate) || 0;
+  if (payload.vat_amount !== undefined) updateData.vat_amount = Number(payload.vat_amount) || 0;
+  if (payload.total !== undefined) updateData.total = Number(payload.total) || 0;
+  if (payload.paid !== undefined) updateData.paid = Number(payload.paid) || 0;
+  if (payload.balance !== undefined) updateData.balance = Number(payload.balance) || 0;
+  if (payload.status !== undefined) updateData.status = payload.status;
+  if (payload.payment_status !== undefined) updateData.payment_status = payload.payment_status;
+  if (payload.assigned_mechanic !== undefined) {
+    updateData.assigned_mechanic = payload.assigned_mechanic != null ? String(payload.assigned_mechanic).trim() || null : null;
+  }
+  if (payload.notes !== undefined) {
+    updateData.notes = payload.notes != null ? String(payload.notes).trim() || null : null;
+  }
+  if (payload.invoice_number !== undefined) {
+    updateData.invoice_number = payload.invoice_number != null && payload.invoice_number !== "" ? Number(payload.invoice_number) : null;
+  }
+  if (payload.invoice_number_mode !== undefined) updateData.invoice_number_mode = payload.invoice_number_mode;
+  if (payload.is_deleted !== undefined) updateData.is_deleted = Boolean(payload.is_deleted);
+  if (payload.deleted_at !== undefined) updateData.deleted_at = payload.deleted_at;
+  if (payload.deleted_by !== undefined) updateData.deleted_by = payload.deleted_by;
+
+  return updateData;
+}
+
+export interface JobCardItemDbRow {
+  id: string;
+  workspace_id: string;
+  job_card_id: string;
+  item_type: "service" | "part";
+  service_id: string | null;
+  part_id: string | null;
+  description: string;
+  quantity: number;
+  unit_price: number;
+  cost_price: number;
+  labour_charge: number;
+  total_price: number;
+  created_at: string;
+}
+
+export function buildJobCardItemDbPayload(
+  it: JobCardItemInput,
+  meta: { jobCardId: string; workspaceId: string }
+): JobCardItemDbRow {
+  const itemType = ((it.item_type as string) === "spare_part" ? "part" : it.item_type) as "service" | "part";
+  const itemId = it.id && it.id.length === 36 && !it.id.startsWith("item-") && !it.id.startsWith("jci-") ? it.id : generateUUID();
+  const qty = Number(it.quantity) || 1;
+  const unitPrice = Number(it.unit_price) || 0;
+  const costPrice = Number(it.cost_price) || 0;
+  const labourCharge = Number(it.labour_charge) || 0;
+  const rawTotal = (it as any).total;
+  const totalPrice = it.total_price != null ? Number(it.total_price) : (rawTotal != null ? Number(rawTotal) : qty * unitPrice + labourCharge);
+  return {
+    id: itemId,
+    job_card_id: meta.jobCardId,
+    workspace_id: meta.workspaceId,
+    item_type: itemType || "service",
+    service_id: it.service_id && it.service_id.length === 36 ? it.service_id : null,
+    part_id: it.part_id && it.part_id.length === 36 ? it.part_id : null,
+    description: (it.description || (itemType === "part" ? "Spare Part" : "Service")).trim(),
+    quantity: qty,
+    unit_price: unitPrice,
+    cost_price: costPrice,
+    labour_charge: labourCharge,
+    total_price: totalPrice,
+    created_at: new Date().toISOString(),
+  };
+}
+
 export async function createJobCard(
-  payload: JobCardInsert & { items?: JobCardItemInput[] },
+  payload: JobCardInsert & { items?: JobCardItemInput[]; payment_method?: string; payment_date?: string; payment_reference?: string; payment_notes?: string },
   itemsInput: JobCardItemInput[] = [],
   workspaceId?: string
 ) {
@@ -549,21 +711,16 @@ export async function createJobCard(
     : (Array.isArray(payload?.items) ? payload.items : []);
 
   const supabase = createClient();
-  const assignedInvoiceNumber = payload.invoice_number || (await getNextInvoiceNumberAsync(targetWsId));
+  const rawInvoiceNum = payload.invoice_number != null ? Number(payload.invoice_number) : null;
+  const assignedInvoiceNumber = rawInvoiceNum !== null && !isNaN(rawInvoiceNum)
+    ? rawInvoiceNum
+    : (await getNextInvoiceNumberAsync(targetWsId));
   const assignedJobCardNumber = payload.job_card_number || (await getNextJobCardNumberAsync(targetWsId));
-  const finalPayload = {
-    ...payload,
-    workspace_id: targetWsId,
-    job_card_number: assignedJobCardNumber,
-    invoice_number: assignedInvoiceNumber,
-    invoice_number_mode: payload.invoice_number_mode || "auto",
-    payment_status: payload.payment_status || "Pending",
-  };
 
   // 1. Stock Validation & Cost Snapshot
   for (const it of items) {
     if ((it.item_type === "part" || (it as any).item_type === "spare_part") && it.part_id) {
-      const part = await getPartById(it.part_id);
+      const part = await getPartById(it.part_id, targetWsId);
       const reqQty = Number(it.quantity) || 1;
       if (part) {
         if (part.current_stock < reqQty) {
@@ -579,18 +736,21 @@ export async function createJobCard(
   }
 
   const payloadId = (payload as any).id;
-  const jobCardId = payloadId && !payloadId.startsWith("jc-") ? payloadId : generateUUID();
+  const jobCardId = payloadId && payloadId.length === 36 ? payloadId : generateUUID();
 
-  // 2. Insert job card header
+  // 2. Build strictly whitelisted DB insert payload
+  const dbInsertPayload = buildJobCardDbInsertPayload(payload, {
+    id: jobCardId,
+    workspaceId: targetWsId,
+    jobCardNumber: assignedJobCardNumber,
+    invoiceNumber: assignedInvoiceNumber,
+    invoiceNumberMode: payload.invoice_number_mode || "auto",
+  });
+
+  // 3. Insert job card header
   const { data: jobCard, error: jcError } = await supabase
     .from("job_cards")
-    .insert({
-      ...finalPayload,
-      id: jobCardId,
-      is_deleted: false,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    })
+    .insert(dbInsertPayload)
     .select()
     .single();
 
@@ -599,26 +759,14 @@ export async function createJobCard(
     throw new Error(`Could not save Job Card to cloud database: ${jcError.message}. No data was saved. Please retry.`);
   }
 
-  // 3. Insert items with workspace_id
+  // 4. Insert items with workspace_id and strictly whitelisted columns
   if (items && items.length > 0) {
-    const itemsPayload = items.map((it) => {
-      const itemType = ((it.item_type as string) === "spare_part" ? "part" : it.item_type) as any;
-      const itemId = it.id && !it.id.startsWith("item-") && !it.id.startsWith("jci-") ? it.id : generateUUID();
-      return {
-        id: itemId,
-        job_card_id: jobCard.id,
-        workspace_id: targetWsId,
-        item_type: itemType,
-        service_id: it.service_id || null,
-        part_id: it.part_id || null,
-        description: it.description,
-        quantity: it.quantity || 1,
-        unit_price: it.unit_price || 0,
-        cost_price: it.cost_price || 0,
-        labour_charge: it.labour_charge || 0,
-        total_price: it.total_price || 0,
-      };
-    });
+    const itemsPayload = items.map((it) =>
+      buildJobCardItemDbPayload(it, {
+        jobCardId: jobCard.id,
+        workspaceId: targetWsId,
+      })
+    );
 
     const { error: itemsError } = await supabase
       .from("job_card_items")
@@ -787,16 +935,14 @@ export async function updateJobCard(
     }
   }
 
-  // 5. Update job card header in Supabase
-  const updatePayload: any = {
-    ...payload,
-    updated_at: new Date().toISOString(),
-  };
+  // 5. Update job card header in Supabase using strict whitelist
+  const updatePayload = buildJobCardDbUpdatePayload(payload);
 
   const { data: updatedHeader, error: jcError } = await supabase
     .from("job_cards")
     .update(updatePayload)
     .eq("id", id)
+    .eq("workspace_id", wsId)
     .select()
     .single();
 
@@ -818,23 +964,12 @@ export async function updateJobCard(
     }
 
     if (items.length > 0) {
-      const itemsWithJcId = items.map((it) => {
-        const itemType = ((it.item_type as string) === "spare_part" ? "part" : it.item_type) as any;
-        return {
-          id: it.id && it.id.length === 36 ? it.id : generateUUID(),
-          job_card_id: id,
-          workspace_id: wsId,
-          item_type: itemType,
-          service_id: it.service_id || null,
-          part_id: it.part_id || null,
-          description: it.description || "",
-          quantity: Number(it.quantity) || 1,
-          unit_price: Number(it.unit_price) || 0,
-          cost_price: Number(it.cost_price) || 0,
-          labour_charge: Number(it.labour_charge) || 0,
-          total_price: Number(it.total_price) || 0,
-        };
-      });
+      const itemsWithJcId = items.map((it) =>
+        buildJobCardItemDbPayload(it, {
+          jobCardId: id,
+          workspaceId: wsId,
+        })
+      );
 
       const { error: insertItemsErr } = await supabase
         .from("job_card_items")

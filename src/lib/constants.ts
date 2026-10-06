@@ -23,7 +23,7 @@ export const DEFAULT_VAT_RATE = 5; // UAE standard VAT
 export const CURRENCY = 'AED';
 
 // ─── Multi-Workspace Constants ──────────────────────────────────────────────
-export const DEFAULT_WORKSPACE_ID = 'ws-atiq-default-001';
+export const DEFAULT_WORKSPACE_ID = 'c6b757e2-49da-41b4-b903-88bcfe8d90fa';
 export const DEFAULT_WORKSPACE_NAME = 'ATIQ JEHAN AUTO REPAIR';
 export const DEFAULT_WORKSPACE_BUSINESS_NAME = 'ATIQ JEHAN AUTO REPAIR & USED SPARE PARTS L.L.C.';
 export const WORKSPACE_STORAGE_KEY = 'atiq_active_workspace_id';

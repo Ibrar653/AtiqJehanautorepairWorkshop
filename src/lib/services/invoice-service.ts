@@ -48,6 +48,146 @@ export function getLocalInvoices(workspaceId?: string): any[] {
   );
 }
 
+export interface InvoiceDbInsertRow {
+  id: string;
+  workspace_id: string;
+  invoice_number: string;
+  job_card_id: string | null;
+  customer_id: string;
+  vehicle_id: string | null;
+  subtotal: number;
+  discount: number;
+  vat_rate: number;
+  vat_amount: number;
+  total: number;
+  paid: number;
+  balance: number;
+  payment_status: string;
+  invoice_type: string;
+  notes: string | null;
+  is_void: boolean;
+  void_reason: string | null;
+  voided_at: string | null;
+  voided_by: string | null;
+  is_deleted: boolean;
+  deleted_at: string | null;
+  deleted_by: string | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export function buildInvoiceDbInsertPayload(
+  payload: any,
+  meta: {
+    id: string;
+    workspaceId: string;
+    invoiceNumber: string;
+  }
+): InvoiceDbInsertRow {
+  const now = new Date().toISOString();
+  return {
+    id: meta.id,
+    workspace_id: meta.workspaceId,
+    invoice_number: meta.invoiceNumber,
+    job_card_id: payload.job_card_id && payload.job_card_id.length === 36 ? payload.job_card_id : null,
+    customer_id: payload.customer_id,
+    vehicle_id: payload.vehicle_id && payload.vehicle_id.length === 36 ? payload.vehicle_id : null,
+    subtotal: Number(payload.subtotal) || 0,
+    discount: Number(payload.discount) || 0,
+    vat_rate: payload.vat_rate != null ? Number(payload.vat_rate) : 5.0,
+    vat_amount: Number(payload.vat_amount) || 0,
+    total: Number(payload.total) || 0,
+    paid: Number(payload.paid) || 0,
+    balance: Number(payload.balance) || 0,
+    payment_status: payload.payment_status || "credit",
+    invoice_type: payload.invoice_type || "job_card",
+    notes: payload.notes != null ? String(payload.notes).trim() || null : null,
+    is_void: Boolean(payload.is_void),
+    void_reason: payload.void_reason || null,
+    voided_at: payload.voided_at || null,
+    voided_by: payload.voided_by || null,
+    is_deleted: false,
+    deleted_at: null,
+    deleted_by: null,
+    created_by: payload.created_by || "Owner",
+    created_at: payload.created_at || now,
+    updated_at: now,
+  };
+}
+
+export function buildInvoiceDbUpdatePayload(payload: any): Partial<InvoiceDbInsertRow> {
+  const updateData: Partial<InvoiceDbInsertRow> = {
+    updated_at: new Date().toISOString(),
+  };
+
+  if (payload.customer_id !== undefined) updateData.customer_id = payload.customer_id;
+  if (payload.vehicle_id !== undefined) {
+    updateData.vehicle_id = payload.vehicle_id && payload.vehicle_id.length === 36 ? payload.vehicle_id : null;
+  }
+  if (payload.subtotal !== undefined) updateData.subtotal = Number(payload.subtotal) || 0;
+  if (payload.discount !== undefined) updateData.discount = Number(payload.discount) || 0;
+  if (payload.vat_rate !== undefined) updateData.vat_rate = Number(payload.vat_rate) || 0;
+  if (payload.vat_amount !== undefined) updateData.vat_amount = Number(payload.vat_amount) || 0;
+  if (payload.total !== undefined) updateData.total = Number(payload.total) || 0;
+  if (payload.paid !== undefined) updateData.paid = Number(payload.paid) || 0;
+  if (payload.balance !== undefined) updateData.balance = Number(payload.balance) || 0;
+  if (payload.payment_status !== undefined) updateData.payment_status = payload.payment_status;
+  if (payload.invoice_type !== undefined) updateData.invoice_type = payload.invoice_type;
+  if (payload.notes !== undefined) updateData.notes = payload.notes != null ? String(payload.notes).trim() || null : null;
+  if (payload.is_void !== undefined) updateData.is_void = Boolean(payload.is_void);
+  if (payload.void_reason !== undefined) updateData.void_reason = payload.void_reason;
+  if (payload.voided_at !== undefined) updateData.voided_at = payload.voided_at;
+  if (payload.voided_by !== undefined) updateData.voided_by = payload.voided_by;
+  if (payload.is_deleted !== undefined) updateData.is_deleted = Boolean(payload.is_deleted);
+  if (payload.deleted_at !== undefined) updateData.deleted_at = payload.deleted_at;
+  if (payload.deleted_by !== undefined) updateData.deleted_by = payload.deleted_by;
+
+  return updateData;
+}
+
+export interface InvoiceItemDbRow {
+  id: string;
+  workspace_id: string;
+  invoice_id: string;
+  item_type: string;
+  description: string;
+  quantity: number;
+  unit_price: number;
+  total_price: number;
+  part_id: string | null;
+  service_id: string | null;
+  cost_price: number;
+  part_number: string | null;
+  created_at: string;
+}
+
+export function buildInvoiceItemDbPayload(
+  it: any,
+  meta: { invoiceId: string; workspaceId: string }
+): InvoiceItemDbRow {
+  const itemId = it.id && it.id.length === 36 && !it.id.startsWith("item-") ? it.id : generateUUID();
+  const qty = Number(it.quantity) || 1;
+  const unitPrice = Number(it.unit_price) || 0;
+  const costPrice = Number(it.cost_price) || 0;
+  const totalPrice = it.total_price != null ? Number(it.total_price) : (it.total != null ? Number(it.total) : qty * unitPrice);
+  return {
+    id: itemId,
+    workspace_id: meta.workspaceId,
+    invoice_id: meta.invoiceId,
+    item_type: it.item_type || "service",
+    description: String(it.description || "").trim(),
+    quantity: qty,
+    unit_price: unitPrice,
+    total_price: totalPrice,
+    part_id: it.part_id && it.part_id.length === 36 ? it.part_id : null,
+    service_id: it.service_id && it.service_id.length === 36 ? it.service_id : null,
+    cost_price: costPrice,
+    part_number: it.part_number != null ? String(it.part_number).trim() || null : null,
+    created_at: it.created_at || new Date().toISOString(),
+  };
+}
+
 export function saveLocalInvoices(invoices: any[], workspaceId?: string) {
   const targetWsId = workspaceId || getActiveWorkspaceId();
   let allExisting: any[] = [];
@@ -516,40 +656,38 @@ export async function generateInvoiceFromJobCard(
   const now = new Date().toISOString();
   const wsId = jobCard.workspace_id || targetWsId;
 
-  const invoicePayload = {
-    id: invoiceId,
-    workspace_id: wsId,
-    invoice_number: formattedInvoiceNumber,
-    job_card_id: jobCard.id,
-    customer_id: jobCard.customer_id,
-    vehicle_id: jobCard.vehicle_id,
-    subtotal,
-    discount,
-    vat_rate: vatRate,
-    vat_amount: vatAmount,
-    total,
-    paid,
-    balance,
-    payment_status,
-    notes: jobCard.notes || null,
-    created_by: createdByUserId || jobCard.created_by || "Owner",
-    created_at: now,
-    updated_at: now,
-  };
+  const invoicePayload = buildInvoiceDbInsertPayload(
+    {
+      job_card_id: jobCard.id,
+      customer_id: jobCard.customer_id,
+      vehicle_id: jobCard.vehicle_id,
+      subtotal,
+      discount,
+      vat_rate: vatRate,
+      vat_amount: vatAmount,
+      total,
+      paid,
+      balance,
+      payment_status,
+      invoice_type: "job_card",
+      notes: jobCard.notes || null,
+      created_by: createdByUserId || jobCard.created_by || "Owner",
+      created_at: now,
+      updated_at: now,
+    },
+    {
+      id: invoiceId,
+      workspaceId: wsId,
+      invoiceNumber: formattedInvoiceNumber,
+    }
+  );
 
-  const invoiceItemsToInsert = allItems.map((it) => ({
-    id: generateUUID(),
-    invoice_id: invoiceId,
-    workspace_id: wsId,
-    item_type: it.item_type,
-    service_id: it.service_id,
-    part_id: it.part_id,
-    description: it.description,
-    quantity: it.quantity,
-    unit_price: it.unit_price,
-    total_price: it.total_price,
-    created_at: now,
-  }));
+  const invoiceItemsToInsert = allItems.map((it) =>
+    buildInvoiceItemDbPayload(it, {
+      invoiceId,
+      workspaceId: wsId,
+    })
+  );
 
   // Write to Supabase
   const { data: created, error: invErr } = await supabase
@@ -902,56 +1040,46 @@ export async function createDirectInvoice(
     } catch {}
   } else if (isExplicitNameProvided) {
     // Manually entered / new customer name (e.g. "FARMAN KHAN", "Ali Ahmad")
-    try {
+    const created = await createCustomer(
+      {
+        name: rawInputName,
+        mobile: resolvedCustomerPhone,
+        email: null,
+        address: null,
+        company_name: resolvedCompany,
+        trn_number: resolvedTrn,
+        notes: "Direct invoice customer",
+      },
+      targetWsId
+    );
+    resolvedCustomerId = created.id;
+    resolvedCustomerName = created.name;
+  } else {
+    // True Walk-in (no name entered or generic placeholder)
+    resolvedCustomerName = "Walk-in Customer";
+    const res = await getCustomers("Walk-in", 1, 10, targetWsId);
+    const found = (res.customers || []).find((c: any) =>
+      c.name.toLowerCase().includes("walk-in")
+    );
+    if (found) {
+      resolvedCustomerId = found.id;
+      resolvedCustomerName = found.name;
+      if (!resolvedCustomerPhone) resolvedCustomerPhone = found.mobile;
+    } else {
       const created = await createCustomer(
         {
-          name: rawInputName,
+          name: "Walk-in Customer",
           mobile: resolvedCustomerPhone,
           email: null,
           address: null,
           company_name: resolvedCompany,
           trn_number: resolvedTrn,
-          notes: "Direct invoice customer",
+          notes: "Walk-in counter customer",
         },
         targetWsId
       );
       resolvedCustomerId = created.id;
       resolvedCustomerName = created.name;
-    } catch (e: any) {
-      console.warn("Could not create customer record for direct invoice:", e);
-      resolvedCustomerId = "cust-" + Date.now() + "-" + Math.random().toString(36).substring(2, 6);
-      resolvedCustomerName = rawInputName;
-    }
-  } else {
-    // True Walk-in (no name entered or generic placeholder)
-    resolvedCustomerName = "Walk-in Customer";
-    try {
-      const res = await getCustomers("Walk-in", 1, 10, targetWsId);
-      const found = (res.customers || []).find((c: any) =>
-        c.name.toLowerCase().includes("walk-in")
-      );
-      if (found) {
-        resolvedCustomerId = found.id;
-        resolvedCustomerName = found.name;
-        if (!resolvedCustomerPhone) resolvedCustomerPhone = found.mobile;
-      } else {
-        const created = await createCustomer(
-          {
-            name: "Walk-in Customer",
-            mobile: resolvedCustomerPhone,
-            email: null,
-            address: null,
-            company_name: resolvedCompany,
-            trn_number: resolvedTrn,
-            notes: "Walk-in counter customer",
-          },
-          targetWsId
-        );
-        resolvedCustomerId = created.id;
-        resolvedCustomerName = created.name;
-      }
-    } catch {
-      resolvedCustomerId = "cust-walkin-" + targetWsId;
     }
   }
 
@@ -1017,65 +1145,79 @@ export async function createDirectInvoice(
   const formattedInvoiceNumber = await generateNextInvoiceNumber(targetWsId);
   const invoiceId = generateUUID();
 
-  const invoicePayload: any = {
-    id: invoiceId,
-    workspace_id: targetWsId,
-    invoice_number: formattedInvoiceNumber,
-    job_card_id: null,
-    customer_id: resolvedCustomerId!,
-    vehicle_id: resolvedVehicleId,
-    subtotal: taxableSubtotal,
-    discount: overallDiscount,
-    vat_rate: vatRate,
-    vat_amount: vatAmount,
-    total: grandTotal,
-    paid: paidAmount,
-    balance: balance,
-    payment_status,
-    invoice_type: invoiceType,
-    notes: payload.notes || `Direct ${invoiceType === "direct_service" ? "Service" : invoiceType === "direct_parts" ? "Spare Parts" : "Service & Parts"} Invoice`,
-    created_by: payload.created_by || "Owner",
-    created_at: payload.date ? `${payload.date}T${now.slice(11)}` : now,
-    updated_at: now,
-  };
+  const invoicePayload = buildInvoiceDbInsertPayload(
+    {
+      job_card_id: null,
+      customer_id: resolvedCustomerId!,
+      vehicle_id: resolvedVehicleId,
+      subtotal: taxableSubtotal,
+      discount: overallDiscount,
+      vat_rate: vatRate,
+      vat_amount: vatAmount,
+      total: grandTotal,
+      paid: paidAmount,
+      balance: balance,
+      payment_status,
+      invoice_type: invoiceType,
+      notes: payload.notes || `Direct ${invoiceType === "direct_service" ? "Service" : invoiceType === "direct_parts" ? "Spare Parts" : "Service & Parts"} Invoice`,
+      created_by: payload.created_by || "Owner",
+      created_at: payload.date ? `${payload.date}T${now.slice(11)}` : now,
+      updated_at: now,
+    },
+    {
+      id: invoiceId,
+      workspaceId: targetWsId,
+      invoiceNumber: formattedInvoiceNumber,
+    }
+  );
 
-  // 6. Build Line Items
-  const invoiceItemsToInsert: any[] = [];
+  // 6. Build Line Items using strict whitelist builder
+  const invoiceItemsToInsert: InvoiceItemDbRow[] = [];
 
   // Service line items
   for (const s of verifiedServices) {
-    invoiceItemsToInsert.push({
-      id: generateUUID(),
-      invoice_id: invoiceId,
-      workspace_id: targetWsId,
-      item_type: "service" as const,
-      service_id: s.service_id,
-      part_id: null,
-      description: s.description,
-      quantity: s.quantity,
-      unit_price: s.unit_price,
-      total_price: s.total_price,
-      cost_price: 0,
-      created_at: now,
-    });
+    invoiceItemsToInsert.push(
+      buildInvoiceItemDbPayload(
+        {
+          item_type: "service",
+          service_id: s.service_id,
+          part_id: null,
+          description: s.description,
+          quantity: s.quantity,
+          unit_price: s.unit_price,
+          total_price: s.total_price,
+          cost_price: 0,
+          created_at: now,
+        },
+        {
+          invoiceId,
+          workspaceId: targetWsId,
+        }
+      )
+    );
   }
 
   // Spare part line items
   for (const p of verifiedParts) {
-    invoiceItemsToInsert.push({
-      id: generateUUID(),
-      invoice_id: invoiceId,
-      workspace_id: targetWsId,
-      item_type: "part" as const,
-      service_id: null,
-      part_id: p.part_id,
-      description: p.part_number ? `${p.part_name} (${p.part_number})` : p.part_name,
-      quantity: p.quantity,
-      unit_price: p.unit_price,
-      total_price: p.total_price,
-      cost_price: p.cost_price,
-      created_at: now,
-    });
+    invoiceItemsToInsert.push(
+      buildInvoiceItemDbPayload(
+        {
+          item_type: "part",
+          service_id: null,
+          part_id: p.part_id,
+          description: p.part_number ? `${p.part_name} (${p.part_number})` : p.part_name,
+          quantity: p.quantity,
+          unit_price: p.unit_price,
+          total_price: p.total_price,
+          cost_price: p.cost_price,
+          created_at: now,
+        },
+        {
+          invoiceId,
+          workspaceId: targetWsId,
+        }
+      )
+    );
   }
 
   // 7. Inventory Deduction: ONLY Catalog Spare Parts Deduct Inventory (Services & Manual parts NEVER touch stock)

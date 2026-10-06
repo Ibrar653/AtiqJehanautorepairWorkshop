@@ -1214,10 +1214,8 @@ export async function postTransaction(
         reference_type: newTxn.reference_type,
         reference_id: newTxn.reference_id,
         description: newTxn.description,
-        total_debit: newTxn.total_debit,
-        total_credit: newTxn.total_credit,
-        cash_flow_type: newTxn.cash_flow_type,
-        created_by: newTxn.created_by,
+        cash_flow_type: newTxn.cash_flow_type || null,
+        created_by: newTxn.created_by || "Owner",
         created_at: newTxn.created_at,
       })
       .select()
@@ -2015,14 +2013,24 @@ export async function createWorker(payload: WorkerInsert, workspaceId?: string):
   const targetWsId = workspaceId || getActiveWorkspaceId();
   const supabase = createClient();
   const now = new Date().toISOString();
-  const newWorker: Worker = {
-    ...payload,
-    id: payload.id || "worker-" + Date.now() + "-" + Math.random().toString(36).substring(2, 6),
+  const workerId = payload.id && payload.id.length === 36 ? payload.id : generateUUID();
+  const workerDbPayload = {
+    id: workerId,
     workspace_id: payload.workspace_id || targetWsId,
+    name: String(payload.name || "").trim(),
+    phone: payload.phone != null ? String(payload.phone).trim() || null : null,
+    job_position: String(payload.job_position || "Mechanic").trim(),
+    salary_type: payload.salary_type || "monthly",
     basic_salary: Number(payload.basic_salary) || 0,
     opening_balance: Number(payload.opening_balance) || 0,
+    status: payload.status || "active",
+    notes: payload.notes != null ? String(payload.notes).trim() || null : null,
     created_at: now,
     updated_at: now,
+  };
+
+  const newWorker: Worker = {
+    ...workerDbPayload,
   };
 
   const list = getLocalWorkers(targetWsId);
@@ -2030,7 +2038,7 @@ export async function createWorker(payload: WorkerInsert, workspaceId?: string):
   saveLocalWorkers(list, targetWsId);
 
   try {
-    const { data, error } = await supabase.from("workers").insert(newWorker).select().single();
+    const { data, error } = await supabase.from("workers").insert(workerDbPayload).select().single();
     if (error) throw error;
     return data;
   } catch {
@@ -2044,12 +2052,22 @@ export async function updateWorker(id: string, payload: Partial<WorkerInsert>): 
   const idx = list.findIndex((w) => w.id === id);
   if (idx === -1) throw new Error("Worker not found");
 
-  const updated = { ...list[idx], ...payload, updated_at: new Date().toISOString() };
+  const updateDbPayload: any = { updated_at: new Date().toISOString() };
+  if (payload.name !== undefined) updateDbPayload.name = String(payload.name).trim();
+  if (payload.phone !== undefined) updateDbPayload.phone = payload.phone != null ? String(payload.phone).trim() || null : null;
+  if (payload.job_position !== undefined) updateDbPayload.job_position = String(payload.job_position).trim();
+  if (payload.salary_type !== undefined) updateDbPayload.salary_type = payload.salary_type;
+  if (payload.basic_salary !== undefined) updateDbPayload.basic_salary = Number(payload.basic_salary) || 0;
+  if (payload.opening_balance !== undefined) updateDbPayload.opening_balance = Number(payload.opening_balance) || 0;
+  if (payload.status !== undefined) updateDbPayload.status = payload.status;
+  if (payload.notes !== undefined) updateDbPayload.notes = payload.notes != null ? String(payload.notes).trim() || null : null;
+
+  const updated = { ...list[idx], ...updateDbPayload };
   list[idx] = updated;
   saveLocalWorkers(list);
 
   try {
-    const { data, error } = await supabase.from("workers").update(payload).eq("id", id).select().single();
+    const { data, error } = await supabase.from("workers").update(updateDbPayload).eq("id", id).select().single();
     if (error) throw error;
     return data;
   } catch {
@@ -2096,13 +2114,23 @@ export async function createBankAccount(payload: BankAccountInsert, workspaceId?
   const targetWsId = workspaceId || getActiveWorkspaceId();
   const supabase = createClient();
   const now = new Date().toISOString();
-  const newBank: BankAccount = {
-    ...payload,
-    id: payload.id || "bank-" + Date.now() + "-" + Math.random().toString(36).substring(2, 6),
+  const bankId = payload.id && payload.id.length === 36 ? payload.id : generateUUID();
+  const bankDbPayload = {
+    id: bankId,
     workspace_id: payload.workspace_id || targetWsId,
+    bank_name: String(payload.bank_name || "").trim(),
+    account_name: String(payload.account_name || "").trim(),
+    account_number_last_digits: payload.account_number_last_digits != null ? String(payload.account_number_last_digits).trim() || null : null,
     opening_balance: Number(payload.opening_balance) || 0,
+    currency: payload.currency || "AED",
+    status: payload.status || "active",
+    notes: payload.notes != null ? String(payload.notes).trim() || null : null,
     created_at: now,
     updated_at: now,
+  };
+
+  const newBank: BankAccount = {
+    ...bankDbPayload,
     current_balance: Number(payload.opening_balance) || 0,
   };
 
@@ -2131,7 +2159,7 @@ export async function createBankAccount(payload: BankAccountInsert, workspaceId?
   }
 
   try {
-    const { data, error } = await supabase.from("bank_accounts").insert(newBank).select().single();
+    const { data, error } = await supabase.from("bank_accounts").insert(bankDbPayload).select().single();
     if (error) throw error;
     return data;
   } catch {

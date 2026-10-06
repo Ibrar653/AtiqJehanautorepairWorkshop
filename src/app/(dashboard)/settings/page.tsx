@@ -107,6 +107,7 @@ import { WorkspacesTab } from "@/components/settings/workspaces-tab";
 import { TestDataResetTab } from "@/components/settings/test-data-reset-tab";
 import { AppearanceThemeTab } from "@/components/settings/appearance-theme-tab";
 import { DatabaseMigrationTab } from "@/components/settings/database-migration-tab";
+import { DatabaseDiagnosticsTab } from "@/components/settings/database-diagnostics-tab";
 import { useWorkspace } from "@/lib/context/workspace-context";
 
 
@@ -587,7 +588,26 @@ export default function SettingsPage() {
 
         {/* Administration Action Area (Test Data Reset & Cloud Migration) — Right aligned below navigation */}
         {isPlatformOwner && (
-          <div className="flex items-center justify-end -mt-1 mb-2 gap-2">
+          <div className="flex items-center justify-end -mt-1 mb-2 gap-2 flex-wrap">
+            <button
+              type="button"
+              onClick={() => setActiveTab("db_diagnostics")}
+              className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-all cursor-pointer ${
+                activeTab === "db_diagnostics"
+                  ? "bg-purple-50 dark:bg-purple-950/40 border-purple-300 dark:border-purple-800 text-purple-700 dark:text-purple-300 shadow-xs"
+                  : "bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 text-purple-600 dark:text-purple-400 hover:bg-purple-50/70 dark:hover:bg-purple-950/30 hover:border-purple-300 shadow-2xs"
+              }`}
+              title="Run Live Database CRUD Write Path Diagnostics (Owner Only)"
+            >
+              <ShieldCheck className="w-3.5 h-3.5 shrink-0 text-purple-600 dark:text-purple-400" aria-hidden="true" />
+              <span className="text-[12px] font-semibold text-purple-600 dark:text-purple-400">
+                DB Diagnostics
+              </span>
+              <span className="inline-flex items-center text-[9px] font-bold uppercase tracking-[0.03em] px-2 py-0.5 rounded-full bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
+                OWNER
+              </span>
+            </button>
+
             <button
               type="button"
               onClick={() => setActiveTab("cloud_migration")}
@@ -802,6 +822,11 @@ export default function SettingsPage() {
               workspaceId={currentWorkspace?.id || "ws-atiq-default-001"}
               isOwnerOrAdmin={isPlatformOwner || isOwner}
             />
+          </TabsContent>
+        )}
+        {isPlatformOwner && (
+          <TabsContent value="db_diagnostics">
+            <DatabaseDiagnosticsTab />
           </TabsContent>
         )}
       </Tabs>

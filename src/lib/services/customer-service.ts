@@ -217,22 +217,88 @@ export async function getCustomerById(id: string, workspaceId?: string): Promise
   };
 }
 
-export async function createCustomer(payload: CustomerInsert, workspaceId?: string): Promise<Customer> {
-  const targetWsId = payload.workspace_id || workspaceId || getActiveWorkspaceId();
-  const supabase = createClient();
-  const customerId = (payload as any).id && (payload as any).id.length > 20 ? (payload as any).id : generateUUID();
-  const now = new Date().toISOString();
+export interface CustomerDbRow {
+  id: string;
+  workspace_id: string;
+  name: string;
+  mobile: string | null;
+  email: string | null;
+  address: string | null;
+  company_name: string | null;
+  trn_number: string | null;
+  notes: string | null;
+  created_by: string | null;
+  is_deleted: boolean;
+  deleted_at: string | null;
+  deleted_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
 
-  const insertPayload = {
-    ...payload,
-    id: customerId,
-    workspace_id: targetWsId,
+export function buildCustomerDbInsertPayload(
+  payload: any,
+  meta: { id: string; workspaceId: string }
+): CustomerDbRow {
+  const now = new Date().toISOString();
+  return {
+    id: meta.id,
+    workspace_id: meta.workspaceId,
+    name: String(payload.name || "").trim(),
+    mobile: payload.mobile != null ? String(payload.mobile).trim() || null : null,
+    email: payload.email != null ? String(payload.email).trim().toLowerCase() || null : null,
+    address: payload.address != null ? String(payload.address).trim() || null : null,
+    company_name: payload.company_name != null ? String(payload.company_name).trim() || null : null,
+    trn_number: payload.trn_number != null ? String(payload.trn_number).trim() || null : null,
+    notes: payload.notes != null ? String(payload.notes).trim() || null : null,
+    created_by: payload.created_by && payload.created_by.length === 36 ? payload.created_by : null,
     is_deleted: false,
     deleted_at: null,
     deleted_by: null,
-    created_at: now,
+    created_at: payload.created_at || now,
     updated_at: now,
   };
+}
+
+export function buildCustomerDbUpdatePayload(payload: any): Partial<CustomerDbRow> {
+  const updateData: Partial<CustomerDbRow> = {
+    updated_at: new Date().toISOString(),
+  };
+
+  if (payload.name !== undefined) updateData.name = String(payload.name || "").trim();
+  if (payload.mobile !== undefined) {
+    updateData.mobile = payload.mobile != null ? String(payload.mobile).trim() || null : null;
+  }
+  if (payload.email !== undefined) {
+    updateData.email = payload.email != null ? String(payload.email).trim().toLowerCase() || null : null;
+  }
+  if (payload.address !== undefined) {
+    updateData.address = payload.address != null ? String(payload.address).trim() || null : null;
+  }
+  if (payload.company_name !== undefined) {
+    updateData.company_name = payload.company_name != null ? String(payload.company_name).trim() || null : null;
+  }
+  if (payload.trn_number !== undefined) {
+    updateData.trn_number = payload.trn_number != null ? String(payload.trn_number).trim() || null : null;
+  }
+  if (payload.notes !== undefined) {
+    updateData.notes = payload.notes != null ? String(payload.notes).trim() || null : null;
+  }
+  if (payload.is_deleted !== undefined) updateData.is_deleted = Boolean(payload.is_deleted);
+  if (payload.deleted_at !== undefined) updateData.deleted_at = payload.deleted_at;
+  if (payload.deleted_by !== undefined) updateData.deleted_by = payload.deleted_by;
+
+  return updateData;
+}
+
+export async function createCustomer(payload: CustomerInsert, workspaceId?: string): Promise<Customer> {
+  const targetWsId = payload.workspace_id || workspaceId || getActiveWorkspaceId();
+  const supabase = createClient();
+  const customerId = (payload as any).id && (payload as any).id.length === 36 ? (payload as any).id : generateUUID();
+
+  const insertPayload = buildCustomerDbInsertPayload(payload, {
+    id: customerId,
+    workspaceId: targetWsId,
+  });
 
   const { data, error } = await supabase
     .from("customers")
@@ -242,7 +308,7 @@ export async function createCustomer(payload: CustomerInsert, workspaceId?: stri
 
   if (error) {
     console.error("Supabase customer creation failed:", error);
-    throw new Error(`Could not save Customer to cloud database: ${error.message}. No data was saved locally.`);
+    throw new Error(`Could not save Customer to cloud database: ${error.message}.`);
   }
 
   clearSearchCache();
@@ -252,11 +318,12 @@ export async function createCustomer(payload: CustomerInsert, workspaceId?: stri
 export async function updateCustomer(id: string, payload: CustomerUpdate, workspaceId?: string): Promise<Customer> {
   const targetWsId = workspaceId || getActiveWorkspaceId();
   const supabase = createClient();
-  const now = new Date().toISOString();
+
+  const updatePayload = buildCustomerDbUpdatePayload(payload);
 
   const { data, error } = await supabase
     .from("customers")
-    .update({ ...payload, updated_at: now })
+    .update(updatePayload)
     .eq("id", id)
     .eq("workspace_id", targetWsId)
     .select()

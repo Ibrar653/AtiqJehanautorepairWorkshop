@@ -182,23 +182,36 @@ export function saveLocalMembers(members: WorkspaceMember[]) {
 
 // ─── Active Workspace Resolution ─────────────────────────────────────────────
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
 let inMemoryActiveWorkspaceId: string = DEFAULT_WORKSPACE_ID;
 
 export function getActiveWorkspaceId(): string {
-  if (typeof window === "undefined") return inMemoryActiveWorkspaceId;
+  if (typeof window === "undefined") {
+    return UUID_REGEX.test(inMemoryActiveWorkspaceId) ? inMemoryActiveWorkspaceId : DEFAULT_WORKSPACE_ID;
+  }
   try {
     const stored = localStorage.getItem(WORKSPACE_STORAGE_KEY);
-    if (stored && stored.trim()) return stored.trim();
+    if (stored && stored.trim()) {
+      const cleanStored = stored.trim();
+      if (UUID_REGEX.test(cleanStored)) {
+        return cleanStored;
+      }
+      // Auto-correct legacy non-UUID workspace ID stored in browser
+      localStorage.setItem(WORKSPACE_STORAGE_KEY, DEFAULT_WORKSPACE_ID);
+      return DEFAULT_WORKSPACE_ID;
+    }
   } catch {}
-  return inMemoryActiveWorkspaceId;
+  return UUID_REGEX.test(inMemoryActiveWorkspaceId) ? inMemoryActiveWorkspaceId : DEFAULT_WORKSPACE_ID;
 }
 
 export function setActiveWorkspaceId(workspaceId: string) {
-  inMemoryActiveWorkspaceId = workspaceId;
+  const targetId = UUID_REGEX.test(workspaceId) ? workspaceId : DEFAULT_WORKSPACE_ID;
+  inMemoryActiveWorkspaceId = targetId;
   if (typeof window === "undefined") return;
   try {
-    localStorage.setItem(WORKSPACE_STORAGE_KEY, workspaceId);
-    window.dispatchEvent(new CustomEvent("atiq_workspace_changed", { detail: { workspaceId } }));
+    localStorage.setItem(WORKSPACE_STORAGE_KEY, targetId);
+    window.dispatchEvent(new CustomEvent("atiq_workspace_changed", { detail: { workspaceId: targetId } }));
   } catch (e) {
     console.error("Failed to set active workspace id", e);
   }

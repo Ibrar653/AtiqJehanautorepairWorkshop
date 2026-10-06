@@ -54,10 +54,51 @@ export async function getPayments(page = 1, limit = 25, workspaceId?: string): P
   return { payments: data || [], total: count || 0 };
 }
 
+export interface PaymentDbRow {
+  id: string;
+  workspace_id: string;
+  invoice_id: string | null;
+  job_card_id: string | null;
+  customer_id: string;
+  amount: number;
+  payment_method: string;
+  reference_number: string | null;
+  notes: string | null;
+  payment_date: string;
+  created_by: string | null;
+  is_deleted: boolean;
+  deleted_at: string | null;
+  deleted_by: string | null;
+  created_at: string;
+}
+
+export function buildPaymentDbInsertPayload(
+  payload: any,
+  meta: { id: string; workspaceId: string }
+): PaymentDbRow {
+  const now = new Date().toISOString();
+  return {
+    id: meta.id,
+    workspace_id: meta.workspaceId,
+    invoice_id: payload.invoice_id && payload.invoice_id.length === 36 ? payload.invoice_id : null,
+    job_card_id: payload.job_card_id && payload.job_card_id.length === 36 ? payload.job_card_id : null,
+    customer_id: payload.customer_id,
+    amount: Number(payload.amount) || 0,
+    payment_method: payload.payment_method || "cash",
+    reference_number: payload.reference_number != null ? String(payload.reference_number).trim() || null : null,
+    notes: payload.notes != null ? String(payload.notes).trim() || null : null,
+    payment_date: payload.payment_date || payload.date || now.slice(0, 10),
+    created_by: payload.created_by || "Owner",
+    is_deleted: false,
+    deleted_at: null,
+    deleted_by: null,
+    created_at: payload.created_at || now,
+  };
+}
+
 export async function recordPayment(payload: PaymentInsert) {
   const supabase = createClient();
   const targetWsId = payload.workspace_id || await getActiveWorkspaceId();
-  const now = new Date().toISOString();
 
   if (Number(payload.amount) <= 0) {
     throw new Error("Payment amount must be greater than zero.");
@@ -65,12 +106,10 @@ export async function recordPayment(payload: PaymentInsert) {
   const payloadId = (payload as any).id;
   const paymentId = payloadId && payloadId.length === 36 ? payloadId : generateUUID();
 
-  const paymentInsertData = {
-    ...payload,
+  const paymentInsertData = buildPaymentDbInsertPayload(payload, {
     id: paymentId,
-    workspace_id: targetWsId,
-    created_at: now,
-  };
+    workspaceId: targetWsId,
+  });
 
   const { data: created, error } = await supabase
     .from("payments")

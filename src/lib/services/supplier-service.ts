@@ -169,25 +169,108 @@ export async function getSupplierById(id: string): Promise<(SupplierWithStats & 
   };
 }
 
+export interface SupplierDbRow {
+  id: string;
+  workspace_id: string;
+  name: string;
+  company_name: string | null;
+  contact_person: string | null;
+  phone: string | null;
+  alternate_phone: string | null;
+  email: string | null;
+  address: string | null;
+  city: string | null;
+  trn_number: string | null;
+  notes: string | null;
+  is_active: boolean;
+  is_deleted: boolean;
+  deleted_at: string | null;
+  deleted_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export function buildSupplierDbInsertPayload(
+  payload: any,
+  meta: { id: string; workspaceId: string }
+): SupplierDbRow {
+  const now = new Date().toISOString();
+  return {
+    id: meta.id,
+    workspace_id: meta.workspaceId,
+    name: String(payload.name || "").trim(),
+    company_name: payload.company_name != null ? String(payload.company_name).trim() || null : null,
+    contact_person: payload.contact_person != null ? String(payload.contact_person).trim() || null : null,
+    phone: payload.phone != null ? String(payload.phone).trim() || null : null,
+    alternate_phone: payload.alternate_phone != null ? String(payload.alternate_phone).trim() || null : null,
+    email: payload.email != null ? String(payload.email).trim().toLowerCase() || null : null,
+    address: payload.address != null ? String(payload.address).trim() || null : null,
+    city: payload.city != null ? String(payload.city).trim() || null : null,
+    trn_number: payload.trn_number != null ? String(payload.trn_number).trim() || null : null,
+    notes: payload.notes != null ? String(payload.notes).trim() || null : null,
+    is_active: payload.is_active !== undefined ? Boolean(payload.is_active) : true,
+    is_deleted: false,
+    deleted_at: null,
+    deleted_by: null,
+    created_at: payload.created_at || now,
+    updated_at: now,
+  };
+}
+
+export function buildSupplierDbUpdatePayload(payload: any): Partial<SupplierDbRow> {
+  const updateData: Partial<SupplierDbRow> = {
+    updated_at: new Date().toISOString(),
+  };
+
+  if (payload.name !== undefined) updateData.name = String(payload.name || "").trim();
+  if (payload.company_name !== undefined) {
+    updateData.company_name = payload.company_name != null ? String(payload.company_name).trim() || null : null;
+  }
+  if (payload.contact_person !== undefined) {
+    updateData.contact_person = payload.contact_person != null ? String(payload.contact_person).trim() || null : null;
+  }
+  if (payload.phone !== undefined) {
+    updateData.phone = payload.phone != null ? String(payload.phone).trim() || null : null;
+  }
+  if (payload.alternate_phone !== undefined) {
+    updateData.alternate_phone = payload.alternate_phone != null ? String(payload.alternate_phone).trim() || null : null;
+  }
+  if (payload.email !== undefined) {
+    updateData.email = payload.email != null ? String(payload.email).trim().toLowerCase() || null : null;
+  }
+  if (payload.address !== undefined) {
+    updateData.address = payload.address != null ? String(payload.address).trim() || null : null;
+  }
+  if (payload.city !== undefined) {
+    updateData.city = payload.city != null ? String(payload.city).trim() || null : null;
+  }
+  if (payload.trn_number !== undefined) {
+    updateData.trn_number = payload.trn_number != null ? String(payload.trn_number).trim() || null : null;
+  }
+  if (payload.notes !== undefined) {
+    updateData.notes = payload.notes != null ? String(payload.notes).trim() || null : null;
+  }
+  if (payload.is_active !== undefined) updateData.is_active = Boolean(payload.is_active);
+  if (payload.is_deleted !== undefined) updateData.is_deleted = Boolean(payload.is_deleted);
+  if (payload.deleted_at !== undefined) updateData.deleted_at = payload.deleted_at;
+  if (payload.deleted_by !== undefined) updateData.deleted_by = payload.deleted_by;
+
+  return updateData;
+}
+
 /**
  * Create a new supplier
  */
 export async function createSupplier(payload: SupplierInsert, workspaceId?: string): Promise<Supplier> {
   const targetWsId = workspaceId || getActiveWorkspaceId();
   const supabase = createClient();
-  const now = new Date().toISOString();
 
-  const newSupplierData = {
-    ...payload,
-    id: payload.id || generateUUID(),
-    workspace_id: payload.workspace_id || targetWsId,
-    is_active: payload.is_active !== undefined ? payload.is_active : true,
-    is_deleted: false,
-    deleted_at: null,
-    deleted_by: null,
-    created_at: now,
-    updated_at: now,
-  };
+  const supplierId = payload.id && payload.id.length === 36 ? payload.id : generateUUID();
+
+  const newSupplierData = buildSupplierDbInsertPayload(payload, {
+    id: supplierId,
+    workspaceId: payload.workspace_id || targetWsId,
+  });
 
   const { data, error } = await supabase
     .from("suppliers")
@@ -205,14 +288,17 @@ export async function createSupplier(payload: SupplierInsert, workspaceId?: stri
 /**
  * Update an existing supplier
  */
-export async function updateSupplier(id: string, payload: SupplierUpdate): Promise<Supplier> {
+export async function updateSupplier(id: string, payload: SupplierUpdate, workspaceId?: string): Promise<Supplier> {
+  const targetWsId = workspaceId || getActiveWorkspaceId();
   const supabase = createClient();
-  const now = new Date().toISOString();
+
+  const updateData = buildSupplierDbUpdatePayload(payload);
 
   const { data, error } = await supabase
     .from("suppliers")
-    .update({ ...payload, updated_at: now })
+    .update(updateData)
     .eq("id", id)
+    .eq("workspace_id", targetWsId)
     .select()
     .single();
 

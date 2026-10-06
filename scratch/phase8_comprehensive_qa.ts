@@ -53,7 +53,7 @@ async function runComprehensiveQA() {
     console.log("\n[1 & 2. ENVIRONMENT & CREDENTIAL HYGIENE]");
     assert(PRIMARY_OWNER_EMAIL === "atiqjehandaraz@gmail.com", "Primary Owner is atiqjehandaraz@gmail.com");
     assert(DEFAULT_VAT_RATE === 5, "UAE Standard VAT rate is 5%");
-    assert(DEFAULT_WORKSPACE_ID === "ws-atiq-default-001", "Default Primary Workspace ID is ws-atiq-default-001");
+    assert(DEFAULT_WORKSPACE_ID === "c6b757e2-49da-41b4-b903-88bcfe8d90fa", "Default Primary Workspace ID is valid UUID");
 
     // ───────────────────────────────────────────────────────────────────────────
     // CHECKPOINT 4: Primary Owner Authentication & Lockout Protection

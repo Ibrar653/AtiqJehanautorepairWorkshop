@@ -68,6 +68,139 @@ export function saveLocalSupplierPayments(payments: SupplierPayment[], workspace
   }
 }
 
+export interface PurchaseDbRow {
+  id: string;
+  workspace_id: string;
+  supplier_id: string;
+  purchase_invoice_number: string | null;
+  date: string;
+  total: number;
+  paid_amount: number;
+  balance: number;
+  payment_status: string;
+  payment_method: string | null;
+  notes: string | null;
+  created_by: string | null;
+  is_deleted: boolean;
+  deleted_at: string | null;
+  deleted_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export function buildPurchaseDbInsertPayload(
+  payload: any,
+  meta: { id: string; workspaceId: string; total: number; paidAmount: number; balance: number; paymentStatus: string; paymentMethod?: string }
+): PurchaseDbRow {
+  const now = new Date().toISOString();
+  return {
+    id: meta.id,
+    workspace_id: meta.workspaceId,
+    supplier_id: payload.supplier_id,
+    purchase_invoice_number: payload.purchase_invoice_number != null ? String(payload.purchase_invoice_number).trim() || null : null,
+    date: payload.date || now.slice(0, 10),
+    total: meta.total,
+    paid_amount: meta.paidAmount,
+    balance: meta.balance,
+    payment_status: meta.paymentStatus,
+    payment_method: meta.paymentMethod || payload.payment_method || "cash",
+    notes: payload.notes != null ? String(payload.notes).trim() || null : null,
+    created_by: payload.created_by || "Owner",
+    is_deleted: false,
+    deleted_at: null,
+    deleted_by: null,
+    created_at: payload.created_at || now,
+    updated_at: now,
+  };
+}
+
+export function buildPurchaseDbUpdatePayload(payload: any): Partial<PurchaseDbRow> {
+  const updateData: Partial<PurchaseDbRow> = {
+    updated_at: new Date().toISOString(),
+  };
+
+  if (payload.supplier_id !== undefined) updateData.supplier_id = payload.supplier_id;
+  if (payload.purchase_invoice_number !== undefined) {
+    updateData.purchase_invoice_number = payload.purchase_invoice_number != null ? String(payload.purchase_invoice_number).trim() || null : null;
+  }
+  if (payload.date !== undefined) updateData.date = payload.date;
+  if (payload.total !== undefined) updateData.total = Number(payload.total) || 0;
+  if (payload.paid_amount !== undefined) updateData.paid_amount = Number(payload.paid_amount) || 0;
+  if (payload.balance !== undefined) updateData.balance = Number(payload.balance) || 0;
+  if (payload.payment_status !== undefined) updateData.payment_status = payload.payment_status;
+  if (payload.payment_method !== undefined) updateData.payment_method = payload.payment_method;
+  if (payload.notes !== undefined) updateData.notes = payload.notes != null ? String(payload.notes).trim() || null : null;
+  if (payload.is_deleted !== undefined) updateData.is_deleted = Boolean(payload.is_deleted);
+  if (payload.deleted_at !== undefined) updateData.deleted_at = payload.deleted_at;
+  if (payload.deleted_by !== undefined) updateData.deleted_by = payload.deleted_by;
+
+  return updateData;
+}
+
+export interface PurchaseItemDbRow {
+  id: string;
+  workspace_id: string;
+  purchase_id: string;
+  part_id: string;
+  quantity: number;
+  purchase_price: number;
+  total_price: number;
+  created_at: string;
+}
+
+export function buildPurchaseItemDbPayload(
+  it: any,
+  meta: { purchaseId: string; workspaceId: string }
+): PurchaseItemDbRow {
+  const itemId = it.id && it.id.length === 36 && !it.id.startsWith("item-") ? it.id : generateUUID();
+  const qty = Number(it.quantity) || 1;
+  const unitPrice = Number(it.purchase_price) || 0;
+  return {
+    id: itemId,
+    workspace_id: meta.workspaceId,
+    purchase_id: meta.purchaseId,
+    part_id: it.part_id,
+    quantity: qty,
+    purchase_price: unitPrice,
+    total_price: it.total_price != null ? Number(it.total_price) : qty * unitPrice,
+    created_at: it.created_at || new Date().toISOString(),
+  };
+}
+
+export interface SupplierPaymentDbRow {
+  id: string;
+  workspace_id: string;
+  purchase_id: string | null;
+  supplier_id: string;
+  amount: number;
+  payment_method: string;
+  payment_date: string;
+  reference_number: string | null;
+  notes: string | null;
+  created_by: string | null;
+  created_at: string;
+}
+
+export function buildSupplierPaymentDbPayload(
+  payload: any,
+  meta: { id: string; workspaceId: string }
+): SupplierPaymentDbRow {
+  const now = new Date().toISOString();
+  return {
+    id: meta.id,
+    workspace_id: meta.workspaceId,
+    purchase_id: payload.purchase_id && payload.purchase_id.length === 36 ? payload.purchase_id : null,
+    supplier_id: payload.supplier_id,
+    amount: Number(payload.amount) || 0,
+    payment_method: payload.payment_method || "cash",
+    payment_date: payload.payment_date || payload.date || now.slice(0, 10),
+    reference_number: payload.reference_number != null ? String(payload.reference_number).trim() || null : null,
+    notes: payload.notes != null ? String(payload.notes).trim() || null : null,
+    created_by: payload.created_by || "Owner",
+    created_at: payload.created_at || now,
+  };
+}
+
 /**
  * Get purchases with query, status filter, supplierId filter, and pagination
  */
@@ -186,20 +319,17 @@ export async function createPurchase(
     payment_status = purchasePayload.payment_status || "credit";
   }
 
-  const purchaseId = purchasePayload.id || generateUUID();
+  const purchaseId = purchasePayload.id && purchasePayload.id.length === 36 ? purchasePayload.id : generateUUID();
 
-  const purchaseData = {
-    ...purchasePayload,
+  const purchaseData = buildPurchaseDbInsertPayload(purchasePayload, {
     id: purchaseId,
-    workspace_id: purchasePayload.workspace_id || targetWsId,
+    workspaceId: purchasePayload.workspace_id || targetWsId,
     total,
-    paid_amount,
+    paidAmount: paid_amount,
     balance,
-    payment_status,
-    payment_method: paymentDetails?.payment_method || purchasePayload.payment_method || "cash",
-    created_at: now,
-    updated_at: now,
-  };
+    paymentStatus: payment_status,
+    paymentMethod: paymentDetails?.payment_method || purchasePayload.payment_method || "cash",
+  });
 
   // 2. Insert purchase header
   const { data: purchase, error: pErr } = await supabase
@@ -215,13 +345,12 @@ export async function createPurchase(
 
   // 3. Insert items & update stock
   if (items.length > 0) {
-    const itemsWithPurchaseId = items.map((it) => ({
-      ...it,
-      id: it.id || generateUUID(),
-      purchase_id: purchase.id,
-      workspace_id: targetWsId,
-      total_price: it.total_price || Number(it.quantity) * Number(it.purchase_price),
-    }));
+    const itemsWithPurchaseId = items.map((it) =>
+      buildPurchaseItemDbPayload(it, {
+        purchaseId: purchase.id,
+        workspaceId: targetWsId,
+      })
+    );
 
     const { error: itemsErr } = await supabase.from("purchase_items").insert(itemsWithPurchaseId);
     if (itemsErr) {
@@ -258,19 +387,22 @@ export async function createPurchase(
 
   // 4. Record initial payment if paid > 0
   if (paid_amount > 0) {
-    const paymentRecord = {
-      id: generateUUID(),
-      workspace_id: targetWsId,
-      purchase_id: purchase.id,
-      supplier_id: purchase.supplier_id,
-      amount: paid_amount,
-      payment_method: paymentDetails?.payment_method || "cash",
-      payment_date: purchasePayload.date || now.slice(0, 10),
-      reference_number: paymentDetails?.payment_reference || purchasePayload.purchase_invoice_number,
-      notes: "Initial purchase payment",
-      created_by: purchasePayload.created_by || "Owner",
-      created_at: now,
-    };
+    const paymentRecord = buildSupplierPaymentDbPayload(
+      {
+        purchase_id: purchase.id,
+        supplier_id: purchase.supplier_id,
+        amount: paid_amount,
+        payment_method: paymentDetails?.payment_method || "cash",
+        payment_date: purchasePayload.date || now.slice(0, 10),
+        reference_number: paymentDetails?.payment_reference || purchasePayload.purchase_invoice_number,
+        notes: "Initial purchase payment",
+        created_by: purchasePayload.created_by || "Owner",
+      },
+      {
+        id: generateUUID(),
+        workspaceId: targetWsId,
+      }
+    );
 
     const { error: spErr } = await supabase.from("supplier_payments").insert(paymentRecord);
     if (spErr) {
@@ -407,14 +539,13 @@ export async function updatePurchase(
     payment_status = "credit";
   }
 
-  const updatedPurchaseData = {
+  const updatedPurchaseData = buildPurchaseDbUpdatePayload({
     ...purchasePayload,
     total,
     paid_amount,
     balance,
     payment_status,
-    updated_at: now,
-  };
+  });
 
   // 4. Update in Supabase
   const { data: updated, error: uErr } = await supabase
@@ -432,13 +563,12 @@ export async function updatePurchase(
   // Replace purchase items
   await supabase.from("purchase_items").delete().eq("purchase_id", purchaseId);
 
-  const itemsToInsert = newItems.map((it) => ({
-    ...it,
-    id: it.id || generateUUID(),
-    purchase_id: purchaseId,
-    workspace_id: targetWsId,
-    total_price: it.total_price || Number(it.quantity) * Number(it.purchase_price),
-  }));
+  const itemsToInsert = newItems.map((it) =>
+    buildPurchaseItemDbPayload(it, {
+      purchaseId,
+      workspaceId: targetWsId,
+    })
+  );
 
   const { error: itemsInsertErr } = await supabase.from("purchase_items").insert(itemsToInsert);
   if (itemsInsertErr) {
@@ -486,19 +616,22 @@ export async function recordSupplierPayment(
 
   const targetWsId = purchase.workspace_id || getActiveWorkspaceId();
 
-  const paymentRecord = {
-    id: generateUUID(),
-    workspace_id: targetWsId,
-    purchase_id: purchaseId,
-    supplier_id: purchase.supplier_id,
-    amount: payAmt,
-    payment_method: paymentMethod,
-    payment_date: now.slice(0, 10),
-    reference_number: referenceNumber || null,
-    notes: notes || null,
-    created_by: createdBy,
-    created_at: now,
-  };
+  const paymentRecord = buildSupplierPaymentDbPayload(
+    {
+      purchase_id: purchaseId,
+      supplier_id: purchase.supplier_id,
+      amount: payAmt,
+      payment_method: paymentMethod,
+      payment_date: now.slice(0, 10),
+      reference_number: referenceNumber || null,
+      notes: notes || null,
+      created_by: createdBy,
+    },
+    {
+      id: generateUUID(),
+      workspaceId: targetWsId,
+    }
+  );
 
   const { data: insertedPayment, error: payErr } = await supabase
     .from("supplier_payments")

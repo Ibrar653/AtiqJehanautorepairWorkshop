@@ -475,6 +475,100 @@ export async function getPartById(id: string, workspaceId?: string): Promise<Par
   }
 }
 
+export interface PartDbRow {
+  id: string;
+  workspace_id: string;
+  part_number: string | null;
+  name: string;
+  brand: string | null;
+  description: string | null;
+  unit: string;
+  purchase_price: number;
+  selling_price: number;
+  current_stock: number;
+  minimum_stock: number;
+  supplier_id: string | null;
+  location: string | null;
+  is_active: boolean;
+  is_deleted: boolean;
+  deleted_at: string | null;
+  deleted_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export function buildPartDbInsertPayload(
+  payload: any,
+  meta: { id: string; workspaceId: string }
+): PartDbRow {
+  const now = new Date().toISOString();
+  return {
+    id: meta.id,
+    workspace_id: meta.workspaceId,
+    part_number: payload.part_number != null ? String(payload.part_number).trim() || null : null,
+    name: String(payload.name || "").trim(),
+    brand: payload.brand != null ? String(payload.brand).trim() || null : null,
+    description: payload.description != null ? String(payload.description).trim() || null : null,
+    unit: payload.unit != null && String(payload.unit).trim() ? String(payload.unit).trim() : "piece",
+    purchase_price: Number(payload.purchase_price) || 0,
+    selling_price: Number(payload.selling_price) || 0,
+    current_stock: Number(payload.current_stock) || 0,
+    minimum_stock: payload.minimum_stock != null ? Number(payload.minimum_stock) : 5,
+    supplier_id: payload.supplier_id && payload.supplier_id.length === 36 ? payload.supplier_id : null,
+    location: payload.location != null ? String(payload.location).trim() || null : null,
+    is_active: payload.is_active !== undefined ? Boolean(payload.is_active) : true,
+    is_deleted: false,
+    deleted_at: null,
+    deleted_by: null,
+    created_at: payload.created_at || now,
+    updated_at: now,
+  };
+}
+
+export function buildPartDbUpdatePayload(payload: any): Partial<PartDbRow> {
+  const updateData: Partial<PartDbRow> = {
+    updated_at: new Date().toISOString(),
+  };
+
+  if (payload.name !== undefined) updateData.name = String(payload.name || "").trim();
+  if (payload.part_number !== undefined) {
+    updateData.part_number = payload.part_number != null ? String(payload.part_number).trim() || null : null;
+  }
+  if (payload.brand !== undefined) {
+    updateData.brand = payload.brand != null ? String(payload.brand).trim() || null : null;
+  }
+  if (payload.description !== undefined) {
+    updateData.description = payload.description != null ? String(payload.description).trim() || null : null;
+  }
+  if (payload.location !== undefined) {
+    updateData.location = payload.location != null ? String(payload.location).trim() || null : null;
+  }
+  if (payload.unit !== undefined) {
+    updateData.unit = payload.unit != null && String(payload.unit).trim() ? String(payload.unit).trim() : "piece";
+  }
+  if (payload.purchase_price !== undefined) {
+    updateData.purchase_price = Number(payload.purchase_price) || 0;
+  }
+  if (payload.selling_price !== undefined) {
+    updateData.selling_price = Number(payload.selling_price) || 0;
+  }
+  if (payload.minimum_stock !== undefined) {
+    updateData.minimum_stock = Number(payload.minimum_stock) || 0;
+  }
+  if (payload.current_stock !== undefined) {
+    updateData.current_stock = Number(payload.current_stock) || 0;
+  }
+  if (payload.supplier_id !== undefined) {
+    updateData.supplier_id = payload.supplier_id && payload.supplier_id.length === 36 ? payload.supplier_id : null;
+  }
+  if (payload.is_active !== undefined) updateData.is_active = Boolean(payload.is_active);
+  if (payload.is_deleted !== undefined) updateData.is_deleted = Boolean(payload.is_deleted);
+  if (payload.deleted_at !== undefined) updateData.deleted_at = payload.deleted_at;
+  if (payload.deleted_by !== undefined) updateData.deleted_by = payload.deleted_by;
+
+  return updateData;
+}
+
 /**
  * Create a new spare part
  */
@@ -494,14 +588,13 @@ export async function createPart(payload: PartInsert, workspaceId?: string): Pro
   const initialStock = Math.max(0, Number(payload.current_stock) || 0);
   const partId = (payload as any).id && (payload as any).id.length === 36 ? (payload as any).id : generateUUID();
 
-  const insertData = {
-    ...payload,
-    id: partId,
-    workspace_id: payload.workspace_id || targetWsId,
-    current_stock: initialStock,
-    created_at: now,
-    updated_at: now,
-  };
+  const insertData = buildPartDbInsertPayload(
+    { ...payload, current_stock: initialStock },
+    {
+      id: partId,
+      workspaceId: payload.workspace_id || targetWsId,
+    }
+  );
 
   const { data: created, error } = await supabase
     .from("parts")
@@ -545,7 +638,6 @@ export async function createPart(payload: PartInsert, workspaceId?: string): Pro
 export async function updatePart(id: string, payload: PartUpdate, workspaceId?: string): Promise<Part> {
   const targetWsId = workspaceId || await getActiveWorkspaceId();
   const supabase = createClient();
-  const now = new Date().toISOString();
 
   // Validate duplicate part number if part_number changed
   if (payload.part_number && payload.part_number.trim()) {
@@ -555,50 +647,13 @@ export async function updatePart(id: string, payload: PartUpdate, workspaceId?: 
     }
   }
 
-  // Parse and sanitize fields
-  const cleanPayload: PartUpdate = { ...payload };
-  if (cleanPayload.name !== undefined) {
-    cleanPayload.name = cleanPayload.name.trim();
-  }
-  if (cleanPayload.part_number !== undefined) {
-    cleanPayload.part_number = cleanPayload.part_number?.trim() || null;
-  }
-  if (cleanPayload.brand !== undefined) {
-    cleanPayload.brand = cleanPayload.brand?.trim() || null;
-  }
-  if (cleanPayload.description !== undefined) {
-    cleanPayload.description = cleanPayload.description?.trim() || null;
-  }
-  if (cleanPayload.location !== undefined) {
-    cleanPayload.location = cleanPayload.location?.trim() || null;
-  }
-  if (cleanPayload.unit !== undefined) {
-    cleanPayload.unit = cleanPayload.unit?.trim() || "piece";
-  }
-  if (cleanPayload.purchase_price !== undefined) {
-    const parsedPurchase = typeof cleanPayload.purchase_price === "string" ? parseFloat(cleanPayload.purchase_price) : Number(cleanPayload.purchase_price);
-    cleanPayload.purchase_price = isNaN(parsedPurchase) ? 0 : Math.max(0, parsedPurchase);
-  }
-  if (cleanPayload.selling_price !== undefined) {
-    const parsedSelling = typeof cleanPayload.selling_price === "string" ? parseFloat(cleanPayload.selling_price) : Number(cleanPayload.selling_price);
-    cleanPayload.selling_price = isNaN(parsedSelling) ? 0 : Math.max(0, parsedSelling);
-  }
-  if (cleanPayload.minimum_stock !== undefined) {
-    const parsedMin = typeof cleanPayload.minimum_stock === "string" ? parseInt(cleanPayload.minimum_stock, 10) : Number(cleanPayload.minimum_stock);
-    cleanPayload.minimum_stock = isNaN(parsedMin) ? 0 : Math.max(0, parsedMin);
-  }
-  if (cleanPayload.current_stock !== undefined) {
-    const parsedStock = typeof cleanPayload.current_stock === "string" ? parseInt(cleanPayload.current_stock, 10) : Number(cleanPayload.current_stock);
-    cleanPayload.current_stock = isNaN(parsedStock) ? 0 : Math.max(0, parsedStock);
-  }
+  const updateData = buildPartDbUpdatePayload(payload);
 
   const { data, error } = await supabase
     .from("parts")
-    .update({
-      ...cleanPayload,
-      updated_at: now,
-    })
+    .update(updateData)
     .eq("id", id)
+    .eq("workspace_id", targetWsId)
     .select()
     .single();
 

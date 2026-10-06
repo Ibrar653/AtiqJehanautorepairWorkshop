@@ -158,19 +158,92 @@ export async function getVehiclesByCustomer(customerId: string, workspaceId?: st
   return (data || []) as Vehicle[];
 }
 
+export interface VehicleDbRow {
+  id: string;
+  workspace_id: string;
+  customer_id: string;
+  make: string;
+  model: string;
+  year: number | null;
+  color: string | null;
+  chassis_vin: string | null;
+  mileage: number | null;
+  registration_number: string | null;
+  notes: string | null;
+  is_deleted: boolean;
+  deleted_at: string | null;
+  deleted_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export function buildVehicleDbInsertPayload(
+  payload: any,
+  meta: { id: string; workspaceId: string }
+): VehicleDbRow {
+  const now = new Date().toISOString();
+  return {
+    id: meta.id,
+    workspace_id: meta.workspaceId,
+    customer_id: payload.customer_id,
+    make: String(payload.make || "").trim(),
+    model: String(payload.model || "").trim(),
+    year: payload.year != null && payload.year !== "" ? Number(payload.year) : null,
+    color: payload.color != null ? String(payload.color).trim() || null : null,
+    chassis_vin: payload.chassis_vin != null ? String(payload.chassis_vin).trim().toUpperCase() || null : null,
+    mileage: payload.mileage != null && payload.mileage !== "" ? Number(payload.mileage) : null,
+    registration_number: payload.registration_number != null ? String(payload.registration_number).trim().toUpperCase() || null : null,
+    notes: payload.notes != null ? String(payload.notes).trim() || null : null,
+    is_deleted: false,
+    deleted_at: null,
+    deleted_by: null,
+    created_at: payload.created_at || now,
+    updated_at: now,
+  };
+}
+
+export function buildVehicleDbUpdatePayload(payload: any): Partial<VehicleDbRow> {
+  const updateData: Partial<VehicleDbRow> = {
+    updated_at: new Date().toISOString(),
+  };
+
+  if (payload.customer_id !== undefined) updateData.customer_id = payload.customer_id;
+  if (payload.make !== undefined) updateData.make = String(payload.make || "").trim();
+  if (payload.model !== undefined) updateData.model = String(payload.model || "").trim();
+  if (payload.year !== undefined) {
+    updateData.year = payload.year != null && payload.year !== "" ? Number(payload.year) : null;
+  }
+  if (payload.color !== undefined) {
+    updateData.color = payload.color != null ? String(payload.color).trim() || null : null;
+  }
+  if (payload.chassis_vin !== undefined) {
+    updateData.chassis_vin = payload.chassis_vin != null ? String(payload.chassis_vin).trim().toUpperCase() || null : null;
+  }
+  if (payload.mileage !== undefined) {
+    updateData.mileage = payload.mileage != null && payload.mileage !== "" ? Number(payload.mileage) : null;
+  }
+  if (payload.registration_number !== undefined) {
+    updateData.registration_number = payload.registration_number != null ? String(payload.registration_number).trim().toUpperCase() || null : null;
+  }
+  if (payload.notes !== undefined) {
+    updateData.notes = payload.notes != null ? String(payload.notes).trim() || null : null;
+  }
+  if (payload.is_deleted !== undefined) updateData.is_deleted = Boolean(payload.is_deleted);
+  if (payload.deleted_at !== undefined) updateData.deleted_at = payload.deleted_at;
+  if (payload.deleted_by !== undefined) updateData.deleted_by = payload.deleted_by;
+
+  return updateData;
+}
+
 export async function createVehicle(payload: VehicleInsert, workspaceId?: string): Promise<Vehicle> {
   const targetWsId = payload.workspace_id || workspaceId || getActiveWorkspaceId();
   const supabase = createClient();
-  const vehicleId = (payload as any).id && !(payload as any).id.startsWith("veh-") ? (payload as any).id : generateUUID();
+  const vehicleId = (payload as any).id && (payload as any).id.length === 36 ? (payload as any).id : generateUUID();
 
-  const insertData = {
-    ...payload,
+  const insertData = buildVehicleDbInsertPayload(payload, {
     id: vehicleId,
-    workspace_id: targetWsId,
-    is_deleted: false,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  };
+    workspaceId: targetWsId,
+  });
 
   const { data, error } = await supabase
     .from("vehicles")
@@ -180,23 +253,23 @@ export async function createVehicle(payload: VehicleInsert, workspaceId?: string
 
   if (error) {
     console.error("Supabase vehicle insertion error:", error);
-    throw new Error(`Could not save vehicle to cloud database: ${error.message}. No data was saved. Please retry.`);
+    throw new Error(`Could not save vehicle to cloud database: ${error.message}.`);
   }
 
   return data as Vehicle;
 }
 
-export async function updateVehicle(id: string, payload: VehicleUpdate): Promise<Vehicle> {
+export async function updateVehicle(id: string, payload: VehicleUpdate, workspaceId?: string): Promise<Vehicle> {
+  const targetWsId = workspaceId || getActiveWorkspaceId();
   const supabase = createClient();
-  const updateData = {
-    ...payload,
-    updated_at: new Date().toISOString(),
-  };
+
+  const updateData = buildVehicleDbUpdatePayload(payload);
 
   const { data, error } = await supabase
     .from("vehicles")
     .update(updateData)
     .eq("id", id)
+    .eq("workspace_id", targetWsId)
     .select()
     .single();
 

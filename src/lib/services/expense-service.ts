@@ -417,6 +417,83 @@ export async function getExpenseReportData(
   };
 }
 
+export interface ExpenseDbRow {
+  id: string;
+  workspace_id: string;
+  expense_date: string;
+  category: string;
+  description: string | null;
+  amount: number;
+  payment_method: string;
+  paid_to: string | null;
+  reference_number: string | null;
+  notes: string | null;
+  attachment_path: string | null;
+  created_by: string | null;
+  is_deleted: boolean;
+  deleted_at: string | null;
+  deleted_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export function buildExpenseDbInsertPayload(
+  payload: any,
+  meta: { id: string; workspaceId: string }
+): ExpenseDbRow {
+  const now = new Date().toISOString();
+  return {
+    id: meta.id,
+    workspace_id: meta.workspaceId,
+    expense_date: payload.expense_date || payload.date || now.slice(0, 10),
+    category: String(payload.category || "").trim(),
+    description: payload.description != null ? String(payload.description).trim() || null : null,
+    amount: Number(payload.amount) || 0,
+    payment_method: payload.payment_method || "cash",
+    paid_to: payload.paid_to != null ? String(payload.paid_to).trim() || null : null,
+    reference_number: payload.reference_number != null ? String(payload.reference_number).trim() || null : null,
+    notes: payload.notes != null ? String(payload.notes).trim() || null : null,
+    attachment_path: payload.attachment_path || null,
+    created_by: payload.created_by || "Owner",
+    is_deleted: false,
+    deleted_at: null,
+    deleted_by: null,
+    created_at: payload.created_at || now,
+    updated_at: now,
+  };
+}
+
+export function buildExpenseDbUpdatePayload(payload: any): Partial<ExpenseDbRow> {
+  const updateData: Partial<ExpenseDbRow> = {
+    updated_at: new Date().toISOString(),
+  };
+
+  if (payload.expense_date !== undefined || payload.date !== undefined) {
+    updateData.expense_date = payload.expense_date || payload.date;
+  }
+  if (payload.category !== undefined) updateData.category = String(payload.category || "").trim();
+  if (payload.description !== undefined) {
+    updateData.description = payload.description != null ? String(payload.description).trim() || null : null;
+  }
+  if (payload.amount !== undefined) updateData.amount = Number(payload.amount) || 0;
+  if (payload.payment_method !== undefined) updateData.payment_method = payload.payment_method;
+  if (payload.paid_to !== undefined) {
+    updateData.paid_to = payload.paid_to != null ? String(payload.paid_to).trim() || null : null;
+  }
+  if (payload.reference_number !== undefined) {
+    updateData.reference_number = payload.reference_number != null ? String(payload.reference_number).trim() || null : null;
+  }
+  if (payload.notes !== undefined) {
+    updateData.notes = payload.notes != null ? String(payload.notes).trim() || null : null;
+  }
+  if (payload.attachment_path !== undefined) updateData.attachment_path = payload.attachment_path;
+  if (payload.is_deleted !== undefined) updateData.is_deleted = Boolean(payload.is_deleted);
+  if (payload.deleted_at !== undefined) updateData.deleted_at = payload.deleted_at;
+  if (payload.deleted_by !== undefined) updateData.deleted_by = payload.deleted_by;
+
+  return updateData;
+}
+
 /**
  * Record a new expense
  */
@@ -427,26 +504,12 @@ export async function recordExpense(payload: ExpenseInsert, workspaceId?: string
   }
 
   const supabase = createClient();
-  const now = new Date().toISOString();
-  const expId = payload.id || generateUUID();
-  const expenseDate = payload.expense_date || payload.date || now.slice(0, 10);
+  const expId = payload.id && payload.id.length === 36 ? payload.id : generateUUID();
 
-  const cleanPayload = {
+  const cleanPayload = buildExpenseDbInsertPayload(payload, {
     id: expId,
-    workspace_id: payload.workspace_id || targetWsId,
-    expense_date: expenseDate,
-    category: payload.category.trim(),
-    amount: Number(payload.amount),
-    payment_method: payload.payment_method || "cash",
-    description: payload.description || null,
-    paid_to: payload.paid_to?.trim() || null,
-    reference_number: payload.reference_number?.trim() || null,
-    notes: payload.notes?.trim() || null,
-    attachment_path: payload.attachment_path || null,
-    is_deleted: false,
-    created_at: now,
-    updated_at: now,
-  };
+    workspaceId: payload.workspace_id || targetWsId,
+  });
 
   saveCustomCategory(cleanPayload.category);
 
@@ -478,28 +541,21 @@ export async function recordExpense(payload: ExpenseInsert, workspaceId?: string
 /**
  * Update an existing expense
  */
-export async function updateExpense(id: string, payload: ExpenseUpdate): Promise<Expense> {
+export async function updateExpense(id: string, payload: ExpenseUpdate, workspaceId?: string): Promise<Expense> {
+  const targetWsId = workspaceId || getActiveWorkspaceId();
   const supabase = createClient();
-  const now = new Date().toISOString();
 
   if (payload.category) {
     saveCustomCategory(payload.category);
   }
 
-  const updatePayload: any = {
-    ...payload,
-    updated_at: now,
-  };
-
-  if (payload.expense_date || payload.date) {
-    updatePayload.expense_date = payload.expense_date || payload.date;
-    delete updatePayload.date;
-  }
+  const updatePayload = buildExpenseDbUpdatePayload(payload);
 
   const { data, error } = await supabase
     .from("expenses")
     .update(updatePayload)
     .eq("id", id)
+    .eq("workspace_id", targetWsId)
     .select()
     .single();
 
