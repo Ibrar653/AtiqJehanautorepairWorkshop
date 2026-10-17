@@ -47,7 +47,7 @@ function normalizePdfCloneColors(
   if (!ctx) return;
 
   // html2canvas's CSS parser does not support these modern CSS Color functions.
-  const unsupportedColor = /(?:oklch|oklab|lch|lab|hwb|color-mix|color)\\s*\\(/i;
+  const unsupportedColor = /(?:oklch|oklab|lch|lab|hwb|color-mix|color)\s*\(/i;
   const colorProperties = [
     "color",
     "background-color",
