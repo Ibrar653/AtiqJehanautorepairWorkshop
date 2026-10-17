@@ -6,9 +6,10 @@ import { useWorkspace } from "@/lib/context/workspace-context";
 
 interface InvoicePrintViewProps {
   invoice: any;
+  isForPdf?: boolean;
 }
 
-export function InvoicePrintView({ invoice }: InvoicePrintViewProps) {
+export function InvoicePrintView({ invoice, isForPdf = false }: InvoicePrintViewProps) {
   const { currentWorkspace } = useWorkspace();
   if (!invoice) return null;
 
@@ -82,12 +83,18 @@ export function InvoicePrintView({ invoice }: InvoicePrintViewProps) {
 
   return (
     <div
-      className={`invoice-print print-only hidden print:block bg-white text-black leading-tight font-sans ${rootTextClass}`}
+      className={
+        isForPdf
+          ? `invoice-print bg-white text-black leading-tight font-sans ${rootTextClass} p-4 block`
+          : `invoice-print print-only hidden print:block bg-white text-black leading-tight font-sans ${rootTextClass}`
+      }
       style={{
         boxSizing: "border-box",
-        width: "100%",
+        width: isForPdf ? "794px" : "100%",
+        minHeight: isForPdf ? "1123px" : undefined,
         maxWidth: "100%",
         margin: "0 auto",
+        backgroundColor: "#ffffff",
       }}
     >
       <style jsx global>{`
@@ -186,7 +193,7 @@ export function InvoicePrintView({ invoice }: InvoicePrintViewProps) {
       {/* ─── Top Main Content Container ─── */}
       <div className="w-full space-y-2">
         {/* ─── Top 3-Column Header ─── */}
-        <div className={`border-2 border-black p-2 ${sectionGap} bg-white invoice-header flex items-center justify-between`}>
+        <div className={`border-2 border-black p-2 ${sectionGap} bg-white invoice-header grid grid-cols-[1.2fr_0.8fr_1fr] items-center gap-3`}>
           {/* Left Column: Workshop Details */}
           <div className="text-left leading-tight">
             <h1
@@ -521,7 +528,7 @@ export function InvoicePrintView({ invoice }: InvoicePrintViewProps) {
 
       {/* ─── OFFICIAL FOOTER / SIGNATURE SECTION ─── */}
       <div className="invoice-signatures w-full mt-2 pt-2 text-black">
-        <div className="invoice-signatures-grid">
+        <div className="invoice-signatures-grid grid grid-cols-2 gap-7 w-full">
           {/* LEFT SIDE: ATIQ JEHAN AUTO REPAIR */}
           <div className="invoice-sig-box text-left flex flex-col justify-between" style={{ minHeight: "75px" }}>
             <div>

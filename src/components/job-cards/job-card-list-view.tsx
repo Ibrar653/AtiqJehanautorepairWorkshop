@@ -2,8 +2,11 @@
 
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import Link from "next/link";
-import { getJobCards, deleteJobCard, type JobCardDateFilter } from "@/lib/services/job-card-service";
+import { getJobCards, deleteJobCard, getJobCardById, type JobCardDateFilter } from "@/lib/services/job-card-service";
 import { getUploadedJobCards, deleteUploadedJobCard } from "@/lib/services/document-service";
+import { exportJobCardToExcel, exportJobCardsBulk, sanitizeFileName } from "@/lib/services/export-service";
+import { exportElementToPdf } from "@/lib/services/pdf-service";
+import { JobCardPrintView } from "@/components/job-cards/job-card-print-view";
 import type { JobCardWithRelations, JobCardStatus, UploadedJobCardWithRelations } from "@/types/database";
 import { UploadJobCardDialog } from "@/components/job-cards/upload-job-card-dialog";
 import { PageHeader } from "@/components/shared/page-header";
@@ -45,6 +48,8 @@ import {
   Download,
   Clock,
   Sparkles,
+  FileSpreadsheet,
+  ChevronDown,
 } from "lucide-react";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { usePermissions } from "@/lib/context/auth-context";
@@ -92,6 +97,12 @@ export function JobCardListView() {
   const [financialBlockMessage, setFinancialBlockMessage] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [selectedJobCardIds, setSelectedJobCardIds] = useState<string[]>([]);
+
+  // Export & PDF Generation State
+  const [pdfTarget, setPdfTarget] = useState<JobCardWithRelations | null>(null);
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+  const pdfContainerRef = useRef<HTMLDivElement>(null);
 
   const requestSeqRef = useRef(0);
 
@@ -310,6 +321,119 @@ export function JobCardListView() {
     }
   };
 
+  // ─── Download PDF directly for a single Job Card ───
+  const handleDownloadPdf = async (jc: JobCardWithRelations) => {
+    try {
+      setIsGeneratingPdf(true);
+      setToastMessage({ type: "success", text: `Generating PDF for Job Card #${jc.job_card_number}...` });
+
+      let fullJc = jc;
+      if (!jc.items || jc.items.length === 0 || !jc.customer || !jc.vehicle) {
+        const fetched = await getJobCardById(jc.id, activeWorkspaceId);
+        if (fetched) fullJc = fetched;
+      }
+      setPdfTarget(fullJc);
+
+      // Wait for DOM to mount offscreen and images to decode
+      await new Promise((resolve) => setTimeout(resolve, 250));
+      if (!pdfContainerRef.current) throw new Error("PDF layout container not found.");
+
+      const cleanNum = sanitizeFileName(fullJc.job_card_number || "Draft");
+      await exportElementToPdf(pdfContainerRef.current, `JobCard-${cleanNum}.pdf`);
+      setToastMessage({ type: "success", text: `JobCard-${cleanNum}.pdf downloaded directly.` });
+    } catch (err: any) {
+      console.error("PDF generation failed:", err);
+      setToastMessage({ type: "error", text: `Failed to download PDF: ${err.message}` });
+    } finally {
+      setPdfTarget(null);
+      setIsGeneratingPdf(false);
+    }
+  };
+
+  // ─── Export Excel (.xlsx) for a single Job Card ───
+  const handleExportExcel = async (jc: JobCardWithRelations) => {
+    try {
+      setIsExporting(true);
+      let fullJc = jc;
+      if (!jc.items || jc.items.length === 0 || !jc.customer || !jc.vehicle) {
+        const fetched = await getJobCardById(jc.id, activeWorkspaceId);
+        if (fetched) fullJc = fetched;
+      }
+      const trn = (currentWorkspace?.trn_number || (currentWorkspace as any)?.trn || "").trim();
+      exportJobCardToExcel(fullJc, trn);
+      const cleanNum = sanitizeFileName(fullJc.job_card_number || "Draft");
+      setToastMessage({ type: "success", text: `JobCard-${cleanNum}.xlsx exported successfully.` });
+    } catch (err: any) {
+      console.error("Excel export failed:", err);
+      setToastMessage({ type: "error", text: `Failed to export Excel: ${err.message}` });
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  // ─── Bulk Export (Selected or Filtered) ───
+  const handleBulkExport = async (scope: "selected" | "filtered", format: "excel" | "csv") => {
+    try {
+      if (scope === "selected") {
+        if (selectedJobCardIds.length === 0) {
+          setToastMessage({
+            type: "error",
+            text: "No job cards selected. Please check one or more rows, or choose 'Export Filtered Records'.",
+          });
+          return;
+        }
+        setIsExporting(true);
+        const targetCards = jobCards.filter((jc) => selectedJobCardIds.includes(jc.id));
+        exportJobCardsBulk(targetCards, format, `JobCards_Selected_${selectedJobCardIds.length}`);
+        setToastMessage({
+          type: "success",
+          text: `Exported ${targetCards.length} selected job cards to ${format.toUpperCase()}.`,
+        });
+        return;
+      }
+
+      // scope === "filtered": Query Supabase directly with active workspace UUID and active filters
+      setIsExporting(true);
+      setToastMessage({
+        type: "success",
+        text: "Fetching filtered job cards directly from cloud database...",
+      });
+
+      const res = await getJobCards(
+        {
+          search: query,
+          status: statusFilter,
+          dateFilter,
+          startDate: appliedStartDate,
+          endDate: appliedEndDate,
+          page: 1,
+          limit: 1000,
+        },
+        activeWorkspaceId
+      );
+
+      const records = res.jobCards || [];
+      if (records.length === 0) {
+        setToastMessage({
+          type: "error",
+          text: "No job cards match your currently applied search, date, or status filters.",
+        });
+        return;
+      }
+
+      exportJobCardsBulk(records, format, `JobCards_Filtered_${records.length}`);
+      setToastMessage({
+        type: "success",
+        text: `Exported ${records.length} filtered job cards to ${format.toUpperCase()}.`,
+      });
+    } catch (err: any) {
+      console.error("Bulk export failed:", err);
+      setToastMessage({ type: "error", text: `Bulk export failed: ${err.message}` });
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Toast Notification */}
@@ -347,6 +471,44 @@ export function JobCardListView() {
         breadcrumbs={[{ label: "Dashboard", href: "/" }, { label: "Job Cards" }]}
       >
         <div className="flex items-center gap-2.5">
+          {/* Export Dropdown Toolbar Button */}
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              disabled={isExporting}
+              className="h-10 px-3.5 text-xs font-semibold rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 shadow-2xs inline-flex items-center gap-1.5 focus:outline-none disabled:opacity-60 cursor-pointer"
+            >
+              {isExporting ? (
+                <Loader2 className="h-3.5 w-3.5 text-slate-500 animate-spin" />
+              ) : (
+                <Download className="h-3.5 w-3.5 text-slate-500" />
+              )}
+              <span>Export</span>
+              <ChevronDown className="h-3 w-3 text-slate-400 ml-0.5" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56 text-xs rounded-xl shadow-lg border-slate-200">
+              <DropdownMenuLabel className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                Bulk Export ({selectedJobCardIds.length > 0 ? `${selectedJobCardIds.length} Selected` : "Filtered"})
+              </DropdownMenuLabel>
+              <DropdownMenuItem onClick={() => handleBulkExport("selected", "excel")}>
+                <FileSpreadsheet className="h-3.5 w-3.5 mr-2 text-emerald-600" />
+                Export Selected to Excel
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleBulkExport("selected", "csv")}>
+                <FileSpreadsheet className="h-3.5 w-3.5 mr-2 text-blue-600" />
+                Export Selected to CSV
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => handleBulkExport("filtered", "excel")}>
+                <Download className="h-3.5 w-3.5 mr-2 text-emerald-600" />
+                Export Filtered Records to Excel
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleBulkExport("filtered", "csv")}>
+                <Download className="h-3.5 w-3.5 mr-2 text-blue-600" />
+                Export Filtered Records to CSV
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
           {!isViewer && (
             <>
               <Button
@@ -901,11 +1063,22 @@ export function JobCardListView() {
                                 <Printer className="h-3.5 w-3.5 mr-1" /> Print
                               </Button>
 
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDownloadPdf(jc)}
+                                disabled={isGeneratingPdf}
+                                title="Download PDF directly"
+                                className="h-8 px-2 text-xs font-semibold text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg"
+                              >
+                                <Download className="h-3.5 w-3.5 mr-1" /> PDF
+                              </Button>
+
                               <DropdownMenu>
                                 <DropdownMenuTrigger className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-blue-600/40">
                                   <MoreVertical className="h-3.5 w-3.5" />
                                 </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end" className="w-44 text-xs shadow-md border-slate-200 rounded-xl">
+                                <DropdownMenuContent align="end" className="w-48 text-xs shadow-md border-slate-200 rounded-xl">
                                   <DropdownMenuLabel>Job Card Actions</DropdownMenuLabel>
                                   <DropdownMenuItem render={<Link href={`/job-cards/${jc.id}`} />}>
                                     <Eye className="h-3.5 w-3.5 mr-2 text-blue-600" /> View Details
@@ -917,6 +1090,13 @@ export function JobCardListView() {
                                   )}
                                   <DropdownMenuItem render={<Link href={`/job-cards/${jc.id}?print=true`} />}>
                                     <Printer className="h-3.5 w-3.5 mr-2 text-slate-500" /> Print A4 Sheet
+                                  </DropdownMenuItem>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem onClick={() => handleDownloadPdf(jc)}>
+                                    <Download className="h-3.5 w-3.5 mr-2 text-blue-600" /> Download PDF
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => handleExportExcel(jc)}>
+                                    <FileSpreadsheet className="h-3.5 w-3.5 mr-2 text-emerald-600" /> Export Excel (.xlsx)
                                   </DropdownMenuItem>
                                   {canDelete && (
                                     <>
@@ -984,6 +1164,18 @@ export function JobCardListView() {
         onDeleteSelected={handleRequestBulkDelete}
         onClearSelection={() => setSelectedJobCardIds([])}
         isDeleting={deleting}
+        customActions={[
+          {
+            label: "Export Excel",
+            icon: <FileSpreadsheet className="h-3.5 w-3.5 text-emerald-600" />,
+            onClick: () => handleBulkExport("selected", "excel"),
+          },
+          {
+            label: "Export CSV",
+            icon: <Download className="h-3.5 w-3.5 text-blue-600" />,
+            onClick: () => handleBulkExport("selected", "csv"),
+          },
+        ]}
       />
 
       {/* Upload Existing Job Card Dialog */}
@@ -1029,6 +1221,23 @@ export function JobCardListView() {
           </DialogContent>
         </Dialog>
       )}
+
+      {/* Hidden offscreen container for direct PDF download rendering */}
+      <div
+        ref={pdfContainerRef}
+        style={{
+          position: "fixed",
+          left: "-9999px",
+          top: "0",
+          width: "794px",
+          zIndex: -9999,
+          backgroundColor: "#ffffff",
+          visibility: pdfTarget ? "visible" : "hidden",
+          pointerEvents: "none",
+        }}
+      >
+        {pdfTarget && <JobCardPrintView jobCard={pdfTarget} isForPdf={true} />}
+      </div>
     </div>
   );
 }

@@ -6,9 +6,10 @@ import { useWorkspace } from "@/lib/context/workspace-context";
 
 interface JobCardPrintViewProps {
   jobCard: JobCardWithRelations;
+  isForPdf?: boolean;
 }
 
-export function JobCardPrintView({ jobCard }: JobCardPrintViewProps) {
+export function JobCardPrintView({ jobCard, isForPdf = false }: JobCardPrintViewProps) {
   const { currentWorkspace } = useWorkspace();
   if (!jobCard) return null;
 
@@ -94,12 +95,18 @@ export function JobCardPrintView({ jobCard }: JobCardPrintViewProps) {
 
   return (
     <div
-      className={`job-card-print print-only hidden print:block bg-white text-black leading-tight font-sans ${rootTextClass}`}
+      className={
+        isForPdf
+          ? `job-card-print bg-white text-black leading-tight font-sans ${rootTextClass} p-4 block`
+          : `job-card-print print-only hidden print:block bg-white text-black leading-tight font-sans ${rootTextClass}`
+      }
       style={{
         boxSizing: "border-box",
-        width: "100%",
+        width: isForPdf ? "794px" : "100%",
+        minHeight: isForPdf ? "1123px" : undefined,
         maxWidth: "100%",
         margin: "0 auto",
+        backgroundColor: "#ffffff",
       }}
     >
       <style jsx global>{`
@@ -222,7 +229,7 @@ export function JobCardPrintView({ jobCard }: JobCardPrintViewProps) {
       {/* ─── Top Main Content Container ─── */}
       <div className="w-full space-y-2">
         {/* ─── Top Section: 3-Column Header ─── */}
-        <div className={`border-2 border-black p-2 ${sectionGap} bg-white job-card-header`}>
+        <div className={`border-2 border-black p-2 ${sectionGap} bg-white job-card-header grid grid-cols-[1.2fr_0.8fr_1fr] items-center gap-3`}>
           {/* Left Column: Workshop Details */}
           <div className="text-left leading-tight">
             <h1
@@ -583,7 +590,7 @@ export function JobCardPrintView({ jobCard }: JobCardPrintViewProps) {
 
       {/* ─── 5. SIGNATURE SECTION (Two Equal Columns below Terms & Conditions) ─── */}
       <div className="job-card-signatures w-full mt-2 pt-2 text-black">
-        <div className="signatures-grid">
+        <div className="signatures-grid grid grid-cols-2 gap-7 w-full">
           {/* LEFT SIDE: ATIQ JEHAN AUTO REPAIR */}
           <div className="signature-box text-left flex flex-col justify-between" style={{ minHeight: "55px" }}>
             <div>

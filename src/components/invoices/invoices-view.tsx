@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -12,6 +12,8 @@ import {
   syncInvoiceFromJobCard,
 } from "@/lib/services/invoice-service";
 import { getJobCards } from "@/lib/services/job-card-service";
+import { exportInvoiceToExcel, exportInvoicesBulk, sanitizeFileName } from "@/lib/services/export-service";
+import { exportElementToPdf } from "@/lib/services/pdf-service";
 import type { Invoice, Payment, PaymentStatus, PaymentMethod } from "@/types/database";
 import { usePermissions } from "@/lib/context/auth-context";
 import { PageHeader } from "@/components/shared/page-header";
@@ -74,6 +76,8 @@ import {
   X,
   Edit3,
   ClipboardList,
+  FileSpreadsheet,
+  ChevronDown,
 } from "lucide-react";
 import { formatCurrency, formatDate, formatAmount } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -164,6 +168,12 @@ export function InvoicesView() {
 
   // ─── Print Invoice Target ───
   const [printInvoice, setPrintInvoice] = useState<any | null>(null);
+
+  // ─── PDF & Excel Direct Download State ───
+  const [pdfInvoice, setPdfInvoice] = useState<any | null>(null);
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+  const pdfInvoiceContainerRef = useRef<HTMLDivElement>(null);
 
   // ─── Bulk & Single Delete State ───
   const [selectedInvoiceIds, setSelectedInvoiceIds] = useState<string[]>([]);
@@ -630,6 +640,119 @@ export function InvoicesView() {
     }, 200);
   };
 
+  // ─── Direct Download PDF for single Invoice ───
+  const handleDownloadInvoicePdf = async (inv: any) => {
+    try {
+      setIsGeneratingPdf(true);
+      setToastMessage({ type: "success", text: `Generating PDF for Invoice #${inv.invoice_number}...` });
+
+      let fullInv = inv;
+      if (!inv.items || inv.items.length === 0 || !inv.customer) {
+        const fetched = await getInvoiceById(inv.id, activeWorkspaceId);
+        if (fetched) fullInv = fetched;
+      }
+      setPdfInvoice(fullInv);
+
+      // Wait for DOM to mount offscreen and images to decode
+      await new Promise((resolve) => setTimeout(resolve, 250));
+      if (!pdfInvoiceContainerRef.current) throw new Error("Invoice PDF layout container not found.");
+
+      const cleanNum = sanitizeFileName(String(fullInv.invoice_number || "Draft"));
+      await exportElementToPdf(pdfInvoiceContainerRef.current, `Invoice-${cleanNum}.pdf`);
+      setToastMessage({ type: "success", text: `Invoice-${cleanNum}.pdf downloaded directly.` });
+    } catch (err: any) {
+      console.error("Invoice PDF generation failed:", err);
+      setToastMessage({ type: "error", text: `Failed to download PDF: ${err.message}` });
+    } finally {
+      setPdfInvoice(null);
+      setIsGeneratingPdf(false);
+    }
+  };
+
+  // ─── Export Excel (.xlsx) for single Invoice ───
+  const handleExportInvoiceExcel = async (inv: any) => {
+    try {
+      setIsExporting(true);
+      let fullInv = inv;
+      if (!inv.items || inv.items.length === 0 || !inv.customer) {
+        const fetched = await getInvoiceById(inv.id, activeWorkspaceId);
+        if (fetched) fullInv = fetched;
+      }
+      const trn = (currentWorkspace?.trn_number || (currentWorkspace as any)?.trn || "").trim();
+      exportInvoiceToExcel(fullInv, trn);
+      const cleanNum = sanitizeFileName(String(fullInv.invoice_number || "Draft"));
+      setToastMessage({ type: "success", text: `Invoice-${cleanNum}.xlsx exported successfully.` });
+    } catch (err: any) {
+      console.error("Invoice Excel export failed:", err);
+      setToastMessage({ type: "error", text: `Failed to export Excel: ${err.message}` });
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  // ─── Bulk Export Invoices (Selected or Filtered) ───
+  const handleBulkInvoiceExport = async (scope: "selected" | "filtered", format: "excel" | "csv") => {
+    try {
+      if (scope === "selected") {
+        if (selectedInvoiceIds.length === 0) {
+          setToastMessage({
+            type: "error",
+            text: "No invoices selected. Please check one or more rows, or choose 'Export Filtered Records'.",
+          });
+          return;
+        }
+        setIsExporting(true);
+        const targetInvoices = invoices.filter((i) => selectedInvoiceIds.includes(i.id));
+        exportInvoicesBulk(targetInvoices, format, `Invoices_Selected_${selectedInvoiceIds.length}`);
+        setToastMessage({
+          type: "success",
+          text: `Exported ${targetInvoices.length} selected invoices to ${format.toUpperCase()}.`,
+        });
+        return;
+      }
+
+      // scope === "filtered": Query Supabase directly with active workspace UUID and active filters
+      setIsExporting(true);
+      setToastMessage({
+        type: "success",
+        text: "Fetching filtered invoices directly from cloud database...",
+      });
+
+      const res = await getInvoices(
+        {
+          query: searchQuery,
+          statusFilter,
+          dateFilter,
+          startDate: customStartDate,
+          endDate: customEndDate,
+          page: 1,
+          limit: 1000,
+        },
+        activeWorkspaceId
+      );
+
+      const records = res.invoices || [];
+      if (records.length === 0) {
+        setToastMessage({
+          type: "error",
+          text: "No invoices match your currently applied search, date, or status filters.",
+        });
+        return;
+      }
+
+      exportInvoicesBulk(records, format, `Invoices_Filtered_${records.length}`);
+      setToastMessage({
+        type: "success",
+        text: `Exported ${records.length} filtered invoices to ${format.toUpperCase()}.`,
+      });
+    } catch (err: any) {
+      console.error("Bulk invoice export failed:", err);
+      setToastMessage({ type: "error", text: `Bulk export failed: ${err.message}` });
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   const totalPages = Math.ceil(totalCount / pageSize);
 
   return (
@@ -648,6 +771,44 @@ export function InvoicesView() {
           ]}
           actions={
             <div className="flex items-center gap-2.5">
+              {/* Export Dropdown Toolbar Button */}
+              <DropdownMenu>
+                <DropdownMenuTrigger
+                  disabled={isExporting}
+                  className="h-10 px-3.5 text-xs font-semibold rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 shadow-2xs inline-flex items-center gap-1.5 focus:outline-none disabled:opacity-60 cursor-pointer"
+                >
+                  {isExporting ? (
+                    <Loader2 className="h-3.5 w-3.5 text-slate-500 animate-spin" />
+                  ) : (
+                    <Download className="h-3.5 w-3.5 text-slate-500" />
+                  )}
+                  <span>Export</span>
+                  <ChevronDown className="h-3 w-3 text-slate-400 ml-0.5" />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56 text-xs rounded-xl shadow-lg border-slate-200">
+                  <DropdownMenuLabel className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                    Bulk Export ({selectedInvoiceIds.length > 0 ? `${selectedInvoiceIds.length} Selected` : "Filtered"})
+                  </DropdownMenuLabel>
+                  <DropdownMenuItem onClick={() => handleBulkInvoiceExport("selected", "excel")}>
+                    <FileSpreadsheet className="h-3.5 w-3.5 mr-2 text-emerald-600" />
+                    Export Selected to Excel
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleBulkInvoiceExport("selected", "csv")}>
+                    <FileSpreadsheet className="h-3.5 w-3.5 mr-2 text-blue-600" />
+                    Export Selected to CSV
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => handleBulkInvoiceExport("filtered", "excel")}>
+                    <Download className="h-3.5 w-3.5 mr-2 text-emerald-600" />
+                    Export Filtered Records to Excel
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleBulkInvoiceExport("filtered", "csv")}>
+                    <Download className="h-3.5 w-3.5 mr-2 text-blue-600" />
+                    Export Filtered Records to CSV
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
               <Button
                 variant="outline"
                 size="sm"
@@ -931,7 +1092,7 @@ export function InvoicesView() {
                     <TableHead className="text-right text-slate-600 font-bold">Paid (AED)</TableHead>
                     <TableHead className="text-right text-slate-600 font-bold">Balance (AED)</TableHead>
                     <TableHead className="text-center text-slate-600 font-bold">Payment Status</TableHead>
-                    <TableHead className="w-[105px] min-w-[105px] text-right pr-4 text-slate-600 font-bold">Actions</TableHead>
+                    <TableHead className="w-[145px] min-w-[145px] text-right pr-4 text-slate-600 font-bold">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -1065,7 +1226,7 @@ export function InvoicesView() {
                           </span>
                         </TableCell>
 
-                        <TableCell className="w-[105px] min-w-[105px] text-right pr-4 py-2.5">
+                        <TableCell className="w-[145px] min-w-[145px] text-right pr-4 py-2.5">
                           <div className="flex items-center justify-end gap-1">
                             <Button
                               variant="ghost"
@@ -1077,11 +1238,32 @@ export function InvoicesView() {
                               <Eye className="h-3.5 w-3.5 mr-1" /> View
                             </Button>
 
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleTriggerPrint(inv)}
+                              className="h-8 w-8 p-0 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-xl"
+                              title="Print A4 Invoice"
+                            >
+                              <Printer className="h-3.5 w-3.5" />
+                            </Button>
+
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDownloadInvoicePdf(inv)}
+                              disabled={isGeneratingPdf}
+                              className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-xl"
+                              title="Download PDF directly"
+                            >
+                              <Download className="h-3.5 w-3.5" />
+                            </Button>
+
                             <DropdownMenu>
                               <DropdownMenuTrigger className="h-8 w-8 inline-flex items-center justify-center rounded-xl border border-slate-200 text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors focus:outline-none">
                                 <MoreVertical className="h-3.5 w-3.5" />
                               </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end" className="w-48 text-xs rounded-xl shadow-lg border-slate-200">
+                              <DropdownMenuContent align="end" className="w-52 text-xs rounded-xl shadow-lg border-slate-200">
                                 <DropdownMenuLabel>Invoice Actions</DropdownMenuLabel>
                                 <DropdownMenuItem onClick={() => handleOpenDetails(inv.id)}>
                                   <Eye className="h-3.5 w-3.5 mr-2 text-blue-600" /> View Details
@@ -1089,6 +1271,14 @@ export function InvoicesView() {
                                 <DropdownMenuItem onClick={() => handleTriggerPrint(inv)}>
                                   <Printer className="h-3.5 w-3.5 mr-2 text-slate-600" /> Print A4
                                 </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem onClick={() => handleDownloadInvoicePdf(inv)}>
+                                  <Download className="h-3.5 w-3.5 mr-2 text-blue-600" /> Download PDF
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleExportInvoiceExcel(inv)}>
+                                  <FileSpreadsheet className="h-3.5 w-3.5 mr-2 text-emerald-600" /> Export Excel (.xlsx)
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
                                 <DropdownMenuItem onClick={() => handleWhatsAppShare(inv)}>
                                   <MessageSquare className="h-3.5 w-3.5 mr-2 text-emerald-600" /> WhatsApp
                                 </DropdownMenuItem>
@@ -1496,6 +1686,26 @@ export function InvoicesView() {
                 className="h-8.5 text-xs font-semibold border-border/80 hover:bg-slate-50 gap-1.5"
               >
                 <Printer className="h-3.5 w-3.5 text-slate-600" /> Print A4
+              </Button>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => selectedInvoice && handleDownloadInvoicePdf(selectedInvoice)}
+                disabled={isGeneratingPdf}
+                className="h-8.5 text-xs font-semibold border-border/80 hover:bg-blue-50 text-blue-700 gap-1.5"
+              >
+                <Download className="h-3.5 w-3.5" /> PDF
+              </Button>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => selectedInvoice && handleExportInvoiceExcel(selectedInvoice)}
+                disabled={isExporting}
+                className="h-8.5 text-xs font-semibold border-border/80 hover:bg-emerald-50 text-emerald-700 gap-1.5"
+              >
+                <FileSpreadsheet className="h-3.5 w-3.5" /> Excel
               </Button>
 
               <Button
@@ -2015,8 +2225,18 @@ export function InvoicesView() {
         onDeleteSelected={handleRequestBulkDelete}
         onClearSelection={() => setSelectedInvoiceIds([])}
         isDeleting={deletingInvoices}
-        customActions={
-          isOwner
+        customActions={[
+          {
+            label: "Export Excel",
+            icon: <FileSpreadsheet className="h-3.5 w-3.5 text-emerald-600" />,
+            onClick: () => handleBulkInvoiceExport("selected", "excel"),
+          },
+          {
+            label: "Export CSV",
+            icon: <Download className="h-3.5 w-3.5 text-blue-600" />,
+            onClick: () => handleBulkInvoiceExport("selected", "csv"),
+          },
+          ...(isOwner
             ? [
                 {
                   label: "Force Delete Test Invoices",
@@ -2026,12 +2246,12 @@ export function InvoicesView() {
                     setInvoicesToDelete(targets);
                     setForceDeleteModalOpen(true);
                   },
-                  variant: "outline",
+                  variant: "outline" as const,
                   className: "text-rose-600 hover:bg-rose-50 border-rose-300 font-bold",
                 },
               ]
-            : undefined
-        }
+            : []),
+        ]}
       />
 
       {/* Confirmation & Financial Safety Delete Dialog */}
@@ -2084,6 +2304,22 @@ export function InvoicesView() {
         }}
       />
 
+      {/* Hidden offscreen container for direct PDF download rendering */}
+      <div
+        ref={pdfInvoiceContainerRef}
+        style={{
+          position: "fixed",
+          left: "-9999px",
+          top: "0",
+          width: "794px",
+          zIndex: -9999,
+          backgroundColor: "#ffffff",
+          visibility: pdfInvoice ? "visible" : "hidden",
+          pointerEvents: "none",
+        }}
+      >
+        {pdfInvoice && <InvoicePrintView invoice={pdfInvoice} isForPdf={true} />}
+      </div>
     </div>
   );
 }
