@@ -624,42 +624,6 @@ export function JobCardForm({ jobCardId }: JobCardFormProps) {
     ]);
   };
 
-  const handleQuickAddPart = (part: Part, effectiveAvailableStock: number) => {
-    handleCatalogDiscovered([part]);
-    setPartItems((prev) => {
-      const existingIdx = prev.findIndex((it) => it.part_id === part.id);
-      if (existingIdx !== -1) {
-        return prev.map((it, idx) => {
-          if (idx !== existingIdx) return it;
-          const nextQty = Math.min(effectiveAvailableStock || it.quantity + 1, (Number(it.quantity) || 1) + 1);
-          const unitPrice = Number(it.unit_price) || Number(part.selling_price) || 0;
-          return {
-            ...it,
-            quantity: nextQty,
-            available_stock: effectiveAvailableStock,
-            total_price: Math.round(nextQty * unitPrice * 100) / 100,
-          };
-        });
-      }
-      const unitPrice = Number(part.selling_price) || 0;
-      const costPrice = Number(part.purchase_price) || 0;
-      const description = part.part_number ? `${part.name} (Part #${part.part_number})` : part.name;
-      return [
-        ...prev,
-        {
-          id: "prt-" + Date.now() + "-" + Math.random().toString(36).substring(2, 6),
-          part_id: part.id,
-          description,
-          quantity: 1,
-          unit_price: unitPrice,
-          cost_price: costPrice,
-          available_stock: effectiveAvailableStock,
-          total_price: unitPrice,
-        },
-      ];
-    });
-  };
-
   const handleSelectPartForRow = (rowId: string, part: Part, effectiveAvailableStock: number) => {
     handleCatalogDiscovered([part]);
     setPartItems((prev) =>
@@ -1644,21 +1608,6 @@ export function JobCardForm({ jobCardId }: JobCardFormProps) {
             </Button>
           </CardHeader>
           <CardContent className="p-0 overflow-visible">
-            {/* Quick-Add Search Bar */}
-            <div className="px-6 py-3.5 border-b border-border/70 bg-muted/10">
-              <div className="max-w-xl">
-                <SparePartSearchSelect
-                  clearOnSelect
-                  initialParts={partsCatalog}
-                  allocatedStockMap={initialPartsAllocatedRef.current}
-                  workspaceId={activeWorkspaceId}
-                  placeholder="Search spare part name or part number..."
-                  onSelectPart={handleQuickAddPart}
-                  onCatalogDiscovered={handleCatalogDiscovered}
-                />
-              </div>
-            </div>
-
             {partItems.length > 0 ? (
               <div className="w-full overflow-visible">
                 <table className="w-full caption-bottom text-sm">
@@ -1768,7 +1717,7 @@ export function JobCardForm({ jobCardId }: JobCardFormProps) {
               </div>
             ) : (
               <div className="py-8 text-center text-xs text-muted-foreground">
-                No spare parts added to this job card yet. Search above or click <strong>"+ Add Spare Part Line"</strong> if replacement parts are required.
+                No spare parts added to this job card yet. Click <strong>"+ Add Spare Part Line"</strong> if replacement parts are required.
               </div>
             )}
           </CardContent>
