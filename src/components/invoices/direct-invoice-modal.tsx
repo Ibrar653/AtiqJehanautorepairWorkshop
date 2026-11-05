@@ -1911,7 +1911,7 @@ export function DirectInvoiceModal({
                                   <SparePartSearchSelect
                                     compact
                                     selectedPartId={isManual ? null : p.part_id || null}
-                                    selectedPartLabel={!isManual ? p.part_name : ""}
+                                    selectedPartLabel={p.part_name || (isManual ? "Custom Spare Part" : "")}
                                     initialParts={catalogParts}
                                     allocatedStockMap={initialPartsAllocatedRef.current}
                                     workspaceId={activeWorkspaceId}

@@ -85,6 +85,7 @@ export interface PartLineItem {
   cost_price?: number;
   available_stock?: number;
   total_price: number;
+  is_custom?: boolean;
 }
 
 interface JobCardFormProps {
@@ -636,6 +637,7 @@ export function JobCardForm({ jobCardId }: JobCardFormProps) {
         return {
           ...item,
           part_id: part.id,
+          is_custom: false,
           description,
           quantity: qty,
           unit_price: unitPrice,
@@ -654,6 +656,7 @@ export function JobCardForm({ jobCardId }: JobCardFormProps) {
         return {
           ...item,
           part_id: null,
+          is_custom: true,
           available_stock: undefined,
           cost_price: 0,
         };
@@ -857,17 +860,15 @@ export function JobCardForm({ jobCardId }: JobCardFormProps) {
     for (const p of partItems) {
       if (p.part_id) {
         const cat = partsCatalog.find((x) => x.id === p.part_id);
-        if (cat) {
-          const currentlyInStock = Number(cat.current_stock) || 0;
-          const alreadyAllocated = initialPartsAllocatedRef.current.get(p.part_id) || 0;
-          const maxAllowed = currentlyInStock + alreadyAllocated;
-          const reqQty = Number(p.quantity) || 1;
-          if (reqQty > maxAllowed) {
-            setFormError(
-              `Insufficient stock for "${p.description || cat.name}". Only ${currentlyInStock} units are available.`
-            );
-            return;
-          }
+        const maxAllowed = cat
+          ? (Number(cat.current_stock) || 0) + (initialPartsAllocatedRef.current.get(p.part_id) || 0)
+          : p.available_stock;
+        const reqQty = Number(p.quantity) || 1;
+        if (maxAllowed !== undefined && reqQty > maxAllowed) {
+          setFormError(
+            `Insufficient stock for "${p.description || cat?.name || "Spare Part"}". Only ${maxAllowed} units are available.`
+          );
+          return;
         }
       }
     }
@@ -1632,12 +1633,12 @@ export function JobCardForm({ jobCardId }: JobCardFormProps) {
                           <SparePartSearchSelect
                             compact
                             selectedPartId={item.part_id || null}
-                            selectedPartLabel={item.part_id ? item.description : ""}
+                            selectedPartLabel={item.description || (item.is_custom ? "Custom Spare Part" : "")}
                             initialParts={partsCatalog}
                             allocatedStockMap={initialPartsAllocatedRef.current}
                             workspaceId={activeWorkspaceId}
                             allowCustomOption
-                            isCustomSelected={!item.part_id && Boolean(item.description)}
+                            isCustomSelected={Boolean(item.is_custom || (!item.part_id && item.description))}
                             placeholder="Search spare part name or part number..."
                             onSelectPart={(part, effectiveStock) =>
                               handleSelectPartForRow(item.id, part, effectiveStock)
@@ -1658,6 +1659,14 @@ export function JobCardForm({ jobCardId }: JobCardFormProps) {
                                 }`}
                               >
                                 {item.available_stock} units
+                              </span>
+                            </div>
+                          )}
+                          {!item.part_id && (item.is_custom || item.description) && (
+                            <div className="mt-1 flex items-center justify-between text-[10px]">
+                              <span className="text-muted-foreground">Item Type:</span>
+                              <span className="font-semibold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/50 px-1.5 py-0.2 rounded">
+                                Custom (Manual Entry)
                               </span>
                             </div>
                           )}

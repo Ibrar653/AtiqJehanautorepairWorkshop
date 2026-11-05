@@ -79,6 +79,7 @@ export function SparePartSearchSelect({
   const [highlightedIndex, setHighlightedIndex] = useState<number>(0);
 
   const containerRef = useRef<HTMLDivElement>(null);
+  const triggerButtonRef = useRef<HTMLButtonElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const requestSeqRef = useRef(0);
@@ -173,7 +174,7 @@ export function SparePartSearchSelect({
     return () => clearTimeout(timer);
   }, [searchQuery, isOpen, activeWorkspaceId, onCatalogDiscovered]);
 
-  // Immediate case-insensitive client-side filtering across name, part_number/SKU, brand/category, description, location
+  // Immediate case-insensitive client-side filtering across name, part_number/SKU, category, brand, description, location
   const filteredParts = useMemo(() => {
     const activeCatalog = mergedCatalog.filter(
       (p) => p.is_active !== false || p.id === selectedPartId
@@ -190,22 +191,36 @@ export function SparePartSearchSelect({
       .filter((part) => {
         const name = (part.name || "").toLowerCase();
         const partNumber = (part.part_number || "").toLowerCase();
+        const sku = ((part as any).sku || (part as any).part_sku || "").toLowerCase();
+        const category = ((part as any).category || (part as any).category_name || "").toLowerCase();
         const brand = (part.brand || "").toLowerCase();
         const description = (part.description || "").toLowerCase();
         const location = (part.location || "").toLowerCase();
-        const haystack = `${name} ${partNumber} ${brand} ${description} ${location}`;
+        const haystack = `${name} ${partNumber} ${sku} ${category} ${brand} ${description} ${location}`;
 
         return tokens.every((token) => haystack.includes(token));
       })
       .sort((a, b) => {
-        // Prioritize exact or prefix matches on part_number and name
+        // Prioritize exact or prefix matches on part_number, SKU, and name
         const aNum = (a.part_number || "").toLowerCase();
         const bNum = (b.part_number || "").toLowerCase();
+        const aSku = ((a as any).sku || "").toLowerCase();
+        const bSku = ((b as any).sku || "").toLowerCase();
         const aName = (a.name || "").toLowerCase();
         const bName = (b.name || "").toLowerCase();
 
-        const aExact = aNum === q || aName === q ? 0 : aNum.startsWith(q) || aName.startsWith(q) ? 1 : 2;
-        const bExact = bNum === q || bName === q ? 0 : bNum.startsWith(q) || bName.startsWith(q) ? 1 : 2;
+        const aExact =
+          aNum === q || aSku === q || aName === q
+            ? 0
+            : aNum.startsWith(q) || aSku.startsWith(q) || aName.startsWith(q)
+            ? 1
+            : 2;
+        const bExact =
+          bNum === q || bSku === q || bName === q
+            ? 0
+            : bNum.startsWith(q) || bSku.startsWith(q) || bName.startsWith(q)
+            ? 1
+            : 2;
         if (aExact !== bExact) return aExact - bExact;
         return aName.localeCompare(bName);
       })
@@ -319,6 +334,11 @@ export function SparePartSearchSelect({
         e.stopPropagation();
         setIsOpen(false);
         setSearchQuery("");
+        triggerButtonRef.current?.focus();
+      }
+    } else if (e.key === "Tab") {
+      if (isOpen) {
+        setIsOpen(false);
       }
     }
   };
@@ -500,9 +520,19 @@ export function SparePartSearchSelect({
                           <span className="inline-flex items-center rounded bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 font-mono text-[10px] font-semibold text-slate-700 dark:text-slate-300">
                             {part.part_number ? `Part #${part.part_number}` : "No SKU"}
                           </span>
+                          {(part as any).sku && (part as any).sku !== part.part_number && (
+                            <span className="inline-flex items-center rounded bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 font-mono text-[10px] font-semibold text-slate-700 dark:text-slate-300">
+                              SKU: {(part as any).sku}
+                            </span>
+                          )}
                           {part.brand && (
                             <span className="inline-flex items-center rounded bg-blue-50 dark:bg-blue-950/60 px-1.5 py-0.5 text-[10px] font-medium text-blue-700 dark:text-blue-300">
                               {part.brand}
+                            </span>
+                          )}
+                          {(part as any).category && (
+                            <span className="inline-flex items-center rounded bg-purple-50 dark:bg-purple-950/60 px-1.5 py-0.5 text-[10px] font-medium text-purple-700 dark:text-purple-300">
+                              {(part as any).category}
                             </span>
                           )}
                           {part.location && (
@@ -554,9 +584,10 @@ export function SparePartSearchSelect({
   // Clicking immediately opens dropdown with search input AT THE TOP!
   // -------------------------------------------------------------
   return (
-    <div ref={containerRef} className={cn("relative w-full", className)}>
+    <div ref={containerRef} className={cn("relative w-full", isOpen && "z-50", className)}>
       {/* Dropdown Trigger Button */}
       <button
+        ref={triggerButtonRef}
         type="button"
         role="combobox"
         aria-expanded={isOpen}
@@ -565,6 +596,14 @@ export function SparePartSearchSelect({
         onClick={() => {
           if (!disabled) {
             setIsOpen((prev) => !prev);
+            setSearchQuery("");
+          }
+        }}
+        onKeyDown={(e) => {
+          if (disabled) return;
+          if (e.key === "ArrowDown" || e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            setIsOpen(true);
             setSearchQuery("");
           }
         }}
@@ -610,11 +649,22 @@ export function SparePartSearchSelect({
                 )}
               </div>
             </>
-          ) : isCustomSelected || (!selectedPartId && selectedPartLabel?.trim()) ? (
+          ) : selectedPartLabel?.trim() ? (
+            <div className="flex items-center gap-1.5 truncate text-slate-800 dark:text-slate-200">
+              {selectedPartId ? (
+                <Package className="h-3.5 w-3.5 text-blue-500 shrink-0" />
+              ) : (
+                <Wrench className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+              )}
+              <span className="font-medium truncate">
+                {selectedPartLabel.trim()}
+              </span>
+            </div>
+          ) : isCustomSelected ? (
             <div className="flex items-center gap-1.5 truncate text-slate-800 dark:text-slate-200">
               <Wrench className="h-3.5 w-3.5 text-slate-400 shrink-0" />
               <span className="font-medium truncate">
-                {selectedPartLabel?.trim() || "Custom Spare Part (Manual Entry)"}
+                Custom Spare Part (Manual Entry)
               </span>
             </div>
           ) : (
@@ -647,6 +697,7 @@ export function SparePartSearchSelect({
               <Search className="pointer-events-none absolute left-2.5 h-3.5 w-3.5 text-slate-400" />
               <input
                 ref={searchInputRef}
+                autoFocus
                 type="text"
                 value={searchQuery}
                 placeholder={placeholder}
@@ -779,9 +830,19 @@ export function SparePartSearchSelect({
                         <span className="inline-flex items-center rounded bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 font-mono text-[10px] font-semibold text-slate-700 dark:text-slate-300">
                           {part.part_number ? `Part #${part.part_number}` : "No SKU"}
                         </span>
+                        {(part as any).sku && (part as any).sku !== part.part_number && (
+                          <span className="inline-flex items-center rounded bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 font-mono text-[10px] font-semibold text-slate-700 dark:text-slate-300">
+                            SKU: {(part as any).sku}
+                          </span>
+                        )}
                         {part.brand && (
                           <span className="inline-flex items-center rounded bg-blue-50 dark:bg-blue-950/60 px-1.5 py-0.5 text-[10px] font-medium text-blue-700 dark:text-blue-300">
                             {part.brand}
+                          </span>
+                        )}
+                        {(part as any).category && (
+                          <span className="inline-flex items-center rounded bg-purple-50 dark:bg-purple-950/60 px-1.5 py-0.5 text-[10px] font-medium text-purple-700 dark:text-purple-300">
+                            {(part as any).category}
                           </span>
                         )}
                         {part.location && (
