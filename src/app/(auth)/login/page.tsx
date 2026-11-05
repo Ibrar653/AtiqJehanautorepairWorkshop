@@ -140,73 +140,66 @@ function LoginForm() {
       });
 
       if (authError) {
-        // Offline / mock authentication check for local dev testing
-        const localUsers = getLocalUsers();
-        const mockUser = localUsers.find((u) => u.email.toLowerCase() === normalizedInputEmail);
-
-        if (!mockUser) {
+        setLoading(false);
+        const msg = (authError.message || "").toLowerCase();
+        if (
+          msg.includes("invalid login credentials") ||
+          msg.includes("invalid_grant") ||
+          msg.includes("invalid email or password")
+        ) {
           setError("Invalid email or password.");
-          setLoading(false);
-          return;
+        } else if (msg.includes("email not confirmed")) {
+          setError("Email address not confirmed. Please check your inbox or contact the workshop administrator.");
+        } else if (msg.includes("too many requests") || msg.includes("rate limit")) {
+          setError("Too many login attempts. Please wait a few minutes and try again.");
+        } else if (msg.includes("user not found")) {
+          setError("No account found with this email address.");
+        } else {
+          setError(authError.message || "Authentication failed. Please verify your credentials and try again.");
         }
-
-        // Check active memberships for workspace routing
-        await handlePostLoginRouting(mockUser.id, normalizedInputEmail, mockUser.full_name, mockUser.role);
         return;
       }
 
       if (data?.user) {
+        const authUserId = data.user.id;
         const authenticatedEmail = (data.user.email || "").trim().toLowerCase();
-        const isPrimaryEmail = authenticatedEmail === PRIMARY_OWNER_EMAIL.toLowerCase();
-
-        // Check platform_admins table for auth UUID
-        let isPlatformAdmin = isPrimaryEmail;
-        if (!isPlatformAdmin) {
-          try {
-            const { data: adminRow } = await supabase
-              .from("platform_admins")
-              .select("id, status")
-              .eq("user_id", data.user.id)
-              .eq("status", "active")
-              .maybeSingle();
-
-            if (adminRow) {
-              isPlatformAdmin = true;
-            }
-          } catch {}
-        }
-
-        if (isPlatformAdmin) {
-          await logUserActivity({
-            user_id: data.user.id || "usr-owner-001",
-            user_email: authenticatedEmail,
-            user_name: data.user.user_metadata?.full_name || "Atiq Jehan (Owner)",
-            action: "LOGIN",
-            module: "auth",
-            description: "Platform Owner logged in with full administrative privileges",
-          });
-
-          setActiveWorkspaceId(DEFAULT_WORKSPACE_ID);
-          router.push("/dashboard");
-          router.refresh();
-          return;
-        }
-
-        // Non-Primary Owner: Resolve workspace strictly from Supabase workspace_members
         const userMeta = data.user.user_metadata || {};
         const metaFullName = userMeta.full_name || authenticatedEmail.split("@")[0];
 
+        // Verify platform owner authorization using server-verified platform_admins record
+        let isPlatformAdmin = false;
+        try {
+          const { data: adminRow, error: adminErr } = await supabase
+            .from("platform_admins")
+            .select("id, user_id, role, status")
+            .eq("user_id", authUserId)
+            .eq("status", "active")
+            .maybeSingle();
+
+          if (
+            !adminErr &&
+            adminRow &&
+            (adminRow.role === "platform_owner" || adminRow.role === "admin" || adminRow.status === "active")
+          ) {
+            isPlatformAdmin = true;
+          }
+        } catch (adminErr) {
+          console.warn("Could not check platform admin:", adminErr);
+        }
+
+        // Route user to existing workspace
         await handlePostLoginRouting(
-          data.user.id,
+          authUserId,
           authenticatedEmail,
           metaFullName,
-          "owner",
-          userMeta.workspace_id
+          isPlatformAdmin ? "owner" : "staff",
+          userMeta.workspace_id,
+          isPlatformAdmin
         );
       }
     } catch (err: any) {
       console.error("Login catch error:", err);
-      setError("Invalid email or password.");
+      setError("An unexpected authentication error occurred. Please try again.");
       setLoading(false);
     }
   };
@@ -217,18 +210,38 @@ function LoginForm() {
     userEmail: string,
     userName: string,
     role: string,
-    assignedWorkspaceId?: string
+    assignedWorkspaceId?: string,
+    isPlatformAdmin: boolean = false
   ) => {
     const supabase = createClient();
     let memberWorkspaces: Workspace[] = [];
-    let memberRole = role || "owner";
+    let memberRole = isPlatformAdmin ? "owner" : role || "staff";
 
     try {
-      // 1. Fetch user's active workspace memberships directly from Supabase
-      const { data: dbMembers, error: dbError } = await supabase
-        .from("workspace_members")
-        .select("id, workspace_id, user_id, role, status, is_workspace_owner, access_starts_at, access_expires_at, expired_at")
-        .eq("user_id", userId);
+      // 1. If Platform Admin: Query all active, non-archived workspaces directly from Supabase
+      if (isPlatformAdmin) {
+        try {
+          const { data: wsRows, error: wsErr } = await supabase
+            .from("workspaces")
+            .select("*")
+            .neq("status", "archived")
+            .order("is_primary", { ascending: false })
+            .order("created_at", { ascending: true });
+
+          if (!wsErr && wsRows && wsRows.length > 0) {
+            memberWorkspaces = wsRows as Workspace[];
+          }
+        } catch (wsQueryErr) {
+          console.warn("Could not query workspaces for platform admin:", wsQueryErr);
+        }
+      }
+
+      // 2. Fetch user's active workspace memberships directly from Supabase
+      if (memberWorkspaces.length === 0) {
+        const { data: dbMembers, error: dbError } = await supabase
+          .from("workspace_members")
+          .select("id, workspace_id, user_id, role, status, is_workspace_owner, access_starts_at, access_expires_at, expired_at")
+          .eq("user_id", userId);
 
       if (!dbError && dbMembers && dbMembers.length > 0) {
         // Filter out expired memberships
@@ -336,8 +349,9 @@ function LoginForm() {
           }
         }
       }
+      }
 
-      // 2. If no DB memberships found, check user metadata workspace_id
+      // 3. If no DB memberships found, check user metadata workspace_id
       if (memberWorkspaces.length === 0 && assignedWorkspaceId) {
         const { data: wsData, error: wsError } = await supabase
           .from("workspaces")
@@ -447,11 +461,13 @@ function LoginForm() {
         user_name: userName,
         action: "LOGIN",
         module: "auth",
-        description: `User ${userName} (${memberRole.toUpperCase()}) authenticated successfully`,
+        description: isPlatformAdmin
+          ? "Platform Owner logged in with full administrative privileges"
+          : `User ${userName} (${memberRole.toUpperCase()}) authenticated successfully`,
       });
     } catch {}
 
-    // RULE 1: Exactly ONE workspace -> route directly to dashboard
+    // RULE 1: Exactly ONE workspace -> route directly to dashboard with resolved workspace UUID
     if (memberWorkspaces.length === 1) {
       setActiveWorkspaceId(memberWorkspaces[0].id);
       router.push("/dashboard");
@@ -459,7 +475,12 @@ function LoginForm() {
       return;
     }
 
-    // RULE 2: Multiple workspaces -> show workspace selector
+    // RULE 2: Multiple workspaces -> set active to primary/first active and show workspace picker
+    const preferredWs =
+      memberWorkspaces.find((w) => (w as any).is_primary && w.status === "active") ||
+      memberWorkspaces.find((w) => w.status === "active") ||
+      memberWorkspaces[0];
+    setActiveWorkspaceId(preferredWs.id);
     setUserWorkspaces(memberWorkspaces);
     setWorkspacePickerOpen(true);
     setLoading(false);

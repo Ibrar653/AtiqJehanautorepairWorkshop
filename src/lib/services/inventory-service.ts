@@ -2,95 +2,18 @@ import { createClient } from "@/lib/supabase/client";
 import { generateUUID } from "@/lib/utils";
 import { getActiveWorkspaceId } from "./workspace-service";
 import type { InventoryTransaction, InventoryTransactionType, Part } from "@/types/database";
-import { getPartById, updatePart, getLocalParts, saveLocalParts } from "./parts-service";
+import { getPartById, updatePart } from "./parts-service";
 
-const LOCAL_TX_KEY = "atiq_local_inventory_transactions";
-
-const DEFAULT_TRANSACTIONS: InventoryTransaction[] = [
-  {
-    id: "tx-1",
-    part_id: "prt-1",
-    transaction_type: "purchase",
-    quantity: 35,
-    quantity_before: 0,
-    quantity_after: 35,
-    unit_cost: 110,
-    reference_type: "purchase",
-    reference_id: "PO-2026-001",
-    notes: "Initial inventory stock in",
-    created_by: "Owner",
-    created_at: "2026-01-10T08:30:00.000Z",
-  },
-  {
-    id: "tx-2",
-    part_id: "prt-2",
-    transaction_type: "purchase",
-    quantity: 50,
-    quantity_before: 0,
-    quantity_after: 50,
-    unit_cost: 25,
-    reference_type: "purchase",
-    reference_id: "PO-2026-001",
-    notes: "Initial inventory stock in",
-    created_by: "Owner",
-    created_at: "2026-01-10T08:30:00.000Z",
-  },
-  {
-    id: "tx-3",
-    part_id: "prt-3",
-    transaction_type: "purchase",
-    quantity: 20,
-    quantity_before: 0,
-    quantity_after: 20,
-    unit_cost: 140,
-    reference_type: "purchase",
-    reference_id: "PO-2026-002",
-    notes: "Brembo batch purchase",
-    created_by: "Owner",
-    created_at: "2026-01-11T09:00:00.000Z",
-  },
-  {
-    id: "tx-4",
-    part_id: "prt-3",
-    transaction_type: "job_card_usage",
-    quantity: -2,
-    quantity_before: 20,
-    quantity_after: 18,
-    unit_cost: 140,
-    reference_type: "job_card",
-    reference_id: "JC-1060",
-    notes: "Used in Job Card #1060 (Toyota Camry)",
-    created_by: "Owner",
-    created_at: "2026-01-15T10:15:00.000Z",
-  },
-];
-
-let inMemoryTransactions: InventoryTransaction[] = [...DEFAULT_TRANSACTIONS];
-
+/**
+ * Deprecated local helpers kept as strict no-ops for backward-compatible imports.
+ * All inventory transaction data is fetched and persisted exclusively in Supabase.
+ */
 export function getLocalTransactions(): InventoryTransaction[] {
-  if (typeof window === "undefined") return inMemoryTransactions;
-  try {
-    const raw = localStorage.getItem(LOCAL_TX_KEY);
-    if (raw !== null) {
-      const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed)) return parsed;
-    }
-    localStorage.setItem(LOCAL_TX_KEY, JSON.stringify(DEFAULT_TRANSACTIONS));
-    return inMemoryTransactions.length > 0 ? inMemoryTransactions : DEFAULT_TRANSACTIONS;
-  } catch {
-    return inMemoryTransactions.length > 0 ? inMemoryTransactions : DEFAULT_TRANSACTIONS;
-  }
+  return [];
 }
 
-
-export function saveLocalTransactions(txs: InventoryTransaction[]) {
-  inMemoryTransactions = txs;
-  if (typeof window === "undefined") return;
-  try {
-    localStorage.setItem(LOCAL_TX_KEY, JSON.stringify(txs));
-  } catch (e) {
-    console.error("Failed to save local inventory transactions", e);
-  }
+export function saveLocalTransactions(_txs: InventoryTransaction[]) {
+  // No-op: localStorage fallback for inventory data is disabled
 }
 
 /**

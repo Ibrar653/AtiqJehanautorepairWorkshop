@@ -4,7 +4,6 @@ import React, { createContext, useContext, useEffect, useState, useCallback, use
 import { getCurrentUser } from "@/lib/services/user-service";
 import { createClient } from "@/lib/supabase/client";
 import {
-  PRIMARY_OWNER_EMAIL,
   getDefaultPermissionsForRole,
   getDefaultFinancialVisibility,
   getDefaultApprovalLimits,
@@ -88,8 +87,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!user) return false;
     return (
       user.role === "owner" ||
-      user.email.toLowerCase() === PRIMARY_OWNER_EMAIL.toLowerCase() ||
-      user.id === "usr-owner-001"
+      user.role === "admin" ||
+      user.is_platform_admin === true
     );
   }, [user]);
 
@@ -240,8 +239,7 @@ export function usePermissions() {
   const isOwner =
     role === "owner" ||
     role === "admin" ||
-    user?.email.toLowerCase() === PRIMARY_OWNER_EMAIL.toLowerCase() ||
-    user?.id === "usr-owner-001";
+    user?.is_platform_admin === true;
 
   const isManager = role === "manager";
   const isAccountant = role === "accountant";

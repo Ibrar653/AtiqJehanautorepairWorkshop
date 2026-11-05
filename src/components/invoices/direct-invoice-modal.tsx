@@ -53,8 +53,10 @@ import { getCustomers } from "@/lib/services/customer-service";
 import { getBankAccounts } from "@/lib/services/ledger-service";
 import {
   createDirectInvoice,
+  updateDirectInvoice,
   CreateDirectInvoicePayload,
 } from "@/lib/services/invoice-service";
+import { SparePartSearchSelect } from "@/components/shared/spare-part-search-select";
 import { useWorkspace } from "@/lib/context/workspace-context";
 import { usePermissions } from "@/lib/context/auth-context";
 import { DEFAULT_WORKSPACE_ID } from "@/lib/constants";
@@ -92,16 +94,20 @@ export interface DirectInvoiceModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess: (createdInvoice: any) => void;
+  editInvoice?: any | null;
 }
 
 export function DirectInvoiceModal({
   open,
   onOpenChange,
   onSuccess,
+  editInvoice = null,
 }: DirectInvoiceModalProps) {
   const { currentWorkspace } = useWorkspace();
   const { user } = usePermissions();
   const activeWorkspaceId = currentWorkspace?.id || DEFAULT_WORKSPACE_ID;
+  const isEditing = Boolean(editInvoice?.id);
+  const initialPartsAllocatedRef = useRef<Map<string, number>>(new Map());
 
   // 1. INVOICE TYPE: "service" | "parts" | "mixed"
   const [invoiceTypeMode, setInvoiceTypeMode] = useState<"service" | "parts" | "mixed">("mixed");
@@ -210,12 +216,167 @@ export function DirectInvoiceModal({
   const serviceSearchRef = useRef<HTMLDivElement>(null);
   const customerSearchRef = useRef<HTMLDivElement>(null);
 
-  // Initial Data Load
+  // Initial Data Load & Edit Pre-population
   useEffect(() => {
     if (!open) return;
     setErrorMessage(null);
     loadAuxiliaryData();
-  }, [open, activeWorkspaceId]);
+
+    if (editInvoice && editInvoice.id) {
+      const items = editInvoice.items || [];
+      const srvs: SelectedServiceRow[] = [];
+      const prts: SelectedPartRow[] = [];
+      const allocMap = new Map<string, number>();
+
+      items.forEach((it: any, idx: number) => {
+        if (it.item_type === "part") {
+          const qty = Number(it.quantity) || 1;
+          const unitPrice = Number(it.unit_price) || 0;
+          const totalPrice = Number(it.total_price) ?? qty * unitPrice;
+          const disc = Math.max(0, Math.round((qty * unitPrice - totalPrice) * 100) / 100);
+          if (it.part_id) {
+            allocMap.set(it.part_id, (allocMap.get(it.part_id) || 0) + qty);
+          }
+          prts.push({
+            id: it.id || `edit-part-${idx}`,
+            part_id: it.part_id || null,
+            item_source: it.part_id ? "inventory" : "manual",
+            part_name: it.description || "Spare Part",
+            part_number: null,
+            brand: null,
+            description: null,
+            available_stock: qty,
+            quantity: qty,
+            unit_price: unitPrice,
+            discount: disc,
+            cost_price: Number(it.cost_price) || 0,
+          });
+        } else {
+          const qty = Number(it.quantity) || 1;
+          const unitPrice = Number(it.unit_price) || 0;
+          const totalPrice = Number(it.total_price) ?? qty * unitPrice;
+          const disc = Math.max(0, Math.round((qty * unitPrice - totalPrice) * 100) / 100);
+          srvs.push({
+            id: it.id || `edit-srv-${idx}`,
+            service_id: it.service_id || null,
+            name: it.description || "Service",
+            description: it.description || "Service",
+            quantity: qty,
+            unit_price: unitPrice,
+            discount: disc,
+            save_to_catalog: false,
+          });
+        }
+      });
+
+      initialPartsAllocatedRef.current = allocMap;
+      setSelectedServices(srvs);
+      setSelectedParts(prts);
+
+      if (srvs.length > 0 && prts.length === 0) {
+        setInvoiceTypeMode("service");
+      } else if (prts.length > 0 && srvs.length === 0) {
+        setInvoiceTypeMode("parts");
+      } else {
+        setInvoiceTypeMode("mixed");
+      }
+
+      if (editInvoice.customer_id) {
+        setCustomerMode("existing");
+        setSelectedCustomerId(editInvoice.customer_id);
+        setCustomerName(editInvoice.customer?.name || "");
+        setCustomerSearchQuery(editInvoice.customer?.name || "");
+        setCustomerPhone(editInvoice.customer?.mobile || "");
+        setCompanyName(editInvoice.customer?.company_name || "");
+        setTrnNumber(editInvoice.customer?.trn_number || "");
+      } else {
+        setCustomerMode("walk_in");
+        setSelectedCustomerId("");
+        setCustomerName(editInvoice.customer?.name || "Walk-in Customer");
+      }
+
+      if (editInvoice.vehicle) {
+        setShowVehicleFields(true);
+        setVehicleMake(editInvoice.vehicle.make || "");
+        setVehicleModel(editInvoice.vehicle.model || "");
+        setVehicleYear(editInvoice.vehicle.year ? String(editInvoice.vehicle.year) : "");
+        setVehiclePlate(editInvoice.vehicle.registration_number || "");
+        setVehicleVin(editInvoice.vehicle.chassis_vin || "");
+      } else {
+        setShowVehicleFields(false);
+      }
+
+      setDiscountAmount(Number(editInvoice.discount) > 0 ? Number(editInvoice.discount) : "");
+      setVatRateInput(
+        editInvoice.vat_rate !== undefined && editInvoice.vat_rate !== null
+          ? Number(editInvoice.vat_rate)
+          : 5
+      );
+      const pStatus =
+        editInvoice.payment_status === "paid" ||
+        editInvoice.payment_status === "partially_paid" ||
+        editInvoice.payment_status === "credit"
+          ? editInvoice.payment_status
+          : Number(editInvoice.paid) > 0
+          ? "partially_paid"
+          : "credit";
+      setPaymentStatus(pStatus);
+      setPaidAmountInput(Number(editInvoice.paid) || 0);
+      setInvoiceNotes(editInvoice.notes || "");
+      setInvoiceDate(
+        editInvoice.created_at
+          ? String(editInvoice.created_at).slice(0, 10)
+          : new Date().toISOString().slice(0, 10)
+      );
+    } else {
+      initialPartsAllocatedRef.current = new Map();
+    }
+  }, [open, activeWorkspaceId, editInvoice]);
+
+  // Keep available_stock on selectedParts synchronized with catalogParts + initialPartsAllocatedRef
+  useEffect(() => {
+    if (catalogParts.length === 0) return;
+    setSelectedParts((prev) => {
+      let changed = false;
+      const next = prev.map((item) => {
+        if (!item.part_id || item.item_source === "manual") return item;
+        const cat = catalogParts.find((p) => p.id === item.part_id);
+        if (!cat) return item;
+        const initAlloc = initialPartsAllocatedRef.current.get(item.part_id) || 0;
+        const effectiveStock = Number(cat.current_stock || 0) + initAlloc;
+        if (
+          item.available_stock !== effectiveStock ||
+          (!item.part_number && cat.part_number) ||
+          (!item.brand && cat.brand)
+        ) {
+          changed = true;
+          return {
+            ...item,
+            available_stock: effectiveStock,
+            part_number: item.part_number || cat.part_number || null,
+            brand: item.brand || cat.brand || null,
+          };
+        }
+        return item;
+      });
+      return changed ? next : prev;
+    });
+  }, [catalogParts]);
+
+  const handleCatalogDiscovered = (discovered: Part[]) => {
+    if (!discovered || discovered.length === 0) return;
+    setCatalogParts((prev) => {
+      const map = new Map(prev.map((p) => [p.id, p]));
+      let added = false;
+      for (const p of discovered) {
+        if (p && p.id && !map.has(p.id)) {
+          map.set(p.id, p);
+          added = true;
+        }
+      }
+      return added ? Array.from(map.values()) : prev;
+    });
+  };
 
   const loadAuxiliaryData = async () => {
     try {
@@ -438,8 +599,13 @@ export function DirectInvoiceModal({
   };
 
   // --- Handlers: Spare Parts ---
-  const handleAddCatalogPart = (part: Part) => {
-    const available = Number(part.current_stock) || 0;
+  const handleAddCatalogPart = (part: Part, effectiveStockOverride?: number) => {
+    handleCatalogDiscovered([part]);
+    const initAlloc = initialPartsAllocatedRef.current.get(part.id) || 0;
+    const available =
+      effectiveStockOverride !== undefined
+        ? effectiveStockOverride
+        : (Number(part.current_stock) || 0) + initAlloc;
     if (available <= 0) {
       setErrorMessage(`Part "${part.name}" is currently OUT OF STOCK (0 available).`);
       return;
@@ -456,7 +622,9 @@ export function DirectInvoiceModal({
       }
       setSelectedParts((prev) =>
         prev.map((item, idx) =>
-          idx === existingIndex ? { ...item, quantity: item.quantity + 1 } : item
+          idx === existingIndex
+            ? { ...item, quantity: item.quantity + 1, available_stock: available }
+            : item
         )
       );
     } else {
@@ -480,6 +648,52 @@ export function DirectInvoiceModal({
     setPartSearchQuery("");
     setPartDropdownOpen(false);
     setErrorMessage(null);
+  };
+
+  const handleSelectPartForRow = (
+    rowId: string,
+    part: Part,
+    effectiveAvailableStock: number
+  ) => {
+    handleCatalogDiscovered([part]);
+    setSelectedParts((prev) =>
+      prev.map((item) => {
+        if (item.id !== rowId) return item;
+        const qty = Math.max(
+          1,
+          Math.min(effectiveAvailableStock || 1, Number(item.quantity) || 1)
+        );
+        return {
+          ...item,
+          part_id: part.id,
+          item_source: "inventory",
+          part_name: part.name,
+          part_number: part.part_number || null,
+          brand: part.brand || null,
+          description: part.description || null,
+          available_stock: effectiveAvailableStock,
+          quantity: qty,
+          unit_price: Number(part.selling_price) || 0,
+          cost_price: Number(part.purchase_price) || 0,
+        };
+      })
+    );
+    setErrorMessage(null);
+  };
+
+  const handleSelectCustomPartForRow = (rowId: string) => {
+    setSelectedParts((prev) =>
+      prev.map((item) => {
+        if (item.id !== rowId) return item;
+        return {
+          ...item,
+          part_id: null,
+          item_source: "manual",
+          available_stock: 0,
+          cost_price: 0,
+        };
+      })
+    );
   };
 
   const handleOpenManualPartDialog = () => {
@@ -863,13 +1077,15 @@ export function DirectInvoiceModal({
         date: invoiceDate,
       };
 
-      const createdInvoice = await createDirectInvoice(payload, activeWorkspaceId);
+      const savedInvoice = isEditing
+        ? await updateDirectInvoice(editInvoice.id, payload, activeWorkspaceId)
+        : await createDirectInvoice(payload, activeWorkspaceId);
       handleResetForm();
       onOpenChange(false);
-      onSuccess(createdInvoice);
+      onSuccess(savedInvoice);
     } catch (err: any) {
       console.error("Direct invoice error:", err);
-      setErrorMessage(err.message || "Failed to finalize direct invoice.");
+      setErrorMessage(err.message || (isEditing ? "Failed to update invoice." : "Failed to finalize direct invoice."));
     } finally {
       setIsSubmitting(false);
     }
@@ -888,13 +1104,17 @@ export function DirectInvoiceModal({
                 </div>
                 <div>
                   <DialogTitle className="text-base font-bold text-foreground flex items-center gap-2">
-                    Create Direct Invoice
+                    {isEditing
+                      ? `Edit Invoice ${editInvoice?.invoice_number ? `#${editInvoice.invoice_number}` : ""}`
+                      : "Create Direct Invoice"}
                     <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
-                      No Job Card Required
+                      {isEditing ? "Update Items & Totals" : "No Job Card Required"}
                     </span>
                   </DialogTitle>
                   <DialogDescription className="text-xs text-muted-foreground mt-0.5">
-                    Generate direct invoice for services, counter spare parts sales, or combined billing.
+                    {isEditing
+                      ? "Modify services, spare parts, quantities, prices, or settlement details."
+                      : "Generate direct invoice for services, counter spare parts sales, or combined billing."}
                   </DialogDescription>
                 </div>
               </div>
@@ -1544,73 +1764,19 @@ export function DirectInvoiceModal({
                   </Button>
                 </div>
 
-                {/* Part Search Input */}
+                {/* Shared Searchable Spare Part Combobox */}
                 <div className="relative" ref={partSearchRef}>
-                  <div className="relative">
-                    <Search className="h-3.5 w-3.5 absolute left-3 top-2.5 text-muted-foreground" />
-                    <Input
-                      value={partSearchQuery}
-                      onChange={(e) => {
-                        setPartSearchQuery(e.target.value);
-                        setPartDropdownOpen(true);
-                      }}
-                      onFocus={() => setPartDropdownOpen(true)}
-                      placeholder="Search spare parts catalog by name, part no, OEM, or brand..."
-                      className="h-9 pl-9 text-xs"
-                    />
-                  </div>
-
-                  {partDropdownOpen && filteredParts.length > 0 && (
-                    <div className="absolute z-30 left-0 right-0 mt-1 max-h-56 overflow-y-auto bg-popover border border-border rounded-xl shadow-xl divide-y divide-border/40">
-                      {filteredParts.map((part) => {
-                        const stock = Number(part.current_stock) || 0;
-                        const isOut = stock <= 0;
-                        return (
-                          <div
-                            key={part.id}
-                            onClick={() => !isOut && handleAddCatalogPart(part)}
-                            className={`p-2.5 flex items-center justify-between text-xs ${
-                              isOut
-                                ? "opacity-50 cursor-not-allowed bg-muted/20"
-                                : "hover:bg-muted/60 cursor-pointer"
-                            }`}
-                          >
-                            <div className="min-w-0 pr-2">
-                              <p className="font-semibold text-foreground truncate">{part.name}</p>
-                              <p className="text-[11px] text-muted-foreground font-mono truncate">
-                                {part.part_number ? `PN: ${part.part_number}` : ""} {part.brand ? `• ${part.brand}` : ""}
-                              </p>
-                            </div>
-                            <div className="flex items-center gap-3 shrink-0">
-                              <span
-                                className={`text-[10px] font-mono px-2 py-0.5 rounded-full font-bold border ${
-                                  stock > 5
-                                    ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                                    : stock > 0
-                                    ? "bg-amber-50 text-amber-700 border-amber-200"
-                                    : "bg-red-50 text-red-700 border-red-200"
-                                }`}
-                              >
-                                Stock: {stock}
-                              </span>
-                              <span className="font-bold font-mono text-foreground">
-                                {formatCurrency(part.selling_price || 0)}
-                              </span>
-                              <Button
-                                type="button"
-                                size="sm"
-                                variant="outline"
-                                disabled={isOut}
-                                className="h-6 text-[10px] px-2"
-                              >
-                                + Add
-                              </Button>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
+                  <SparePartSearchSelect
+                    clearOnSelect
+                    initialParts={catalogParts}
+                    allocatedStockMap={initialPartsAllocatedRef.current}
+                    workspaceId={activeWorkspaceId}
+                    placeholder="Search spare part name or part number..."
+                    onSelectPart={(part, effectiveStock) =>
+                      handleAddCatalogPart(part, effectiveStock)
+                    }
+                    onCatalogDiscovered={handleCatalogDiscovered}
+                  />
                 </div>
 
                 {/* Direct Inline Spare Part Quick Entry Row */}
@@ -1719,11 +1885,11 @@ export function DirectInvoiceModal({
 
                 {/* Selected Parts Table */}
                 {selectedParts.length > 0 ? (
-                  <div className="border border-border/80 rounded-xl overflow-hidden shadow-2xs">
-                    <Table className="text-xs">
+                  <div className="border border-border/80 rounded-xl overflow-visible shadow-2xs">
+                    <table className="w-full caption-bottom text-xs">
                       <TableHeader>
                         <TableRow className="bg-slate-50/80 dark:bg-slate-800/50 text-[11px] font-semibold text-muted-foreground">
-                          <TableHead className="min-w-[180px]">Spare Part Description</TableHead>
+                          <TableHead className="min-w-[220px]">Spare Part Description</TableHead>
                           <TableHead className="w-24 text-center">In Stock</TableHead>
                           <TableHead className="w-16 text-center">Qty</TableHead>
                           <TableHead className="w-24 text-right">Unit Price (AED)</TableHead>
@@ -1739,37 +1905,46 @@ export function DirectInvoiceModal({
                           const lineVat = Math.round(lineTotal * (effectiveVatRate / 100) * 100) / 100;
                           const isManual = p.item_source === "manual" || !p.part_id;
                           return (
-                            <TableRow key={p.id} className="h-11 border-b border-border/40">
-                              <TableCell className="py-2">
-                                {isManual ? (
-                                  <div className="flex items-center gap-1.5">
-                                    <Input
-                                      value={p.part_name}
-                                      onChange={(e) =>
-                                        handleUpdatePartField(p.id, "part_name", e.target.value)
-                                      }
-                                      onKeyDown={(e) => {
-                                        if (e.key === "Enter") e.preventDefault();
-                                      }}
-                                      className="h-7 text-xs font-medium px-2 py-0 flex-1 bg-background border-border/80 focus:border-blue-500"
-                                      placeholder="Part name / description"
-                                    />
-                                    <span className="text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300 border border-amber-200 dark:border-amber-800 shrink-0">
-                                      Manual
-                                    </span>
-                                  </div>
-                                ) : (
-                                  <div className="flex items-center gap-1.5 flex-wrap">
-                                    <span className="font-semibold text-foreground leading-tight px-1">{p.part_name}</span>
-                                  </div>
-                                )}
-                                {(p.part_number || p.brand || p.description) && (
-                                  <div className="text-[10px] font-mono text-muted-foreground mt-0.5 truncate max-w-xs px-1">
-                                    {p.part_number ? `PN: ${p.part_number}` : ""} {p.brand ? `• ${p.brand}` : ""} {p.description ? `• ${p.description}` : ""}
-                                  </div>
-                                )}
+                            <TableRow key={p.id} className="min-h-11 border-b border-border/40">
+                              <TableCell className="py-2 align-top">
+                                <div className="space-y-1.5">
+                                  <SparePartSearchSelect
+                                    compact
+                                    selectedPartId={isManual ? null : p.part_id || null}
+                                    selectedPartLabel={!isManual ? p.part_name : ""}
+                                    initialParts={catalogParts}
+                                    allocatedStockMap={initialPartsAllocatedRef.current}
+                                    workspaceId={activeWorkspaceId}
+                                    allowCustomOption
+                                    isCustomSelected={isManual}
+                                    placeholder="Search spare part name or part number..."
+                                    onSelectPart={(part, effectiveStock) =>
+                                      handleSelectPartForRow(p.id, part, effectiveStock)
+                                    }
+                                    onSelectCustom={() => handleSelectCustomPartForRow(p.id)}
+                                    onCatalogDiscovered={handleCatalogDiscovered}
+                                  />
+                                  {isManual && (
+                                    <div className="flex items-center gap-1.5">
+                                      <Input
+                                        value={p.part_name}
+                                        onChange={(e) =>
+                                          handleUpdatePartField(p.id, "part_name", e.target.value)
+                                        }
+                                        onKeyDown={(e) => {
+                                          if (e.key === "Enter") e.preventDefault();
+                                        }}
+                                        className="h-7 text-xs font-medium px-2 py-0 flex-1 bg-background border-border/80 focus:border-blue-500"
+                                        placeholder="Part name / description"
+                                      />
+                                      <span className="text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300 border border-amber-200 dark:border-amber-800 shrink-0">
+                                        Manual
+                                      </span>
+                                    </div>
+                                  )}
+                                </div>
                               </TableCell>
-                              <TableCell className="py-2 text-center">
+                              <TableCell className="py-2 text-center align-top pt-3">
                                 {isManual ? (
                                   <span className="inline-block text-[10px] text-muted-foreground font-medium italic">
                                     Manual (No Stock)
@@ -1780,7 +1955,7 @@ export function DirectInvoiceModal({
                                   </span>
                                 )}
                               </TableCell>
-                              <TableCell className="py-2 text-center">
+                              <TableCell className="py-2 text-center align-top pt-2.5">
                                 <Input
                                   type="number"
                                   min="1"
@@ -1795,7 +1970,7 @@ export function DirectInvoiceModal({
                                   className="h-7 w-14 text-center font-mono text-xs mx-auto px-1"
                                 />
                               </TableCell>
-                              <TableCell className="py-2 text-right">
+                              <TableCell className="py-2 text-right align-top pt-2.5">
                                 <Input
                                   type="number"
                                   min="0"
@@ -1810,7 +1985,7 @@ export function DirectInvoiceModal({
                                   className="h-7 w-20 text-right font-mono text-xs ml-auto px-1.5"
                                 />
                               </TableCell>
-                              <TableCell className="py-2 text-right">
+                              <TableCell className="py-2 text-right align-top pt-2.5">
                                 <Input
                                   type="number"
                                   min="0"
@@ -1825,13 +2000,13 @@ export function DirectInvoiceModal({
                                   className="h-7 w-16 text-right font-mono text-xs ml-auto px-1.5"
                                 />
                               </TableCell>
-                              <TableCell className="py-2 text-center font-mono text-[11px] text-muted-foreground">
+                              <TableCell className="py-2 text-center font-mono text-[11px] text-muted-foreground align-top pt-3.5">
                                 {formatCurrency(lineVat)}
                               </TableCell>
-                              <TableCell className="py-2 text-right font-mono font-bold text-foreground">
+                              <TableCell className="py-2 text-right font-mono font-bold text-foreground align-top pt-3.5">
                                 {formatCurrency(lineTotal)}
                               </TableCell>
-                              <TableCell className="py-2 text-center">
+                              <TableCell className="py-2 text-center align-top pt-2.5">
                                 <div className="flex items-center justify-center gap-1">
                                   {isManual && (
                                     <Button
@@ -1861,7 +2036,7 @@ export function DirectInvoiceModal({
                           );
                         })}
                       </TableBody>
-                    </Table>
+                    </table>
                   </div>
                 ) : (
                   <div className="py-2.5 px-3 text-center border border-dashed border-border/70 rounded-xl text-xs text-muted-foreground bg-muted/10">
@@ -2132,11 +2307,13 @@ export function DirectInvoiceModal({
             >
               {isSubmitting ? (
                 <>
-                  <Loader2 className="h-4 w-4 animate-spin" /> Finalizing Direct Invoice...
+                  <Loader2 className="h-4 w-4 animate-spin" />{" "}
+                  {isEditing ? "Saving Invoice Changes..." : "Finalizing Direct Invoice..."}
                 </>
               ) : (
                 <>
-                  <CheckCircle2 className="h-4 w-4" /> Create &amp; Finalize Invoice
+                  <CheckCircle2 className="h-4 w-4" />{" "}
+                  {isEditing ? "Save Invoice Changes" : "Create & Finalize Invoice"}
                 </>
               )}
             </Button>

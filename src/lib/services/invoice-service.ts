@@ -1861,3 +1861,453 @@ export async function syncInvoiceFromJobCard(
     },
   };
 }
+
+/**
+ * Update an existing Invoice (Direct Invoice or Job Card Invoice) with safe inventory stock delta calculation
+ */
+export async function updateDirectInvoice(
+  invoiceId: string,
+  payload: CreateDirectInvoicePayload,
+  workspaceId?: string
+): Promise<any> {
+  const targetWsId = workspaceId || (await getActiveWorkspaceId());
+  const supabase = createClient();
+  const now = new Date().toISOString();
+
+  const existingInvoice = await getInvoiceById(invoiceId, targetWsId);
+  if (!existingInvoice) {
+    throw new Error("Invoice not found.");
+  }
+  if (existingInvoice.payment_status === "void" || existingInvoice.is_void) {
+    throw new Error("Cannot edit a voided invoice.");
+  }
+
+  const wsId = existingInvoice.workspace_id || targetWsId;
+
+  const rawServices = payload.services || [];
+  const rawParts = payload.parts || [];
+
+  if (rawServices.length === 0 && rawParts.length === 0) {
+    throw new Error("Please add at least one service or spare part to save the invoice.");
+  }
+
+  // 1. Build map of old catalog part quantities on this invoice
+  const oldPartsQtyMap = new Map<string, number>();
+  for (const oldIt of existingInvoice.items || []) {
+    if (oldIt.item_type === "part" && oldIt.part_id) {
+      const prev = oldPartsQtyMap.get(oldIt.part_id) || 0;
+      oldPartsQtyMap.set(oldIt.part_id, prev + (Number(oldIt.quantity) || 0));
+    }
+  }
+
+  // 2. Validate Services
+  const verifiedServices: Array<{
+    service_id: string | null;
+    description: string;
+    quantity: number;
+    unit_price: number;
+    discount: number;
+    total_price: number;
+  }> = [];
+
+  for (const srv of rawServices) {
+    const desc = (srv.description || (srv as any).service_name || "").trim();
+    if (!desc) {
+      throw new Error("Service description cannot be empty.");
+    }
+    const qty = Number(srv.quantity) || 1;
+    if (qty <= 0) {
+      throw new Error(`Quantity for service "${desc}" must be greater than zero.`);
+    }
+    const price = Math.max(0, Number(srv.unit_price) || 0);
+    const disc = Math.max(0, Number(srv.discount) || 0);
+    const lineTotal = Math.max(0, Math.round((qty * price - disc) * 100) / 100);
+
+    verifiedServices.push({
+      service_id: srv.service_id || null,
+      description: desc,
+      quantity: qty,
+      unit_price: price,
+      discount: disc,
+      total_price: lineTotal,
+    });
+  }
+
+  // 3. Validate Spare Parts & Stock Availability against Deltas
+  const { getPartById } = await import("./parts-service");
+  const newPartsQtyMap = new Map<string, { qty: number; costPrice: number; name: string }>();
+
+  const verifiedParts: Array<{
+    part_id: string | null;
+    item_source: "inventory" | "manual";
+    part_name: string;
+    part_number: string | null;
+    brand: string | null;
+    description: string | null;
+    quantity: number;
+    unit_price: number;
+    discount: number;
+    total_price: number;
+    cost_price: number;
+  }> = [];
+
+  for (const item of rawParts) {
+    const qty = Number(item.quantity);
+    if (isNaN(qty) || qty <= 0) {
+      throw new Error(`Quantity for "${item.part_name}" must be greater than zero.`);
+    }
+
+    const isManual = item.item_source === "manual" || !item.part_id;
+    if (isManual) {
+      const price = Math.max(0, Number(item.unit_price) || 0);
+      const disc = Math.max(0, Number(item.discount) || 0);
+      const lineTotal = Math.max(0, Math.round((qty * price - disc) * 100) / 100);
+
+      verifiedParts.push({
+        part_id: null,
+        item_source: "manual",
+        part_name: item.part_name,
+        part_number: item.part_number || null,
+        brand: item.brand || null,
+        description: item.description || null,
+        quantity: qty,
+        unit_price: price,
+        discount: disc,
+        total_price: lineTotal,
+        cost_price: Math.max(0, Number(item.cost_price) || 0),
+      });
+      continue;
+    }
+
+    const part = await getPartById(item.part_id!, wsId);
+    if (!part) {
+      throw new Error(`Spare part "${item.part_name || item.part_id}" was not found in catalog.`);
+    }
+
+    const price = Number(item.unit_price) >= 0 ? Number(item.unit_price) : Number(part.selling_price) || 0;
+    const disc = Math.max(0, Number(item.discount) || 0);
+    const lineTotal = Math.max(0, Math.round((qty * price - disc) * 100) / 100);
+    const costPrice = Number(item.cost_price) >= 0 ? Number(item.cost_price) : Number(part.purchase_price) || 0;
+
+    const prevNew = newPartsQtyMap.get(part.id)?.qty || 0;
+    newPartsQtyMap.set(part.id, {
+      qty: prevNew + qty,
+      costPrice,
+      name: part.name,
+    });
+
+    verifiedParts.push({
+      part_id: part.id,
+      item_source: "inventory",
+      part_name: item.part_name || part.name,
+      part_number: item.part_number || part.part_number || null,
+      brand: item.brand || part.brand || null,
+      description: item.description || part.description || null,
+      quantity: qty,
+      unit_price: price,
+      discount: disc,
+      total_price: lineTotal,
+      cost_price: costPrice,
+    });
+  }
+
+  // Verify stock availability for any positive deltas before mutating anything
+  const allPartIds = new Set<string>([
+    ...Array.from(oldPartsQtyMap.keys()),
+    ...Array.from(newPartsQtyMap.keys()),
+  ]);
+
+  for (const partId of allPartIds) {
+    const oldQty = oldPartsQtyMap.get(partId) || 0;
+    const newEntry = newPartsQtyMap.get(partId);
+    const newQty = newEntry?.qty || 0;
+    const delta = newQty - oldQty;
+
+    if (delta > 0) {
+      const part = await getPartById(partId, wsId);
+      const currentStock = Number(part?.current_stock || 0);
+      if (delta > currentStock) {
+        throw new Error(
+          `Only ${currentStock + oldQty} units are available in stock for "${part?.name || newEntry?.name}".`
+        );
+      }
+    }
+  }
+
+  // 4. Apply stock delta transactions
+  const { recordStockTransaction } = await import("./inventory-service");
+  const invNumberLabel = existingInvoice.invoice_number || invoiceId.slice(0, 8);
+
+  for (const partId of allPartIds) {
+    const oldQty = oldPartsQtyMap.get(partId) || 0;
+    const newEntry = newPartsQtyMap.get(partId);
+    const newQty = newEntry?.qty || 0;
+    const delta = newQty - oldQty;
+
+    if (delta > 0) {
+      await recordStockTransaction({
+        partId,
+        transactionType: "direct_sale",
+        quantityChange: -delta,
+        unitCost: newEntry?.costPrice,
+        referenceType: "invoice",
+        referenceId: invNumberLabel,
+        notes: `Additional ${delta} unit(s) added on Invoice #${invNumberLabel}`,
+        createdBy: payload.created_by || "Owner",
+        workspace_id: wsId,
+      });
+    } else if (delta < 0) {
+      const returnedQty = Math.abs(delta);
+      await recordStockTransaction({
+        partId,
+        transactionType: "return",
+        quantityChange: returnedQty,
+        unitCost: newEntry?.costPrice,
+        referenceType: "invoice",
+        referenceId: invNumberLabel,
+        notes: `Returned ${returnedQty} unit(s) from edited Invoice #${invNumberLabel}`,
+        createdBy: payload.created_by || "Owner",
+        workspace_id: wsId,
+      });
+    }
+  }
+
+  // 5. Financial Calculations
+  const servicesSubtotal = verifiedServices.reduce((sum, s) => sum + s.total_price, 0);
+  const partsSubtotal = verifiedParts.reduce((sum, p) => sum + p.total_price, 0);
+  const itemsTotal = servicesSubtotal + partsSubtotal;
+
+  const overallDiscount = Number(payload.discount) || 0;
+  const taxableSubtotal = Math.max(0, itemsTotal - overallDiscount);
+
+  let netServices = servicesSubtotal;
+  let netParts = partsSubtotal;
+  if (overallDiscount > 0 && itemsTotal > 0) {
+    const discountRatio = 1 - overallDiscount / itemsTotal;
+    netServices = Math.round(servicesSubtotal * discountRatio * 100) / 100;
+    netParts = Math.max(0, taxableSubtotal - netServices);
+  }
+
+  const vatRate =
+    payload.vat_rate !== undefined && Number.isFinite(Number(payload.vat_rate))
+      ? Number(payload.vat_rate)
+      : Number(existingInvoice.vat_rate ?? 5);
+  const vatAmount = Math.round(taxableSubtotal * (vatRate / 100) * 100) / 100;
+  const grandTotal = Math.round((taxableSubtotal + vatAmount) * 100) / 100;
+
+  const paidAmount =
+    payload.payment_status === "credit"
+      ? 0
+      : payload.payment_status === "paid"
+      ? grandTotal
+      : Math.min(grandTotal, Math.max(0, Number(payload.paid_amount) || 0));
+
+  const balance = Math.max(0, grandTotal - paidAmount);
+
+  let payment_status: PaymentStatus = "credit";
+  if (balance === 0 && grandTotal > 0) {
+    payment_status = "paid";
+  } else if (paidAmount > 0 && balance > 0) {
+    payment_status = "partially_paid";
+  }
+
+  const resolvedCustomerId = payload.customer_id || existingInvoice.customer_id;
+  const resolvedVehicleId =
+    payload.vehicle_id !== undefined ? payload.vehicle_id : existingInvoice.vehicle_id;
+
+  let invoiceType: "job_card" | "direct_service" | "direct_parts" | "direct_combined" =
+    existingInvoice.invoice_type || "direct_combined";
+  if (!existingInvoice.job_card_id) {
+    if (verifiedServices.length > 0 && verifiedParts.length === 0) {
+      invoiceType = "direct_service";
+    } else if (verifiedParts.length > 0 && verifiedServices.length === 0) {
+      invoiceType = "direct_parts";
+    } else {
+      invoiceType = "direct_combined";
+    }
+  }
+
+  // 6. Update Invoice Header in Supabase
+  const { error: updateErr } = await supabase
+    .from("invoices")
+    .update({
+      customer_id: resolvedCustomerId,
+      vehicle_id: resolvedVehicleId || null,
+      subtotal: taxableSubtotal,
+      discount: overallDiscount,
+      vat_rate: vatRate,
+      vat_amount: vatAmount,
+      total: grandTotal,
+      paid: paidAmount,
+      balance,
+      payment_status,
+      invoice_type: invoiceType,
+      notes: payload.notes !== undefined ? payload.notes : existingInvoice.notes,
+      updated_at: now,
+    })
+    .eq("id", invoiceId);
+
+  if (updateErr) {
+    throw new Error(`Failed to update invoice: ${updateErr.message}`);
+  }
+
+  // 7. Replace Invoice Items in Supabase
+  const { error: delItemsErr } = await supabase
+    .from("invoice_items")
+    .delete()
+    .eq("invoice_id", invoiceId);
+
+  if (delItemsErr) {
+    throw new Error(`Failed to replace invoice items: ${delItemsErr.message}`);
+  }
+
+  const invoiceItemsToInsert: InvoiceItemDbRow[] = [];
+
+  for (const s of verifiedServices) {
+    invoiceItemsToInsert.push(
+      buildInvoiceItemDbPayload(
+        {
+          item_type: "service",
+          service_id: s.service_id,
+          part_id: null,
+          description: s.description,
+          quantity: s.quantity,
+          unit_price: s.unit_price,
+          total_price: s.total_price,
+          cost_price: 0,
+          created_at: now,
+        },
+        {
+          invoiceId,
+          workspaceId: wsId,
+        }
+      )
+    );
+  }
+
+  for (const p of verifiedParts) {
+    const desc =
+      p.part_number && !p.part_name.includes(p.part_number)
+        ? `${p.part_name} (${p.part_number})`
+        : p.part_name;
+    invoiceItemsToInsert.push(
+      buildInvoiceItemDbPayload(
+        {
+          item_type: "part",
+          service_id: null,
+          part_id: p.part_id,
+          description: desc,
+          quantity: p.quantity,
+          unit_price: p.unit_price,
+          total_price: p.total_price,
+          cost_price: p.cost_price,
+          created_at: now,
+        },
+        {
+          invoiceId,
+          workspaceId: wsId,
+        }
+      )
+    );
+  }
+
+  if (invoiceItemsToInsert.length > 0) {
+    const { error: insItemsErr } = await supabase
+      .from("invoice_items")
+      .insert(invoiceItemsToInsert);
+
+    if (insItemsErr) {
+      throw new Error(`Failed to insert updated invoice items: ${insItemsErr.message}`);
+    }
+  }
+
+  // 8. If linked to a Job Card, keep job_cards & job_card_items synchronized
+  if (existingInvoice.job_card_id) {
+    try {
+      await supabase
+        .from("job_cards")
+        .update({
+          customer_id: resolvedCustomerId,
+          vehicle_id: resolvedVehicleId || undefined,
+          subtotal: itemsTotal,
+          discount: overallDiscount,
+          vat_rate: vatRate,
+          vat_amount: vatAmount,
+          total: grandTotal,
+          paid: paidAmount,
+          balance,
+          updated_at: now,
+        })
+        .eq("id", existingInvoice.job_card_id);
+
+      await supabase
+        .from("job_card_items")
+        .delete()
+        .eq("job_card_id", existingInvoice.job_card_id);
+
+      const jcItems = [
+        ...verifiedServices.map((s) => ({
+          id: generateUUID(),
+          job_card_id: existingInvoice.job_card_id,
+          workspace_id: wsId,
+          item_type: "service",
+          service_id: s.service_id,
+          part_id: null,
+          description: s.description,
+          quantity: s.quantity,
+          unit_price: s.unit_price,
+          labour_charge: 0,
+          cost_price: 0,
+          total_price: s.total_price,
+          created_at: now,
+        })),
+        ...verifiedParts.map((p) => ({
+          id: generateUUID(),
+          job_card_id: existingInvoice.job_card_id,
+          workspace_id: wsId,
+          item_type: "part",
+          service_id: null,
+          part_id: p.part_id,
+          description:
+            p.part_number && !p.part_name.includes(p.part_number)
+              ? `${p.part_name} (Part #${p.part_number})`
+              : p.part_name,
+          quantity: p.quantity,
+          unit_price: p.unit_price,
+          labour_charge: 0,
+          cost_price: p.cost_price,
+          total_price: p.total_price,
+          created_at: now,
+        })),
+      ];
+      if (jcItems.length > 0) {
+        await supabase.from("job_card_items").insert(jcItems);
+      }
+    } catch (jcSyncErr) {
+      console.warn("Linked job card sync notice during invoice update:", jcSyncErr);
+    }
+  }
+
+  // 9. Update Ledger
+  try {
+    const { postInvoiceLedger } = await import("./ledger-service");
+    await postInvoiceLedger({
+      id: invoiceId,
+      invoice_number: existingInvoice.invoice_number,
+      customer_id: resolvedCustomerId,
+      customer_name: payload.customer_name || existingInvoice.customer?.name || "Customer",
+      date: payload.date || existingInvoice.created_at,
+      services_total: netServices,
+      parts_total: netParts,
+      subtotal: taxableSubtotal,
+      vat_amount: vatAmount,
+      total: grandTotal,
+      created_by: payload.created_by || existingInvoice.created_by || "Owner",
+    });
+  } catch (ledErr) {
+    console.warn("Ledger update on invoice edit notice:", ledErr);
+  }
+
+  invalidateDashboardCache();
+  return await getInvoiceById(invoiceId, wsId);
+}

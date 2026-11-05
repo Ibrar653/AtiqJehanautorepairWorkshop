@@ -325,7 +325,7 @@ export async function ensureWorkspaceMembership(
   // Create membership
   const now = new Date().toISOString();
   const newMember: WorkspaceMember = {
-    id: `wm-${Date.now().toString(36)}`,
+    id: generateUUID(),
     workspace_id: workspaceId,
     user_id: authUserId,
     role: "owner" as any,
@@ -358,22 +358,10 @@ let lastWorkspacesFetchTime = 0;
 let cachedWorkspacesResult: Workspace[] | null = null;
 
 export async function getWorkspaces(userEmail?: string): Promise<Workspace[]> {
-  const isPlatformOwner =
-    !userEmail ||
-    userEmail.toLowerCase() === PRIMARY_OWNER_EMAIL.toLowerCase() ||
-    userEmail === "usr-owner-001";
-
   // Fast return cached result if fetched within last 4 seconds
   const now = Date.now();
   if (cachedWorkspacesResult && now - lastWorkspacesFetchTime < 4000) {
-    if (isPlatformOwner) return cachedWorkspacesResult;
-    return cachedWorkspacesResult.filter((w) => w.status === "active");
-  }
-
-  // If table is known to be missing in Supabase schema cache, use local storage immediately
-  if (isTableMissingInSupabase("workspaces")) {
-    const local = getLocalWorkspaces();
-    return isPlatformOwner ? local : local.filter((w) => w.status === "active");
+    return cachedWorkspacesResult;
   }
 
   // Deduplicate concurrent in-flight requests
@@ -385,10 +373,36 @@ export async function getWorkspaces(userEmail?: string): Promise<Workspace[]> {
     const supabase = createClient();
     try {
       const fetchPromise = (async () => {
-        if (isPlatformOwner) {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+
+        if (!user) {
+          return [];
+        }
+
+        // Verify platform admin from platform_admins table using server-verified UUID
+        let isPlatformAdmin = false;
+        try {
+          const { data: adminRow } = await supabase
+            .from("platform_admins")
+            .select("id")
+            .eq("user_id", user.id)
+            .eq("status", "active")
+            .maybeSingle();
+
+          if (adminRow) {
+            isPlatformAdmin = true;
+          }
+        } catch {
+          // Table check failed or RLS denied
+        }
+
+        if (isPlatformAdmin) {
           const { data, error } = await supabase
             .from("workspaces")
             .select("*")
+            .neq("status", "archived")
             .order("created_at", { ascending: false });
           if (error) {
             markTableMissingInSupabase("workspaces", error);
@@ -400,12 +414,13 @@ export async function getWorkspaces(userEmail?: string): Promise<Workspace[]> {
           const { data: memberData, error: memErr } = await supabase
             .from("workspace_members")
             .select("workspace_id")
+            .eq("user_id", user.id)
             .eq("status", "active");
           if (memErr) {
             markTableMissingInSupabase("workspace_members", memErr);
             throw memErr;
           }
-          const wsIds = (memberData || []).map((m: any) => m.workspace_id);
+          const wsIds = (memberData || []).map((m: any) => m.workspace_id).filter(Boolean);
           if (wsIds.length === 0) return [];
 
           const { data, error } = await supabase
@@ -423,42 +438,23 @@ export async function getWorkspaces(userEmail?: string): Promise<Workspace[]> {
       })();
 
       const timeoutPromise = new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error("Timeout")), 1800)
+        setTimeout(() => reject(new Error("Timeout")), 3000)
       );
 
       const result = await Promise.race([fetchPromise, timeoutPromise]);
-      if (result && result.length > 0) {
+      if (result) {
         saveLocalWorkspaces(result);
         cachedWorkspacesResult = result;
         lastWorkspacesFetchTime = Date.now();
         return result;
       }
     } catch (e: any) {
-      markTableMissingInSupabase("workspaces", e);
-      // fallback to local storage
+      console.warn("getWorkspaces Supabase error:", e?.message || e);
     } finally {
       inFlightWorkspacesPromise = null;
     }
 
-    const local = getLocalWorkspaces();
-    cachedWorkspacesResult = local;
-    lastWorkspacesFetchTime = Date.now();
-    if (isPlatformOwner) {
-      return local;
-    }
-
-    // Strictly filter local workspaces by active membership for non-platform users
-    const allMembers = getLocalMembers();
-    const userMembers = allMembers.filter(
-      (m) =>
-        (userEmail && m.user_id.toLowerCase() === userEmail.toLowerCase()) &&
-        m.status === "active"
-    );
-    if (userMembers.length === 0) {
-      return [];
-    }
-    const memberWsIds = new Set(userMembers.map((m) => m.workspace_id));
-    return local.filter((w) => memberWsIds.has(w.id) && w.status === "active");
+    return [];
   })();
 
   return inFlightWorkspacesPromise;

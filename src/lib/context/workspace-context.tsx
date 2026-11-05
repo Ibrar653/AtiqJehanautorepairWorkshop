@@ -61,10 +61,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
 
   const isPlatformOwner = useMemo(() => {
     if (!user) return false;
-    return (
-      user.email.toLowerCase() === PRIMARY_OWNER_EMAIL.toLowerCase() ||
-      user.id === "usr-owner-001"
-    );
+    return Boolean(user.is_platform_admin || user.role === "owner");
   }, [user]);
 
   const refreshWorkspaces = useCallback(async () => {
@@ -79,8 +76,12 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
         if (found) {
           setActiveWorkspaceIdState(found.id);
         } else {
-          setActiveWorkspaceIdState(list[0].id);
-          setStoredWorkspaceId(list[0].id);
+          const preferred =
+            list.find((w) => (w as any).is_primary && w.status === "active") ||
+            list.find((w) => w.status === "active") ||
+            list[0];
+          setActiveWorkspaceIdState(preferred.id);
+          setStoredWorkspaceId(preferred.id);
         }
       }
     } catch (e) {
@@ -122,9 +123,12 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
 
   const createWorkspace = useCallback(
     async (input: CreateWorkspaceInput) => {
+      if (!user?.id) {
+        return { success: false, error: "Authentication required to create a workspace." };
+      }
       const res = await createWorkspaceService(input, {
-        id: user?.id || "usr-owner-001",
-        name: user?.full_name || "Platform Owner",
+        id: user.id,
+        name: user.full_name || "Platform Owner",
       });
       if (res.success && res.workspace) {
         await refreshWorkspaces();

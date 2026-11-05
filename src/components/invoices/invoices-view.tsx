@@ -111,8 +111,22 @@ export function InvoicesView() {
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 15;
 
-  // Direct Spare Parts Sale Modal State
+  // Direct Spare Parts / Edit Invoice Modal State
   const [directPartsModalOpen, setDirectPartsModalOpen] = useState(false);
+  const [editingInvoice, setEditingInvoice] = useState<any | null>(null);
+
+  const handleOpenEditInvoice = async (inv: any) => {
+    try {
+      const fullInv = await getInvoiceById(inv.id, activeWorkspaceId);
+      setEditingInvoice(fullInv || inv);
+      setDetailsModalOpen(false);
+      setDirectPartsModalOpen(true);
+    } catch {
+      setEditingInvoice(inv);
+      setDetailsModalOpen(false);
+      setDirectPartsModalOpen(true);
+    }
+  };
 
   // Owner Force Delete State
   const [forceDeleteModalOpen, setForceDeleteModalOpen] = useState(false);
@@ -820,7 +834,10 @@ export function InvoicesView() {
               </Button>
               <Button
                 size="sm"
-                onClick={() => setDirectPartsModalOpen(true)}
+                onClick={() => {
+                  setEditingInvoice(null);
+                  setDirectPartsModalOpen(true);
+                }}
                 className="h-10 px-3.5 text-xs font-semibold border border-blue-600 bg-blue-50 text-blue-700 hover:bg-blue-100 dark:bg-blue-950/40 dark:border-blue-700 dark:text-blue-300 dark:hover:bg-blue-900/60 shadow-2xs rounded-xl gap-2 font-bold"
               >
                 <Receipt className="h-4 w-4 text-blue-600 dark:text-blue-400" /> + Create Direct Invoice
@@ -1282,6 +1299,11 @@ export function InvoicesView() {
                                 <DropdownMenuItem onClick={() => handleWhatsAppShare(inv)}>
                                   <MessageSquare className="h-3.5 w-3.5 mr-2 text-emerald-600" /> WhatsApp
                                 </DropdownMenuItem>
+                                {!isVoid && canEdit && (
+                                  <DropdownMenuItem onClick={() => handleOpenEditInvoice(inv)}>
+                                    <Edit3 className="h-3.5 w-3.5 mr-2 text-blue-600" /> Edit Invoice
+                                  </DropdownMenuItem>
+                                )}
                                 {inv.job_card_id && !isVoid && canEdit && (
                                   <DropdownMenuItem onClick={() => handleRequestSync(inv)}>
                                     <RefreshCw className="h-3.5 w-3.5 mr-2 text-blue-600" /> Sync from Job Card
@@ -1716,6 +1738,17 @@ export function InvoicesView() {
               >
                 <MessageSquare className="h-3.5 w-3.5" /> WhatsApp
               </Button>
+
+              {selectedInvoice && !selectedInvoice.is_void && selectedInvoice.payment_status !== "void" && canEdit && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleOpenEditInvoice(selectedInvoice)}
+                  className="h-8.5 text-xs font-semibold border-border/80 hover:bg-blue-50 text-blue-700 gap-1.5"
+                >
+                  <Edit3 className="h-3.5 w-3.5" /> Edit Invoice
+                </Button>
+              )}
 
               {selectedInvoice && selectedInvoice.balance > 0 && !selectedInvoice.is_void && canEdit && (
                 <Button
@@ -2290,16 +2323,24 @@ export function InvoicesView() {
         isDeleting={forceDeleting}
       />
 
-      {/* Direct Invoice Modal */}
+      {/* Direct / Edit Invoice Modal */}
       <DirectInvoiceModal
         open={directPartsModalOpen}
-        onOpenChange={setDirectPartsModalOpen}
-        onSuccess={(created) => {
+        onOpenChange={(open) => {
+          setDirectPartsModalOpen(open);
+          if (!open) setEditingInvoice(null);
+        }}
+        editInvoice={editingInvoice}
+        onSuccess={(saved) => {
+          const wasEdit = Boolean(editingInvoice?.id);
+          setEditingInvoice(null);
           loadInvoicesList();
-          handleOpenDetails(created.id);
+          handleOpenDetails(saved.id);
           setToastMessage({
             type: "success",
-            text: `Direct invoice #${created.invoice_number} created successfully.`,
+            text: wasEdit
+              ? `Invoice #${saved.invoice_number} updated successfully.`
+              : `Direct invoice #${saved.invoice_number} created successfully.`,
           });
         }}
       />

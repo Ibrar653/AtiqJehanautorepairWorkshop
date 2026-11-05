@@ -340,6 +340,7 @@ export interface User {
   deleted_by?: string | null;
   hierarchy_level?: HierarchyLevel;
   workspace_id?: string;
+  is_platform_admin?: boolean;
   phone?: string | null;
   job_title?: string | null;
   data_scope?: DataAccessScope;

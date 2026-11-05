@@ -26,6 +26,9 @@ import {
   getAttachmentsByJobCard,
 } from "@/lib/services/document-service";
 import { CustomerSearchSelect } from "@/components/shared/customer-search-select";
+import { SparePartSearchSelect } from "@/components/shared/spare-part-search-select";
+import { useWorkspace } from "@/lib/context/workspace-context";
+import { DEFAULT_WORKSPACE_ID } from "@/lib/constants";
 import type { CustomerWithMetrics } from "@/lib/services/customer-service";
 import type { Service, Vehicle, Part, JobCardStatus, DocumentType, JobCardAttachment } from "@/types/database";
 import { PageHeader } from "@/components/shared/page-header";
@@ -91,6 +94,8 @@ interface JobCardFormProps {
 export function JobCardForm({ jobCardId }: JobCardFormProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { currentWorkspace } = useWorkspace();
+  const activeWorkspaceId = currentWorkspace?.id || DEFAULT_WORKSPACE_ID;
 
   const [loading, setLoading] = useState(!!jobCardId);
   const [saving, setSaving] = useState(false);
@@ -283,13 +288,49 @@ export function JobCardForm({ jobCardId }: JobCardFormProps) {
     return () => clearTimeout(timer);
   }, [invoiceNumber, invoiceNumberMode, jobCardId]);
 
-  // Load Catalogs on Mount
+  // Load Catalogs on Mount / Workspace change
   useEffect(() => {
     getServices(true).then(setServiceCatalog).catch(console.error);
-    getParts("all", "", 1, 100)
+    getParts("all", "", 1, 100, activeWorkspaceId)
       .then((res) => setPartsCatalog(res.parts))
       .catch(console.error);
-  }, []);
+  }, [activeWorkspaceId]);
+
+  // Keep available_stock on existing part rows synchronized with partsCatalog + initial allocation
+  useEffect(() => {
+    if (partsCatalog.length === 0) return;
+    setPartItems((prev) => {
+      let changed = false;
+      const next = prev.map((item) => {
+        if (!item.part_id) return item;
+        const cat = partsCatalog.find((p) => p.id === item.part_id);
+        if (!cat) return item;
+        const initAlloc = initialPartsAllocatedRef.current.get(item.part_id) || 0;
+        const effectiveStock = Number(cat.current_stock || 0) + initAlloc;
+        if (item.available_stock !== effectiveStock) {
+          changed = true;
+          return { ...item, available_stock: effectiveStock };
+        }
+        return item;
+      });
+      return changed ? next : prev;
+    });
+  }, [partsCatalog]);
+
+  const handleCatalogDiscovered = (discovered: Part[]) => {
+    if (!discovered || discovered.length === 0) return;
+    setPartsCatalog((prev) => {
+      const map = new Map(prev.map((p) => [p.id, p]));
+      let added = false;
+      for (const p of discovered) {
+        if (p && p.id && !map.has(p.id)) {
+          map.set(p.id, p);
+          added = true;
+        }
+      }
+      return added ? Array.from(map.values()) : prev;
+    });
+  };
 
   const targetVehicleIdRef = useRef<string | null>(null);
   const initialPartsAllocatedRef = useRef<Map<string, number>>(new Map());
@@ -574,12 +615,86 @@ export function JobCardForm({ jobCardId }: JobCardFormProps) {
       ...partItems,
       {
         id: "prt-" + Date.now() + "-" + Math.random().toString(36).substring(2, 6),
+        part_id: null,
         description: "",
         quantity: 1,
-        unit_price: 50,
-        total_price: 50,
+        unit_price: 0,
+        total_price: 0,
       },
     ]);
+  };
+
+  const handleQuickAddPart = (part: Part, effectiveAvailableStock: number) => {
+    handleCatalogDiscovered([part]);
+    setPartItems((prev) => {
+      const existingIdx = prev.findIndex((it) => it.part_id === part.id);
+      if (existingIdx !== -1) {
+        return prev.map((it, idx) => {
+          if (idx !== existingIdx) return it;
+          const nextQty = Math.min(effectiveAvailableStock || it.quantity + 1, (Number(it.quantity) || 1) + 1);
+          const unitPrice = Number(it.unit_price) || Number(part.selling_price) || 0;
+          return {
+            ...it,
+            quantity: nextQty,
+            available_stock: effectiveAvailableStock,
+            total_price: Math.round(nextQty * unitPrice * 100) / 100,
+          };
+        });
+      }
+      const unitPrice = Number(part.selling_price) || 0;
+      const costPrice = Number(part.purchase_price) || 0;
+      const description = part.part_number ? `${part.name} (Part #${part.part_number})` : part.name;
+      return [
+        ...prev,
+        {
+          id: "prt-" + Date.now() + "-" + Math.random().toString(36).substring(2, 6),
+          part_id: part.id,
+          description,
+          quantity: 1,
+          unit_price: unitPrice,
+          cost_price: costPrice,
+          available_stock: effectiveAvailableStock,
+          total_price: unitPrice,
+        },
+      ];
+    });
+  };
+
+  const handleSelectPartForRow = (rowId: string, part: Part, effectiveAvailableStock: number) => {
+    handleCatalogDiscovered([part]);
+    setPartItems((prev) =>
+      prev.map((item) => {
+        if (item.id !== rowId) return item;
+        const qty = Number(item.quantity) > 0 ? Number(item.quantity) : 1;
+        const unitPrice = Number(part.selling_price) || 0;
+        const costPrice = Number(part.purchase_price) || 0;
+        const description = part.part_number ? `${part.name} (Part #${part.part_number})` : part.name;
+        return {
+          ...item,
+          part_id: part.id,
+          description,
+          quantity: qty,
+          unit_price: unitPrice,
+          cost_price: costPrice,
+          available_stock: effectiveAvailableStock,
+          total_price: Math.round(qty * unitPrice * 100) / 100,
+        };
+      })
+    );
+  };
+
+  const handleSelectCustomForRow = (rowId: string) => {
+    setPartItems((prev) =>
+      prev.map((item) => {
+        if (item.id !== rowId) return item;
+        return {
+          ...item,
+          part_id: null,
+          available_stock: undefined,
+          cost_price: 0,
+        };
+      })
+    );
   };
 
   const removePartLine = (id: string) => {
@@ -596,10 +711,11 @@ export function JobCardForm({ jobCardId }: JobCardFormProps) {
           if (value) {
             const cat = partsCatalog.find((p) => p.id === value);
             if (cat) {
+              const initAlloc = initialPartsAllocatedRef.current.get(cat.id) || 0;
               updated.description = cat.part_number ? `${cat.name} (Part #${cat.part_number})` : cat.name;
               updated.unit_price = cat.selling_price;
               updated.cost_price = cat.purchase_price;
-              updated.available_stock = cat.current_stock;
+              updated.available_stock = Number(cat.current_stock || 0) + initAlloc;
             }
           } else {
             updated.available_stock = undefined;
@@ -1513,125 +1629,146 @@ export function JobCardForm({ jobCardId }: JobCardFormProps) {
         </Card>
 
         {/* Step 4: Spare Parts Section */}
-        <Card className="rounded-xl border border-border/80 shadow-xs bg-card overflow-hidden">
-          <CardHeader className="flex flex-row items-center justify-between py-3.5 px-6 border-b border-border bg-muted/30">
+        <Card className="rounded-xl border border-border/80 shadow-xs bg-card overflow-visible">
+          <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 py-3.5 px-6 border-b border-border bg-muted/30">
             <div>
               <CardTitle className="text-sm font-bold flex items-center gap-2 text-foreground">
                 <Package className="h-4 w-4 text-primary" /> 4. Spare Parts ({partItems.length})
               </CardTitle>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Amount is automatically calculated: Quantity × Unit Price
+                Search spare parts by name or part number, or add custom lines. Amount = Quantity × Unit Price.
               </p>
             </div>
             <Button type="button" variant="outline" size="sm" onClick={addPartLine}>
               <Plus className="mr-1 h-3.5 w-3.5" /> Add Spare Part Line
             </Button>
           </CardHeader>
-          <CardContent className="p-0">
+          <CardContent className="p-0 overflow-visible">
+            {/* Quick-Add Search Bar */}
+            <div className="px-6 py-3.5 border-b border-border/70 bg-muted/10">
+              <div className="max-w-xl">
+                <SparePartSearchSelect
+                  clearOnSelect
+                  initialParts={partsCatalog}
+                  allocatedStockMap={initialPartsAllocatedRef.current}
+                  workspaceId={activeWorkspaceId}
+                  placeholder="Search spare part name or part number..."
+                  onSelectPart={handleQuickAddPart}
+                  onCatalogDiscovered={handleCatalogDiscovered}
+                />
+              </div>
+            </div>
+
             {partItems.length > 0 ? (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-[5%] text-center">S.No</TableHead>
-                    <TableHead className="w-[28%]">Inventory Part</TableHead>
-                    <TableHead className="w-[32%]">Description / Part #</TableHead>
-                    <TableHead className="w-[10%]">Qty</TableHead>
-                    <TableHead className="w-[12%]">Unit Price</TableHead>
-                    <TableHead className="w-[13%] text-right">Amount</TableHead>
-                    <TableHead className="w-[5%] text-center">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {partItems.map((item, idx) => (
-                    <TableRow key={item.id}>
-                      <TableCell className="text-center font-bold text-muted-foreground pt-3">
-                        {idx + 1}
-                      </TableCell>
-                      <TableCell>
-                        <select
-                          value={item.part_id || ""}
-                          onChange={(e) => updatePartLine(item.id, "part_id", e.target.value)}
-                          className="flex h-9 w-full rounded-md border border-input bg-background px-2 py-1 text-xs shadow-sm font-medium"
-                        >
-                          <option value="">Custom Spare Part</option>
-                          {partsCatalog.map((p) => (
-                            <option key={p.id} value={p.id}>
-                              {p.name} {p.part_number ? `(#${p.part_number})` : ""} — {formatAmount(p.selling_price)} (Stock: {p.current_stock})
-                            </option>
-                          ))}
-                        </select>
-                        {item.part_id && item.available_stock !== undefined && (
-                          <div className="mt-1 flex items-center justify-between text-[10px]">
-                            <span className="text-muted-foreground">Available Stock:</span>
-                            <span
-                              className={`font-bold font-mono px-1.5 py-0.2 rounded ${
-                                item.quantity > item.available_stock
-                                  ? "bg-rose-100 text-rose-700 dark:bg-rose-950/50"
-                                  : item.available_stock <= 5
-                                  ? "bg-amber-100 text-amber-700 dark:bg-amber-950/50"
-                                  : "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50"
-                              }`}
-                            >
-                              {item.available_stock} units
-                            </span>
-                          </div>
-                        )}
-                        {item.part_id && item.available_stock !== undefined && item.quantity > item.available_stock && (
-                          <p className="text-[10px] text-destructive font-medium mt-0.5 flex items-center gap-1">
-                            <AlertCircle className="h-3 w-3 shrink-0" /> Insufficient stock ({item.available_stock} available)
-                          </p>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <Input
-                          placeholder="Spare part name or OEM code"
-                          value={item.description}
-                          onChange={(e) => updatePartLine(item.id, "description", e.target.value)}
-                          className="h-9 text-xs"
-                          required
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Input
-                          type="number"
-                          min="1"
-                          step="1"
-                          value={item.quantity}
-                          onChange={(e) => updatePartLine(item.id, "quantity", parseFloat(e.target.value) || 0)}
-                          className="h-9 text-xs font-mono"
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          value={item.unit_price}
-                          onChange={(e) => updatePartLine(item.id, "unit_price", parseFloat(e.target.value) || 0)}
-                          className="h-9 text-xs font-mono"
-                        />
-                      </TableCell>
-                      <TableCell className="text-right font-bold text-foreground text-sm font-mono pt-3">
-                        {formatAmount(item.total_price)}
-                      </TableCell>
-                      <TableCell className="text-center pt-2">
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => removePartLine(item.id)}
-                          className="text-muted-foreground hover:text-destructive h-7 w-7 p-0 mx-auto"
-                          title="Remove Part"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
-                      </TableCell>
+              <div className="w-full overflow-visible">
+                <table className="w-full caption-bottom text-sm">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[5%] text-center">S.No</TableHead>
+                      <TableHead className="w-[32%]">Inventory Part</TableHead>
+                      <TableHead className="w-[28%]">Description / Part #</TableHead>
+                      <TableHead className="w-[10%]">Qty</TableHead>
+                      <TableHead className="w-[12%]">Unit Price</TableHead>
+                      <TableHead className="w-[10%] text-right">Amount</TableHead>
+                      <TableHead className="w-[5%] text-center">Actions</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {partItems.map((item, idx) => (
+                      <TableRow key={item.id}>
+                        <TableCell className="text-center font-bold text-muted-foreground pt-3 align-top">
+                          {idx + 1}
+                        </TableCell>
+                        <TableCell className="align-top">
+                          <SparePartSearchSelect
+                            compact
+                            selectedPartId={item.part_id || null}
+                            selectedPartLabel={item.part_id ? item.description : ""}
+                            initialParts={partsCatalog}
+                            allocatedStockMap={initialPartsAllocatedRef.current}
+                            workspaceId={activeWorkspaceId}
+                            allowCustomOption
+                            isCustomSelected={!item.part_id && Boolean(item.description)}
+                            placeholder="Search spare part name or part number..."
+                            onSelectPart={(part, effectiveStock) =>
+                              handleSelectPartForRow(item.id, part, effectiveStock)
+                            }
+                            onSelectCustom={() => handleSelectCustomForRow(item.id)}
+                            onCatalogDiscovered={handleCatalogDiscovered}
+                          />
+                          {item.part_id && item.available_stock !== undefined && (
+                            <div className="mt-1 flex items-center justify-between text-[10px]">
+                              <span className="text-muted-foreground">Available Stock:</span>
+                              <span
+                                className={`font-bold font-mono px-1.5 py-0.2 rounded ${
+                                  item.quantity > item.available_stock
+                                    ? "bg-rose-100 text-rose-700 dark:bg-rose-950/50"
+                                    : item.available_stock <= 5
+                                    ? "bg-amber-100 text-amber-700 dark:bg-amber-950/50"
+                                    : "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50"
+                                }`}
+                              >
+                                {item.available_stock} units
+                              </span>
+                            </div>
+                          )}
+                          {item.part_id && item.available_stock !== undefined && item.quantity > item.available_stock && (
+                            <p className="text-[10px] text-destructive font-medium mt-0.5 flex items-center gap-1">
+                              <AlertCircle className="h-3 w-3 shrink-0" /> Insufficient stock ({item.available_stock} available)
+                            </p>
+                          )}
+                        </TableCell>
+                        <TableCell className="align-top">
+                          <Input
+                            placeholder="Spare part name or OEM code"
+                            value={item.description}
+                            onChange={(e) => updatePartLine(item.id, "description", e.target.value)}
+                            className="h-9 text-xs"
+                            required
+                          />
+                        </TableCell>
+                        <TableCell className="align-top">
+                          <Input
+                            type="number"
+                            min="1"
+                            step="1"
+                            value={item.quantity}
+                            onChange={(e) => updatePartLine(item.id, "quantity", parseFloat(e.target.value) || 0)}
+                            className="h-9 text-xs font-mono"
+                          />
+                        </TableCell>
+                        <TableCell className="align-top">
+                          <Input
+                            type="number"
+                            step="0.01"
+                            value={item.unit_price}
+                            onChange={(e) => updatePartLine(item.id, "unit_price", parseFloat(e.target.value) || 0)}
+                            className="h-9 text-xs font-mono"
+                          />
+                        </TableCell>
+                        <TableCell className="text-right font-bold text-foreground text-sm font-mono pt-3 align-top">
+                          {formatAmount(item.total_price)}
+                        </TableCell>
+                        <TableCell className="text-center pt-2 align-top">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removePartLine(item.id)}
+                            className="text-muted-foreground hover:text-destructive h-7 w-7 p-0 mx-auto"
+                            title="Remove Part"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </table>
+              </div>
             ) : (
               <div className="py-8 text-center text-xs text-muted-foreground">
-                No spare parts added to this job card yet. Click <strong>"+ Add Spare Part Line"</strong> if replacement parts are required (supports 1 to 15+ items).
+                No spare parts added to this job card yet. Search above or click <strong>"+ Add Spare Part Line"</strong> if replacement parts are required.
               </div>
             )}
           </CardContent>

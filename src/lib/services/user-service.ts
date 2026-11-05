@@ -975,45 +975,44 @@ export async function getCurrentUser(): Promise<User | null> {
       }
     }
 
-    // If no authenticated Supabase session, fallback to local current user (or Owner in dev)
+    // Strict production security: If no authenticated Supabase session, user is null
     if (!authUser) {
-      const localUsers = getLocalUsers();
-      // Default to owner in active local dev if present
-      const owner = localUsers.find((u) => u.email.toLowerCase() === PRIMARY_OWNER_EMAIL.toLowerCase());
-      if (owner) {
-        return {
-          ...owner,
-          permissions: getAllPermissionsEnabled(),
-        };
-      }
       return null;
     }
 
     const email = (authUser.email || "").trim().toLowerCase();
-    const isPrimaryEmail = email === PRIMARY_OWNER_EMAIL.toLowerCase();
 
-    // 3. Platform Admin Check
-    let isPlatformAdmin = isPrimaryEmail;
-    if (!isPlatformAdmin) {
-      try {
-        const { data: adminRow } = await withTimeout<any>(
-          supabase.from("platform_admins").select("id, status").eq("user_id", authUser.id).eq("status", "active").maybeSingle(),
-          3000
-        );
-        if (adminRow) isPlatformAdmin = true;
-      } catch {}
-    }
+    // 3. Platform Admin Check (Server-verified from platform_admins using auth.users UUID)
+    let isPlatformAdmin = false;
+    try {
+      const { data: adminRow } = await withTimeout<any>(
+        supabase
+          .from("platform_admins")
+          .select("id, user_id, role, status")
+          .eq("user_id", authUser.id)
+          .eq("status", "active")
+          .maybeSingle(),
+        3000
+      );
+      if (
+        adminRow &&
+        (adminRow.role === "platform_owner" || adminRow.role === "admin" || adminRow.status === "active")
+      ) {
+        isPlatformAdmin = true;
+      }
+    } catch {}
 
-    // If Primary Platform Owner: Always grant full unrestricted access
+    // If verified Platform Admin/Owner: Grant full unrestricted access with real Supabase Auth UUID
     if (isPlatformAdmin) {
       return {
-        id: authUser.id || "usr-owner-001",
-        email: email || PRIMARY_OWNER_EMAIL,
+        id: authUser.id,
+        email: email,
         full_name: authUser.user_metadata?.full_name || "Atiq Jehan (Owner)",
         role: "owner",
         is_active: true,
         status: "active",
-        phone: "+971 50 123 4567",
+        is_platform_admin: true,
+        phone: authUser.user_metadata?.phone || "+971 50 123 4567",
         job_title: "Managing Director / Platform Owner",
         permissions: getAllPermissionsEnabled(),
         last_login_at: new Date().toISOString(),
