@@ -328,7 +328,7 @@ export function JobCardListView() {
       setToastMessage({ type: "success", text: `Generating PDF for Job Card #${jc.job_card_number}...` });
 
       let fullJc = jc;
-      if (!jc.items || jc.items.length === 0 || !jc.customer || !jc.vehicle) {
+      if (!jc.items || jc.items.length === 0 || !jc.customer || !jc.vehicle || jc.vat_rate === undefined) {
         const fetched = await getJobCardById(jc.id, activeWorkspaceId);
         if (fetched) fullJc = fetched;
       }
@@ -355,7 +355,7 @@ export function JobCardListView() {
     try {
       setIsExporting(true);
       let fullJc = jc;
-      if (!jc.items || jc.items.length === 0 || !jc.customer || !jc.vehicle) {
+      if (!jc.items || jc.items.length === 0 || !jc.customer || !jc.vehicle || jc.vat_rate === undefined) {
         const fetched = await getJobCardById(jc.id, activeWorkspaceId);
         if (fetched) fullJc = fetched;
       }

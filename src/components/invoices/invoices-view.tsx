@@ -1633,10 +1633,12 @@ export function InvoicesView() {
                         <span className="font-mono font-semibold">-{formatCurrency(selectedInvoice.discount_amount)}</span>
                       </div>
                     )}
-                    <div className="flex justify-between text-muted-foreground">
-                      <span>VAT ({selectedInvoice.vat_rate ?? 5}%):</span>
-                      <span className="font-mono font-semibold text-foreground">{formatCurrency(selectedInvoice.vat_amount)}</span>
-                    </div>
+                    {Number(selectedInvoice.vat_rate || 0) > 0 && Number(selectedInvoice.vat_amount || 0) > 0 && (
+                      <div className="flex justify-between text-muted-foreground">
+                        <span>VAT ({selectedInvoice.vat_rate}%):</span>
+                        <span className="font-mono font-semibold text-foreground">{formatCurrency(selectedInvoice.vat_amount)}</span>
+                      </div>
+                    )}
                     <div className="flex justify-between text-muted-foreground pt-1 border-t">
                       <span>Paid Amount:</span>
                       <span className="font-mono font-bold text-emerald-600">{formatCurrency(selectedInvoice.paid || 0)}</span>
@@ -1658,7 +1660,9 @@ export function InvoicesView() {
                       {formatCurrency(selectedInvoice.total)}
                     </div>
                     <span className="text-[10px] text-blue-200">
-                      Inclusive of {selectedInvoice.vat_rate ?? 5}% UAE VAT
+                      {Number(selectedInvoice.vat_rate || 0) > 0
+                        ? `Inclusive of ${selectedInvoice.vat_rate}% UAE VAT`
+                        : "Zero-Rated / Exempt (0% VAT)"}
                     </span>
                   </div>
                 </div>

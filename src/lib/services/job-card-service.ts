@@ -427,7 +427,7 @@ export async function getJobCards(
   let query = supabase
     .from("job_cards")
     .select(
-      "id, invoice_number, payment_status, job_card_number, date, status, total, balance, customer_id, vehicle_id, customer_complaint, assigned_mechanic, workspace_id, is_deleted, created_at, customer:customers(id, name, mobile, email, company_name, trn_number, address), vehicle:vehicles(id, make, model, registration_number, chassis_vin, color, year, mileage), items:job_card_items(id, item_type, description, quantity, unit_price, cost_price, total_price)",
+      "id, invoice_number, payment_status, job_card_number, date, status, subtotal, discount, vat_rate, vat_amount, total, paid, balance, customer_id, vehicle_id, customer_complaint, assigned_mechanic, workspace_id, is_deleted, created_at, customer:customers(id, name, mobile, email, company_name, trn_number, address), vehicle:vehicles(id, make, model, registration_number, chassis_vin, color, year, mileage), items:job_card_items(id, item_type, description, quantity, unit_price, cost_price, total_price)",
       { count: "exact" }
     )
     .eq("is_deleted", false)
@@ -594,7 +594,7 @@ export function buildJobCardDbInsertPayload(
     work_details: payload.work_details != null ? String(payload.work_details).trim() || null : null,
     discount: Number(payload.discount) || 0,
     subtotal: Number(payload.subtotal) || 0,
-    vat_rate: payload.vat_rate != null ? Number(payload.vat_rate) : 5.0,
+    vat_rate: payload.vat_rate != null && !isNaN(Number(payload.vat_rate)) ? Number(payload.vat_rate) : 5.0,
     vat_amount: Number(payload.vat_amount) || 0,
     total: Number(payload.total) || 0,
     paid: Number(payload.paid) || 0,
@@ -631,8 +631,12 @@ export function buildJobCardDbUpdatePayload(payload: any): Partial<JobCardDbInse
   }
   if (payload.discount !== undefined) updateData.discount = Number(payload.discount) || 0;
   if (payload.subtotal !== undefined) updateData.subtotal = Number(payload.subtotal) || 0;
-  if (payload.vat_rate !== undefined) updateData.vat_rate = Number(payload.vat_rate) || 0;
-  if (payload.vat_amount !== undefined) updateData.vat_amount = Number(payload.vat_amount) || 0;
+  if (payload.vat_rate !== undefined && payload.vat_rate !== null && !isNaN(Number(payload.vat_rate))) {
+    updateData.vat_rate = Number(payload.vat_rate);
+  }
+  if (payload.vat_amount !== undefined && payload.vat_amount !== null && !isNaN(Number(payload.vat_amount))) {
+    updateData.vat_amount = Number(payload.vat_amount);
+  }
   if (payload.total !== undefined) updateData.total = Number(payload.total) || 0;
   if (payload.paid !== undefined) updateData.paid = Number(payload.paid) || 0;
   if (payload.balance !== undefined) updateData.balance = Number(payload.balance) || 0;

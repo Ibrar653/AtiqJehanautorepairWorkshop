@@ -618,6 +618,7 @@ export interface CreateDirectInvoicePayload {
   parts?: DirectInvoicePartItemPayload[];
   discount?: number;
   vat_rate?: number;
+  vat_amount?: number;
   payment_status: "paid" | "partially_paid" | "credit";
   payment_method: "cash" | "bank" | "credit";
   paid_amount?: number;

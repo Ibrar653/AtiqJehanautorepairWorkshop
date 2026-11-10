@@ -1188,7 +1188,12 @@ export async function executeLocalDataMigrationToSupabase(
       work_details: jc.work_details || null,
       discount: Number(jc.discount) || 0,
       subtotal: Number(jc.subtotal) || 0,
-      vat_rate: Number(jc.vat_rate) || 5,
+      vat_rate:
+        jc.vat_rate !== undefined && jc.vat_rate !== null
+          ? Number(jc.vat_rate)
+          : Number(jc.vat_amount) === 0
+          ? 0
+          : 5,
       vat_amount: Number(jc.vat_amount) || 0,
       total: Number(jc.total) || 0,
       paid: Number(jc.paid) || 0,
@@ -1235,7 +1240,12 @@ export async function executeLocalDataMigrationToSupabase(
       vehicle_id: inv.vehicle_id ? toDeterministicUuid("vehicle", inv.vehicle_id, wsUuid) : null,
       subtotal: Number(inv.subtotal) || 0,
       discount: Number(inv.discount) || 0,
-      vat_rate: Number(inv.vat_rate) || 5,
+      vat_rate:
+        inv.vat_rate !== undefined && inv.vat_rate !== null
+          ? Number(inv.vat_rate)
+          : Number(inv.vat_amount) === 0
+          ? 0
+          : 5,
       vat_amount: Number(inv.vat_amount) || 0,
       total: Number(inv.total) || 0,
       paid: Number(inv.paid) || 0,

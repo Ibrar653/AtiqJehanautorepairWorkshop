@@ -851,10 +851,12 @@ export function JobCardDetailView({ id }: JobCardDetailViewProps) {
                       <span className="font-mono tabular-nums">-{formatAmount(jobCard.discount)}</span>
                     </div>
                   )}
-                  <div className="flex justify-between text-slate-600">
-                    <span>VAT ({jobCard.vat_rate}%):</span>
-                    <span className="font-semibold text-slate-900 font-mono tabular-nums">{formatAmount(jobCard.vat_amount)}</span>
-                  </div>
+                  {Number(jobCard.vat_rate || 0) > 0 && Number(jobCard.vat_amount || 0) > 0 && (
+                    <div className="flex justify-between text-slate-600">
+                      <span>VAT ({jobCard.vat_rate}%):</span>
+                      <span className="font-semibold text-slate-900 font-mono tabular-nums">{formatAmount(jobCard.vat_amount)}</span>
+                    </div>
+                  )}
                   <div className="border-t border-slate-200/80 pt-2.5 bg-blue-50 border border-blue-200/80 p-3.5 rounded-xl flex justify-between items-center text-sm font-bold text-blue-900">
                     <span className="uppercase tracking-wider text-xs">Total Amount:</span>
                     <span className="font-mono font-bold text-base text-blue-700">AED {formatAmount(jobCard.total)}</span>

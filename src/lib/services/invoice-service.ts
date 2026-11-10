@@ -95,7 +95,12 @@ export function buildInvoiceDbInsertPayload(
     vehicle_id: payload.vehicle_id && payload.vehicle_id.length === 36 ? payload.vehicle_id : null,
     subtotal: Number(payload.subtotal) || 0,
     discount: Number(payload.discount) || 0,
-    vat_rate: payload.vat_rate != null ? Number(payload.vat_rate) : 5.0,
+    vat_rate:
+      payload.vat_rate != null && !isNaN(Number(payload.vat_rate))
+        ? Number(payload.vat_rate)
+        : Number(payload.vat_amount) === 0
+        ? 0.0
+        : 5.0,
     vat_amount: Number(payload.vat_amount) || 0,
     total: Number(payload.total) || 0,
     paid: Number(payload.paid) || 0,
@@ -622,11 +627,34 @@ export async function generateInvoiceFromJobCard(
 
   const subtotal = Number(jobCard.subtotal) || calculatedSubtotal;
   const discount = Number(jobCard.discount) || 0;
-  const vatRate = jobCard.vat_rate !== undefined && jobCard.vat_rate !== null && Number.isFinite(Number(jobCard.vat_rate))
+  const taxableAmount = Math.max(0, subtotal - discount);
+
+  // Preserve true VAT rate from Job Card: 0% must remain 0%!
+  const hasJcVatRate =
+    jobCard.vat_rate !== undefined &&
+    jobCard.vat_rate !== null &&
+    !isNaN(Number(jobCard.vat_rate));
+
+  const vatRate = hasJcVatRate
     ? Number(jobCard.vat_rate)
+    : Number(jobCard.vat_amount) === 0 ||
+      (jobCard.total && Math.abs(Number(jobCard.total) - taxableAmount) < 0.05)
+    ? 0
     : 5;
-  const vatAmount = Number(jobCard.vat_amount) || Math.round(subtotal * (vatRate / 100) * 100) / 100;
-  const total = Number(jobCard.total) || Math.round((subtotal + vatAmount - discount) * 100) / 100;
+
+  const vatAmount =
+    vatRate === 0
+      ? 0
+      : jobCard.vat_amount !== undefined &&
+        jobCard.vat_amount !== null &&
+        Number(jobCard.vat_amount) > 0
+      ? Number(jobCard.vat_amount)
+      : Math.round(taxableAmount * (vatRate / 100) * 100) / 100;
+
+  const total =
+    Number(jobCard.total) > 0
+      ? Number(jobCard.total)
+      : Math.round((taxableAmount + vatAmount) * 100) / 100;
 
   // Fetch all existing real payment records for this Job Card
   const { getPaymentsByJobCard, getLocalPayments, saveLocalPayments } = await import("./payment-service");
@@ -1121,10 +1149,17 @@ export async function createDirectInvoice(
     netParts = Math.max(0, taxableSubtotal - netServices);
   }
 
-  const vatRate = payload.vat_rate !== undefined && Number.isFinite(Number(payload.vat_rate))
+  const hasPayloadVatRate =
+    payload.vat_rate !== undefined &&
+    payload.vat_rate !== null &&
+    !isNaN(Number(payload.vat_rate));
+  const vatRate = hasPayloadVatRate
     ? Number(payload.vat_rate)
+    : Number(payload.vat_amount) === 0
+    ? 0
     : 5;
-  const vatAmount = Math.round(taxableSubtotal * (vatRate / 100) * 100) / 100;
+  const vatAmount =
+    vatRate === 0 ? 0 : Math.round(taxableSubtotal * (vatRate / 100) * 100) / 100;
   const grandTotal = Math.round((taxableSubtotal + vatAmount) * 100) / 100;
 
   const paidAmount = payload.payment_status === "credit"
@@ -2088,11 +2123,21 @@ export async function updateDirectInvoice(
     netParts = Math.max(0, taxableSubtotal - netServices);
   }
 
-  const vatRate =
-    payload.vat_rate !== undefined && Number.isFinite(Number(payload.vat_rate))
-      ? Number(payload.vat_rate)
-      : Number(existingInvoice.vat_rate ?? 5);
-  const vatAmount = Math.round(taxableSubtotal * (vatRate / 100) * 100) / 100;
+  const hasPayloadVatRate =
+    payload.vat_rate !== undefined &&
+    payload.vat_rate !== null &&
+    !isNaN(Number(payload.vat_rate));
+  const vatRate = hasPayloadVatRate
+    ? Number(payload.vat_rate)
+    : existingInvoice.vat_rate !== undefined &&
+      existingInvoice.vat_rate !== null &&
+      !isNaN(Number(existingInvoice.vat_rate))
+    ? Number(existingInvoice.vat_rate)
+    : Number(existingInvoice.vat_amount) === 0
+    ? 0
+    : 5;
+  const vatAmount =
+    vatRate === 0 ? 0 : Math.round(taxableSubtotal * (vatRate / 100) * 100) / 100;
   const grandTotal = Math.round((taxableSubtotal + vatAmount) * 100) / 100;
 
   const paidAmount =

@@ -310,6 +310,10 @@ export function DirectInvoiceModal({
       setVatRateInput(
         editInvoice.vat_rate !== undefined && editInvoice.vat_rate !== null
           ? Number(editInvoice.vat_rate)
+          : Number(editInvoice.vat_amount) === 0 ||
+            (Number(editInvoice.total) > 0 &&
+              Math.abs(Number(editInvoice.total) - (Number(editInvoice.subtotal) - (Number(editInvoice.discount) || 0))) < 0.01)
+          ? 0
           : 5
       );
       const pStatus =
@@ -2535,7 +2539,7 @@ export function DirectInvoiceModal({
               <div>
                 <Label className="text-[11px] text-muted-foreground">VAT Applicability</Label>
                 <div className="h-8 mt-1 px-2.5 rounded-md border border-border bg-muted/40 text-[11px] flex items-center font-mono text-muted-foreground">
-                  Standard ({effectiveVatRate}%)
+                  {effectiveVatRate > 0 ? `Standard (${effectiveVatRate}%)` : "Zero-Rated (0%)"}
                 </div>
               </div>
             </div>

@@ -394,6 +394,11 @@ export function JobCardForm({ jobCardId }: JobCardFormProps) {
         setInvoiceNumberMode((jc as any).invoice_number_mode || (jc.invoice_number ? "manual" : "auto"));
         if (jc.vat_rate !== undefined && jc.vat_rate !== null) {
           setVatRate(String(jc.vat_rate));
+        } else if (
+          Number(jc.vat_amount) === 0 ||
+          (Number(jc.total) > 0 && Math.abs(Number(jc.total) - (Number(jc.subtotal) - (Number(jc.discount) || 0))) < 0.01)
+        ) {
+          setVatRate("0");
         }
         setDate(jc.date || new Date().toISOString().slice(0, 10));
         targetVehicleIdRef.current = jc.vehicle_id;
@@ -509,7 +514,7 @@ export function JobCardForm({ jobCardId }: JobCardFormProps) {
   const numDiscount = Math.max(0, parseFloat(discount) || 0);
   const taxableAmount = Math.max(0, subtotal - numDiscount);
   const numVatRate = Math.max(0, parseFloat(vatRate) || 0);
-  const vatAmount = Math.round(taxableAmount * numVatRate) / 100;
+  const vatAmount = numVatRate === 0 ? 0 : Math.round(taxableAmount * numVatRate) / 100;
   const grandTotal = Math.round((taxableAmount + vatAmount) * 100) / 100;
 
   const effectivePaid = paymentOption === "paid_full"

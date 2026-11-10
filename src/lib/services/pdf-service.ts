@@ -53,7 +53,7 @@ export async function exportElementToPdf(
     windowWidth: 794,
     // The on-screen PDF template is deliberately positioned offscreen.
     // Move only the cloned copy into the capture viewport to avoid blank PDFs.
-    onclone: (_clonedDocument, clonedElement) => {
+    onclone: (_clonedDocument: Document, clonedElement: HTMLElement) => {
       clonedElement.style.position = "absolute";
       clonedElement.style.left = "0";
       clonedElement.style.top = "0";

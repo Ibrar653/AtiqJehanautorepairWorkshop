@@ -60,15 +60,30 @@ export function exportJobCardToExcel(
   const subtotal = Number(jobCard.subtotal) || calculatedSubtotal;
   const discount = Number(jobCard.discount) || 0;
   const taxableAmount = Math.max(0, subtotal - discount);
-  const vatRate =
+
+  const hasSavedVatRate =
     jobCard.vat_rate !== undefined &&
     jobCard.vat_rate !== null &&
-    Number.isFinite(Number(jobCard.vat_rate))
-      ? Number(jobCard.vat_rate)
-      : 5;
-  const vatAmount =
-    Number(jobCard.vat_amount) ||
-    Math.round(taxableAmount * (vatRate / 100) * 100) / 100;
+    Number.isFinite(Number(jobCard.vat_rate));
+  const savedVatAmount =
+    jobCard.vat_amount !== undefined && jobCard.vat_amount !== null
+      ? Number(jobCard.vat_amount)
+      : null;
+  const isZeroTax =
+    (hasSavedVatRate && Number(jobCard.vat_rate) === 0) ||
+    savedVatAmount === 0 ||
+    (Number(jobCard.total) > 0 && Math.abs(Number(jobCard.total) - taxableAmount) < 0.01);
+
+  const vatRate = isZeroTax
+    ? 0
+    : hasSavedVatRate
+    ? Number(jobCard.vat_rate)
+    : 5;
+  const vatAmount = isZeroTax
+    ? 0
+    : savedVatAmount !== null
+    ? savedVatAmount
+    : Math.round(taxableAmount * (vatRate / 100) * 100) / 100;
   const grandTotal =
     Number(jobCard.total) ||
     Math.round((taxableAmount + vatAmount) * 100) / 100;
@@ -142,10 +157,14 @@ export function exportJobCardToExcel(
     ["Services Subtotal (AED)", servicesTotal],
     ["Spare Parts Subtotal (AED)", sparePartsTotal],
     ["Gross Subtotal (AED)", subtotal],
-    ["Discount (AED)", discount],
-    ["VAT Rate", `${vatRate}%`],
-    ["VAT Amount (AED)", vatAmount],
-    ["Total Amount (AED)", grandTotal],
+    ...(discount > 0 ? [["Discount (AED)", discount]] : []),
+    ...(vatRate > 0 && vatAmount > 0
+      ? [
+          ["VAT Rate", `${vatRate}%`],
+          ["VAT Amount (AED)", vatAmount],
+        ]
+      : []),
+    [vatRate > 0 ? "Total Amount (Incl. VAT) (AED)" : "Total Amount (AED)", grandTotal],
     ["Advance / Paid (AED)", totalPaid],
     ["Pending Balance (AED)", pendingBalance],
     [],
@@ -273,17 +292,34 @@ export function exportInvoiceToExcel(
   const servicesTotal = serviceItems.reduce((sum, s) => sum + s.amount, 0);
   const sparePartsTotal = sparePartItems.reduce((sum, p) => sum + p.amount, 0);
   const subtotal = Number(invoice.subtotal) || servicesTotal + sparePartsTotal;
-  const vatRate =
+  const discount = Number(invoice.discount) || 0;
+  const taxableAmount = Math.max(0, subtotal - discount);
+
+  const hasSavedVatRate =
     invoice.vat_rate !== undefined &&
     invoice.vat_rate !== null &&
-    Number.isFinite(Number(invoice.vat_rate))
-      ? Number(invoice.vat_rate)
-      : 5;
-  const vatAmount =
-    Number(invoice.vat_amount) ||
-    Math.round(subtotal * (vatRate / 100) * 100) / 100;
+    Number.isFinite(Number(invoice.vat_rate));
+  const savedVatAmount =
+    invoice.vat_amount !== undefined && invoice.vat_amount !== null
+      ? Number(invoice.vat_amount)
+      : null;
+  const isZeroTax =
+    (hasSavedVatRate && Number(invoice.vat_rate) === 0) ||
+    savedVatAmount === 0 ||
+    (Number(invoice.total) > 0 && Math.abs(Number(invoice.total) - taxableAmount) < 0.01);
+
+  const vatRate = isZeroTax
+    ? 0
+    : hasSavedVatRate
+    ? Number(invoice.vat_rate)
+    : 5;
+  const vatAmount = isZeroTax
+    ? 0
+    : savedVatAmount !== null
+    ? savedVatAmount
+    : Math.round(taxableAmount * (vatRate / 100) * 100) / 100;
   const total =
-    Number(invoice.total) || Math.round((subtotal + vatAmount) * 100) / 100;
+    Number(invoice.total) || Math.round((taxableAmount + vatAmount) * 100) / 100;
   const paid = Number(invoice.paid) || 0;
   const balance =
     Number(invoice.balance) !== undefined
@@ -344,10 +380,14 @@ export function exportInvoiceToExcel(
     ["Services Subtotal (AED)", servicesTotal],
     ["Spare Parts Subtotal (AED)", sparePartsTotal],
     ["Gross Subtotal (AED)", subtotal],
-    ["Discount (AED)", Number(invoice.discount) || 0],
-    ["VAT Rate", `${vatRate}%`],
-    ["VAT Amount (AED)", vatAmount],
-    ["Total Amount (Incl. VAT) (AED)", total],
+    ...(discount > 0 ? [["Discount (AED)", discount]] : []),
+    ...(vatRate > 0 && vatAmount > 0
+      ? [
+          ["VAT Rate", `${vatRate}%`],
+          ["VAT Amount (AED)", vatAmount],
+        ]
+      : []),
+    [vatRate > 0 ? "Total Amount (Incl. VAT) (AED)" : "Total Amount (AED)", total],
     ["Paid / Received (AED)", paid],
     ["Balance Outstanding (AED)", balance],
     [],
@@ -557,7 +597,13 @@ export function exportInvoicesBulk(
       inv.vehicle?.mileage ? String(inv.vehicle.mileage) : "",
       Number(inv.subtotal) || 0,
       Number(inv.discount) || 0,
-      Number(inv.vat_rate) || 5,
+      inv.vat_rate !== undefined && inv.vat_rate !== null
+        ? Number(inv.vat_rate)
+        : Number(inv.vat_amount) === 0 ||
+          (Number(inv.total) > 0 &&
+            Math.abs(Number(inv.total) - (Number(inv.subtotal) - (Number(inv.discount) || 0))) < 0.01)
+        ? 0
+        : 5,
       Number(inv.vat_amount) || 0,
       Number(inv.total) || 0,
       Number(inv.paid) || 0,

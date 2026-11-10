@@ -55,11 +55,47 @@ export function JobCardPrintView({ jobCard, isForPdf = false }: JobCardPrintView
   const subtotal = Number(jobCard.subtotal) || calculatedSubtotal;
   const discount = Number(jobCard.discount) || 0;
   const taxableAmount = Math.max(0, subtotal - discount);
-  const vatRate = jobCard.vat_rate !== undefined && jobCard.vat_rate !== null && Number.isFinite(Number(jobCard.vat_rate))
-    ? Number(jobCard.vat_rate)
-    : 5;
-  const vatAmount = Number(jobCard.vat_amount) || Math.round(taxableAmount * (vatRate / 100) * 100) / 100;
-  const grandTotal = Number(jobCard.total) || Math.round((taxableAmount + vatAmount) * 100) / 100;
+
+  // Single source of truth for VAT rate & amount
+  const hasSavedVatRate =
+    jobCard.vat_rate !== undefined &&
+    jobCard.vat_rate !== null &&
+    !isNaN(Number(jobCard.vat_rate));
+
+  const savedVatAmount =
+    jobCard.vat_amount !== undefined &&
+    jobCard.vat_amount !== null &&
+    !isNaN(Number(jobCard.vat_amount))
+      ? Number(jobCard.vat_amount)
+      : null;
+
+  let effectiveVatRate: number;
+  if (hasSavedVatRate) {
+    effectiveVatRate = Number(jobCard.vat_rate);
+  } else if (savedVatAmount === 0) {
+    effectiveVatRate = 0;
+  } else if (
+    jobCard.total !== undefined &&
+    jobCard.total !== null &&
+    Math.abs(Number(jobCard.total) - taxableAmount) < 0.05
+  ) {
+    // Total matches taxable base, meaning zero VAT was charged
+    effectiveVatRate = 0;
+  } else {
+    effectiveVatRate = 5;
+  }
+
+  const vatAmount =
+    effectiveVatRate === 0
+      ? 0
+      : savedVatAmount !== null && savedVatAmount > 0
+      ? savedVatAmount
+      : Math.round(taxableAmount * (effectiveVatRate / 100) * 100) / 100;
+
+  const grandTotal =
+    Number(jobCard.total) > 0
+      ? Number(jobCard.total)
+      : Math.round((taxableAmount + vatAmount) * 100) / 100;
 
   // Paid & Balance calculation
   const totalPaid = (jobCard as any).payments && Array.isArray((jobCard as any).payments) && (jobCard as any).payments.length > 0
@@ -525,10 +561,12 @@ export function JobCardPrintView({ jobCard, isForPdf = false }: JobCardPrintView
                   <span className="font-mono font-bold">-{formatAmount(discount)} AED</span>
                 </div>
               )}
-              <div className="flex justify-between py-1 px-2.5 bg-gray-50">
-                <span className="font-bold text-gray-800">VAT ({vatRate}%):</span>
-                <span className="font-mono font-bold text-black">{formatAmount(vatAmount)} AED</span>
-              </div>
+              {effectiveVatRate > 0 && vatAmount > 0 && (
+                <div className="flex justify-between py-1 px-2.5 bg-gray-50">
+                  <span className="font-bold text-gray-800">VAT ({effectiveVatRate}%):</span>
+                  <span className="font-mono font-bold text-black">{formatAmount(vatAmount)} AED</span>
+                </div>
+              )}
               <div
                 className="flex justify-between py-1.5 px-2.5 font-black text-[11px] bg-gray-100 text-black border-t-2 border-black"
                 style={{
