@@ -553,20 +553,18 @@ export function JobCardPrintView({ jobCard, isForPdf = false }: JobCardPrintView
             <div className="col-span-6 text-[9px] divide-y divide-gray-300 font-medium">
               <div className="flex justify-between py-1 px-2.5 bg-gray-50">
                 <span className="font-bold text-gray-800">Sub Total:</span>
-                <span className="font-mono font-bold text-black">{formatAmount(subtotal)} AED</span>
+                <span className="font-mono font-bold text-black">AED {formatAmount(subtotal)}</span>
               </div>
               {discount > 0 && (
                 <div className="flex justify-between py-1 px-2.5 bg-emerald-50/60 text-emerald-800">
                   <span className="font-bold">Discount:</span>
-                  <span className="font-mono font-bold">-{formatAmount(discount)} AED</span>
+                  <span className="font-mono font-bold">-AED {formatAmount(discount)}</span>
                 </div>
               )}
-              {effectiveVatRate > 0 && vatAmount > 0 && (
-                <div className="flex justify-between py-1 px-2.5 bg-gray-50">
-                  <span className="font-bold text-gray-800">VAT ({effectiveVatRate}%):</span>
-                  <span className="font-mono font-bold text-black">{formatAmount(vatAmount)} AED</span>
-                </div>
-              )}
+              <div className="flex justify-between py-1 px-2.5 bg-gray-50">
+                <span className="font-bold text-gray-800">VAT ({effectiveVatRate}%):</span>
+                <span className="font-mono font-bold text-black">AED {formatAmount(vatAmount)}</span>
+              </div>
               <div
                 className="flex justify-between py-1.5 px-2.5 font-black text-[11px] bg-gray-100 text-black border-t-2 border-black"
                 style={{

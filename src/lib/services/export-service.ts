@@ -157,13 +157,9 @@ export function exportJobCardToExcel(
     ["Services Subtotal (AED)", servicesTotal],
     ["Spare Parts Subtotal (AED)", sparePartsTotal],
     ["Gross Subtotal (AED)", subtotal],
-    ...(discount > 0 ? [["Discount (AED)", discount]] : []),
-    ...(vatRate > 0 && vatAmount > 0
-      ? [
-          ["VAT Rate", `${vatRate}%`],
-          ["VAT Amount (AED)", vatAmount],
-        ]
-      : []),
+    ...(discount > 0 ? [["Discount (AED)", -discount]] : []),
+    ["VAT Rate", `${vatRate}%`],
+    ["VAT Amount (AED)", vatAmount],
     [vatRate > 0 ? "Total Amount (Incl. VAT) (AED)" : "Total Amount (AED)", grandTotal],
     ["Advance / Paid (AED)", totalPaid],
     ["Pending Balance (AED)", pendingBalance],
@@ -380,13 +376,9 @@ export function exportInvoiceToExcel(
     ["Services Subtotal (AED)", servicesTotal],
     ["Spare Parts Subtotal (AED)", sparePartsTotal],
     ["Gross Subtotal (AED)", subtotal],
-    ...(discount > 0 ? [["Discount (AED)", discount]] : []),
-    ...(vatRate > 0 && vatAmount > 0
-      ? [
-          ["VAT Rate", `${vatRate}%`],
-          ["VAT Amount (AED)", vatAmount],
-        ]
-      : []),
+    ...(discount > 0 ? [["Discount (AED)", -discount]] : []),
+    ["VAT Rate", `${vatRate}%`],
+    ["VAT Amount (AED)", vatAmount],
     [vatRate > 0 ? "Total Amount (Incl. VAT) (AED)" : "Total Amount (AED)", total],
     ["Paid / Received (AED)", paid],
     ["Balance Outstanding (AED)", balance],

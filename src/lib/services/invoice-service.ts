@@ -1722,11 +1722,39 @@ export async function syncInvoiceFromJobCard(
   const subtotal = Number(jobCard.subtotal) || calculatedSubtotal;
   const discount = Number(jobCard.discount) || 0;
   const taxableAmount = Math.max(0, subtotal - discount);
-  const vatRate = jobCard.vat_rate !== undefined && jobCard.vat_rate !== null && Number.isFinite(Number(jobCard.vat_rate))
-    ? Number(jobCard.vat_rate)
-    : 5;
-  const vatAmount = Number(jobCard.vat_amount) || Math.round(taxableAmount * (vatRate / 100) * 100) / 100;
-  const total = Number(jobCard.total) || Math.round((taxableAmount + vatAmount) * 100) / 100;
+  const hasJcVatRate =
+    jobCard.vat_rate !== undefined &&
+    jobCard.vat_rate !== null &&
+    Number.isFinite(Number(jobCard.vat_rate));
+  const savedJcVatAmount =
+    jobCard.vat_amount !== undefined &&
+    jobCard.vat_amount !== null &&
+    Number.isFinite(Number(jobCard.vat_amount))
+      ? Number(jobCard.vat_amount)
+      : null;
+
+  let vatRate = 5;
+  if (hasJcVatRate) {
+    vatRate = Number(jobCard.vat_rate);
+  } else if (
+    savedJcVatAmount === 0 ||
+    (jobCard.total !== undefined &&
+      jobCard.total !== null &&
+      Math.abs(Number(jobCard.total) - taxableAmount) < 0.05)
+  ) {
+    vatRate = 0;
+  }
+
+  const vatAmount =
+    vatRate === 0
+      ? 0
+      : savedJcVatAmount !== null && savedJcVatAmount > 0
+      ? savedJcVatAmount
+      : Math.round(taxableAmount * (vatRate / 100) * 100) / 100;
+  const total =
+    Number(jobCard.total) > 0
+      ? Number(jobCard.total)
+      : Math.round((taxableAmount + vatAmount) * 100) / 100;
 
   // 7. Calculate payments and balance strictly from actual existing valid payments
   const existingPayments = await getPaymentsByInvoice(invoice.id, invoice.workspace_id || targetWsId);

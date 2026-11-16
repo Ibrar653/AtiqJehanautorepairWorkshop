@@ -51,7 +51,7 @@ export function InvoicePrintView({ invoice, isForPdf = false }: InvoicePrintView
   const sparePartsTotal = sparePartItems.reduce((sum, p) => sum + p.amount, 0);
   const calculatedSubtotal = servicesTotal + sparePartsTotal;
   const subtotal = Number(invoice.subtotal) || calculatedSubtotal;
-  const discount = Number(invoice.discount) || 0;
+  const discount = Number(invoice.discount) || Number(invoice.discount_amount) || 0;
   const taxableAmount = Math.max(0, subtotal - discount);
 
   // Single source of truth for VAT rate & amount
@@ -548,12 +548,10 @@ export function InvoicePrintView({ invoice, isForPdf = false }: InvoicePrintView
                   <td className="py-1 px-2.5 font-mono text-emerald-700">-{formatCurrency(discount)}</td>
                 </tr>
               )}
-              {effectiveVatRate > 0 && vatAmount > 0 && (
-                <tr className="border-b border-gray-200">
-                  <td className="py-1 px-2.5 text-gray-600 font-semibold">VAT ({effectiveVatRate}%):</td>
-                  <td className="py-1 px-2.5 font-mono text-black">{formatCurrency(vatAmount)}</td>
-                </tr>
-              )}
+              <tr className="border-b border-gray-200">
+                <td className="py-1 px-2.5 text-gray-600 font-semibold">VAT ({effectiveVatRate}%):</td>
+                <td className="py-1 px-2.5 font-mono text-black">{formatCurrency(vatAmount)}</td>
+              </tr>
               <tr className="border-b border-black bg-gray-100 text-[10.5px]">
                 <td className="py-1.5 px-2.5 font-black text-black">
                   {effectiveVatRate > 0 ? "TOTAL AMOUNT (INCL. VAT):" : "TOTAL AMOUNT:"}

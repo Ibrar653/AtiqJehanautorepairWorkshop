@@ -1627,18 +1627,22 @@ export function InvoicesView() {
                       <span>Subtotal:</span>
                       <span className="font-mono font-semibold text-foreground">{formatCurrency(selectedInvoice.subtotal)}</span>
                     </div>
-                    {Number(selectedInvoice.discount_amount) > 0 && (
-                      <div className="flex justify-between text-rose-600">
+                    {(Number(selectedInvoice.discount ?? selectedInvoice.discount_amount) || 0) > 0 && (
+                      <div className="flex justify-between text-emerald-600 font-medium">
                         <span>Discount:</span>
-                        <span className="font-mono font-semibold">-{formatCurrency(selectedInvoice.discount_amount)}</span>
+                        <span className="font-mono font-semibold">
+                          -{formatCurrency(Number(selectedInvoice.discount ?? selectedInvoice.discount_amount) || 0)}
+                        </span>
                       </div>
                     )}
-                    {Number(selectedInvoice.vat_rate || 0) > 0 && Number(selectedInvoice.vat_amount || 0) > 0 && (
-                      <div className="flex justify-between text-muted-foreground">
-                        <span>VAT ({selectedInvoice.vat_rate}%):</span>
-                        <span className="font-mono font-semibold text-foreground">{formatCurrency(selectedInvoice.vat_amount)}</span>
-                      </div>
-                    )}
+                    <div className="flex justify-between text-muted-foreground">
+                      <span>
+                        VAT ({selectedInvoice.vat_rate !== undefined && selectedInvoice.vat_rate !== null ? Number(selectedInvoice.vat_rate) : (Number(selectedInvoice.vat_amount) === 0 ? 0 : 5)}%):
+                      </span>
+                      <span className="font-mono font-semibold text-foreground">
+                        {formatCurrency(Number(selectedInvoice.vat_rate) === 0 ? 0 : (selectedInvoice.vat_amount ?? 0))}
+                      </span>
+                    </div>
                     <div className="flex justify-between text-muted-foreground pt-1 border-t">
                       <span>Paid Amount:</span>
                       <span className="font-mono font-bold text-emerald-600">{formatCurrency(selectedInvoice.paid || 0)}</span>
