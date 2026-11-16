@@ -117,3 +117,168 @@ export function generateUUID(): string {
   });
 }
 
+export interface ResolvedDocumentFinancials {
+  subtotal: number;
+  discount: number;
+  discountAmbiguous: boolean;
+  discountLabel: string;
+  taxableAmount: number;
+  vatRate: number | null;
+  vatRateAmbiguous: boolean;
+  vatLabel: string;
+  vatAmount: number;
+  total: number;
+  paid: number;
+  balance: number;
+}
+
+/**
+ * Resolves persisted financial figures for Job Cards & Invoices without
+ * silently inventing VAT rates or altering historical totals.
+ */
+export function resolveDocumentFinancials(
+  record: {
+    subtotal?: number | null;
+    discount?: number | null;
+    discount_amount?: number | null;
+    discount_type?: string | null;
+    discount_percentage?: number | null;
+    vat_rate?: number | null;
+    vat_amount?: number | null;
+    total?: number | null;
+    paid?: number | null;
+    balance?: number | null;
+    payments?: Array<{ amount?: number | null }> | null;
+  },
+  calculatedSubtotal: number
+): ResolvedDocumentFinancials {
+  const hasSavedSubtotal =
+    record.subtotal !== undefined &&
+    record.subtotal !== null &&
+    !isNaN(Number(record.subtotal));
+  const subtotal = hasSavedSubtotal ? Number(record.subtotal) : calculatedSubtotal;
+
+  const hasSavedTotal =
+    record.total !== undefined &&
+    record.total !== null &&
+    !isNaN(Number(record.total));
+  const savedTotal = hasSavedTotal ? Number(record.total) : null;
+
+  const hasSavedVatAmount =
+    record.vat_amount !== undefined &&
+    record.vat_amount !== null &&
+    !isNaN(Number(record.vat_amount));
+  const savedVatAmount = hasSavedVatAmount ? Number(record.vat_amount) : null;
+
+  const rawDiscount = record.discount ?? record.discount_amount;
+  const hasSavedDiscount =
+    rawDiscount !== undefined &&
+    rawDiscount !== null &&
+    !isNaN(Number(rawDiscount));
+
+  let discount = 0;
+  let discountAmbiguous = false;
+  if (hasSavedDiscount) {
+    discount = Math.max(0, Number(rawDiscount));
+  } else {
+    const expectedWithoutDiscount = subtotal + (savedVatAmount ?? 0);
+    if (savedTotal !== null && Math.abs(savedTotal - expectedWithoutDiscount) < 0.05) {
+      discount = 0;
+    } else if (savedTotal !== null && savedTotal < subtotal) {
+      discount = 0;
+      discountAmbiguous = true;
+    } else {
+      discount = 0;
+      discountAmbiguous = savedTotal === null && subtotal > 0;
+    }
+  }
+
+  let discountLabel = "Discount:";
+  if (
+    record.discount_type === "percentage" &&
+    record.discount_percentage !== undefined &&
+    record.discount_percentage !== null &&
+    !isNaN(Number(record.discount_percentage))
+  ) {
+    discountLabel = `Discount (${Number(record.discount_percentage)}%):`;
+  } else if (discountAmbiguous) {
+    discountLabel = "Discount (Review):";
+  }
+
+  const taxableAmount = Math.max(0, subtotal - discount);
+
+  const hasSavedVatRate =
+    record.vat_rate !== undefined &&
+    record.vat_rate !== null &&
+    !isNaN(Number(record.vat_rate));
+
+  let vatRate: number | null = null;
+  let vatRateAmbiguous = false;
+
+  if (hasSavedVatRate) {
+    vatRate = Number(record.vat_rate);
+  } else if (savedVatAmount === 0) {
+    vatRate = 0;
+  } else if (savedTotal !== null && Math.abs(savedTotal - taxableAmount) < 0.05) {
+    vatRate = 0;
+  } else if (savedVatAmount !== null && savedVatAmount > 0 && taxableAmount > 0) {
+    const derivedRate = Math.round((savedVatAmount / taxableAmount) * 10000) / 100;
+    const checkAmt = Math.round(taxableAmount * (derivedRate / 100) * 100) / 100;
+    if (Math.abs(checkAmt - savedVatAmount) < 0.05) {
+      vatRate = derivedRate;
+    } else {
+      vatRate = null;
+      vatRateAmbiguous = true;
+    }
+  } else {
+    vatRate = null;
+    vatRateAmbiguous = true;
+  }
+
+  const vatAmount =
+    vatRate === 0
+      ? 0
+      : savedVatAmount !== null
+      ? savedVatAmount
+      : vatRate !== null
+      ? Math.round(taxableAmount * (vatRate / 100) * 100) / 100
+      : 0;
+
+  const vatLabel =
+    vatRate !== null
+      ? `VAT (${vatRate}%):`
+      : vatRateAmbiguous
+      ? "VAT (Review):"
+      : "VAT:";
+
+  const total =
+    savedTotal !== null
+      ? savedTotal
+      : Math.round((taxableAmount + vatAmount) * 100) / 100;
+
+  const paid =
+    record.payments && Array.isArray(record.payments) && record.payments.length > 0
+      ? record.payments.reduce((sum, p) => sum + (Number(p.amount) || 0), 0)
+      : Number(record.paid) || 0;
+
+  const balance =
+    record.balance !== undefined && record.balance !== null && !isNaN(Number(record.balance))
+      ? Math.max(0, Number(record.balance))
+      : Math.max(0, total - paid);
+
+  return {
+    subtotal,
+    discount,
+    discountAmbiguous,
+    discountLabel,
+    taxableAmount,
+    vatRate,
+    vatRateAmbiguous,
+    vatLabel,
+    vatAmount,
+    total,
+    paid,
+    balance,
+  };
+}
+

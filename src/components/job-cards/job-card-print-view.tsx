@@ -1,7 +1,7 @@
 "use client";
 
 import type { JobCardWithRelations } from "@/types/database";
-import { formatAmount, formatCurrency, formatDate } from "@/lib/utils";
+import { formatAmount, formatCurrency, formatDate, resolveDocumentFinancials } from "@/lib/utils";
 import { useWorkspace } from "@/lib/context/workspace-context";
 
 interface JobCardPrintViewProps {
@@ -48,60 +48,21 @@ export function JobCardPrintView({ jobCard, isForPdf = false }: JobCardPrintView
       };
     });
 
-  // Calculate totals
+  // Calculate totals using persisted record as single source of truth
   const servicesTotal = serviceItems.reduce((sum, s) => sum + s.amount, 0);
   const sparePartsTotal = sparePartItems.reduce((sum, p) => sum + p.amount, 0);
   const calculatedSubtotal = servicesTotal + sparePartsTotal;
-  const subtotal = Number(jobCard.subtotal) || calculatedSubtotal;
-  const discount = Number(jobCard.discount) || 0;
-  const taxableAmount = Math.max(0, subtotal - discount);
 
-  // Single source of truth for VAT rate & amount
-  const hasSavedVatRate =
-    jobCard.vat_rate !== undefined &&
-    jobCard.vat_rate !== null &&
-    !isNaN(Number(jobCard.vat_rate));
-
-  const savedVatAmount =
-    jobCard.vat_amount !== undefined &&
-    jobCard.vat_amount !== null &&
-    !isNaN(Number(jobCard.vat_amount))
-      ? Number(jobCard.vat_amount)
-      : null;
-
-  let effectiveVatRate: number;
-  if (hasSavedVatRate) {
-    effectiveVatRate = Number(jobCard.vat_rate);
-  } else if (savedVatAmount === 0) {
-    effectiveVatRate = 0;
-  } else if (
-    jobCard.total !== undefined &&
-    jobCard.total !== null &&
-    Math.abs(Number(jobCard.total) - taxableAmount) < 0.05
-  ) {
-    // Total matches taxable base, meaning zero VAT was charged
-    effectiveVatRate = 0;
-  } else {
-    effectiveVatRate = 5;
-  }
-
-  const vatAmount =
-    effectiveVatRate === 0
-      ? 0
-      : savedVatAmount !== null && savedVatAmount > 0
-      ? savedVatAmount
-      : Math.round(taxableAmount * (effectiveVatRate / 100) * 100) / 100;
-
-  const grandTotal =
-    Number(jobCard.total) > 0
-      ? Number(jobCard.total)
-      : Math.round((taxableAmount + vatAmount) * 100) / 100;
-
-  // Paid & Balance calculation
-  const totalPaid = (jobCard as any).payments && Array.isArray((jobCard as any).payments) && (jobCard as any).payments.length > 0
-    ? (jobCard as any).payments.reduce((sum: number, p: any) => sum + (Number(p.amount) || 0), 0)
-    : Number((jobCard as any).paid) || 0;
-  const pendingBalance = Math.max(0, (jobCard as any).balance !== undefined ? Number((jobCard as any).balance) : grandTotal - totalPaid);
+  const {
+    subtotal,
+    discount,
+    discountLabel,
+    vatLabel,
+    vatAmount,
+    total: grandTotal,
+    paid: totalPaid,
+    balance: pendingBalance,
+  } = resolveDocumentFinancials(jobCard as any, calculatedSubtotal);
 
   // Invoice Number (starting from 1066 sequence)
   const invoiceNumber = jobCard.invoice_number
@@ -555,14 +516,12 @@ export function JobCardPrintView({ jobCard, isForPdf = false }: JobCardPrintView
                 <span className="font-bold text-gray-800">Sub Total:</span>
                 <span className="font-mono font-bold text-black">AED {formatAmount(subtotal)}</span>
               </div>
-              {discount > 0 && (
-                <div className="flex justify-between py-1 px-2.5 bg-emerald-50/60 text-emerald-800">
-                  <span className="font-bold">Discount:</span>
-                  <span className="font-mono font-bold">-AED {formatAmount(discount)}</span>
-                </div>
-              )}
+              <div className={`flex justify-between py-1 px-2.5 ${discount > 0 ? "bg-emerald-50/60 text-emerald-800" : "bg-white text-gray-700"}`}>
+                <span className="font-bold">{discountLabel}</span>
+                <span className="font-mono font-bold">-AED {formatAmount(discount)}</span>
+              </div>
               <div className="flex justify-between py-1 px-2.5 bg-gray-50">
-                <span className="font-bold text-gray-800">VAT ({effectiveVatRate}%):</span>
+                <span className="font-bold text-gray-800">{vatLabel}</span>
                 <span className="font-mono font-bold text-black">AED {formatAmount(vatAmount)}</span>
               </div>
               <div
@@ -580,16 +539,14 @@ export function JobCardPrintView({ jobCard, isForPdf = false }: JobCardPrintView
                   AED {formatAmount(grandTotal)}
                 </span>
               </div>
-              {totalPaid > 0 && (
-                <div className="flex justify-between py-1 px-2.5 bg-emerald-50/50">
-                  <span className="font-bold text-emerald-800">Advance / Paid:</span>
-                  <span className="font-mono font-bold text-emerald-700">{formatAmount(totalPaid)} AED</span>
-                </div>
-              )}
+              <div className="flex justify-between py-1 px-2.5 bg-emerald-50/50">
+                <span className="font-bold text-emerald-800">Paid Amount:</span>
+                <span className="font-mono font-bold text-emerald-700">AED {formatAmount(totalPaid)}</span>
+              </div>
               <div className="flex justify-between py-1 px-2.5 bg-rose-50/50">
                 <span className="font-bold text-rose-800">Pending Balance:</span>
                 <span className="font-mono font-black text-rose-700">
-                  {formatAmount(pendingBalance)} AED
+                  AED {formatAmount(pendingBalance)}
                 </span>
               </div>
             </div>

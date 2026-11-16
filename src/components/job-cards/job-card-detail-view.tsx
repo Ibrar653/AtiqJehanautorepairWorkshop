@@ -842,21 +842,19 @@ export function JobCardDetailView({ id }: JobCardDetailViewProps) {
                     <span className="font-semibold text-slate-900 font-mono tabular-nums">{formatAmount(partsSubtotal)}</span>
                   </div>
                   <div className="border-t border-slate-200/70 pt-2 flex justify-between font-semibold">
-                    <span>Subtotal:</span>
-                    <span className="font-bold text-slate-900 font-mono tabular-nums">{formatAmount(jobCard.subtotal)}</span>
+                    <span>Sub Total:</span>
+                    <span className="font-bold text-slate-900 font-mono tabular-nums">AED {formatAmount(jobCard.subtotal)}</span>
                   </div>
-                  {Number(jobCard.discount) > 0 && (
-                    <div className="flex justify-between text-emerald-600 font-medium">
-                      <span>Discount:</span>
-                      <span className="font-mono tabular-nums">-{formatAmount(jobCard.discount)}</span>
-                    </div>
-                  )}
+                  <div className={`flex justify-between font-medium ${Number(jobCard.discount) > 0 ? "text-emerald-600" : "text-slate-600"}`}>
+                    <span>Discount:</span>
+                    <span className="font-mono tabular-nums">-AED {formatAmount(Number(jobCard.discount) || 0)}</span>
+                  </div>
                   <div className="flex justify-between text-slate-600">
                     <span>
-                      VAT ({jobCard.vat_rate !== undefined && jobCard.vat_rate !== null ? Number(jobCard.vat_rate) : (Number(jobCard.vat_amount) === 0 ? 0 : 5)}%):
+                      VAT ({jobCard.vat_rate !== undefined && jobCard.vat_rate !== null ? `${Number(jobCard.vat_rate)}%` : (Number(jobCard.vat_amount) === 0 ? "0%" : "Review")}):
                     </span>
                     <span className="font-semibold text-slate-900 font-mono tabular-nums">
-                      {formatAmount(Number(jobCard.vat_rate) === 0 ? 0 : (jobCard.vat_amount ?? 0))}
+                      AED {formatAmount(Number(jobCard.vat_rate) === 0 ? 0 : (jobCard.vat_amount ?? 0))}
                     </span>
                   </div>
                   <div className="border-t border-slate-200/80 pt-2.5 bg-blue-50 border border-blue-200/80 p-3.5 rounded-xl flex justify-between items-center text-sm font-bold text-blue-900">

@@ -1627,17 +1627,15 @@ export function InvoicesView() {
                       <span>Subtotal:</span>
                       <span className="font-mono font-semibold text-foreground">{formatCurrency(selectedInvoice.subtotal)}</span>
                     </div>
-                    {(Number(selectedInvoice.discount ?? selectedInvoice.discount_amount) || 0) > 0 && (
-                      <div className="flex justify-between text-emerald-600 font-medium">
-                        <span>Discount:</span>
-                        <span className="font-mono font-semibold">
-                          -{formatCurrency(Number(selectedInvoice.discount ?? selectedInvoice.discount_amount) || 0)}
-                        </span>
-                      </div>
-                    )}
+                    <div className={`flex justify-between font-medium ${(Number(selectedInvoice.discount ?? selectedInvoice.discount_amount) || 0) > 0 ? "text-emerald-600" : "text-muted-foreground"}`}>
+                      <span>Discount:</span>
+                      <span className="font-mono font-semibold">
+                        -{formatCurrency(Number(selectedInvoice.discount ?? selectedInvoice.discount_amount) || 0)}
+                      </span>
+                    </div>
                     <div className="flex justify-between text-muted-foreground">
                       <span>
-                        VAT ({selectedInvoice.vat_rate !== undefined && selectedInvoice.vat_rate !== null ? Number(selectedInvoice.vat_rate) : (Number(selectedInvoice.vat_amount) === 0 ? 0 : 5)}%):
+                        VAT ({selectedInvoice.vat_rate !== undefined && selectedInvoice.vat_rate !== null ? `${Number(selectedInvoice.vat_rate)}%` : (Number(selectedInvoice.vat_amount) === 0 ? "0%" : "Review")}):
                       </span>
                       <span className="font-mono font-semibold text-foreground">
                         {formatCurrency(Number(selectedInvoice.vat_rate) === 0 ? 0 : (selectedInvoice.vat_amount ?? 0))}

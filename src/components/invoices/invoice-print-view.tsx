@@ -1,7 +1,7 @@
 "use client";
 
 import type { Invoice, InvoiceItem, Payment } from "@/types/database";
-import { formatAmount, formatCurrency, formatDate } from "@/lib/utils";
+import { formatAmount, formatCurrency, formatDate, resolveDocumentFinancials } from "@/lib/utils";
 import { useWorkspace } from "@/lib/context/workspace-context";
 
 interface InvoicePrintViewProps {
@@ -50,52 +50,16 @@ export function InvoicePrintView({ invoice, isForPdf = false }: InvoicePrintView
   const servicesTotal = serviceItems.reduce((sum, s) => sum + s.amount, 0);
   const sparePartsTotal = sparePartItems.reduce((sum, p) => sum + p.amount, 0);
   const calculatedSubtotal = servicesTotal + sparePartsTotal;
-  const subtotal = Number(invoice.subtotal) || calculatedSubtotal;
-  const discount = Number(invoice.discount) || Number(invoice.discount_amount) || 0;
-  const taxableAmount = Math.max(0, subtotal - discount);
-
-  // Single source of truth for VAT rate & amount
-  const hasSavedVatRate =
-    invoice.vat_rate !== undefined &&
-    invoice.vat_rate !== null &&
-    !isNaN(Number(invoice.vat_rate));
-
-  const savedVatAmount =
-    invoice.vat_amount !== undefined &&
-    invoice.vat_amount !== null &&
-    !isNaN(Number(invoice.vat_amount))
-      ? Number(invoice.vat_amount)
-      : null;
-
-  let effectiveVatRate: number;
-  if (hasSavedVatRate) {
-    effectiveVatRate = Number(invoice.vat_rate);
-  } else if (savedVatAmount === 0) {
-    effectiveVatRate = 0;
-  } else if (
-    invoice.total !== undefined &&
-    invoice.total !== null &&
-    Math.abs(Number(invoice.total) - taxableAmount) < 0.05
-  ) {
-    // Total matches taxable base, meaning zero VAT was charged
-    effectiveVatRate = 0;
-  } else {
-    effectiveVatRate = 5;
-  }
-
-  const vatAmount =
-    effectiveVatRate === 0
-      ? 0
-      : savedVatAmount !== null && savedVatAmount > 0
-      ? savedVatAmount
-      : Math.round(taxableAmount * (effectiveVatRate / 100) * 100) / 100;
-
-  const total =
-    Number(invoice.total) > 0
-      ? Number(invoice.total)
-      : Math.round((taxableAmount + vatAmount) * 100) / 100;
-  const paid = Number(invoice.paid) || 0;
-  const balance = Number(invoice.balance) !== undefined ? Number(invoice.balance) : Math.max(0, total - paid);
+  const {
+    subtotal,
+    discount,
+    discountLabel,
+    vatLabel,
+    vatAmount,
+    total,
+    paid,
+    balance,
+  } = resolveDocumentFinancials(invoice, calculatedSubtotal);
 
   const payments: Payment[] = invoice.payments || [];
 
@@ -539,33 +503,31 @@ export function InvoicePrintView({ invoice, isForPdf = false }: InvoicePrintView
                 <td className="py-1 px-2.5 font-mono text-black">{formatCurrency(sparePartsTotal)}</td>
               </tr>
               <tr className="border-b border-gray-300 bg-gray-50">
-                <td className="py-1 px-2.5 text-gray-800 font-bold">Gross Subtotal:</td>
-                <td className="py-1 px-2.5 font-mono font-bold text-black">{formatCurrency(subtotal)}</td>
+                <td className="py-1 px-2.5 text-gray-800 font-bold">Sub Total:</td>
+                <td className="py-1 px-2.5 font-mono font-bold text-black">AED {formatAmount(subtotal)}</td>
               </tr>
-              {discount > 0 && (
-                <tr className="border-b border-gray-200">
-                  <td className="py-1 px-2.5 text-emerald-700 font-semibold">Discount:</td>
-                  <td className="py-1 px-2.5 font-mono text-emerald-700">-{formatCurrency(discount)}</td>
-                </tr>
-              )}
               <tr className="border-b border-gray-200">
-                <td className="py-1 px-2.5 text-gray-600 font-semibold">VAT ({effectiveVatRate}%):</td>
-                <td className="py-1 px-2.5 font-mono text-black">{formatCurrency(vatAmount)}</td>
+                <td className={`py-1 px-2.5 font-semibold ${discount > 0 ? "text-emerald-700" : "text-gray-600"}`}>{discountLabel}</td>
+                <td className={`py-1 px-2.5 font-mono ${discount > 0 ? "text-emerald-700" : "text-black"}`}>-AED {formatAmount(discount)}</td>
+              </tr>
+              <tr className="border-b border-gray-200">
+                <td className="py-1 px-2.5 text-gray-600 font-semibold">{vatLabel}</td>
+                <td className="py-1 px-2.5 font-mono text-black">AED {formatAmount(vatAmount)}</td>
               </tr>
               <tr className="border-b border-black bg-gray-100 text-[10.5px]">
                 <td className="py-1.5 px-2.5 font-black text-black">
-                  {effectiveVatRate > 0 ? "TOTAL AMOUNT (INCL. VAT):" : "TOTAL AMOUNT:"}
+                  TOTAL AMOUNT:
                 </td>
-                <td className="py-1.5 px-2.5 font-mono font-black text-black">{formatCurrency(total)}</td>
+                <td className="py-1.5 px-2.5 font-mono font-black text-black">AED {formatAmount(total)}</td>
               </tr>
               <tr className="border-b border-gray-200">
-                <td className="py-1 px-2.5 text-emerald-700 font-bold">Paid / Received:</td>
-                <td className="py-1 px-2.5 font-mono font-bold text-emerald-700">{formatCurrency(paid)}</td>
+                <td className="py-1 px-2.5 text-emerald-700 font-bold">Paid Amount:</td>
+                <td className="py-1 px-2.5 font-mono font-bold text-emerald-700">AED {formatAmount(paid)}</td>
               </tr>
               <tr className="bg-gray-50 text-[9.5px]">
-                <td className="py-1 px-2.5 font-black text-rose-700">BALANCE OUTSTANDING:</td>
+                <td className="py-1 px-2.5 font-black text-rose-700">Pending Balance:</td>
                 <td className={`py-1 px-2.5 font-mono font-black ${balance > 0 ? "text-rose-700" : "text-emerald-700"}`}>
-                  {formatCurrency(balance)}
+                  AED {formatAmount(balance)}
                 </td>
               </tr>
             </tbody>
