@@ -188,6 +188,8 @@ export function InvoicesView() {
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const pdfInvoiceContainerRef = useRef<HTMLDivElement>(null);
+  const requestSeqRef = useRef(0);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   // ─── Bulk & Single Delete State ───
   const [selectedInvoiceIds, setSelectedInvoiceIds] = useState<string[]>([]);
@@ -209,25 +211,37 @@ export function InvoicesView() {
 
   // Load Invoices
   const loadInvoicesList = useCallback(async () => {
+    const seq = ++requestSeqRef.current;
     setLoading(true);
+    setLoadError(null);
     try {
-      const res = await getInvoices({
-        query: debouncedQuery,
-        statusFilter,
-        dateFilter,
-        startDate: customStartDate || undefined,
-        endDate: customEndDate || undefined,
-        page: currentPage,
-        limit: pageSize,
-      });
-      setInvoices(res.invoices);
-      setTotalCount(res.total);
-    } catch (e) {
-      console.error("Error loading invoices:", e);
+      const res = await getInvoices(
+        {
+          query: debouncedQuery,
+          statusFilter,
+          dateFilter,
+          startDate: customStartDate || undefined,
+          endDate: customEndDate || undefined,
+          page: currentPage,
+          limit: pageSize,
+        },
+        activeWorkspaceId
+      );
+      if (seq === requestSeqRef.current) {
+        setInvoices(res.invoices);
+        setTotalCount(res.total);
+      }
+    } catch (e: any) {
+      if (seq === requestSeqRef.current) {
+        console.error("Error loading invoices:", e);
+        setLoadError(e?.message || "Failed to load invoices from database.");
+      }
     } finally {
-      setLoading(false);
+      if (seq === requestSeqRef.current) {
+        setLoading(false);
+      }
     }
-  }, [debouncedQuery, statusFilter, dateFilter, customStartDate, customEndDate, currentPage, pageSize]);
+  }, [debouncedQuery, statusFilter, dateFilter, customStartDate, customEndDate, currentPage, pageSize, activeWorkspaceId]);
 
   useEffect(() => {
     loadInvoicesList();
@@ -1056,6 +1070,15 @@ export function InvoicesView() {
             <div className="py-20 text-center text-slate-500">
               <Loader2 className="h-8 w-8 mx-auto animate-spin mb-3 text-blue-600" />
               <p className="font-semibold text-xs">Loading invoices...</p>
+            </div>
+          ) : loadError ? (
+            <div className="py-16 text-center text-rose-600 px-4">
+              <AlertTriangle className="h-8 w-8 mx-auto mb-2 text-rose-500" />
+              <p className="font-bold text-sm">Failed to search invoices</p>
+              <p className="text-xs text-rose-500 mt-1 max-w-md mx-auto">{loadError}</p>
+              <Button variant="outline" size="sm" className="mt-3 text-xs" onClick={loadInvoicesList}>
+                Retry
+              </Button>
             </div>
           ) : invoices.length > 0 ? (
             <div className="overflow-x-auto min-w-full">

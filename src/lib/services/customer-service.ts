@@ -4,6 +4,7 @@ import { getActiveWorkspaceId } from "./workspace-service";
 import { DEFAULT_WORKSPACE_ID } from "@/lib/constants";
 import { generateUUID } from "@/lib/utils";
 import { getLocalVehicles } from "./vehicle-service";
+import { sanitizePostgrestSearch, buildFuzzyLikePattern } from "./search-helpers";
 
 export interface CustomerWithMetrics extends Customer {
   vehicles?: Vehicle[];
@@ -151,8 +152,11 @@ export async function getCustomers(query?: string, page = 1, limit = 20, workspa
     .eq("workspace_id", targetWsId);
 
   if (query && query.trim()) {
-    const q = query.trim();
-    dbQuery = dbQuery.or(`name.ilike.%${q}%,mobile.ilike.%${q}%,email.ilike.%${q}%,trn_number.ilike.%${q}%,company_name.ilike.%${q}%`);
+    const clean = sanitizePostgrestSearch(query);
+    if (clean) {
+      const pat = buildFuzzyLikePattern(clean);
+      dbQuery = dbQuery.or(`name.ilike.${pat},mobile.ilike.${pat},email.ilike.${pat},trn_number.ilike.${pat},company_name.ilike.${pat}`);
+    }
   }
 
   const { data, count, error } = await dbQuery

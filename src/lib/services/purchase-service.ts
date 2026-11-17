@@ -12,6 +12,11 @@ import { getActiveWorkspaceId } from "./workspace-service";
 import { DEFAULT_WORKSPACE_ID } from "@/lib/constants";
 import { recordStockTransaction } from "./inventory-service";
 import { generateUUID } from "@/lib/utils";
+import {
+  sanitizePostgrestSearch,
+  buildFuzzyLikePattern,
+  searchMatchingSupplierIds,
+} from "./search-helpers";
 
 const LOCAL_PURCHASES_KEY = "atiq_local_purchases";
 const LOCAL_SUPPLIER_PAYMENTS_KEY = "atiq_local_supplier_payments";
@@ -233,10 +238,19 @@ export async function getPurchases(
   }
 
   if (query && query.trim()) {
-    const q = query.trim();
-    dbQuery = dbQuery.or(
-      `purchase_invoice_number.ilike.%${q}%,notes.ilike.%${q}%,supplier.name.ilike.%${q}%`
-    );
+    const cleanSearch = sanitizePostgrestSearch(query);
+    if (cleanSearch) {
+      const pat = buildFuzzyLikePattern(cleanSearch);
+      const supplierIds = await searchMatchingSupplierIds(supabase, targetWsId, cleanSearch);
+      const orClauses = [
+        `purchase_invoice_number.ilike.${pat}`,
+        `notes.ilike.${pat}`,
+      ];
+      if (supplierIds.length > 0) {
+        orClauses.push(`supplier_id.in.(${supplierIds.join(",")})`);
+      }
+      dbQuery = dbQuery.or(orClauses.join(","));
+    }
   }
 
   const { data, count, error } = await dbQuery

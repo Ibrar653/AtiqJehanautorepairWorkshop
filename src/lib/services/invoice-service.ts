@@ -21,6 +21,14 @@ import { getActiveWorkspaceId } from "./workspace-service";
 import { DEFAULT_WORKSPACE_ID } from "@/lib/constants";
 import { isTableMissingInSupabase, markTableMissingInSupabase } from "./supabase-schema-status";
 import { getNextInvoiceNumberAsync } from "./job-card-service";
+import {
+  sanitizePostgrestSearch,
+  buildFuzzyLikePattern,
+  searchMatchingCustomerIds,
+  searchMatchingVehicleIds,
+  searchMatchingJobCardIdsForInvoice,
+  searchInvoiceIdsByItemDescription,
+} from "./search-helpers";
 
 const LOCAL_INVOICES_KEY = "atiq_local_invoices";
 const LOCAL_INVOICE_ITEMS_KEY = "atiq_local_invoice_items";
@@ -370,10 +378,34 @@ export async function getInvoices(
         }
 
         if (query && query.trim()) {
-          const q = query.trim();
-          dbQuery = dbQuery.or(
-            `invoice_number.ilike.%${q}%,notes.ilike.%${q}%`
-          );
+          const cleanSearch = sanitizePostgrestSearch(query);
+          if (cleanSearch) {
+            const pat = buildFuzzyLikePattern(cleanSearch);
+            const [customerIds, vehicleIds, jobCardIds, itemInvoiceIds] = await Promise.all([
+              searchMatchingCustomerIds(supabase, targetWsId, cleanSearch),
+              searchMatchingVehicleIds(supabase, targetWsId, cleanSearch),
+              searchMatchingJobCardIdsForInvoice(supabase, targetWsId, cleanSearch),
+              searchInvoiceIdsByItemDescription(supabase, cleanSearch),
+            ]);
+
+            const orClauses = [
+              `invoice_number.ilike.${pat}`,
+              `notes.ilike.${pat}`,
+            ];
+            if (customerIds.length > 0) {
+              orClauses.push(`customer_id.in.(${customerIds.join(",")})`);
+            }
+            if (vehicleIds.length > 0) {
+              orClauses.push(`vehicle_id.in.(${vehicleIds.join(",")})`);
+            }
+            if (jobCardIds.length > 0) {
+              orClauses.push(`job_card_id.in.(${jobCardIds.join(",")})`);
+            }
+            if (itemInvoiceIds.length > 0) {
+              orClauses.push(`id.in.(${itemInvoiceIds.join(",")})`);
+            }
+            dbQuery = dbQuery.or(orClauses.join(","));
+          }
         }
 
         const { data, count, error } = await dbQuery
@@ -387,9 +419,12 @@ export async function getInvoices(
         return { invoices: data || [], total: count || 0 };
       };
 
-      return await withTimeout(fetchWithTimeout(), 2000);
+      return await withTimeout(fetchWithTimeout(), 15000);
     } catch (err: any) {
       markTableMissingInSupabase("invoices", err);
+      if (!isTableMissingInSupabase("invoices")) {
+        throw new Error(`Could not load invoices: ${err?.message || "Database query failed"}`);
+      }
     }
   }
 

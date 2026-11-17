@@ -2,6 +2,12 @@ import { createClient } from "@/lib/supabase/client";
 import type { Vehicle, VehicleInsert, VehicleUpdate } from "@/types/database";
 import { generateUUID } from "@/lib/utils";
 import { getActiveWorkspaceId } from "./workspace-service";
+import {
+  sanitizePostgrestSearch,
+  buildFuzzyLikePattern,
+  tokenizeSearchQuery,
+  searchMatchingCustomerIds,
+} from "./search-helpers";
 
 const LOCAL_STORAGE_KEY = "atiq_local_vehicles";
 let inMemoryVehicles: Vehicle[] = [];
@@ -103,8 +109,39 @@ export async function getVehicles(query?: string, page = 1, limit = 20, workspac
     .eq("is_deleted", false);
 
   if (query && query.trim()) {
-    const q = query.trim();
-    dbQuery = dbQuery.or(`make.ilike.%${q}%,model.ilike.%${q}%,registration_number.ilike.%${q}%,chassis_vin.ilike.%${q}%`);
+    const cleanSearch = sanitizePostgrestSearch(query);
+    if (cleanSearch) {
+      const tokens = tokenizeSearchQuery(cleanSearch);
+      const customerIds = await searchMatchingCustomerIds(supabase, targetWsId, cleanSearch);
+
+      if (tokens.length === 1) {
+        const pat = buildFuzzyLikePattern(tokens[0]);
+        const orClauses = [
+          `make.ilike.${pat}`,
+          `model.ilike.${pat}`,
+          `registration_number.ilike.${pat}`,
+          `chassis_vin.ilike.${pat}`,
+        ];
+        if (customerIds.length > 0) {
+          orClauses.push(`customer_id.in.(${customerIds.join(",")})`);
+        }
+        dbQuery = dbQuery.or(orClauses.join(","));
+      } else {
+        for (const token of tokens) {
+          const pat = buildFuzzyLikePattern(token);
+          const orClauses = [
+            `make.ilike.${pat}`,
+            `model.ilike.${pat}`,
+            `registration_number.ilike.${pat}`,
+            `chassis_vin.ilike.${pat}`,
+          ];
+          if (customerIds.length > 0) {
+            orClauses.push(`customer_id.in.(${customerIds.join(",")})`);
+          }
+          dbQuery = dbQuery.or(orClauses.join(","));
+        }
+      }
+    }
   }
 
   const { data, count, error } = await dbQuery

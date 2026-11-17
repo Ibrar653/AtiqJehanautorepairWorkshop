@@ -18,6 +18,13 @@ import { recordStockTransaction } from "./inventory-service";
 import { getActiveWorkspaceId } from "./workspace-service";
 import { DEFAULT_WORKSPACE_ID } from "@/lib/constants";
 import { generateUUID } from "@/lib/utils";
+import {
+  sanitizePostgrestSearch,
+  buildFuzzyLikePattern,
+  searchMatchingCustomerIds,
+  searchMatchingVehicleIds,
+  searchJobCardIdsByItemDescription,
+} from "./search-helpers";
 
 
 const LOCAL_JOB_CARDS_KEY = "atiq_local_job_cards";
@@ -449,15 +456,36 @@ export async function getJobCards(
   }
 
   if (search) {
-    const orClauses = [
-      `job_card_number.ilike.%${search}%`,
-      `assigned_mechanic.ilike.%${search}%`,
-      `customer_complaint.ilike.%${search}%`,
-    ];
-    if (!isNaN(Number(search))) {
-      orClauses.push(`invoice_number.eq.${Number(search)}`);
+    const cleanSearch = sanitizePostgrestSearch(search);
+    if (cleanSearch) {
+      const pat = buildFuzzyLikePattern(cleanSearch);
+      const [customerIds, vehicleIds, itemJobCardIds] = await Promise.all([
+        searchMatchingCustomerIds(supabase, targetWsId, cleanSearch),
+        searchMatchingVehicleIds(supabase, targetWsId, cleanSearch),
+        searchJobCardIdsByItemDescription(supabase, cleanSearch),
+      ]);
+
+      const orClauses = [
+        `job_card_number.ilike.${pat}`,
+        `assigned_mechanic.ilike.${pat}`,
+        `customer_complaint.ilike.${pat}`,
+        `work_details.ilike.${pat}`,
+        `notes.ilike.${pat}`,
+      ];
+      if (!isNaN(Number(cleanSearch)) && cleanSearch !== "") {
+        orClauses.push(`invoice_number.eq.${Number(cleanSearch)}`);
+      }
+      if (customerIds.length > 0) {
+        orClauses.push(`customer_id.in.(${customerIds.join(",")})`);
+      }
+      if (vehicleIds.length > 0) {
+        orClauses.push(`vehicle_id.in.(${vehicleIds.join(",")})`);
+      }
+      if (itemJobCardIds.length > 0) {
+        orClauses.push(`id.in.(${itemJobCardIds.join(",")})`);
+      }
+      query = query.or(orClauses.join(","));
     }
-    query = query.or(orClauses.join(","));
   }
 
   const { data, count, error } = await query

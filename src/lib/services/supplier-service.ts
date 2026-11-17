@@ -115,10 +115,12 @@ export async function getSuppliers(
   }
 
   if (query && query.trim()) {
-    const q = query.trim();
-    dbQuery = dbQuery.or(
-      `name.ilike.%${q}%,company_name.ilike.%${q}%,contact_person.ilike.%${q}%,phone.ilike.%${q}%,trn_number.ilike.%${q}%`
-    );
+    const q = query.trim().replace(/[,()]/g, " ").replace(/\s+/g, "%");
+    if (q) {
+      dbQuery = dbQuery.or(
+        `name.ilike.%${q}%,company_name.ilike.%${q}%,contact_person.ilike.%${q}%,phone.ilike.%${q}%,trn_number.ilike.%${q}%`
+      );
+    }
   }
 
   const { data, count, error } = await dbQuery

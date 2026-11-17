@@ -23,7 +23,7 @@ export function SearchInput({
   defaultValue = "",
   className,
   debounceMs = 280,
-  minChars = 2,
+  minChars = 1,
 }: SearchInputProps) {
   const [internalValue, setInternalValue] = useState(defaultValue);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
@@ -92,6 +92,12 @@ export function SearchInput({
         placeholder={placeholder}
         value={value}
         onChange={handleChange}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            if (timerRef.current) clearTimeout(timerRef.current);
+            if (onSearch) onSearch(value.trim());
+          }
+        }}
         className="pl-9 pr-8 text-xs font-medium"
       />
       {value && value.length > 0 && (
