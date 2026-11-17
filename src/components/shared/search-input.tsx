@@ -1,7 +1,7 @@
 "use client";
 
 import { Input } from "@/components/ui/input";
-import { Search, X } from "lucide-react";
+import { Search, X, Loader2 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 
 interface SearchInputProps {
@@ -13,6 +13,7 @@ interface SearchInputProps {
   className?: string;
   debounceMs?: number;
   minChars?: number;
+  isLoading?: boolean;
 }
 
 export function SearchInput({
@@ -22,8 +23,9 @@ export function SearchInput({
   value: controlledValue,
   defaultValue = "",
   className,
-  debounceMs = 280,
+  debounceMs = 180,
   minChars = 1,
+  isLoading = false,
 }: SearchInputProps) {
   const [internalValue, setInternalValue] = useState(defaultValue);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
@@ -87,7 +89,11 @@ export function SearchInput({
 
   return (
     <div className={`relative ${className || ""}`}>
-      <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+      {isLoading ? (
+        <Loader2 className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-blue-600 animate-spin pointer-events-none" />
+      ) : (
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+      )}
       <Input
         placeholder={placeholder}
         value={value}

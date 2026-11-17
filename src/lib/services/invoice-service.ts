@@ -29,6 +29,7 @@ import {
   searchMatchingJobCardIdsForInvoice,
   searchInvoiceIdsByItemDescription,
 } from "./search-helpers";
+import { buildFuzzyWildcardPatterns, rankAndFilterRecords } from "./smart-search-engine";
 
 const LOCAL_INVOICES_KEY = "atiq_local_invoices";
 const LOCAL_INVOICE_ITEMS_KEY = "atiq_local_invoice_items";
@@ -392,6 +393,10 @@ export async function getInvoices(
               `invoice_number.ilike.${pat}`,
               `notes.ilike.${pat}`,
             ];
+            const fuzzyPatterns = buildFuzzyWildcardPatterns(cleanSearch);
+            for (const fPat of fuzzyPatterns) {
+              orClauses.push(`invoice_number.ilike.${fPat}`);
+            }
             if (customerIds.length > 0) {
               orClauses.push(`customer_id.in.(${customerIds.join(",")})`);
             }
@@ -416,7 +421,32 @@ export async function getInvoices(
           markTableMissingInSupabase("invoices", error);
           throw error;
         }
-        return { invoices: data || [], total: count || 0 };
+
+        let rows = (data || []) as any[];
+        if (query && query.trim()) {
+          rows = rankAndFilterRecords(rows, query.trim(), (inv) => {
+            const cust = inv.customer || {};
+            const veh = inv.vehicle || {};
+            const jc = inv.job_card || {};
+            const itemDescs = (inv.items || []).map((it: any) => ({ value: it.description, weight: 5 }));
+            return [
+              { value: inv.invoice_number, weight: 50 },
+              { value: jc.job_card_number, weight: 45 },
+              { value: veh.registration_number, weight: 45 },
+              { value: veh.chassis_vin, weight: 40 },
+              { value: cust.name, weight: 35 },
+              { value: cust.mobile, weight: 35 },
+              { value: cust.company_name, weight: 30 },
+              { value: `${veh.make || ""} ${veh.model || ""}`.trim(), weight: 30 },
+              { value: veh.make, weight: 25 },
+              { value: veh.model, weight: 25 },
+              { value: inv.notes, weight: 5 },
+              ...itemDescs,
+            ];
+          });
+        }
+
+        return { invoices: rows, total: count || 0 };
       };
 
       return await withTimeout(fetchWithTimeout(), 15000);

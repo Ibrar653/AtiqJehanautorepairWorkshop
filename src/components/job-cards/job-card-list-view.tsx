@@ -762,7 +762,8 @@ export function JobCardListView() {
         {/* ROW 2: Search Bar */}
         <div className="w-full">
           <SearchInput
-            placeholder="Search by JC # (e.g. JC-1065), Customer Name, Mobile, Plate #, or Chassis/VIN..."
+            placeholder="Smart Search: JC #, Invoice #, Customer, Mobile, Vehicle (Toyota Corolla), Plate # (GSS23456), or VIN..."
+            isLoading={loading && query.length > 0}
             onSearch={(q) => {
               const clean = typeof q === "string" ? q : "";
               setQuery(clean);
@@ -989,6 +990,11 @@ export function JobCardListView() {
                               {jc.invoice_number && (
                                 <span className="text-[10px] text-slate-400 font-mono font-medium block">
                                   Inv: #{jc.invoice_number}
+                                </span>
+                              )}
+                              {(jc as any)._isSimilarMatch && (
+                                <span className="inline-block mt-0.5 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide rounded bg-amber-50 text-amber-700 border border-amber-200">
+                                  Similar match
                                 </span>
                               )}
                             </Link>

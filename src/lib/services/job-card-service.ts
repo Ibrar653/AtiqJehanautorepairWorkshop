@@ -25,6 +25,7 @@ import {
   searchMatchingVehicleIds,
   searchJobCardIdsByItemDescription,
 } from "./search-helpers";
+import { buildFuzzyWildcardPatterns, rankAndFilterRecords } from "./smart-search-engine";
 
 
 const LOCAL_JOB_CARDS_KEY = "atiq_local_job_cards";
@@ -472,6 +473,10 @@ export async function getJobCards(
         `work_details.ilike.${pat}`,
         `notes.ilike.${pat}`,
       ];
+      const fuzzyPatterns = buildFuzzyWildcardPatterns(cleanSearch);
+      for (const fPat of fuzzyPatterns) {
+        orClauses.push(`job_card_number.ilike.${fPat}`, `assigned_mechanic.ilike.${fPat}`);
+      }
       if (!isNaN(Number(cleanSearch)) && cleanSearch !== "") {
         orClauses.push(`invoice_number.eq.${Number(cleanSearch)}`);
       }
@@ -498,7 +503,33 @@ export async function getJobCards(
     throw new Error(`Could not load job cards: ${error.message}`);
   }
 
-  return { jobCards: (data || []) as unknown as JobCardWithRelations[], total: count || 0 };
+  let rows = (data || []) as any[];
+  if (search) {
+    rows = rankAndFilterRecords(rows, search, (jc) => {
+      const cust = jc.customer || {};
+      const veh = jc.vehicle || {};
+      const itemDescs = (jc.items || []).map((it: any) => ({ value: it.description, weight: 5 }));
+      return [
+        { value: jc.job_card_number, weight: 50 },
+        { value: jc.invoice_number, weight: 50 },
+        { value: veh.registration_number, weight: 45 },
+        { value: veh.chassis_vin, weight: 40 },
+        { value: cust.name, weight: 35 },
+        { value: cust.mobile, weight: 35 },
+        { value: cust.company_name, weight: 30 },
+        { value: `${veh.make || ""} ${veh.model || ""}`.trim(), weight: 30 },
+        { value: veh.make, weight: 25 },
+        { value: veh.model, weight: 25 },
+        { value: jc.assigned_mechanic, weight: 15 },
+        { value: jc.customer_complaint, weight: 10 },
+        { value: jc.work_details, weight: 10 },
+        { value: jc.notes, weight: 5 },
+        ...itemDescs,
+      ];
+    });
+  }
+
+  return { jobCards: rows as unknown as JobCardWithRelations[], total: count || 0 };
 }
 
 export async function getJobCardById(id: string, workspaceId?: string): Promise<JobCardWithRelations | null> {

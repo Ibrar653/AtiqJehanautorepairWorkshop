@@ -1,35 +1,29 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import {
+  sanitizePostgrestValue,
+  buildSeparatorTolerantPattern,
+  buildFuzzyWildcardPatterns,
+  isShortNumericQuery,
+  scoreFieldMatch,
+} from "./smart-search-engine";
 
-/**
- * Sanitizes a user search string for safe inclusion inside PostgREST `.or(...)` filter expressions.
- * Strips commas and parentheses which are PostgREST filter syntax delimiters.
- */
 export function sanitizePostgrestSearch(raw: string): string {
-  return raw.replace(/[,()]/g, " ").replace(/\s+/g, " ").trim();
+  return sanitizePostgrestValue(raw);
 }
 
-/**
- * Builds a case-insensitive PostgREST ILIKE pattern that treats spaces and hyphens
- * flexibly (e.g. "AD-12345" or "AD 12345" -> "%AD%12345%").
- */
 export function buildFuzzyLikePattern(term: string): string {
-  const clean = sanitizePostgrestSearch(term);
-  if (!clean) return "%";
-  return `%${clean.replace(/[\s\-]+/g, "%")}%`;
+  return buildSeparatorTolerantPattern(term);
 }
 
-/**
- * Splits a search query into individual non-empty tokens for multi-word matching
- * (e.g. "Toyota Land Cruiser" -> ["Toyota", "Land", "Cruiser"]).
- */
 export function tokenizeSearchQuery(raw: string): string[] {
-  const clean = sanitizePostgrestSearch(raw);
+  const clean = sanitizePostgrestValue(raw);
   if (!clean) return [];
   return clean.split(/\s+/).filter(Boolean);
 }
 
 /**
  * Resolves customer IDs in the active workspace matching name, mobile, company_name, email, or TRN.
+ * Supports exact, prefix, substring, separator-insensitive, and typo-tolerant fuzzy matching.
  */
 export async function searchMatchingCustomerIds(
   supabase: SupabaseClient,
@@ -37,33 +31,58 @@ export async function searchMatchingCustomerIds(
   search: string,
   limit = 150
 ): Promise<string[]> {
-  const clean = sanitizePostgrestSearch(search);
+  const clean = sanitizePostgrestValue(search);
   if (!clean) return [];
 
   const tokens = tokenizeSearchQuery(clean);
+  const fuzzyPatterns = tokens.length === 1 ? buildFuzzyWildcardPatterns(clean) : [];
+
   let q = supabase
     .from("customers")
-    .select("id")
+    .select("id, name, mobile, company_name, email, trn_number")
     .eq("workspace_id", workspaceId)
     .eq("is_deleted", false);
 
-  for (const token of tokens) {
-    const pat = buildFuzzyLikePattern(token);
-    q = q.or(
-      `name.ilike.${pat},mobile.ilike.${pat},company_name.ilike.${pat},email.ilike.${pat},trn_number.ilike.${pat}`
-    );
+  if (tokens.length > 1) {
+    for (const token of tokens) {
+      const pat = buildSeparatorTolerantPattern(token);
+      q = q.or(
+        `name.ilike.${pat},mobile.ilike.${pat},company_name.ilike.${pat},email.ilike.${pat},trn_number.ilike.${pat}`
+      );
+    }
+  } else {
+    const pat = buildSeparatorTolerantPattern(clean);
+    const orClauses = [
+      `name.ilike.${pat}`,
+      `mobile.ilike.${pat}`,
+      `company_name.ilike.${pat}`,
+      `email.ilike.${pat}`,
+      `trn_number.ilike.${pat}`,
+    ];
+    for (const fPat of fuzzyPatterns) {
+      orClauses.push(`name.ilike.${fPat}`, `company_name.ilike.${fPat}`);
+    }
+    q = q.or(orClauses.join(","));
   }
 
   const { data, error } = await q.limit(limit);
   if (error) {
     throw new Error(`Customer search failed: ${error.message}`);
   }
-  return (data || []).map((row: { id: string }) => row.id);
+
+  // Filter out false-positive wildcard candidates using strict similarity scoring
+  return (data || [])
+    .filter((row: any) => {
+      const fields = [row.name, row.mobile, row.company_name, row.email, row.trn_number];
+      return fields.some((val) => scoreFieldMatch(clean, val).tier !== "none");
+    })
+    .map((row: { id: string }) => row.id);
 }
 
 /**
  * Resolves vehicle IDs in the active workspace matching make, model, registration/plate number, or chassis/VIN.
- * Supports multi-word queries like "Toyota Land Cruiser" and plate formats with/without hyphens or spaces.
+ * Supports multi-word queries ("Toyota Land Cruiser"), separator-insensitive plates ("GSS23456" <-> "GSS-23456"),
+ * and typo-tolerant fuzzy matches ("Toyta" -> "Toyota", "Corola" -> "Corolla", "GSS23457" -> "GSS-23456").
  */
 export async function searchMatchingVehicleIds(
   supabase: SupabaseClient,
@@ -71,33 +90,59 @@ export async function searchMatchingVehicleIds(
   search: string,
   limit = 150
 ): Promise<string[]> {
-  const clean = sanitizePostgrestSearch(search);
+  const clean = sanitizePostgrestValue(search);
   if (!clean) return [];
 
   const tokens = tokenizeSearchQuery(clean);
+  const fuzzyPatterns = tokens.length === 1 ? buildFuzzyWildcardPatterns(clean) : [];
+
   let q = supabase
     .from("vehicles")
-    .select("id")
+    .select("id, make, model, registration_number, chassis_vin")
     .eq("workspace_id", workspaceId)
     .eq("is_deleted", false);
 
-  for (const token of tokens) {
-    const pat = buildFuzzyLikePattern(token);
-    q = q.or(
-      `make.ilike.${pat},model.ilike.${pat},registration_number.ilike.${pat},chassis_vin.ilike.${pat}`
-    );
+  if (tokens.length > 1) {
+    for (const token of tokens) {
+      const pat = buildSeparatorTolerantPattern(token);
+      q = q.or(
+        `make.ilike.${pat},model.ilike.${pat},registration_number.ilike.${pat},chassis_vin.ilike.${pat}`
+      );
+    }
+  } else {
+    const pat = buildSeparatorTolerantPattern(clean);
+    const orClauses = [
+      `make.ilike.${pat}`,
+      `model.ilike.${pat}`,
+      `registration_number.ilike.${pat}`,
+      `chassis_vin.ilike.${pat}`,
+    ];
+    for (const fPat of fuzzyPatterns) {
+      orClauses.push(
+        `make.ilike.${fPat}`,
+        `model.ilike.${fPat}`,
+        `registration_number.ilike.${fPat}`
+      );
+    }
+    q = q.or(orClauses.join(","));
   }
 
   const { data, error } = await q.limit(limit);
   if (error) {
     throw new Error(`Vehicle search failed: ${error.message}`);
   }
-  return (data || []).map((row: { id: string }) => row.id);
+
+  return (data || [])
+    .filter((row: any) => {
+      const combined = `${row.make || ""} ${row.model || ""}`.trim();
+      const fields = [row.make, row.model, combined, row.registration_number, row.chassis_vin];
+      return fields.some((val) => scoreFieldMatch(clean, val).tier !== "none");
+    })
+    .map((row: { id: string }) => row.id);
 }
 
 /**
- * Resolves job card IDs in the active workspace matching job_card_number, invoice_number,
- * or line-item descriptions (useful when linking invoices to job card searches).
+ * Resolves job card IDs in the active workspace matching job_card_number or invoice_number.
  */
 export async function searchMatchingJobCardIdsForInvoice(
   supabase: SupabaseClient,
@@ -105,10 +150,10 @@ export async function searchMatchingJobCardIdsForInvoice(
   search: string,
   limit = 150
 ): Promise<string[]> {
-  const clean = sanitizePostgrestSearch(search);
+  const clean = sanitizePostgrestValue(search);
   if (!clean) return [];
 
-  const pat = buildFuzzyLikePattern(clean);
+  const pat = buildSeparatorTolerantPattern(clean);
   const orParts = [`job_card_number.ilike.${pat}`];
   if (!isNaN(Number(clean)) && clean !== "") {
     orParts.push(`invoice_number.eq.${Number(clean)}`);
@@ -136,10 +181,10 @@ export async function searchJobCardIdsByItemDescription(
   search: string,
   limit = 150
 ): Promise<string[]> {
-  const clean = sanitizePostgrestSearch(search);
+  const clean = sanitizePostgrestValue(search);
   if (!clean) return [];
 
-  const pat = buildFuzzyLikePattern(clean);
+  const pat = buildSeparatorTolerantPattern(clean);
   const { data, error } = await supabase
     .from("job_card_items")
     .select("job_card_id")
@@ -147,7 +192,6 @@ export async function searchJobCardIdsByItemDescription(
     .limit(limit);
 
   if (error) {
-    // Non-fatal if item search fails; return empty
     console.warn("Job card item description search warning:", error.message);
     return [];
   }
@@ -166,10 +210,10 @@ export async function searchInvoiceIdsByItemDescription(
   search: string,
   limit = 150
 ): Promise<string[]> {
-  const clean = sanitizePostgrestSearch(search);
+  const clean = sanitizePostgrestValue(search);
   if (!clean) return [];
 
-  const pat = buildFuzzyLikePattern(clean);
+  const pat = buildSeparatorTolerantPattern(clean);
   const { data, error } = await supabase
     .from("invoice_items")
     .select("invoice_id")
@@ -196,10 +240,10 @@ export async function searchMatchingSupplierIds(
   search: string,
   limit = 150
 ): Promise<string[]> {
-  const clean = sanitizePostgrestSearch(search);
+  const clean = sanitizePostgrestValue(search);
   if (!clean) return [];
 
-  const pat = buildFuzzyLikePattern(clean);
+  const pat = buildSeparatorTolerantPattern(clean);
   const { data, error } = await supabase
     .from("suppliers")
     .select("id")
@@ -215,3 +259,5 @@ export async function searchMatchingSupplierIds(
   }
   return (data || []).map((row: { id: string }) => row.id);
 }
+
+export { isShortNumericQuery };

@@ -205,7 +205,7 @@ export function InvoicesView() {
     const handler = setTimeout(() => {
       setDebouncedQuery(searchQuery);
       setCurrentPage(1);
-    }, 250);
+    }, 180);
     return () => clearTimeout(handler);
   }, [searchQuery]);
 
@@ -968,11 +968,15 @@ export function InvoicesView() {
 
         {/* ─── Search & Filter Bar ─── */}
         <div className="bg-white border border-slate-200/90 rounded-2xl p-3.5 shadow-2xs flex flex-col md:flex-row items-center justify-between gap-3">
-          <div className="relative w-full md:w-80">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+          <div className="relative w-full md:w-96">
+            {loading && searchQuery ? (
+              <Loader2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-blue-600 animate-spin" />
+            ) : (
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+            )}
             <Input
               type="search"
-              placeholder="Search by invoice #, customer, phone, vehicle..."
+              placeholder="Smart Search: Invoice #, JC #, Customer, Phone, Vehicle, Plate #..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-9 h-10 text-xs rounded-xl border-slate-200 bg-white shadow-2xs focus:border-blue-500 focus:ring-blue-500"
@@ -1185,6 +1189,11 @@ export function InvoicesView() {
                             ) : (
                               <span className="inline-block mt-0.5 px-1.5 py-0.2 rounded text-[9px] font-semibold tracking-wider bg-blue-50 text-blue-700 border border-blue-200/80 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800/60 uppercase">
                                 Direct
+                              </span>
+                            )}
+                            {inv._isSimilarMatch && (
+                              <span className="inline-block ml-1 mt-0.5 px-1.5 py-0.2 rounded text-[9px] font-semibold tracking-wide bg-amber-50 text-amber-700 border border-amber-200 uppercase">
+                                Similar match
                               </span>
                             )}
                           </div>
