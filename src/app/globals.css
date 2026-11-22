@@ -722,6 +722,158 @@
   }
 }
 
+/* ─── ATIQ JEHAN AI — Animated Liquid Glass Generate AI Button & Nav ───── */
+@keyframes aiGenerateSheen {
+  0% {
+    transform: translateX(-140%) skewX(-22deg);
+    opacity: 0;
+  }
+  18% {
+    opacity: 0.55;
+  }
+  42% {
+    transform: translateX(190%) skewX(-22deg);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(190%) skewX(-22deg);
+    opacity: 0;
+  }
+}
+
+@keyframes aiGradientFlow {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@keyframes aiSparklePulse {
+  0%, 100% {
+    transform: scale(1) rotate(0deg);
+    filter: drop-shadow(0 0 4px rgba(125, 211, 252, 0.85));
+  }
+  50% {
+    transform: scale(1.12) rotate(8deg);
+    filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.95));
+  }
+}
+
+.ai-generate-btn {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  background-image: linear-gradient(
+    115deg,
+    #7C3AED 0%,
+    #6338F5 24%,
+    #2455EC 52%,
+    #007BFF 78%,
+    #00C8F8 100%
+  );
+  background-size: 200% 200%;
+  animation: aiGradientFlow 7.5s ease-in-out infinite;
+  border: 1px solid rgba(186, 230, 253, 0.58);
+  box-shadow:
+    inset 0 1.5px 1px rgba(255, 255, 255, 0.52),
+    inset 0 -2px 5px rgba(28, 25, 118, 0.34),
+    0 6px 20px -4px rgba(59, 82, 246, 0.44),
+    0 2px 10px -2px rgba(0, 200, 248, 0.32);
+  transition:
+    transform 180ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 220ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 180ms ease;
+}
+
+.ai-generate-btn::before {
+  content: "";
+  position: absolute;
+  inset: 1px 1px auto 1px;
+  height: 46%;
+  border-radius: inherit;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.36) 0%,
+    rgba(255, 255, 255, 0.04) 100%
+  );
+  pointer-events: none;
+  z-index: 1;
+}
+
+.ai-generate-btn::after {
+  content: "";
+  position: absolute;
+  top: -20%;
+  bottom: -20%;
+  left: 0;
+  width: 48%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.48) 50%,
+    transparent 100%
+  );
+  animation: aiGenerateSheen 4.6s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.ai-generate-btn:hover {
+  transform: translateY(-1.5px);
+  border-color: rgba(224, 242, 254, 0.85);
+  box-shadow:
+    inset 0 1.5px 1.5px rgba(255, 255, 255, 0.65),
+    inset 0 -2px 6px rgba(28, 25, 118, 0.28),
+    0 10px 26px -4px rgba(99, 56, 245, 0.52),
+    0 4px 16px -2px rgba(0, 200, 248, 0.48);
+}
+
+.ai-generate-btn:active {
+  transform: translateY(0px) scale(0.97);
+  box-shadow:
+    inset 0 2px 5px rgba(17, 24, 89, 0.36),
+    0 3px 12px -2px rgba(59, 82, 246, 0.38);
+}
+
+.ai-generate-btn-active {
+  box-shadow:
+    inset 0 1.5px 1.5px rgba(255, 255, 255, 0.7),
+    0 0 0 2.5px rgba(0, 200, 248, 0.42),
+    0 8px 24px -4px rgba(99, 56, 245, 0.54);
+}
+
+.ai-sparkle-icon {
+  animation: aiSparklePulse 3.2s ease-in-out infinite;
+}
+
+.ai-nav-active {
+  background-image: linear-gradient(
+    120deg,
+    #7C3AED 0%,
+    #4F46E5 38%,
+    #007BFF 76%,
+    #00B8E8 100%
+  );
+  border: 1px solid rgba(186, 230, 253, 0.45);
+  box-shadow:
+    inset 0 1px 1px rgba(255, 255, 255, 0.46),
+    inset 0 -2px 5px rgba(30, 27, 115, 0.28),
+    0 6px 18px -4px rgba(79, 70, 229, 0.42);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ai-generate-btn,
+  .ai-generate-btn::after,
+  .ai-sparkle-icon {
+    animation: none !important;
+  }
+}
+
 /* ─── Print Styles (100% Protected — Unchanged A4 Output) ──────────────── */
 @page {
   size: A4 portrait;

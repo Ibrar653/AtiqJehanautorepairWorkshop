@@ -18,6 +18,7 @@ import { LogOut, Bell, Lock, User as UserIcon, Menu, ShieldCheck, Sun, Moon, Set
 import { getInitials } from "@/lib/utils";
 import type { User } from "@/types/database";
 import { WorkspaceSwitcher } from "./workspace-switcher";
+import { GenerateAIButton } from "@/components/ai/generate-ai-button";
 import { useWorkspace } from "@/lib/context/workspace-context";
 import { useTheme } from "@/lib/context/theme-context";
 import { LogoutConfirmationModal } from "@/components/shared/logout-confirmation-modal";
@@ -66,6 +67,9 @@ export function Header({ user, onOpenMobileMenu }: HeaderProps) {
 
         {/* Header Right Actions */}
         <div className="flex items-center gap-2.5 shrink-0">
+          {/* Animated Generate AI Trigger */}
+          <GenerateAIButton />
+
           {/* Notifications with red badge */}
           <Button
             variant="ghost"

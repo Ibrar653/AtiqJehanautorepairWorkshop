@@ -24,6 +24,8 @@ import {
   Trash2,
   Settings,
   BookOpen,
+  BrainCircuit,
+  Sparkles,
   ChevronRight,
   X,
   LogOut,
@@ -36,6 +38,8 @@ import { LogoutConfirmationModal } from "@/components/shared/logout-confirmation
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   LayoutDashboard,
+  BrainCircuit,
+  Sparkles,
   Users,
   Car,
   ClipboardList,
@@ -58,6 +62,10 @@ const NAV_GROUPS = [
   {
     title: "MAIN",
     items: ["/", "/customers", "/vehicles", "/job-cards", "/services"],
+  },
+  {
+    title: "AI & AUTOMATION",
+    items: ["/ai"],
   },
   {
     title: "PARTS & PROCUREMENT",
@@ -150,6 +158,7 @@ export function Sidebar({ className, user, onCloseMobile }: SidebarProps) {
                       item.href === "/"
                         ? pathname === "/"
                         : pathname.startsWith(item.href);
+                    const isAiItem = item.href === "/ai";
 
                     return (
                       <Link
@@ -158,23 +167,44 @@ export function Sidebar({ className, user, onCloseMobile }: SidebarProps) {
                         prefetch
                         onClick={onCloseMobile}
                         className={cn(
-                          "flex items-center gap-3 rounded-xl px-3.5 h-[40px] text-[13.5px] transition-all duration-150 select-none group",
+                          "flex items-center justify-between gap-2.5 rounded-xl px-3.5 h-[40px] text-[13.5px] transition-all duration-150 select-none group",
                           isActive
-                            ? "glass-btn-primary text-white font-semibold"
+                            ? isAiItem
+                              ? "ai-nav-active text-white font-semibold"
+                              : "glass-btn-primary text-white font-semibold"
+                            : isAiItem
+                            ? "text-[#29206B] dark:text-indigo-200 hover:text-[#4F46E5] dark:hover:text-white hover:bg-indigo-50/75 dark:hover:bg-indigo-950/40 hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_2px_8px_rgba(99,56,245,0.10)] font-medium"
                             : "text-[#1A2D4D] dark:text-slate-200 hover:text-[#0068F5] dark:hover:text-white hover:bg-white/75 dark:hover:bg-white/[0.06] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_2px_6px_rgba(16,40,82,0.05)] font-medium"
                         )}
                       >
-                        {Icon && (
-                          <Icon
+                        <span className="flex items-center gap-3 min-w-0">
+                          {Icon && (
+                            <Icon
+                              className={cn(
+                                "h-[17px] w-[17px] shrink-0 transition-colors",
+                                isActive
+                                  ? "text-white drop-shadow-[0_1px_2px_rgba(0,40,120,0.3)]"
+                                  : isAiItem
+                                  ? "text-[#6338F5] dark:text-indigo-400 group-hover:text-[#7C3AED] dark:group-hover:text-sky-300"
+                                  : "text-[#52657F] dark:text-[#94A8C4] group-hover:text-[#007BFF] dark:group-hover:text-sky-400"
+                              )}
+                            />
+                          )}
+                          <span className="truncate">{item.label}</span>
+                        </span>
+                        {isAiItem && (
+                          <span
                             className={cn(
-                              "h-[17px] w-[17px] shrink-0 transition-colors",
+                              "inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider shrink-0",
                               isActive
-                                ? "text-white drop-shadow-[0_1px_2px_rgba(0,40,120,0.3)]"
-                                : "text-[#52657F] dark:text-[#94A8C4] group-hover:text-[#007BFF] dark:group-hover:text-sky-400"
+                                ? "bg-white/20 text-white border border-white/30"
+                                : "bg-gradient-to-r from-violet-500/15 to-sky-500/15 text-[#4F46E5] dark:text-sky-300 border border-indigo-200/70 dark:border-indigo-700/60"
                             )}
-                          />
+                          >
+                            <Sparkles className="h-2.5 w-2.5" />
+                            AGENT
+                          </span>
                         )}
-                        <span className="truncate">{item.label}</span>
                       </Link>
                     );
                   })}

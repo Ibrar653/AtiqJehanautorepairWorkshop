@@ -49,6 +49,14 @@ export async function updateSession(request: NextRequest) {
   // Check if this is a workspace-specific login page (e.g. /w/ibrar/login)
   const isWorkspaceLoginPath = request.nextUrl.pathname.startsWith("/w/") && request.nextUrl.pathname.endsWith("/login");
 
+  // For AI API routes, return clean JSON 401 instead of HTML redirect when unauthenticated
+  if (!user && request.nextUrl.pathname.startsWith("/api/ai/")) {
+    return NextResponse.json(
+      { success: false, error: "UNAUTHORIZED: Active authenticated session required." },
+      { status: 401 }
+    );
+  }
+
   // Redirect unauthenticated users to login (but not workspace login pages — they handle their own auth)
   if (!user && !isPublicPath) {
     const redirectUrl = request.nextUrl.clone();
