@@ -110,19 +110,19 @@ export function GlobalSearchBar() {
   return (
     <div ref={searchRef} className="relative w-full max-w-lg">
       <div className="relative">
-        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 dark:text-slate-500" />
+        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#526782] dark:text-slate-400" />
         <Input
           placeholder="Search customers, vehicles, job cards..."
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onFocus={() => query.trim().length >= 2 && setOpen(true)}
-          className="pl-10 pr-16 h-10 bg-slate-50/80 hover:bg-slate-50 border-slate-200 dark:bg-[#111827] dark:hover:bg-[#172033] dark:border-[#273449] focus-visible:bg-white dark:focus-visible:bg-[#111827] text-[13px] rounded-xl text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus-visible:ring-2 focus-visible:ring-blue-500/20 focus-visible:border-blue-500 shadow-2xs transition-all"
+          className="pl-10 pr-16 h-10 neu-inset focus-visible:bg-white dark:focus-visible:bg-[#111B30] text-[13px] rounded-xl text-[#102340] dark:text-slate-100 placeholder:text-[#64748B] dark:placeholder:text-slate-400 focus-visible:ring-2 focus-visible:ring-[#007BFF]/25 focus-visible:border-[#007BFF] transition-all"
         />
         <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
           {loading ? (
-            <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
+            <Loader2 className="h-4 w-4 animate-spin text-[#007BFF]" />
           ) : (
-            <kbd className="hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10.5px] font-semibold text-slate-400 dark:text-slate-400 bg-white dark:bg-[#172033] border border-slate-200 dark:border-[#273449] rounded-md shadow-2xs">
+            <kbd className="hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10.5px] font-semibold text-[#526782] dark:text-slate-400 bg-[#F5F9FF] dark:bg-[#182540] border border-[#D6E2F0] dark:border-[#243554] rounded-md shadow-2xs">
               ⌘ K
             </kbd>
           )}
@@ -130,7 +130,7 @@ export function GlobalSearchBar() {
       </div>
 
       {open && (
-        <div className="absolute left-0 right-0 top-full mt-2 z-50 rounded-xl border bg-popover text-popover-foreground shadow-2xl overflow-hidden max-h-[80vh] overflow-y-auto">
+        <div className="absolute left-0 right-0 top-full mt-2 z-50 glass-menu text-popover-foreground overflow-hidden max-h-[80vh] overflow-y-auto">
           {loading ? (
             <div className="p-4 text-center text-xs text-muted-foreground flex items-center justify-center gap-2">
               <Loader2 className="h-4 w-4 animate-spin text-primary" /> Searching system...

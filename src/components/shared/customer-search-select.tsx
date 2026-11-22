@@ -293,7 +293,7 @@ export function CustomerSearchSelect({
 
           {dropdownOpen && (
             <div
-              className="absolute left-0 right-0 top-full mt-1.5 rounded-xl border border-border bg-card text-card-foreground shadow-2xl overflow-hidden max-h-80 overflow-y-auto"
+              className="absolute left-0 right-0 top-full mt-1.5 glass-menu text-card-foreground overflow-hidden max-h-80 overflow-y-auto"
               style={{ minWidth: "100%", zIndex: 99999 }}
             >
               {loading ? (

@@ -46,18 +46,18 @@ export function DashboardSalesChart({
   );
 
   return (
-    <div className="rounded-xl border border-border bg-card shadow-xs overflow-hidden">
+    <div className="neu-card overflow-hidden">
       {/* Header with Title and View Mode Tabs */}
-      <div className="p-5 pb-4 border-b border-border/80 flex flex-row items-center justify-between flex-wrap gap-3">
-        <div className="flex items-center gap-2.5 text-[15px] sm:text-[16px] font-bold text-foreground">
-          <div className="h-7 w-7 rounded-md bg-primary/10 text-primary flex items-center justify-center">
+      <div className="p-5 pb-4 border-b border-[#D6E2F0]/80 dark:border-border/80 flex flex-row items-center justify-between flex-wrap gap-3">
+        <div className="flex items-center gap-2.5 text-[15px] sm:text-[16px] font-semibold text-foreground">
+          <div className="h-9 w-9 rounded-xl neu-icon-box text-[#007BFF] flex items-center justify-center">
             <BarChart3 className="h-4 w-4" />
           </div>
           <span>Financial Overview &amp; Performance</span>
         </div>
 
         {/* View Mode Tabs */}
-        <div className="flex items-center gap-1 bg-slate-100/90 dark:bg-muted/70 p-1 rounded-lg border border-border/70 text-xs">
+        <div className="flex items-center gap-1 bg-[#E7EFFA] dark:bg-muted/70 shadow-[var(--neu-shadow-inset)] p-1 rounded-xl border border-[#D6E2F0] dark:border-border/70 text-xs">
           <button
             type="button"
             onClick={() => setActiveTab("overview")}

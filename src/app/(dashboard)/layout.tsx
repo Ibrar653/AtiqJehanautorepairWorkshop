@@ -17,35 +17,35 @@ export default function DashboardLayout({
 
   return (
     <WorkspaceProvider>
-      <div className="min-h-screen bg-[#F6F8FB] dark:bg-[#0B1120] flex text-[#111827] dark:text-[#F8FAFC] font-sans antialiased">
-        {/* Desktop Sidebar */}
-        <div className="hidden lg:block w-[240px] shrink-0">
-          <Sidebar user={user} className="w-[240px]" />
+      <div className="min-h-screen glass-canvas flex text-[#101D36] dark:text-[#F0F6FF] font-sans antialiased">
+        {/* Desktop Floating Glass Sidebar Rail */}
+        <div className="hidden lg:block w-[264px] shrink-0">
+          <Sidebar user={user} className="w-[244px]" />
         </div>
 
         {/* Mobile Drawer Sidebar */}
         {mobileMenuOpen && (
           <div className="fixed inset-0 z-50 lg:hidden">
             <div
-              className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs transition-opacity"
+              className="fixed inset-0 bg-[#101D36]/45 backdrop-blur-sm transition-opacity"
               onClick={() => setMobileMenuOpen(false)}
             />
             <Sidebar
               user={user}
               onCloseMobile={() => setMobileMenuOpen(false)}
-              className="w-[240px]"
+              className="w-[252px]"
             />
           </div>
         )}
 
-        {/* Main Content Area */}
-        <div className="flex-1 flex flex-col min-w-0 bg-[#F6F8FB] dark:bg-[#0B1120]">
+        {/* Fluid Main Content Area (Eliminates Excessive Desktop Empty Margins) */}
+        <div className="flex-1 flex flex-col min-w-0">
           <Header
             user={user}
             onOpenMobileMenu={() => setMobileMenuOpen(true)}
           />
-          <main className="w-full max-w-[1560px] mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1">
-            <div className="w-full space-y-6">
+          <main className="w-full max-w-[1880px] mx-auto px-4 sm:px-5 lg:px-6 py-5 flex-1">
+            <div className="w-full space-y-5">
               <RouteGuard>
                 {children}
               </RouteGuard>

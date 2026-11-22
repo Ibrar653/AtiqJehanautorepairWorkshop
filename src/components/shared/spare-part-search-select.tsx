@@ -418,7 +418,7 @@ export function SparePartSearchSelect({
             className={cn(
               "absolute left-0 top-full mt-1.5 z-[9999]",
               "w-full min-w-[320px] sm:min-w-[420px] max-w-[calc(100vw-2rem)]",
-              "rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-2xl ring-1 ring-black/10 overflow-hidden"
+              "glass-menu overflow-hidden"
             )}
           >
             <div
@@ -688,7 +688,7 @@ export function SparePartSearchSelect({
           className={cn(
             "absolute left-0 top-full mt-1.5 z-[9999]",
             "w-[340px] sm:w-[440px] max-w-[calc(100vw-2rem)]",
-            "rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-2xl ring-1 ring-black/10 overflow-hidden"
+            "glass-menu overflow-hidden"
           )}
         >
           {/* 1. SEARCH INPUT AT THE VERY TOP OF DROPDOWN */}

@@ -2,19 +2,21 @@
 
 import { useState, useEffect, Suspense } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
-  Wrench,
   Loader2,
   AlertCircle,
   Lock,
   Mail,
   ShieldCheck,
   CheckCircle2,
+  Eye,
+  EyeOff,
+  ArrowRight,
 } from "lucide-react";
 import {
   getWorkspaceBySlug,
@@ -30,6 +32,7 @@ const WORKSPACE_LOGIN_PATH = "/w/ibrar/login";
 function IbrarLoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -159,32 +162,34 @@ function IbrarLoginForm() {
   }
 
   return (
-    <div className="w-full max-w-md mx-auto space-y-6">
-      {/* Brand Header */}
-      <div className="flex flex-col items-center text-center space-y-2.5">
-        <div className="h-14 w-14 rounded-2xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-600/25">
-          <Wrench className="h-7 w-7 text-white" />
+    <div className="w-full mx-auto space-y-5">
+      {/* Main Premium Neumorphic Login Card */}
+      <div className="rounded-[26px] bg-[#F5F9FF]/95 dark:bg-[#131E35]/95 backdrop-blur-md border border-white/80 dark:border-[#243554] shadow-[12px_12px_32px_rgba(110,142,184,0.24),-10px_-10px_28px_rgba(255,255,255,0.92)] dark:shadow-[12px_12px_32px_rgba(2,6,18,0.65)] p-7 sm:p-8">
+        <div className="flex flex-col items-center text-center space-y-3 mb-6">
+          <div className="h-16 w-16 rounded-2xl neu-icon-box p-2 flex items-center justify-center">
+            <Image
+              src="/branding/atiq-jehan-logo.png"
+              alt="ATIQ JEHAN AUTO REPAIR"
+              width={52}
+              height={52}
+              className="w-full h-full object-contain"
+              priority
+            />
+          </div>
+          <div className="space-y-1">
+            <p className="text-[11px] font-bold text-[#007BFF] dark:text-blue-400 tracking-[0.12em] uppercase">
+              IBRAR &bull; WORKSHOP MANAGEMENT SYSTEM
+            </p>
+            <h1 className="text-[26px] font-bold text-[#102340] dark:text-slate-100 tracking-tight leading-tight">
+              Welcome Back
+            </h1>
+            <p className="text-[13px] text-[#526782] dark:text-slate-400">
+              Sign in to access your assigned workspace
+            </p>
+          </div>
         </div>
-        <div>
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight uppercase">
-            IBRAR
-          </h1>
-          <p className="text-xs font-semibold text-blue-700 tracking-wider uppercase">
-            Workshop Management System
-          </p>
-        </div>
-      </div>
 
-      {/* Main Login Card */}
-      <Card className="border border-slate-200/80 shadow-xl shadow-slate-200/50 bg-white">
-        <CardHeader className="space-y-1 pb-4">
-          <CardTitle className="text-lg font-bold text-slate-900">Sign In</CardTitle>
-          <CardDescription className="text-xs text-slate-500">
-            Sign in to your workspace
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleLogin} className="space-y-4">
+        <form onSubmit={handleLogin} className="space-y-4">
             {/* Informational Message */}
             {infoMessage && (
               <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center gap-2.5 text-xs text-emerald-800 font-semibold animate-in fade-in-50">
@@ -202,11 +207,11 @@ function IbrarLoginForm() {
             )}
 
             <div className="space-y-1.5">
-              <Label htmlFor="ws-email" className="text-xs font-semibold text-slate-700">
+              <Label htmlFor="ws-email" className="text-[13px] font-medium text-[#102340] dark:text-slate-200">
                 Email Address
               </Label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#526782]" />
                 <Input
                   id="ws-email"
                   type="email"
@@ -215,45 +220,53 @@ function IbrarLoginForm() {
                   onChange={(e) => setEmail(e.target.value)}
                   required
                   disabled={loading}
-                  className="pl-9 h-10 text-sm bg-slate-50/50 border-slate-200 focus:bg-white"
+                  className="pl-10 h-11 text-[13.5px] rounded-xl neu-inset border-[#D6E2F0] focus-visible:border-[#007BFF]"
                 />
               </div>
             </div>
 
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
-                <Label htmlFor="ws-password" className="text-xs font-semibold text-slate-700">
+                <Label htmlFor="ws-password" className="text-[13px] font-medium text-[#102340] dark:text-slate-200">
                   Password
                 </Label>
                 <a
                   href="/forgot-password"
-                  className="text-xs font-medium text-blue-600 hover:text-blue-700 hover:underline"
+                  className="text-xs font-medium text-[#007BFF] hover:text-[#1746D1] hover:underline"
                 >
                   Forgot password?
                 </a>
               </div>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#526782]" />
                 <Input
                   id="ws-password"
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   disabled={loading}
-                  className="pl-9 h-10 text-sm bg-slate-50/50 border-slate-200 focus:bg-white"
+                  className="pl-10 pr-10 h-11 text-[13.5px] rounded-xl neu-inset border-[#D6E2F0] focus-visible:border-[#007BFF]"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((prev) => !prev)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#64748B] hover:text-[#007BFF] p-1 rounded-lg transition-colors"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
               </div>
             </div>
 
-            <div className="flex items-center justify-between text-xs pt-1">
-              <label className="flex items-center gap-2 cursor-pointer select-none text-slate-600 font-medium">
+            <div className="flex items-center justify-between text-xs pt-0.5">
+              <label className="flex items-center gap-2 cursor-pointer select-none text-[#526782] dark:text-slate-400 font-medium">
                 <input
                   type="checkbox"
                   checked={rememberMe}
                   onChange={(e) => setRememberMe(e.target.checked)}
-                  className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 h-3.5 w-3.5"
+                  className="rounded border-[#D6E2F0] text-[#007BFF] focus:ring-[#007BFF] h-4 w-4"
                 />
                 Remember this device
               </label>
@@ -261,7 +274,7 @@ function IbrarLoginForm() {
 
             <Button
               type="submit"
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white h-10 text-sm font-semibold shadow-md shadow-blue-600/20 mt-2"
+              className="w-full h-11 text-sm font-semibold rounded-xl neu-btn-primary mt-2"
               disabled={loading}
             >
               {loading ? (
@@ -270,15 +283,17 @@ function IbrarLoginForm() {
                   Authenticating...
                 </>
               ) : (
-                "Sign In"
+                <>
+                  Sign In
+                  <ArrowRight className="ml-1 h-4 w-4" />
+                </>
               )}
             </Button>
           </form>
-        </CardContent>
-      </Card>
+      </div>
 
       {/* Security notice */}
-      <div className="flex items-center justify-center gap-1.5 text-xs text-slate-500">
+      <div className="flex items-center justify-center gap-1.5 text-xs text-[#526782] dark:text-slate-400 font-medium">
         <ShieldCheck className="h-4 w-4 text-emerald-600" />
         <span>Secure Workspace Access</span>
       </div>

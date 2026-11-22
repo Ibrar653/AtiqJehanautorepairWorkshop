@@ -16,11 +16,11 @@ interface StatCardProps {
 }
 
 const iconVariantStyles = {
-  default: "bg-blue-50 text-blue-600 border border-blue-100/80 dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-900/40",
-  primary: "bg-blue-50 text-blue-600 border border-blue-100/80 dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-900/40",
-  success: "bg-emerald-50 text-emerald-600 border border-emerald-100/80 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-900/40",
-  warning: "bg-amber-50 text-amber-600 border border-amber-100/80 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-900/40",
-  danger: "bg-rose-50 text-rose-600 border border-rose-100/80 dark:bg-rose-950/40 dark:text-rose-400 dark:border-rose-900/40",
+  default: "neu-icon-box text-[#007BFF] dark:text-blue-400",
+  primary: "neu-icon-box text-[#007BFF] dark:text-blue-400",
+  success: "neu-icon-box text-emerald-600 dark:text-emerald-400",
+  warning: "neu-icon-box text-amber-600 dark:text-amber-400",
+  danger: "neu-icon-box text-rose-600 dark:text-rose-400",
 };
 
 export function StatCard({
@@ -35,23 +35,23 @@ export function StatCard({
   const displayValue = isCurrency ? formatCurrency(value as number) : value;
 
   return (
-    <div className="h-full rounded-xl border border-border bg-card shadow-xs p-5 flex flex-col justify-between transition-colors duration-150 hover:border-slate-300 dark:hover:border-slate-700 select-none">
+    <div className="h-full neu-card p-5 flex flex-col justify-between transition-all duration-150 hover:-translate-y-0.5 select-none">
       <div>
         <div className="flex items-start justify-between gap-2">
-          <p className="text-[11.5px] font-semibold text-muted-foreground uppercase tracking-wider truncate">
+          <p className="text-[12px] font-semibold text-[#526782] dark:text-muted-foreground tracking-wide truncate">
             {title}
           </p>
           <div
             className={cn(
-              "h-8 w-8 rounded-lg flex items-center justify-center shrink-0 [&>svg]:h-4 [&>svg]:w-4",
+              "h-9 w-9 rounded-xl flex items-center justify-center shrink-0 [&>svg]:h-4 [&>svg]:w-4",
               iconVariantStyles[variant]
             )}
           >
             {icon}
           </div>
         </div>
-        <div className="mt-2.5">
-          <p className="text-[26px] sm:text-[28px] font-bold text-foreground tabular-nums tracking-tight leading-none truncate">
+        <div className="mt-3">
+          <p className="text-[26px] sm:text-[28px] font-bold text-[#102340] dark:text-foreground tabular-nums tracking-tight leading-none truncate">
             {displayValue}
           </p>
         </div>

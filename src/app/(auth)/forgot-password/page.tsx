@@ -56,42 +56,36 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="w-full max-w-md mx-auto space-y-6">
-      {/* Brand Header */}
-      <div className="flex flex-col items-center text-center space-y-2">
-        <div className="h-12 w-12 rounded-xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-600/25">
-          <Wrench className="h-6 w-6 text-white" />
+    <div className="w-full mx-auto space-y-5">
+      {/* Main Neumorphic Recovery Card */}
+      <div className="rounded-[26px] bg-[#F5F9FF]/95 dark:bg-[#131E35]/95 backdrop-blur-md border border-white/80 dark:border-[#243554] shadow-[12px_12px_32px_rgba(110,142,184,0.24),-10px_-10px_28px_rgba(255,255,255,0.92)] p-7 sm:p-8">
+        <div className="flex flex-col items-center text-center space-y-2.5 mb-6">
+          <div className="h-14 w-14 rounded-2xl neu-btn-primary flex items-center justify-center">
+            <Wrench className="h-6 w-6 text-white" />
+          </div>
+          <div>
+            <p className="text-[11px] font-bold text-[#007BFF] uppercase tracking-[0.12em]">{APP_NAME}</p>
+            <h1 className="text-xl font-bold text-[#102340] dark:text-slate-100 tracking-tight mt-0.5">Reset Your Password</h1>
+            <p className="text-xs text-[#526782] dark:text-slate-400 mt-1">
+              Enter your registered staff email to receive a secure recovery link
+            </p>
+          </div>
         </div>
         <div>
-          <h1 className="text-xl font-bold text-slate-900 tracking-tight">{APP_NAME}</h1>
-          <p className="text-xs text-slate-500">Password Recovery</p>
-        </div>
-      </div>
-
-      {/* Card */}
-      <Card className="border border-slate-200 bg-white shadow-xl shadow-slate-200/50 rounded-xl overflow-hidden">
-        <div className="h-1.5 bg-blue-600 w-full" />
-        <CardHeader className="text-center pb-3 pt-6">
-          <CardTitle className="text-base font-bold text-slate-900">Reset Your Password</CardTitle>
-          <CardDescription className="text-xs text-slate-500">
-            Enter your registered staff email to receive a secure recovery link
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="px-6 pb-6 pt-2">
           {success ? (
             <div className="space-y-4 text-center py-3">
               <div className="h-12 w-12 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto border border-emerald-200">
                 <CheckCircle2 className="h-6 w-6" />
               </div>
               <div className="space-y-1">
-                <p className="text-sm font-semibold text-slate-900">Check your inbox</p>
-                <p className="text-xs text-slate-600">
-                  A password reset link has been sent to <span className="font-semibold text-slate-900">{email}</span>.
+                <p className="text-sm font-semibold text-[#102340]">Check your inbox</p>
+                <p className="text-xs text-[#526782]">
+                  A password reset link has been sent to <span className="font-semibold text-[#102340]">{email}</span>.
                 </p>
               </div>
               <div className="pt-3">
                 <Link href="/login">
-                  <Button variant="outline" className="w-full h-9 text-xs">
+                  <Button variant="outline" className="w-full h-10 text-xs">
                     Return to Sign In
                   </Button>
                 </Link>
@@ -100,18 +94,18 @@ export default function ForgotPasswordPage() {
           ) : (
             <form onSubmit={handleResetRequest} className="space-y-4">
               {error && (
-                <div className="rounded-lg bg-red-50 border border-red-200 px-3.5 py-2 text-xs text-red-700 flex items-center gap-2">
+                <div className="rounded-xl bg-red-50 border border-red-200 px-3.5 py-2.5 text-xs text-red-700 flex items-center gap-2">
                   <AlertCircle className="h-4 w-4 shrink-0 text-red-600" />
                   <span>{error}</span>
                 </div>
               )}
 
               <div className="space-y-1.5">
-                <Label htmlFor="email" className="text-xs font-semibold text-slate-700">
+                <Label htmlFor="email" className="text-[13px] font-medium text-[#102340]">
                   Email Address
                 </Label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                  <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#526782]" />
                   <Input
                     id="email"
                     type="email"
@@ -120,14 +114,14 @@ export default function ForgotPasswordPage() {
                     onChange={(e) => setEmail(e.target.value)}
                     required
                     disabled={loading}
-                    className="pl-9 h-10 text-sm bg-slate-50/50 border-slate-200 focus:bg-white"
+                    className="pl-10 h-11 text-[13.5px] rounded-xl neu-inset border-[#D6E2F0]"
                   />
                 </div>
               </div>
 
               <Button
                 type="submit"
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white h-10 text-sm font-semibold shadow-md shadow-blue-600/20"
+                className="w-full h-11 text-sm font-semibold rounded-xl neu-btn-primary"
                 disabled={loading}
               >
                 {loading ? (
@@ -143,15 +137,15 @@ export default function ForgotPasswordPage() {
               <div className="text-center pt-2">
                 <Link
                   href="/login"
-                  className="text-xs font-medium text-slate-600 hover:text-blue-600 inline-flex items-center gap-1"
+                  className="text-xs font-medium text-[#526782] hover:text-[#007BFF] inline-flex items-center gap-1"
                 >
                   <ArrowLeft className="h-3.5 w-3.5" /> Back to Sign In
                 </Link>
               </div>
             </form>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }

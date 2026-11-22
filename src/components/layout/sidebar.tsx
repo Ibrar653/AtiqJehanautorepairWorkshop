@@ -93,14 +93,16 @@ export function Sidebar({ className, user, onCloseMobile }: SidebarProps) {
   return (
     <aside
       className={cn(
-        "fixed left-0 top-0 z-40 h-screen w-[240px] bg-white dark:bg-[#0F172A] text-slate-800 dark:text-slate-200 border-r border-[#E5E7EB] dark:border-[#1E293B] shadow-xs flex flex-col select-none transition-colors duration-150",
+        "fixed z-40 flex flex-col select-none transition-all duration-150",
+        "top-0 left-0 h-screen w-[252px] lg:top-3.5 lg:left-3.5 lg:h-[calc(100vh-28px)] lg:w-[244px] lg:rounded-[24px]",
+        "glass-panel text-[#101D36] dark:text-[#E8F1FC] overflow-hidden",
         className
       )}
     >
-      {/* Brand Header — Crisp emblem */}
-      <div className="flex items-center justify-between px-3.5 py-3 min-h-[68px] border-b border-[#E5E7EB] dark:border-[#1E293B] shrink-0 bg-white dark:bg-[#0F172A] transition-colors duration-150">
+      {/* Brand Header — Luminous Frosted Emblem */}
+      <div className="flex items-center justify-between px-4 py-3.5 min-h-[72px] border-b border-[#D7E4F3]/75 dark:border-[#24385A] shrink-0 bg-white/35 dark:bg-white/[0.02]">
         <Link href="/" prefetch className="flex items-center gap-3 group min-w-0 flex-1" onClick={onCloseMobile}>
-          <div className="h-11 w-11 rounded-xl bg-slate-50 border border-slate-200/90 p-1 flex items-center justify-center shrink-0 shadow-2xs">
+          <div className="h-11 w-11 rounded-2xl glass-icon-tile p-1.5 flex items-center justify-center shrink-0 transition-transform duration-150 group-hover:scale-[1.03]">
             <Image
               src="/branding/atiq-jehan-logo.png"
               alt="ATIQ JEHAN AUTO REPAIR"
@@ -111,18 +113,18 @@ export function Sidebar({ className, user, onCloseMobile }: SidebarProps) {
             />
           </div>
           <div className="min-w-0 flex-1">
-            <h1 className="text-[14px] font-bold text-slate-900 dark:text-slate-100 tracking-tight leading-[17px]">
+            <h1 className="font-heading text-[13.5px] font-bold text-[#101D36] dark:text-slate-100 tracking-tight leading-[17px]">
               ATIQ JEHAN AUTO REPAIR
             </h1>
-            <p className="text-[9px] font-semibold text-slate-400 dark:text-slate-400 uppercase tracking-wider mt-0.5 leading-none">
-              WORKSHOP MANAGEMENT SYSTEM
+            <p className="text-[9.5px] font-bold text-[#007BFF] dark:text-sky-400 uppercase tracking-[0.09em] mt-0.5 leading-none">
+              AUTOMOTIVE ERP
             </p>
           </div>
         </Link>
         {onCloseMobile && (
           <button
             onClick={onCloseMobile}
-            className="lg:hidden p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors ml-1 shrink-0"
+            className="lg:hidden p-1.5 rounded-xl text-[#52657F] hover:text-[#101D36] dark:hover:text-slate-200 hover:bg-white/70 dark:hover:bg-slate-800 transition-colors ml-1 shrink-0"
           >
             <X className="h-4 w-4" />
           </button>
@@ -130,7 +132,7 @@ export function Sidebar({ className, user, onCloseMobile }: SidebarProps) {
       </div>
 
       {/* Navigation Links — Grouped Sections */}
-      <ScrollArea className="flex-1 px-3 py-3">
+      <ScrollArea className="flex-1 px-3 py-3.5">
         <nav className="space-y-4">
           {NAV_GROUPS.map((group) => {
             const groupItems = visibleNavItems.filter((item) => group.items.includes(item.href));
@@ -138,7 +140,7 @@ export function Sidebar({ className, user, onCloseMobile }: SidebarProps) {
 
             return (
               <div key={group.title} className="space-y-1">
-                <div className="text-[10.5px] font-bold text-[#4B5563] dark:text-[#94A3B8] uppercase tracking-wider px-3 py-1">
+                <div className="text-[10px] font-bold text-[#647B97] dark:text-[#8BA3C4] uppercase tracking-[0.09em] px-3 py-1">
                   {group.title}
                 </div>
                 <div className="space-y-1">
@@ -156,19 +158,19 @@ export function Sidebar({ className, user, onCloseMobile }: SidebarProps) {
                         prefetch
                         onClick={onCloseMobile}
                         className={cn(
-                          "flex items-center gap-3 rounded-xl px-3.5 h-[42px] text-[13.5px] transition-all duration-150 select-none group",
+                          "flex items-center gap-3 rounded-xl px-3.5 h-[40px] text-[13.5px] transition-all duration-150 select-none group",
                           isActive
-                            ? "bg-[#2563EB] text-white font-semibold shadow-xs"
-                            : "text-[#111827] dark:text-slate-200 hover:text-[#111827] dark:hover:text-white hover:bg-[#F3F4F6] dark:hover:bg-slate-800/70 font-semibold"
+                            ? "glass-btn-primary text-white font-semibold"
+                            : "text-[#1A2D4D] dark:text-slate-200 hover:text-[#0068F5] dark:hover:text-white hover:bg-white/75 dark:hover:bg-white/[0.06] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_2px_6px_rgba(16,40,82,0.05)] font-medium"
                         )}
                       >
                         {Icon && (
                           <Icon
                             className={cn(
-                              "h-[18px] w-[18px] shrink-0 transition-colors",
+                              "h-[17px] w-[17px] shrink-0 transition-colors",
                               isActive
-                                ? "text-white"
-                                : "text-[#64748B] dark:text-[#94A3B8] group-hover:text-[#111827] dark:group-hover:text-white"
+                                ? "text-white drop-shadow-[0_1px_2px_rgba(0,40,120,0.3)]"
+                                : "text-[#52657F] dark:text-[#94A8C4] group-hover:text-[#007BFF] dark:group-hover:text-sky-400"
                             )}
                           />
                         )}
@@ -184,8 +186,8 @@ export function Sidebar({ className, user, onCloseMobile }: SidebarProps) {
       </ScrollArea>
 
       {/* User Footer Profile & Secure Logout */}
-      <div className="p-2.5 border-t border-[#E5E7EB] dark:border-[#1E293B] shrink-0 bg-white dark:bg-[#0F172A] transition-colors duration-150">
-        <div className="flex items-center justify-between gap-1 px-2 py-1.5 rounded-xl bg-slate-50/80 dark:bg-slate-900/80 border border-[#E5E7EB] dark:border-[#1E293B] hover:border-slate-300 dark:hover:border-slate-700 transition-all">
+      <div className="p-3 border-t border-[#D7E4F3]/75 dark:border-[#24385A] shrink-0 bg-white/30 dark:bg-white/[0.02]">
+        <div className="flex items-center justify-between gap-1.5 px-2.5 py-2 rounded-2xl bg-white/80 dark:bg-[#162542]/90 border border-white/95 dark:border-[#2A3F64] shadow-[var(--glass-shadow-sm)] transition-all">
           <Link
             href="/settings"
             prefetch
@@ -193,24 +195,23 @@ export function Sidebar({ className, user, onCloseMobile }: SidebarProps) {
             className="flex items-center gap-2.5 min-w-0 flex-1 group"
             title="Open Workshop Settings & Profile"
           >
-            <div className="h-8.5 w-8.5 rounded-full bg-[#2563EB] text-white flex items-center justify-center text-xs font-bold shrink-0 shadow-2xs">
+            <div className="h-9 w-9 rounded-full glass-btn-primary text-white flex items-center justify-center text-xs font-bold shrink-0">
               {user ? getInitials(user.full_name) : "IA"}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-[12.5px] font-bold text-[#111827] dark:text-slate-100 truncate leading-tight group-hover:text-[#2563EB] dark:group-hover:text-blue-400 transition-colors" title={user?.full_name || "Ibrar Ahmad"}>
+              <p className="text-[12.5px] font-semibold text-[#101D36] dark:text-slate-100 truncate leading-tight group-hover:text-[#007BFF] dark:group-hover:text-sky-400 transition-colors" title={user?.full_name || "Ibrar Ahmad"}>
                 {user?.full_name || "Ibrar Ahmad"}
               </p>
-              <p className="text-[11px] text-[#64748B] dark:text-slate-400 font-medium capitalize truncate mt-0.5">
+              <p className="text-[11px] text-[#52657F] dark:text-slate-400 font-medium capitalize truncate mt-0.5">
                 {user?.role || "Owner"}
               </p>
             </div>
           </Link>
 
-          {/* Quick Logout Button */}
           <button
             type="button"
             onClick={() => setLogoutModalOpen(true)}
-            className="p-1.5 text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/50 rounded-lg transition-colors shrink-0 cursor-pointer"
+            className="p-1.5 text-[#52657F] hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50/90 dark:hover:bg-red-950/50 rounded-xl transition-colors shrink-0 cursor-pointer"
             title="Log Out of System"
             aria-label="Log Out of System"
           >

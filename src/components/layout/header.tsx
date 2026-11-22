@@ -41,7 +41,7 @@ export function Header({ user, onOpenMobileMenu }: HeaderProps) {
 
   return (
     <>
-      <header className="sticky top-0 z-30 h-[62px] bg-white dark:bg-[#0F172A] border-b border-slate-200/90 dark:border-[#1E293B] flex items-center justify-between px-4 sm:px-6 lg:px-8 gap-4 select-none transition-colors duration-150">
+      <header className="sticky top-3 z-30 mx-4 sm:mx-5 lg:mx-6 mt-3.5 min-h-[76px] py-2 rounded-[22px] glass-panel flex items-center justify-between px-4 sm:px-5 gap-4 select-none transition-all duration-150">
         {/* Mobile Hamburger & Workspace Switcher */}
         <div className="flex items-center gap-2.5 shrink-0">
           {onOpenMobileMenu && (
@@ -49,7 +49,7 @@ export function Header({ user, onOpenMobileMenu }: HeaderProps) {
               variant="ghost"
               size="sm"
               onClick={onOpenMobileMenu}
-              className="lg:hidden p-1.5 h-9 w-9 rounded-xl text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+              className="lg:hidden p-1.5 h-10 w-10 rounded-xl glass-btn-secondary text-[#101D36] dark:text-slate-200"
             >
               <Menu className="h-4 w-4" />
             </Button>
@@ -60,7 +60,7 @@ export function Header({ user, onOpenMobileMenu }: HeaderProps) {
         </div>
 
         {/* Global Search Bar — Wide Centered Field */}
-        <div className="hidden md:block flex-1 max-w-lg mx-auto">
+        <div className="hidden md:block flex-1 max-w-xl mx-auto">
           <GlobalSearchBar />
         </div>
 
@@ -70,11 +70,11 @@ export function Header({ user, onOpenMobileMenu }: HeaderProps) {
           <Button
             variant="ghost"
             size="sm"
-            className="relative h-10 w-10 p-0 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800/80 rounded-xl border border-slate-200/80 dark:border-[#273449] bg-white dark:bg-[#172033] shadow-2xs"
+            className="relative h-10 w-10 p-0 text-[#52657F] hover:text-[#007BFF] dark:text-slate-300 dark:hover:text-sky-300 rounded-xl glass-btn-secondary"
             title="Notifications"
           >
             <Bell className="h-[18px] w-[18px]" />
-            <span className="absolute -top-0.5 -right-0.5 h-4 w-4 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center border-2 border-white dark:border-[#172033] shadow-xs">
+            <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-gradient-to-br from-rose-500 to-red-600 text-white text-[10px] font-bold flex items-center justify-center border-2 border-white dark:border-[#131E35] shadow-xs">
               3
             </span>
           </Button>
@@ -84,33 +84,33 @@ export function Header({ user, onOpenMobileMenu }: HeaderProps) {
             variant="ghost"
             size="sm"
             onClick={toggleTheme}
-            className="h-10 w-10 p-0 text-slate-500 hover:text-slate-800 dark:text-slate-300 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/80 rounded-xl border border-slate-200/80 dark:border-[#273449] bg-white dark:bg-[#172033] shadow-2xs hidden sm:flex items-center justify-center cursor-pointer transition-all"
+            className="h-10 w-10 p-0 text-[#52657F] hover:text-[#007BFF] dark:text-slate-300 dark:hover:text-white rounded-xl glass-btn-secondary hidden sm:flex items-center justify-center cursor-pointer transition-all"
             title={`Active Theme: ${theme.toUpperCase()} (${resolvedTheme} mode). Click to toggle Light / Dark.`}
           >
             {resolvedTheme === "dark" ? (
               <Sun className="h-[18px] w-[18px] text-amber-400 transition-transform hover:rotate-12" />
             ) : (
-              <Moon className="h-[18px] w-[18px] text-slate-600 transition-transform hover:-rotate-12" />
+              <Moon className="h-[18px] w-[18px] text-[#52657F] transition-transform hover:-rotate-12" />
             )}
           </Button>
 
           {/* User Profile Trigger & Menu */}
           <DropdownMenu>
-            <DropdownMenuTrigger className="flex items-center gap-2.5 pl-1.5 py-1 rounded-xl hover:bg-slate-100/80 dark:hover:bg-slate-800/80 transition-all outline-none cursor-pointer">
-              <div className="h-9 w-9 rounded-full bg-[#2563EB] text-white flex items-center justify-center text-xs font-bold shrink-0 shadow-xs">
+            <DropdownMenuTrigger className="flex items-center gap-2.5 pl-1.5 pr-2.5 py-1 rounded-xl hover:bg-white/75 dark:hover:bg-white/[0.06] transition-all outline-none cursor-pointer">
+              <div className="h-9 w-9 rounded-full glass-btn-primary text-white flex items-center justify-center text-xs font-bold shrink-0">
                 {initials}
               </div>
-              <div className="hidden sm:block text-left leading-tight pr-1">
-                <p className="text-[13px] font-bold text-slate-900 dark:text-slate-100 leading-tight">
+              <div className="hidden sm:block text-left leading-tight">
+                <p className="text-[13px] font-semibold text-[#101D36] dark:text-slate-100 leading-tight">
                   {displayName}
                 </p>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium capitalize mt-0.5">
+                <p className="text-[11px] text-[#52657F] dark:text-slate-400 font-medium capitalize mt-0.5">
                   {displayRole}
                 </p>
               </div>
             </DropdownMenuTrigger>
 
-            <DropdownMenuContent className="w-64 bg-white dark:bg-[#172033] p-1.5 shadow-xl border border-slate-200 dark:border-[#273449] rounded-2xl" align="end">
+            <DropdownMenuContent className="w-64 glass-menu p-1.5" align="end">
               <DropdownMenuLabel className="font-normal p-3">
                 <div className="flex flex-col space-y-1">
                   <p className="text-sm font-bold text-slate-900 dark:text-slate-100 truncate">{displayName}</p>

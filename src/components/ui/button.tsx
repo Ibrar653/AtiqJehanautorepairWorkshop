@@ -4,22 +4,22 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const buttonVariants = cva(
-  "group/button inline-flex shrink-0 items-center justify-center rounded-lg border border-transparent text-[13px] font-semibold whitespace-nowrap transition-colors outline-none select-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-1 active:translate-y-px disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-[15px] gap-2",
+  "group/button inline-flex shrink-0 items-center justify-center rounded-[12px] border border-transparent text-[13px] font-semibold whitespace-nowrap transition-all duration-150 outline-none select-none focus-visible:ring-2 focus-visible:ring-[#007BFF]/45 focus-visible:ring-offset-1 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-[15px] gap-2 cursor-pointer",
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-[#1D4ED8] active:bg-[#1E40AF] shadow-xs",
+        default: "glass-btn-primary text-white",
         outline:
-          "border-border bg-card text-foreground hover:bg-slate-50 dark:hover:bg-muted/50 hover:text-foreground shadow-xs border",
+          "glass-btn-secondary text-[#101D36] dark:text-foreground",
         secondary:
-          "bg-secondary text-secondary-foreground hover:bg-slate-200/80 dark:hover:bg-slate-800 shadow-xs border border-border/60",
+          "bg-[#E6F0FD]/90 dark:bg-secondary text-[#101D36] dark:text-secondary-foreground hover:bg-[#DCEAFE] dark:hover:bg-slate-800 shadow-[var(--glass-shadow-sm)] border border-[#CFE0F3] dark:border-border/60",
         ghost:
-          "hover:bg-muted hover:text-foreground aria-expanded:bg-muted",
+          "hover:bg-white/75 dark:hover:bg-white/[0.06] text-[#52657F] hover:text-[#0068F5] dark:hover:text-foreground aria-expanded:bg-white/80",
         destructive:
-          "bg-destructive text-destructive-foreground hover:bg-red-700 active:bg-red-800 shadow-xs",
+          "glass-btn-danger text-white",
         danger:
-          "bg-destructive text-destructive-foreground hover:bg-red-700 active:bg-red-800 shadow-xs",
-        link: "text-primary underline-offset-4 hover:underline",
+          "glass-btn-danger text-white",
+        link: "text-[#007BFF] underline-offset-4 hover:underline",
       },
       size: {
         default: "h-[38px] px-3.5 gap-2",

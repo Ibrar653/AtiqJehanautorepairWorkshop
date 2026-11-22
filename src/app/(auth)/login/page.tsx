@@ -3,6 +3,7 @@
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,6 +30,8 @@ import {
   CheckCircle2,
   ArrowRight,
   Sparkles,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { APP_NAME, COMPANY_FULL_NAME, PRIMARY_OWNER_EMAIL, DEFAULT_WORKSPACE_ID } from "@/lib/constants";
 import { getLocalUsers, saveLocalUsers, logUserActivity } from "@/lib/services/user-service";
@@ -45,6 +48,7 @@ import type { Workspace } from "@/types/database";
 function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -554,30 +558,35 @@ function LoginForm() {
   };
 
   return (
-    <div className="w-full max-w-md mx-auto space-y-6">
-      {/* Brand Header */}
-      <div className="flex flex-col items-center text-center space-y-2.5">
-        <div className="h-14 w-14 rounded-2xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-600/25">
-          <Wrench className="h-7 w-7 text-white" />
+    <div className="w-full mx-auto space-y-5">
+      {/* Main Premium Neumorphic Login Card (Reference Image 3) */}
+      <div className="rounded-[26px] bg-[#F5F9FF]/95 dark:bg-[#131E35]/95 backdrop-blur-md border border-white/80 dark:border-[#243554] shadow-[12px_12px_32px_rgba(110,142,184,0.24),-10px_-10px_28px_rgba(255,255,255,0.92)] dark:shadow-[12px_12px_32px_rgba(2,6,18,0.65)] p-7 sm:p-8">
+        {/* Brand Emblem & Identity */}
+        <div className="flex flex-col items-center text-center space-y-3 mb-6">
+          <div className="h-16 w-16 rounded-2xl neu-icon-box p-2 flex items-center justify-center">
+            <Image
+              src="/branding/atiq-jehan-logo.png"
+              alt="ATIQ JEHAN AUTO REPAIR"
+              width={52}
+              height={52}
+              className="w-full h-full object-contain"
+              priority
+            />
+          </div>
+          <div className="space-y-1">
+            <p className="text-[11px] font-bold text-[#007BFF] dark:text-blue-400 tracking-[0.12em] uppercase">
+              {APP_NAME}
+            </p>
+            <h1 className="font-heading text-[28px] font-bold text-[#101D36] dark:text-slate-100 tracking-tight leading-tight">
+              Welcome Back
+            </h1>
+            <p className="text-[13px] text-[#526782] dark:text-slate-400">
+              Sign in to access your workshop management workspace
+            </p>
+          </div>
         </div>
-        <div>
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight">{APP_NAME}</h1>
-          <p className="text-xs font-semibold text-blue-700 tracking-wider uppercase">
-            Auto Workshop Management
-          </p>
-        </div>
-      </div>
 
-      {/* Main Login Card */}
-      <Card className="border border-slate-200/80 shadow-xl shadow-slate-200/50 bg-white">
-        <CardHeader className="space-y-1 pb-4">
-          <CardTitle className="text-lg font-bold text-slate-900">Sign In</CardTitle>
-          <CardDescription className="text-xs text-slate-500">
-            Enter your email and private password to access your assigned workshop
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleLogin} className="space-y-4">
+        <form onSubmit={handleLogin} className="space-y-4">
             {/* Workspace Access Expired Notice (PART 6) */}
             {expiredNotice && (
               <div className="p-4 bg-rose-50/90 border border-rose-300/80 rounded-xl space-y-2.5 text-xs text-rose-950 animate-in fade-in-50 shadow-sm">
@@ -676,11 +685,11 @@ function LoginForm() {
             )}
 
             <div className="space-y-1.5">
-              <Label htmlFor="email" className="text-xs font-semibold text-slate-700">
+              <Label htmlFor="email" className="text-[13px] font-medium text-[#102340] dark:text-slate-200">
                 Email Address
               </Label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#526782]" />
                 <Input
                   id="email"
                   type="email"
@@ -689,45 +698,53 @@ function LoginForm() {
                   onChange={(e) => setEmail(e.target.value)}
                   required
                   disabled={loading}
-                  className="pl-9 h-10 text-sm bg-slate-50/50 border-slate-200 focus:bg-white"
+                  className="pl-10 h-11 text-[13.5px] rounded-xl neu-inset border-[#D6E2F0] focus-visible:border-[#007BFF]"
                 />
               </div>
             </div>
 
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
-                <Label htmlFor="password" className="text-xs font-semibold text-slate-700">
+                <Label htmlFor="password" className="text-[13px] font-medium text-[#102340] dark:text-slate-200">
                   Password
                 </Label>
                 <Link
                   href="/forgot-password"
-                  className="text-xs font-medium text-blue-600 hover:text-blue-700 hover:underline"
+                  className="text-xs font-medium text-[#007BFF] hover:text-[#1746D1] hover:underline"
                 >
                   Forgot password?
                 </Link>
               </div>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#526782]" />
                 <Input
                   id="password"
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   disabled={loading}
-                  className="pl-9 h-10 text-sm bg-slate-50/50 border-slate-200 focus:bg-white"
+                  className="pl-10 pr-10 h-11 text-[13.5px] rounded-xl neu-inset border-[#D6E2F0] focus-visible:border-[#007BFF]"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((prev) => !prev)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#64748B] hover:text-[#007BFF] p-1 rounded-lg transition-colors"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
               </div>
             </div>
 
-            <div className="flex items-center justify-between text-xs pt-1">
-              <label className="flex items-center gap-2 cursor-pointer select-none text-slate-600 font-medium">
+            <div className="flex items-center justify-between text-xs pt-0.5">
+              <label className="flex items-center gap-2 cursor-pointer select-none text-[#526782] dark:text-slate-400 font-medium">
                 <input
                   type="checkbox"
                   checked={rememberMe}
                   onChange={(e) => setRememberMe(e.target.checked)}
-                  className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 h-3.5 w-3.5"
+                  className="rounded border-[#D6E2F0] text-[#007BFF] focus:ring-[#007BFF] h-4 w-4"
                 />
                 Remember this device
               </label>
@@ -735,7 +752,7 @@ function LoginForm() {
 
             <Button
               type="submit"
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white h-10 text-sm font-semibold shadow-md shadow-blue-600/20 mt-2"
+              className="w-full h-11 text-sm font-semibold rounded-xl glass-btn-primary mt-2"
               disabled={loading}
             >
               {loading ? (
@@ -744,31 +761,33 @@ function LoginForm() {
                   Authenticating...
                 </>
               ) : (
-                "Sign In"
+                <>
+                  Sign In
+                  <ArrowRight className="ml-1 h-4 w-4" />
+                </>
               )}
             </Button>
           </form>
 
           {/* ─── OPTIONAL MANUAL CODE ACTIVATION TRIGGER (REQUIREMENT 6) ─── */}
-          <div className="mt-5 pt-4 border-t border-slate-100 text-center">
-            <p className="text-xs text-slate-500">
+          <div className="mt-6 pt-5 border-t border-[#D6E2F0]/80 dark:border-[#243554] text-center">
+            <p className="text-xs text-[#526782] dark:text-slate-400">
               Received an invitation to join a workshop?
             </p>
             <Button
               type="button"
               variant="outline"
               onClick={() => setCodeModalOpen(true)}
-              className="mt-2 text-xs font-bold border-blue-200 text-blue-700 hover:bg-blue-50 h-8 gap-1.5"
+              className="mt-2.5 text-xs font-semibold text-[#007BFF] border-[#C5DAF2] hover:bg-[#EBF4FF] h-9 rounded-xl gap-1.5"
             >
-              <KeyRound className="w-3.5 h-3.5 text-blue-600" />
+              <KeyRound className="w-3.5 h-3.5 text-[#007BFF]" />
               Have an invitation code? Activate Invitation
             </Button>
           </div>
-        </CardContent>
-      </Card>
+      </div>
 
       {/* Security notice */}
-      <div className="flex items-center justify-center gap-1.5 text-xs text-slate-500">
+      <div className="flex items-center justify-center gap-1.5 text-xs text-[#526782] dark:text-slate-400 font-medium">
         <ShieldCheck className="h-4 w-4 text-emerald-600" />
         <span>Authorized Multi-Tenant Workshop Access Only</span>
       </div>
