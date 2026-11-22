@@ -1,5 +1,25 @@
 export type AIProvider = "openai" | "gemini";
 export type AIMode = "ask" | "agent";
+export type AIModelTier = "free_eligible" | "standard" | "paid_recommended";
+export type AIErrorCategory =
+  | "api_key_missing"
+  | "invalid_api_key"
+  | "billing_required"
+  | "quota_exceeded"
+  | "rate_limited"
+  | "model_unavailable"
+  | "network_error"
+  | "timeout"
+  | "unknown";
+
+export interface ClassifiedAIError {
+  category: AIErrorCategory;
+  title: string;
+  userMessage: string;
+  detail: string;
+  retryAfterSeconds?: number;
+  suggestedFreeModelId?: string;
+}
 
 export interface AIModelOption {
   id: string;
@@ -9,6 +29,7 @@ export interface AIModelOption {
   supportsTools: boolean;
   supportsStreaming: boolean;
   recommended?: boolean;
+  tier?: AIModelTier;
 }
 
 export interface ProviderConnectionStatus {
@@ -16,6 +37,8 @@ export interface ProviderConnectionStatus {
   label: string;
   configured: boolean;
   operational: boolean;
+  verifiedGeneration?: boolean;
+  errorCategory?: AIErrorCategory;
   statusMessage: string;
   models: AIModelOption[];
 }
@@ -158,6 +181,13 @@ export interface AIChatMessageUI {
     total_tokens?: number;
   };
   error?: string;
+  errorMeta?: {
+    category?: AIErrorCategory;
+    title?: string;
+    detail?: string;
+    retryAfterSeconds?: number;
+    suggestedFreeModelId?: string;
+  };
 }
 
 export interface AIConversationThread {

@@ -11,8 +11,10 @@ import {
   getAllowedToolsForMode,
 } from "@/lib/ai/tool-registry";
 import {
+  classifyProviderError,
   getAIRequestTimeoutMs,
   getGeminiClient,
+  getGeminiThinkingConfig,
   getOpenAIClient,
   isSupportedModel,
   toGeminiFunctionDeclarations,
@@ -107,12 +109,18 @@ export async function POST(request: NextRequest) {
 
       const requestTimeoutMs = getAIRequestTimeoutMs();
       const timeoutSignal = AbortSignal.timeout(requestTimeoutMs);
+      // Keep context window lean (last 10 turns) & tune output cap to conserve free-tier TPM/RPD
+      const trimmedMessages = body.messages.slice(-10).map((m) => ({
+        role: m.role,
+        content: m.content.length > 3500 ? `${m.content.slice(0, 3500)}…` : m.content,
+      }));
+      const maxOutputTokens = body.mode === "ask" ? 1280 : 1800;
 
       try {
         if (body.provider === "openai") {
           const client = getOpenAIClient();
           const tools = toOpenAIResponsesTools(allowedTools);
-          const inputItems: any[] = body.messages.map((m) => ({
+          const inputItems: any[] = trimmedMessages.map((m) => ({
             role: m.role,
             content: m.content,
           }));
@@ -124,7 +132,7 @@ export async function POST(request: NextRequest) {
                 instructions: systemInstruction,
                 input: inputItems,
                 tools,
-                max_output_tokens: 2048,
+                max_output_tokens: maxOutputTokens,
                 stream: true,
               },
               { signal: timeoutSignal }
@@ -200,8 +208,9 @@ export async function POST(request: NextRequest) {
           // ─── Google Gemini Official @google/genai SDK ───
           const ai = getGeminiClient();
           const functionDeclarations = toGeminiFunctionDeclarations(allowedTools);
+          const thinkingConfig = getGeminiThinkingConfig(body.model, body.mode);
 
-          const contents: any[] = body.messages.map((m) => ({
+          const contents: any[] = trimmedMessages.map((m) => ({
             role: m.role === "assistant" ? "model" : "user",
             parts: [{ text: m.content }],
           }));
@@ -213,7 +222,8 @@ export async function POST(request: NextRequest) {
               config: {
                 systemInstruction,
                 tools: [{ functionDeclarations }],
-                maxOutputTokens: 2048,
+                maxOutputTokens,
+                ...(thinkingConfig ? { thinkingConfig } : {}),
                 abortSignal: timeoutSignal,
               },
             });
@@ -302,17 +312,23 @@ export async function POST(request: NextRequest) {
         });
         send({ type: "done", hasConfirmation: Boolean(pendingConfirmation) });
       } catch (err: any) {
-        const cleanMsg = sanitizeErrorForClient(err);
-        let friendly = cleanMsg;
-        const lower = cleanMsg.toLowerCase();
-        if (lower.includes("401") || lower.includes("invalid api key") || lower.includes("api_key_invalid")) {
-          friendly = `Authentication failed for ${body.provider.toUpperCase()}. Please verify the server API key in .env.local or Vercel Environment Variables.`;
-        } else if (lower.includes("429") || lower.includes("quota") || lower.includes("rate")) {
-          friendly = `${body.provider.toUpperCase()} rate limit or quota exceeded. Please check your provider billing/credits or wait a moment.`;
-        } else if (lower.includes("timeout") || lower.includes("aborted")) {
-          friendly = `${body.provider.toUpperCase()} request timed out. Please try again.`;
-        }
-        send({ type: "error", message: friendly });
+        const classified = classifyProviderError(body.provider, err, body.model);
+        // Log sanitized diagnostics server-side (never exposing API keys)
+        console.error("[AI Chat Provider Error]", {
+          provider: body.provider,
+          model: body.model,
+          category: classified.category,
+          detail: classified.detail,
+        });
+        send({
+          type: "error",
+          message: classified.userMessage,
+          errorCategory: classified.category,
+          errorTitle: classified.title,
+          errorDetail: classified.detail,
+          retryAfterSeconds: classified.retryAfterSeconds,
+          suggestedFreeModelId: classified.suggestedFreeModelId,
+        });
       } finally {
         try {
           controller.close();

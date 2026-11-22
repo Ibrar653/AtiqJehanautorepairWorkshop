@@ -306,45 +306,70 @@ export function AIWorkspace() {
     }
   }, [threads, workspaceId]);
 
-  const fetchProviders = useCallback(async (forceRefresh = false) => {
-    setLoadingProviders(true);
-    try {
-      const url = forceRefresh ? "/api/ai/models?refresh=1" : "/api/ai/models";
-      const res = await fetch(url, { cache: "no-store" });
-      const data = await res.json();
-      if (!res.ok || !data.success) {
-        throw new Error(data.error || "Unable to load AI models");
-      }
-      const list = (data.providers || []) as ProviderConnectionStatus[];
-      setProviders(list);
-
-      // Keep user's explicit provider selection if still present, or pick an operational one on first load
-      setSelectedProvider((currentProv) => {
-        const currentStatus = list.find((p) => p.provider === currentProv);
-        const operational = list.find((p) => p.operational);
-        const chosen =
-          !forceRefresh && currentStatus && !currentStatus.operational && operational
-            ? operational
-            : currentStatus || list[0];
-
-        if (chosen) {
-          const validModel =
-            chosen.models.find((m) => m.recommended) || chosen.models[0];
-          if (validModel) {
-            setSelectedModel((prevModel) =>
-              chosen.models.some((m) => m.id === prevModel) ? prevModel : validModel.id
-            );
-          }
-          return chosen.provider;
+  const fetchProviders = useCallback(
+    async (
+      forceRefresh = false,
+      probeTarget?: { provider: AIProvider; model: string }
+    ) => {
+      setLoadingProviders(true);
+      try {
+        const params = new URLSearchParams();
+        if (forceRefresh) params.set("refresh", "1");
+        if (probeTarget) {
+          params.set("probe", "1");
+          params.set("provider", probeTarget.provider);
+          params.set("model", probeTarget.model);
         }
-        return currentProv;
-      });
-    } catch (err: any) {
-      showNotice("error", err?.message || "Failed to check AI provider status");
-    } finally {
-      setLoadingProviders(false);
-    }
-  }, [showNotice]);
+        const qs = params.toString();
+        const url = qs ? `/api/ai/models?${qs}` : "/api/ai/models";
+        const res = await fetch(url, { cache: "no-store" });
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+          throw new Error(data.error || "Unable to load AI models");
+        }
+        const list = (data.providers || []) as ProviderConnectionStatus[];
+        setProviders(list);
+
+        if (probeTarget) {
+          const probed = list.find((p) => p.provider === probeTarget.provider);
+          if (probed?.verifiedGeneration) {
+            showNotice("success", probed.statusMessage);
+          } else if (probed) {
+            showNotice("error", probed.statusMessage);
+          }
+        }
+
+        // Keep user's explicit provider selection if still present, or pick an operational one on first load
+        setSelectedProvider((currentProv) => {
+          const currentStatus = list.find((p) => p.provider === currentProv);
+          const operational = list.find((p) => p.operational);
+          const chosen =
+            !forceRefresh && !probeTarget && currentStatus && !currentStatus.operational && operational
+              ? operational
+              : currentStatus || list[0];
+
+          if (chosen) {
+            const validModel =
+              chosen.models.find((m) => m.recommended) ||
+              chosen.models.find((m) => m.tier === "free_eligible") ||
+              chosen.models[0];
+            if (validModel) {
+              setSelectedModel((prevModel) =>
+                chosen.models.some((m) => m.id === prevModel) ? prevModel : validModel.id
+              );
+            }
+            return chosen.provider;
+          }
+          return currentProv;
+        });
+      } catch (err: any) {
+        showNotice("error", err?.message || "Failed to check AI provider status");
+      } finally {
+        setLoadingProviders(false);
+      }
+    },
+    [showNotice]
+  );
 
   useEffect(() => {
     fetchProviders(false);
@@ -567,7 +592,7 @@ export function AIWorkspace() {
     const apiMessages = [
       ...priorMessages
         .filter((m) => m.content && !m.error)
-        .slice(-16)
+        .slice(-9)
         .map((m) => ({ role: m.role, content: m.content })),
       { role: "user" as const, content: cleanText },
     ];
@@ -659,6 +684,13 @@ export function AIWorkspace() {
             updateMessageInThread(targetThreadId, assistantMsgId, (msg) => ({
               ...msg,
               error: evt.message || "An unexpected AI error occurred.",
+              errorMeta: {
+                category: evt.errorCategory,
+                title: evt.errorTitle,
+                detail: evt.errorDetail,
+                retryAfterSeconds: evt.retryAfterSeconds,
+                suggestedFreeModelId: evt.suggestedFreeModelId,
+              },
             }));
           }
         }
@@ -903,20 +935,28 @@ export function AIWorkspace() {
               </span>
               <ChevronDown className="h-3.5 w-3.5 opacity-60 shrink-0" />
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-72 glass-menu p-1.5">
-              <DropdownMenuLabel className="text-[11px] uppercase tracking-wider text-[#52657F] dark:text-slate-400 flex items-center justify-between">
+            <DropdownMenuContent align="end" className="w-80 glass-menu p-1.5">
+              <DropdownMenuLabel className="text-[11px] uppercase tracking-wider text-[#52657F] dark:text-slate-400 flex items-center justify-between gap-2">
                 <span>
                   {selectedProvider === "openai" ? "OpenAI Models" : "Google Gemini Models"}
                 </span>
                 <span
                   className={cn(
-                    "text-[10px] font-bold px-1.5 py-0.5 rounded-full",
-                    activeProviderStatus?.operational
+                    "text-[10px] font-bold px-1.5 py-0.5 rounded-full shrink-0",
+                    activeProviderStatus?.verifiedGeneration
                       ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/70 dark:text-emerald-300"
+                      : activeProviderStatus?.operational
+                      ? "bg-blue-100 text-blue-700 dark:bg-blue-950/70 dark:text-sky-300"
                       : "bg-amber-100 text-amber-700 dark:bg-amber-950/70 dark:text-amber-300"
                   )}
                 >
-                  {activeProviderStatus?.operational ? "Connected" : "Key Needed"}
+                  {activeProviderStatus?.verifiedGeneration
+                    ? "Verified Live"
+                    : activeProviderStatus?.operational
+                    ? "Connected"
+                    : activeProviderStatus?.configured
+                    ? "Action Needed"
+                    : "Key Needed"}
                 </span>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
@@ -929,14 +969,24 @@ export function AIWorkspace() {
                     selectedModel === m.id && "bg-blue-50/90 dark:bg-blue-950/60"
                   )}
                 >
-                  <div className="flex items-center justify-between w-full gap-2">
-                    <span className="text-xs font-bold text-[#101D36] dark:text-slate-100">
+                  <div className="flex items-center justify-between w-full gap-1.5">
+                    <span className="text-xs font-bold text-[#101D36] dark:text-slate-100 truncate">
                       {m.label}
                     </span>
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-1 shrink-0">
+                      {m.tier === "free_eligible" && (
+                        <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/70 text-emerald-700 dark:text-emerald-300">
+                          Free Tier
+                        </span>
+                      )}
+                      {m.tier === "paid_recommended" && (
+                        <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950/70 text-amber-700 dark:text-amber-300">
+                          Paid / Limited
+                        </span>
+                      )}
                       {m.recommended && (
-                        <span className="text-[9.5px] font-bold uppercase px-1.5 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-950/70 text-[#4F46E5] dark:text-sky-300">
-                          Recommended
+                        <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-950/70 text-[#4F46E5] dark:text-sky-300">
+                          Default
                         </span>
                       )}
                       {selectedModel === m.id && (
@@ -944,11 +994,28 @@ export function AIWorkspace() {
                       )}
                     </div>
                   </div>
-                  <span className="text-[11px] text-[#52657F] dark:text-slate-400">
+                  <span className="text-[11px] text-[#52657F] dark:text-slate-400 leading-snug">
                     {m.description}
                   </span>
                 </DropdownMenuItem>
               ))}
+              {selectedProvider === "gemini" && activeProviderStatus?.configured && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={() =>
+                      fetchProviders(true, {
+                        provider: "gemini",
+                        model: selectedModel,
+                      })
+                    }
+                    className="rounded-lg p-2 text-xs font-semibold text-[#0068F5] dark:text-sky-300 cursor-pointer flex items-center justify-between"
+                  >
+                    <span>Test Live Generation ({activeModelObj?.label || selectedModel})</span>
+                    <Zap className="h-3.5 w-3.5" />
+                  </DropdownMenuItem>
+                </>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
 
@@ -1287,11 +1354,50 @@ export function AIWorkspace() {
                               </div>
                             ) : null}
 
-                            {/* Error Banner */}
+                            {/* Structured Error Banner (Distinguishes Key, Billing, Quota, Rate Limit, Model & Network) */}
                             {msg.error && (
-                              <div className="mt-2 rounded-xl border border-red-200 dark:border-red-800/70 bg-red-50/90 dark:bg-red-950/40 px-3 py-2.5 text-xs text-red-700 dark:text-red-300 flex items-start gap-2">
-                                <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
-                                <span>{msg.error}</span>
+                              <div className="mt-2 rounded-xl border border-red-200 dark:border-red-800/70 bg-red-50/90 dark:bg-red-950/40 px-3.5 py-3 text-xs text-red-800 dark:text-red-200 space-y-2">
+                                <div className="flex items-start gap-2">
+                                  <AlertTriangle className="h-4 w-4 text-red-600 dark:text-red-400 shrink-0 mt-0.5" />
+                                  <div className="space-y-1 min-w-0 flex-1">
+                                    {msg.errorMeta?.title && (
+                                      <p className="font-bold text-red-900 dark:text-red-100">
+                                        {msg.errorMeta.title}
+                                      </p>
+                                    )}
+                                    <p className="leading-relaxed">{msg.error}</p>
+                                    {msg.errorMeta?.detail &&
+                                      msg.errorMeta.detail !== msg.error && (
+                                        <p className="text-[11px] font-mono text-red-700/80 dark:text-red-300/80 bg-white/60 dark:bg-black/20 rounded-lg px-2 py-1 break-words">
+                                          Server diagnostic: {msg.errorMeta.detail}
+                                        </p>
+                                      )}
+                                  </div>
+                                </div>
+
+                                {msg.errorMeta?.suggestedFreeModelId &&
+                                  availableModels.some(
+                                    (m) => m.id === msg.errorMeta?.suggestedFreeModelId
+                                  ) && (
+                                    <div className="pt-1 flex flex-wrap items-center gap-2">
+                                      <Button
+                                        type="button"
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => {
+                                          const target = msg.errorMeta?.suggestedFreeModelId!;
+                                          setSelectedModel(target);
+                                          showNotice(
+                                            "info",
+                                            `Switched model to ${target} (Free-Tier Eligible). Click Retry to resend.`
+                                          );
+                                        }}
+                                        className="h-7 rounded-lg text-[11.5px] bg-white dark:bg-slate-900 border-red-300 dark:border-red-700 text-[#101D36] dark:text-slate-100 hover:border-[#007BFF] cursor-pointer"
+                                      >
+                                        Switch to {msg.errorMeta.suggestedFreeModelId} (Free Tier)
+                                      </Button>
+                                    </div>
+                                  )}
                               </div>
                             )}
 
